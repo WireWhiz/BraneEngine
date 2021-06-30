@@ -1,3 +1,4 @@
+#pragma once
 #include <vector>
 #include <string>
 #include <stdexcept>
@@ -18,7 +19,7 @@ public:
 	}
 };
 
-class TestLogger
+class TestRunner
 {
 private:
 	static std::vector<std::string> failedTests;
@@ -57,21 +58,23 @@ public:
 		return failedTests.size() == 0;
 	}
 };
-std::vector<std::string> TestLogger::failedTests;
-std::string TestLogger::testName = "";
-int TestLogger::testIndex = 0;
+std::vector<std::string> TestRunner::failedTests;
+std::string TestRunner::testName = "";
+int TestRunner::testIndex = 0;
 
-#define expectError(x, error) try\
+#define expectError(x, error)\
+	try\
 	{\
 		x;\
-		TestLogger::logFail();\
+		TestRunner::logFail();\
 	}\
 	catch(const error& e)\
 	{\
-		TestLogger::logSucess();\
+		TestRunner::logSucess();\
 	}
-#define expectValue(x, value) if(x == value)\
-		TestLogger::logSucess();\
+#define expectValue(x, value)\
+	if(x == value)\
+		TestRunner::logSucess();\
 	else \
-		TestLogger::logFail();
+		TestRunner::logFail();
 

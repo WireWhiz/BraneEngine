@@ -1,6 +1,7 @@
 #pragma once
-#include "test.h"
-#include "ECS/tests.h"
+#ifdef DEBUG
+#include "testing.h"
+#include "ECS/ECSTests.h"
 
 namespace tests
 {
@@ -8,9 +9,10 @@ namespace tests
 	{
 		std::cout << "Running Tests" << std::endl;
 		runECSTests();
-		TestLogger::printFailedTests();
-		TestLogger::throwIfFailed();
-		if (TestLogger::testsSucceeded())
+		TestRunner::printFailedTests();
+		TestRunner::throwIfFailed();
+		if (TestRunner::testsSucceeded())
 			std::cout << "Tests Succeeded" << std::endl << std::endl;
 	}
 }
+#endif

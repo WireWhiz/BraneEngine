@@ -14,9 +14,17 @@ file(GLOB_RECURSE SOURCES src/*.h src/*.cpp src/*.hh src/*.cc)
 add_compile_definitions(ASMJIT_STATIC)
 
 include_directories(
-    src/ecs
-    src/Debug
+    src/ECS
+    src/Tests
 )
+
+if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    message("debug mode")
+    add_compile_definitions(DEBUG)
+else ()
+    message("shipping mode")
+endif ()
+    
 
 if (UNIX)
     add_link_options(-lrt)
@@ -24,10 +32,10 @@ endif (UNIX)
 
 
 # Add source to this project's executable.
-add_executable (BraneEngine "src/BraneEngine.cpp" "src/BraneEngine.h" ${SOURCES})
+add_executable (BraneEngine ${SOURCES})
 
-target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/ecs)
-target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/Debug)
+target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/ECS)
+target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/Tests)
 
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
 #     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
