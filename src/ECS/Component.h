@@ -6,6 +6,18 @@
 
 
 typedef uint64_t ComponentID;
+const ComponentID nullComponent = 0;
+
+struct NativeVarDef
+{
+	VirtualType type;
+	size_t index;
+	NativeVarDef(size_t index, VirtualType type)
+	{
+		this->type = type;
+		this->index = index;
+	}
+};
 
 class ComponentDefinition
 {
@@ -24,11 +36,11 @@ public:
 	~ComponentDefinition();
 	void setIndexType(size_t index, VirtualType type);
 	void initalize();
+	void initalize(const std::vector<NativeVarDef> vars, size_t size);
 	ComponentID id() const;
 	size_t size() const;
 	size_t getByteIndex(size_t index) const;
 };
-
 
 class VirtualComponent
 {
@@ -84,6 +96,53 @@ public:
 	byte* data() const;
 };
 
+template <class T, size_t id>
+class NativeComponent
+{
+private:
+	void constructDef()
+	{
+		if (_def == nullptr)
+		{
+			std::vector<NativeVarDef> vars;
+			this->getVariables(vars);
+
+			assert(vars.size() > 0);
+			_def = new ComponentDefinition(vars.size(), id);
+			_def->initalize(vars, sizeof(T));
+		}
+	}
+protected:
+	static ComponentDefinition* _def;
+	virtual void getVariables(std::vector<NativeVarDef>& variables) = 0;
+	size_t getVarIndex(void* var)
+	{
+		size_t index = (size_t)var - (size_t)this;;
+		assert(0 <= index < sizeof(T));
+		return index;
+	}
+public:
+	NativeComponent()
+	{
+		
+	}
+	T fromVirtual(byte* data)
+	{
+		constructDef();
+		return *(T*)data;
+	}
+	VirtualComponentPtr toVirtual()
+	{
+		constructDef();
+		return VirtualComponentPtr(_def, (byte*)this);
+	}
+	ComponentDefinition* def()
+	{
+		return _def;
+	}
+};
+template <class T, size_t id> ComponentDefinition* NativeComponent<T, id>::_def = nullptr;
+
 class VirtualComponentVector
 {
 private:
@@ -112,7 +171,8 @@ public:
 	size_t size() const;
 	ComponentDefinition* def() const;
 	void reserve(size_t size);
-	void pushBack(VirtualComponent& virtualStruct);
+	void pushBack(VirtualComponent& virtualComponent);
+	void pushBack(VirtualComponentPtr& virtualComponentPtr);
 	void pushBack();
 	void swapRemove(size_t index);
 	void copy(const VirtualComponentVector& source, size_t sourceIndex, size_t destIndex);

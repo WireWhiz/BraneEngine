@@ -41,10 +41,7 @@ byte* VirtualComponent::data() const
 
 ComponentDefinition::ComponentDefinition()
 {
-	assert(false); // This should never be used but something isn't compiling because of it
-	_byteIndices = nullptr;
-	_types = nullptr;
-	_initalized = false;
+	assert(false);
 }
 
 ComponentID ComponentDefinition::id() const
@@ -102,6 +99,19 @@ void ComponentDefinition::initalize()
 		assert(_types[i] != virtualNone); // Make sure all _types are initallized
 		_byteIndices[i] = _size;
 		_size += sizeofVirtual(_types[i]);
+	}
+}
+
+void ComponentDefinition::initalize(const std::vector<NativeVarDef> vars, size_t size)
+{
+	assert(vars.size() == _numTypes);
+	_initalized = true;
+	_size = size;
+	for (size_t i = 0; i < _numTypes; i++)
+	{
+		assert(vars[i].type != virtualNone); // Make sure all _types are initallized
+		_types[i] = vars[i].type;
+		_byteIndices[i] = vars[i].index;
 	}
 }
 
@@ -169,7 +179,18 @@ void VirtualComponentVector::copy(const VirtualComponentVector& source, size_t s
 
 void VirtualComponentVector::pushBack(VirtualComponent& virtualStruct)
 {
+	assert(virtualStruct.def() == _def);
 	byte* inData = virtualStruct.data();
+	for (size_t i = 0; i < _def->size(); i++)
+	{
+		_data.push_back(*(inData + i));
+	}
+}
+
+void VirtualComponentVector::pushBack(VirtualComponentPtr& virtualComponentPtr)
+{
+	assert(virtualComponentPtr.def() == _def);
+	byte* inData = virtualComponentPtr.data();
 	for (size_t i = 0; i < _def->size(); i++)
 	{
 		_data.push_back(*(inData + i));

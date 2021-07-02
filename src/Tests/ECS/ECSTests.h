@@ -9,79 +9,125 @@ namespace tests
 {
 	void testVirtualStruct()
 	{
-		TestRunner::setTestCatagory("Virtual Struct");
+		TestRunner::setTestCatagory("Virtual Component");
 		
 		//Initalize a struct with one of every type of value and set them to test values, then read them back and make sure that they are correct
-		ComponentDefinition vsd(3, 0);
-		vsd.setIndexType(0, virtualBool);
-		vsd.setIndexType(1, virtualInt);
-		vsd.setIndexType(2, virtualFloat);
-		vsd.initalize();
-		VirtualComponent vs(&vsd);
-		vs.setVar(0, true);
-		vs.setVar(1, 69);
-		vs.setVar<float>(2, 420);
-		expectValue(true, *vs.getVar<bool> (0));
-		expectValue(69,   *vs.getVar<int>  (1));
-		expectValue(420,  *vs.getVar<float>(2));
+		ComponentDefinition vcd(3, 0);
+		vcd.setIndexType(0, virtualBool);
+		vcd.setIndexType(1, virtualInt);
+		vcd.setIndexType(2, virtualFloat);
+		vcd.initalize();
+		VirtualComponent vc(&vcd);
+		vc.setVar(0, true);
+		vc.setVar(1, 69);
+		vc.setVar<float>(2, 420);
+		expectValue(true, *vc.getVar<bool> (0));
+		expectValue(69,   *vc.getVar<int>  (1));
+		expectValue(420,  *vc.getVar<float>(2));
 
-		expectValue(true, vs.readVar<bool> (0));
-		expectValue(69,   vs.readVar<int>  (1));
-		expectValue(420,  vs.readVar<float>(2));
+		expectValue(true, vc.readVar<bool> (0));
+		expectValue(69,   vc.readVar<int>  (1));
+		expectValue(420,  vc.readVar<float>(2));
 
 
-		TestRunner::setTestCatagory("Virtual Struct Vector");
+		TestRunner::setTestCatagory("Virtual Component Vector");
 
-		VirtualComponent vs2(&vsd);
-		vs2.setVar(0, false);
-		vs2.setVar(1, 1234);
-		vs2.setVar<float>(2, 42);
+		VirtualComponent vc2(&vcd);
+		vc2.setVar(0, false);
+		vc2.setVar(1, 1234);
+		vc2.setVar<float>(2, 42);
 
-		VirtualComponentVector vsv(&vsd, 2);
+		VirtualComponentVector vcv(&vcd, 2);
 
-		vsv.pushBack(vs);
-		vsv.pushBack(vs2);
-		vsv.pushBack(vs);
-		vsv.setComponentVar(2, 1, 42);
+		vcv.pushBack(vc);
+		vcv.pushBack(vc2);
+		vcv.pushBack(vc);
+		vcv.setComponentVar(2, 1, 42);
 
-		expectValue(69, vsv.readComponentVar<int>  (0, 1));
-		expectValue(1234, vsv.readComponentVar<int>(1, 1));
-		expectValue(42, vsv.readComponentVar<int>  (2, 1));
+		expectValue(69, vcv.readComponentVar<int>  (0, 1));
+		expectValue(1234, vcv.readComponentVar<int>(1, 1));
+		expectValue(42, vcv.readComponentVar<int>  (2, 1));
 		
-		vsv.swapRemove(0);
-		expectValue(42, vsv.readComponentVar<int>  (0, 1));
-		expectValue(1234, vsv.readComponentVar<int>(1, 1));
-		expectValue(42, vsv.readComponentVar<float>(1, 2));
+		vcv.swapRemove(0);
+		expectValue(42, vcv.readComponentVar<int>  (0, 1));
+		expectValue(1234, vcv.readComponentVar<int>(1, 1));
+		expectValue(42, vcv.readComponentVar<float>(1, 2));
 
-		VirtualComponentVector vsvc(&vsd);
-		vsvc.pushBack();
+		VirtualComponentVector vcvc(&vcd);
+		vcvc.pushBack();
 
-		vsvc.copy(vsv, 0, 0);
-		expectValue(42, vsvc.readComponentVar<int>(0, 1));
+		vcvc.copy(vcv, 0, 0);
+		expectValue(42, vcvc.readComponentVar<int>(0, 1));
 	}
+#pragma region  native struct
 
+	class TestNativeComponent : public NativeComponent<TestNativeComponent, 3>
+	{
+	public:
+		bool var1;
+		int var2;
+		float var3;
+	protected:
+		void getVariables(std::vector<NativeVarDef>& variables) override
+		{
+			variables.push_back(NativeVarDef(getVarIndex(&var1), virtualBool));
+			variables.push_back(NativeVarDef(getVarIndex(&var2), virtualInt));
+			variables.push_back(NativeVarDef(getVarIndex(&var3), virtualFloat));
+		}
+	
+	};
+
+	void testNativeStruct()
+	{
+		TestRunner::setTestCatagory("Native Component");
+
+		//Initalize a struct with one of every type of value and set them to test values, then read them back and make sure that they are correct
+		TestNativeComponent nc;
+
+		nc.var1 = true;
+		nc.var2 = 69;
+		nc.var3 = 420;
+
+		VirtualComponentPtr vc = nc.toVirtual();
+		expectValue(true, vc.readVar<bool>(0));
+		expectValue(69, vc.readVar<int>(1));
+		expectValue(420, vc.readVar<float>(2));
+
+		vc.setVar(0, false);
+		vc.setVar(1, 42);
+		vc.setVar<float>(2, 42 * 2);
+
+		expectValue(false, vc.readVar<bool>(0));
+		expectValue(42, vc.readVar<int>(1));
+		expectValue(42 * 2, vc.readVar<float>(2));
+
+		expectValue(false, nc.var1);
+		expectValue(42,   nc.var2);
+		expectValue(42 * 2, nc.var3);
+	}
+#pragma endregion
 	void testEntityManager()
 	{
 		TestRunner::setTestCatagory("Entity Manager");
 
-		ComponentDefinition vsd1(1, 1);
-		vsd1.setIndexType(0, virtualBool);
-		vsd1.initalize();
+		ComponentDefinition vcd1(1, 1);
+		vcd1.setIndexType(0, virtualBool);
+		vcd1.initalize();
 
-		ComponentDefinition vsd2(1, 2);
-		vsd2.setIndexType(0, virtualFloat);
-		vsd2.initalize();
+		ComponentDefinition vcd2(1, 2);
+		vcd2.setIndexType(0, virtualFloat);
+		vcd2.initalize();
 
-		ComponentDefinition vsd3(2, 3);
-		vsd3.setIndexType(0, virtualBool);
-		vsd3.setIndexType(1, virtualFloat);
-		vsd3.initalize();
+		ComponentDefinition vcd3(2, 3);
+		vcd3.setIndexType(0, virtualBool);
+		vcd3.setIndexType(1, virtualFloat);
+		vcd3.initalize();
 
 		
 		EntityManager em;
-		em.regesterComponent(vsd1);
-		em.regesterComponent(vsd2);
-		em.regesterComponent(vsd3);
+		em.regesterComponent(vcd1);
+		em.regesterComponent(vcd2);
+		em.regesterComponent(vcd3);
 
 		// Create entity
 		EntityID entity = em.createEntity();
@@ -121,8 +167,9 @@ namespace tests
 	}
 
 	void runECSTests()
-	{
+	{  
 		testVirtualStruct();
+		testNativeStruct();
 		testEntityManager();
 	}
 }
