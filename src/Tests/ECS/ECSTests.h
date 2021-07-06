@@ -1,9 +1,7 @@
 #pragma once
 #ifdef DEBUG
 #include <ecs.h>
-#include <Component.h>
-#include <Archetype.h>
-#include <Entity.h>
+#include "JITTests.h"
 
 namespace tests
 {
@@ -54,7 +52,7 @@ namespace tests
 		expectValue(42, vcv.readComponentVar<float>(1, 2));
 
 		VirtualComponentVector vcvc(&vcd);
-		vcvc.pushBack();
+		vcvc.pushEmpty();
 
 		vcvc.copy(vcv, 0, 0);
 		expectValue(42, vcvc.readComponentVar<int>(0, 1));
@@ -70,9 +68,9 @@ namespace tests
 	protected:
 		void getVariables(std::vector<NativeVarDef>& variables) override
 		{
-			variables.push_back(NativeVarDef(getVarIndex(&var1), virtualBool));
-			variables.push_back(NativeVarDef(getVarIndex(&var2), virtualInt));
-			variables.push_back(NativeVarDef(getVarIndex(&var3), virtualFloat));
+			variables.emplace_back(getVarIndex(&var1), virtualBool);
+			variables.emplace_back(getVarIndex(&var2), virtualInt);
+			variables.emplace_back(getVarIndex(&var3), virtualFloat);
 		}
 	
 	};
@@ -104,6 +102,32 @@ namespace tests
 		expectValue(false, nc.var1);
 		expectValue(42,   nc.var2);
 		expectValue(42 * 2, nc.var3);
+
+		TestRunner::setTestCatagory("Native Component Vector");
+
+		VirtualComponentVector vcv(nc.def());
+		vcv.pushEmpty();
+		vcv.pushEmpty(); // We want to test the second index to make sure that the calculated size() is correct
+		TestNativeComponent* ncp = TestNativeComponent::fromVirtual(vcv.getComponentData(1));
+		ncp->var1 = true;
+		ncp->var2 = 69;
+		ncp->var3 = 420;
+
+		expectValue(true, vcv.readComponentVar<bool>(1, 0));
+		expectValue(69, vcv.readComponentVar<int>(1, 1));
+		expectValue(420, vcv.readComponentVar<float>(1, 2));
+
+		vcv.setComponentVar(1, 0, false);
+		vcv.setComponentVar(1, 1, 42);
+		vcv.setComponentVar<float>(1, 2, 42 * 2);
+
+		expectValue(false, vcv.readComponentVar<bool>(1, 0));
+		expectValue(42, vcv.readComponentVar<int>(1, 1));
+		expectValue(42 * 2, vcv.readComponentVar<float>(1, 2));
+
+		expectValue(false, ncp->var1);
+		expectValue(42, ncp->var2);
+		expectValue(42 * 2, ncp->var3);
 	}
 #pragma endregion
 	void testEntityManager()
@@ -171,6 +195,7 @@ namespace tests
 		testVirtualStruct();
 		testNativeStruct();
 		testEntityManager();
+		runJITTests();
 	}
 }
 #endif

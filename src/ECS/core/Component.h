@@ -29,7 +29,6 @@ private:
 	size_t* _byteIndices;
 	ComponentID _id;
 public:
-	std::string identifier;
 	ComponentDefinition();
 	ComponentDefinition(const ComponentDefinition& source);
 	ComponentDefinition(size_t _numTypes, ComponentID id);
@@ -124,12 +123,10 @@ protected:
 public:
 	NativeComponent()
 	{
-		
 	}
-	T fromVirtual(byte* data)
+	static T* fromVirtual(byte* data)
 	{
-		constructDef();
-		return *(T*)data;
+		return (T*)data;
 	}
 	VirtualComponentPtr toVirtual()
 	{
@@ -173,7 +170,7 @@ public:
 	void reserve(size_t size);
 	void pushBack(VirtualComponent& virtualComponent);
 	void pushBack(VirtualComponentPtr& virtualComponentPtr);
-	void pushBack();
+	void pushEmpty();
 	void swapRemove(size_t index);
 	void copy(const VirtualComponentVector& source, size_t sourceIndex, size_t destIndex);
 };

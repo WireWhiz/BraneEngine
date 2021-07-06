@@ -1,10 +1,10 @@
 #pragma once
 #include <cstdint>
 #include <vector>
-#include <Component.h>
-#include <VirtualSystem.h>
+#include "Component.h"
+#include "Archetype.h"
+#include "VirtualSystem.h"
 #include <unordered_map>
-#include <Archetype.h>
 #include <queue>
 #include <algorithm>
 
@@ -25,6 +25,7 @@ class EntityManager
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
+	std::unordered_map<SystemID, VirtualSystem> _systems;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<VirtualArchetype>> _archetypes;
 

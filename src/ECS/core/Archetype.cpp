@@ -98,7 +98,7 @@ size_t VirtualArchetype::createEntity()
 	index = components[0].size();   
 	for (size_t i = 0; i < components.size(); i++)
 	{
-		components[i].pushBack();
+		components[i].pushEmpty();
 	}
 	return index;
 }

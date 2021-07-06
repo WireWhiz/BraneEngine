@@ -1,6 +1,6 @@
 #pragma once
 #include <cstdint>
-#include <Component.h>
+#include "Component.h"
 #include <memory>
 typedef uint64_t ArchetypeID;
 

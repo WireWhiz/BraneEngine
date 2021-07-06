@@ -8,7 +8,6 @@ int main()
 #ifdef DEBUG
 	tests::runTests();
 #endif // !NDEBUG
-	ECSRuntime rt();
 
 	// Create JitCompiler
 	// Create runtime

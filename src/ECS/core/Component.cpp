@@ -58,7 +58,6 @@ ComponentDefinition::ComponentDefinition(const ComponentDefinition& source)
 	std::copy(source._types, source._types + _numTypes, _types);
 	_byteIndices = new size_t[_numTypes];
 	std::copy(source._byteIndices, source._byteIndices + _numTypes, _byteIndices);
-	identifier = source.identifier;
 	_id = source._id;
 }
 
@@ -156,7 +155,7 @@ size_t VirtualComponentVector::size() const
 
 byte* VirtualComponentVector::getComponentData(size_t index) const
 {
-	assert(index >= 0 && byteIndex(index) < _data.size() / _def->size());
+	assert(index >= 0 && index < _data.size() / _def->size());
 	return (byte*)&_data[ byteIndex(index)];
 }
 
@@ -197,12 +196,9 @@ void VirtualComponentVector::pushBack(VirtualComponentPtr& virtualComponentPtr)
 	}
 }
 
-void VirtualComponentVector::pushBack()
+void VirtualComponentVector::pushEmpty()
 {
-	for (size_t i = 0; i < _def->size(); i++)
-	{
-		_data.push_back(0);
-	}
+	_data.resize(_def->size() + _data.size());
 }
 
 void VirtualComponentVector::reserve(size_t size)
