@@ -1,5 +1,5 @@
 #include <testing.h>
-#include <JIT/VirtualSystemCompiler.h>
+#include <core/JIT/VirtualSystemCompiler.h>
 
 namespace tests
 {

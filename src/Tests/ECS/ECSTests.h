@@ -65,8 +65,7 @@ namespace tests
 		bool var1;
 		int var2;
 		float var3;
-	protected:
-		void getVariables(std::vector<NativeVarDef>& variables) override
+		void getVariableIndicies(std::vector<NativeVarDef>& variables) override
 		{
 			variables.emplace_back(getVarIndex(&var1), virtualBool);
 			variables.emplace_back(getVarIndex(&var2), virtualInt);
@@ -159,7 +158,7 @@ namespace tests
 		// Add component, this creates first archetype
 		em.addComponent(entity, 1);
 		// Get component, make sure we can read and write to it
-		VirtualComponentPtr compPtr = em.getComponent(entity, 1);
+		VirtualComponentPtr compPtr = em.getEntityComponent(entity, 1);
 		compPtr.setVar<bool>(0, true);
 		expectValue(true, compPtr.readVar<bool>(0));
 
@@ -167,11 +166,11 @@ namespace tests
 		em.addComponent(entity, 2);
 
 		//  make sure the copied data is still valid
-		compPtr = em.getComponent(entity, 1);
+		compPtr = em.getEntityComponent(entity, 1);
 		expectValue(true, compPtr.readVar<bool>(0));
 
 		// Get second component, make sure we can read and write
-		compPtr = em.getComponent(entity, 2);
+		compPtr = em.getEntityComponent(entity, 2);
 		compPtr.setVar<float>(0, 42);
 		expectValue(42, compPtr.readVar<float>(0));
 
@@ -179,7 +178,7 @@ namespace tests
 		em.removeComponent(entity, 1);
 
 		// Make sure that we still have the second component and can still read from it after the copy
-		compPtr = em.getComponent(entity, 2);
+		compPtr = em.getEntityComponent(entity, 2);
 		expectValue(42, compPtr.readVar<float>(0));
 
 		// just make sure these throw no errors
@@ -188,6 +187,80 @@ namespace tests
 		em.removeComponent(entity, 3);
 		em.removeComponent(entity, 2);
 		em.removeComponent(entity, 1);
+
+		//We now should have some archetypes that we can fetch
+		std::vector<ComponentID> arch1components = {1, 2};
+		std::vector<ComponentID> arch2components = {1, 2, 3};
+		expectValue(true, (em.getArcheytpe(arch1components) != nullptr));
+		expectValue(true, (em.getArcheytpe(arch2components) != nullptr));
+
+	}
+
+	class TestNativeComponent2 : public NativeComponent<TestNativeComponent2, 4>
+	{
+	public:
+		bool var1;
+		void getVariableIndicies(std::vector<NativeVarDef>& variables) override
+		{
+			variables.emplace_back(getVarIndex(&var1), virtualBool);
+		}
+
+	};
+
+	class TestNativeSystem : public VirtualSystem
+	{
+	public:
+		TestNativeSystem(SystemID id)  : VirtualSystem(id)
+		{
+		}
+
+		const std::vector<ComponentID> requiredComponents() const override
+		{
+			return {3, 4};
+		};
+		void run(const std::vector<byte*> data, VirtualSystemConstants* constants) const override
+		{
+			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(data[0]);
+			c1->var1 = true;
+			c1->var2 = 42;
+			c1->var3 = 32;
+			TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(data[1]);
+			c2->var1 = true;
+
+		};
+
+
+	};
+
+	
+
+	void testNativeSystem()
+	{
+		TestRunner::setTestCatagory("Native System");
+
+		TestNativeSystem ts(1);
+
+
+		EntityManager em;
+		em.regesterComponent(*TestNativeComponent::def());
+		em.regesterComponent(*TestNativeComponent2::def());
+		
+		for (size_t i = 0; i < 100; i++)
+		{
+			EntityID e = em.createEntity();
+			em.addComponent(e, 3);
+			// Create a new archetype
+			if(i >= 49)
+				em.addComponent(e, 4);
+		}
+		VirtualSystemConstants vsc;
+		em.runSystem(&ts, &vsc);
+
+		int  testValue  = TestNativeComponent::fromVirtual( em.getEntityComponent(99, 3).data())->var2;
+		bool testValue2 = TestNativeComponent2::fromVirtual(em.getEntityComponent(99, 4).data())->var1;
+		expectValue(42, testValue);
+		expectValue(true, testValue2);
+
 	}
 
 	void runECSTests()
@@ -195,6 +268,7 @@ namespace tests
 		testVirtualStruct();
 		testNativeStruct();
 		testEntityManager();
+		testNativeSystem();
 		runJITTests();
 	}
 }

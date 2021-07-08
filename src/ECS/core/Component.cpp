@@ -150,7 +150,7 @@ ComponentDefinition* VirtualComponentVector::def() const
 
 size_t VirtualComponentVector::size() const
 {
-	return _data.size();
+	return _data.size() / _def->size();
 }
 
 byte* VirtualComponentVector::getComponentData(size_t index) const

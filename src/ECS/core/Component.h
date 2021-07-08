@@ -22,12 +22,12 @@ struct NativeVarDef
 class ComponentDefinition
 {
 private:
+	ComponentID _id;
 	size_t _numTypes;
 	size_t _size;
 	bool _initalized;
 	VirtualType* _types;
 	size_t* _byteIndices;
-	ComponentID _id;
 public:
 	ComponentDefinition();
 	ComponentDefinition(const ComponentDefinition& source);
@@ -99,21 +99,20 @@ template <class T, size_t id>
 class NativeComponent
 {
 private:
-	void constructDef()
+	static ComponentDefinition* constructDef()
 	{
-		if (_def == nullptr)
-		{
-			std::vector<NativeVarDef> vars;
-			this->getVariables(vars);
+		std::vector<NativeVarDef> vars;
+		T c;
+		c.getVariableIndicies(vars);
 
-			assert(vars.size() > 0);
-			_def = new ComponentDefinition(vars.size(), id);
-			_def->initalize(vars, sizeof(T));
-		}
+		assert(vars.size() > 0);
+		ComponentDefinition* def = new ComponentDefinition(vars.size(), id);
+		def->initalize(vars, sizeof(T));
+		return def;
 	}
 protected:
 	static ComponentDefinition* _def;
-	virtual void getVariables(std::vector<NativeVarDef>& variables) = 0;
+	virtual void getVariableIndicies(std::vector<NativeVarDef>& variables) = 0;
 	size_t getVarIndex(void* var)
 	{
 		size_t index = (size_t)var - (size_t)this;;
@@ -130,15 +129,15 @@ public:
 	}
 	VirtualComponentPtr toVirtual()
 	{
-		constructDef();
 		return VirtualComponentPtr(_def, (byte*)this);
 	}
-	ComponentDefinition* def()
+	static ComponentDefinition* def()
 	{
 		return _def;
 	}
 };
-template <class T, size_t id> ComponentDefinition* NativeComponent<T, id>::_def = nullptr;
+//This is a memory leak, but as we want to keep the def around for the enitre lifetime of the program it doesn't matter
+template <class T, size_t id> ComponentDefinition* NativeComponent<T, id>::_def = NativeComponent<T, id>::constructDef();
 
 class VirtualComponentVector
 {

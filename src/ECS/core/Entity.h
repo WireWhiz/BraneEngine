@@ -14,8 +14,7 @@ typedef uint64_t EntityID;
 struct EntityIndex
 {
 	// Can't use a pointer here, because std::vector likes to be all smart and reallocate memory breaking pointers mercilessly, so I have to deal with this madness to store the archetype that contains the entity
-	size_t componentCount;
-	size_t archetypeIndex;
+	VirtualArchetype* archetype;
 	size_t index;
 	bool alive;
 };
@@ -25,21 +24,22 @@ class EntityManager
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
-	std::unordered_map<SystemID, VirtualSystem> _systems;
+	std::unordered_map<SystemID, std::unique_ptr<VirtualSystem>> _systems;
 	// Index 1: number of components, Index 2: archetype
-	std::vector<std::vector<VirtualArchetype>> _archetypes;
+	std::vector<std::vector<std::unique_ptr<VirtualArchetype>>> _archetypes;
 
 	VirtualArchetype* makeArchetype(std::vector<ComponentDefinition*>& cdefs);
 
 public:
 	void regesterComponent(const ComponentDefinition& newComponent);
 	void deregesterComponent(ComponentID component);
-
+	VirtualArchetype* getArcheytpe(const std::vector<ComponentID>& components);
 	EntityID createEntity();
 	void destroyEntity(EntityID entity);
+	void runSystem(VirtualSystem* vs, VirtualSystemConstants* constants);
 	VirtualArchetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity);  
-	VirtualComponentPtr getComponent(EntityID entity, ComponentID component) const;
+	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID component) const;
 	void addComponent(EntityID entity, ComponentID component);
 	void removeComponent(EntityID entity, ComponentID component);
 };

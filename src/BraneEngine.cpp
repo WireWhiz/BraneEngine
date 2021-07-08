@@ -1,7 +1,5 @@
 ﻿#include "BraneEngine.h"
 
-using namespace std;
-
 int main()
 {
 	//Run all our tests if we are in debug mode
@@ -16,6 +14,9 @@ int main()
 	// run systmes
 	// occasionally check if components and systems are being used, if they arn't, deallocate them.
 
-
+#if defined( DEBUG) && defined(__linux__)
+	int input;
+	std::cin >> input;
+#endif
 	return 0;
 }

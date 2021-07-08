@@ -25,15 +25,17 @@ if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
 else ()
     message("shipping mode")
 endif ()
-    
-
-if (UNIX)
-    add_link_options(-lrt)
-endif (UNIX)
-
 
 # Add source to this project's executable.
 add_executable (BraneEngine ${SOURCES})
+
+if (UNIX)
+    # add_link_options(-lrt)
+    find_library(LIBRT rt) 
+    if(LIBRT)
+        target_link_libraries(BraneEngine ${LIBRT})
+    endif()
+endif (UNIX)
 
 target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/ECS)
 target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/Tests)
