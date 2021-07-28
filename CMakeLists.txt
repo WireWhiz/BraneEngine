@@ -16,7 +16,7 @@ add_compile_definitions(ASMJIT_STATIC)
 include_directories(
     src/ECS
     src/Tests
-    src/asmjit
+    lib/asmjit
 )
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -39,7 +39,7 @@ endif (UNIX)
 
 target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/ECS)
 target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/Tests)
-target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/src/asmjit)
+target_include_directories(BraneEngine PRIVATE ${YOUR_DIRECTORY}/lib/asmjit)
 
 #file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
 #     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
