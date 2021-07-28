@@ -234,7 +234,7 @@ namespace tests
 
 	
 
-	void testNativeSystem()
+	void testForEach()
 	{
 		TestRunner::setTestCatagory("Native System");
 
@@ -253,7 +253,6 @@ namespace tests
 			if(i >= 49)
 				em.addComponent(e, 4);
 		}
-		VirtualSystemGlobals vsc;
 
 		em.forEach(ts.requiredComponents(), [&](byte* components[]) {
 			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
@@ -277,7 +276,7 @@ namespace tests
 		testVirtualStruct();
 		testNativeStruct();
 		testEntityManager();
-		testNativeSystem();
+		testForEach();
 		runJITTests();
 	}
 }

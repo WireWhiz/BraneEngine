@@ -17,7 +17,7 @@ void VirtualSystemCompiler::testFunction()
 	code.init(rt.environment());
 	x86::Compiler cc(&code);
 
-	cc.addFunc(FuncSignatureT<int>(CallConv::kIdHost));// Begin a function of `int fn(void)` signature.
+	cc.addFunc(FuncSignatureT<int, byte**>(CallConv::kIdHost));// Begin a function of `int fn(void)` signature.
 
 
 	x86::Gp ret = cc.newInt32("ret");
@@ -44,6 +44,7 @@ void VirtualSystemCompiler::testFunction()
 	Error err = rt.add(&fn, &code);   // Add the generated code to the runtime.
 	if (err) return;                // Handle a possible error returned by AsmJit.
 	// ----> CodeHolder is no longer needed from here and can be destroyed <----
+
 
 	int result = fn();                // Execute the generated code.
 	printf("%d\n", result);           // Print the resulting "1".
