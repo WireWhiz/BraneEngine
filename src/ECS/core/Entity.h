@@ -7,13 +7,15 @@
 #include <unordered_map>
 #include <queue>
 #include <algorithm>
+#include <memory>
+#include <functional>
+#include <unordered_set>
 
 
 typedef uint64_t EntityID;
 
 struct EntityIndex
 {
-	// Can't use a pointer here, because std::vector likes to be all smart and reallocate memory breaking pointers mercilessly, so I have to deal with this madness to store the archetype that contains the entity
 	VirtualArchetype* archetype;
 	size_t index;
 	bool alive;
@@ -24,19 +26,21 @@ class EntityManager
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
-	std::unordered_map<SystemID, std::unique_ptr<VirtualSystem>> _systems;
+	std::unordered_map<ComponentID, std::vector<VirtualArchetype*>> _rootArchetypes;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<VirtualArchetype>>> _archetypes;
 
 	VirtualArchetype* makeArchetype(std::vector<ComponentDefinition*>& cdefs);
-
+	void updateArchetypeRoots(VirtualArchetype* archtype);
+	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed);
 public:
 	void regesterComponent(const ComponentDefinition& newComponent);
 	void deregesterComponent(ComponentID component);
 	VirtualArchetype* getArcheytpe(const std::vector<ComponentID>& components);
-	EntityID createEntity();
+	EntityID createEntity(); 
 	void destroyEntity(EntityID entity);
-	void runSystem(VirtualSystem* vs, VirtualSystemConstants* constants);
+	void forEach(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f);
+	void runSystem(VirtualSystem* vs, VirtualSystemGlobals* constants);
 	VirtualArchetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity);  
 	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID component) const;

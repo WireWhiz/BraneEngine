@@ -23,20 +23,17 @@ VirtualArchetype* EntityManager::makeArchetype(std::vector<ComponentDefinition*>
 
 	VirtualArchetype* newArch = _archetypes[numComps - 1][newIndex].get();
 	
+	bool isRootArch = false;
 	// find edges to other archetypes lower then this one
 	if (numComps > 1)
 	{
+		ComponentID connectingComponent;
 		for (size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
 		{
-			ComponentID connectingComponent;
 			if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
 			{
-				std::shared_ptr<ArchetypeEdge> ae = std::make_shared<ArchetypeEdge>();
-				ae->component = connectingComponent;
-				ae->add = newArch;
-				ae->remove = _archetypes[numComps - 2][i].get();
-				newArch->addEdge(ae);
-				_archetypes[numComps - 2][i]->addEdge(ae);
+				_archetypes[numComps - 2][i]->addAddEdge(connectingComponent, newArch);
+				newArch->addRemoveEdge(connectingComponent, _archetypes[numComps - 2][i].get());
 			}
 		}
 	}
@@ -48,17 +45,51 @@ VirtualArchetype* EntityManager::makeArchetype(std::vector<ComponentDefinition*>
 			ComponentID connectingComponent;
 			if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
 			{
-				std::shared_ptr<ArchetypeEdge> ae = std::make_shared<ArchetypeEdge>();
-				ae->component = connectingComponent;
-				ae->add = _archetypes[numComps][i].get();
-				ae->remove = newArch;
-				newArch->addEdge(ae);
-				_archetypes[numComps][i]->addEdge(ae);
+				VirtualArchetype* otherArch = _archetypes[numComps][i].get();
+				newArch->addAddEdge(connectingComponent, otherArch);
+				otherArch->addRemoveEdge(connectingComponent, newArch);
+
+				updateArchetypeRoots(otherArch);
 			}
 		}
 	}
-
+	updateArchetypeRoots(newArch);
 	return newArch;
+}
+
+void EntityManager::updateArchetypeRoots(VirtualArchetype* archtype)
+{
+	for (size_t i = 0; i < archtype->components.size(); i++)
+	{
+		ComponentID component = archtype->components[i].def()->id();
+		if (archtype->isRootForComponent(component))
+		{
+			bool isRoot = false;
+			for (size_t i = 0; i < _rootArchetypes[component].size(); i++)
+			{
+				if (_rootArchetypes[component][i] == archtype)
+				{
+					isRoot = true;
+					break;
+				}
+			}
+			if (!isRoot)
+				_rootArchetypes[component].push_back(archtype);
+		}
+		else // remove from root
+		{
+			for (size_t i = 0; i < _rootArchetypes[component].size(); i++)
+			{
+				if (_rootArchetypes[component][i] == archtype)
+				{
+					// swap with last
+					_rootArchetypes[component][i] = _rootArchetypes[component][_rootArchetypes[component].size() - 1];
+					// remove last
+					_rootArchetypes[component].resize(_rootArchetypes[component].size() - 1);
+				}
+			}
+		}
+	}
 }
 
 void EntityManager::regesterComponent(const ComponentDefinition& newComponent)
@@ -124,14 +155,46 @@ EntityID EntityManager::createEntity()
 
 void EntityManager::destroyEntity(EntityID entity)
 {
-	assert(0 <= entity < _entities.size());
+	assert(0 <= entity && entity < _entities.size());
 	_entities[entity].alive = false;
 	_unusedEntities.push(entity);
 	VirtualArchetype* archetype = getEntityArchetype(entity);
 	archetype->swapRemove(_entities[entity].index);
 }
 
-void EntityManager::runSystem(VirtualSystem* vs, VirtualSystemConstants* constants)
+void EntityManager::forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f)
+{
+	assert(components.size() > 0);
+	std::unordered_set<VirtualArchetype*> executed;
+	for (size_t i = 0; i < components.size(); i++)
+	{
+		for (size_t j = 0; j < _rootArchetypes[components[i]].size(); j++)
+		{
+			forEachRecursive(_rootArchetypes[components[i]][j], components, f, executed);
+		}
+	}
+}
+
+void EntityManager::forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed)
+{
+	if (executed.find(archetype) != executed.end())
+		return;
+
+	if (archetype->components.size() >= components.size())
+	{
+		if (archetype->hasComponents(components))
+		{
+			archetype->forEach(components, f);
+		}
+	}
+	
+	archetype->forAddEdge([this, &components, &f, &executed](std::shared_ptr<ArchetypeEdge> edge) {
+		forEachRecursive(edge->archetype, components, f, executed);
+	});
+	executed.insert(archetype);
+}
+
+void EntityManager::runSystem(VirtualSystem* vs, VirtualSystemGlobals* constants)
 {
 	std::vector<ComponentID> requiredComponents = vs->requiredComponents();
 	for (size_t a = requiredComponents.size() - 1; a < _archetypes.size(); a++)
@@ -172,10 +235,10 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 		VirtualArchetype* currentArchetype = getEntityArchetype(entity);
 		assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
 		// See if there's already an archetype we know about:
-		std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getEdge(component);
+		std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getAddEdge(component);
 		if (ae != nullptr)
 		{
-			destArchetype = ae->add;
+			destArchetype = ae->archetype;
 		}
 		else
 		{
@@ -231,11 +294,11 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	VirtualArchetype* currentArchetype = getEntityArchetype(entity);
 	assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
 	// See if there's already an archetype we know about:
-	std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getEdge(component);
+	std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getRemoveEdge(component);
 	if (ae != nullptr)
 	{
 		assert(_entities[entity].archetype->components.size() >= 2); // Must be an archtype level beneath this one
-		destArchetype = ae->remove;
+		destArchetype = ae->archetype;
 	}
 	else
 	{

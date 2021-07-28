@@ -116,7 +116,7 @@ protected:
 	size_t getVarIndex(void* var)
 	{
 		size_t index = (size_t)var - (size_t)this;;
-		assert(0 <= index < sizeof(T));
+		assert(0 <= index && index < sizeof(T));
 		return index;
 	}
 public:

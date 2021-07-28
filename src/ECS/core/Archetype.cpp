@@ -85,6 +85,20 @@ bool VirtualArchetype::isChildOf(const VirtualArchetype* parent, ComponentID& co
 	return true;
 }
 
+bool VirtualArchetype::isRootForComponent(ComponentID component)
+{
+	size_t edges = _removeEdges.size();
+	if(edges > 1)
+	{
+		return false;
+	}
+	else if (edges == 1)
+	{
+		return _removeEdges[0]->component == component;
+	}
+	return true;
+}
+
 
 std::vector<ComponentDefinition*> VirtualArchetype::getComponentDefs()
 {
@@ -96,19 +110,50 @@ std::vector<ComponentDefinition*> VirtualArchetype::getComponentDefs()
 	return componentDefs;
 }
 
-std::shared_ptr<ArchetypeEdge> VirtualArchetype::getEdge(ComponentID component)
+std::shared_ptr<ArchetypeEdge> VirtualArchetype::getAddEdge(ComponentID component)
 {
-	for (size_t i = 0; i < _edges.size(); i++)
+	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
-		if (component == _edges[i]->component)
-			return _edges[i];
+		if (component == _addEdges[i]->component)
+			return _addEdges[i];
 	}
 	return std::shared_ptr<ArchetypeEdge>();
 }
 
-void VirtualArchetype::addEdge(std::shared_ptr<ArchetypeEdge> edge)
+std::shared_ptr<ArchetypeEdge> VirtualArchetype::getRemoveEdge(ComponentID component)
 {
-	_edges.push_back(edge);
+	for (size_t i = 0; i < _removeEdges.size(); i++)
+	{
+		if (component == _removeEdges[i]->component)
+			return _removeEdges[i];
+	}
+	return std::shared_ptr<ArchetypeEdge>();
+}
+
+void VirtualArchetype::addAddEdge(ComponentID component, VirtualArchetype* archetype)
+{
+	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
+}
+
+void VirtualArchetype::addRemoveEdge(ComponentID component, VirtualArchetype* archetype)
+{
+	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
+}
+
+void VirtualArchetype::forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
+{
+	for (size_t i = 0; i < _addEdges.size(); i++)
+	{
+		f(_addEdges[i]);
+	}
+}
+
+void VirtualArchetype::forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
+{
+	for (size_t i = 0; i < _removeEdges.size(); i++)
+	{
+		f(_removeEdges[i]);
+	}
 }
 
 size_t VirtualArchetype::createEntity()
@@ -150,7 +195,34 @@ void VirtualArchetype::swapRemove(size_t index)
 	}
 }
 
-void VirtualArchetype::runSystem(VirtualSystem* vs, VirtualSystemConstants* constants)
+void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponents, const std::function<void(byte* [])>& f)
+{
+	std::vector<byte*> data;
+	data.resize(requiredComponents.size(), nullptr);
+
+	std::vector<VirtualComponentVector*> requiredComponentVectors;
+	size_t cIndex = 0;
+	for (size_t i = 0; i < components.size(); i++)
+	{
+		if (components[i].def()->id() == requiredComponents[cIndex])
+		{
+			requiredComponentVectors.push_back(&components[i]);
+			++cIndex;
+		}
+	}
+
+	for (size_t entityIndex = 0; entityIndex < requiredComponentVectors[0]->size(); entityIndex++)
+	{
+		for (size_t i = 0; i < requiredComponents.size(); i++)              
+		{
+			data[i] = requiredComponentVectors[i]->getComponentData(entityIndex);
+		}
+		f(data.data());
+	}
+	
+}
+
+void VirtualArchetype::runSystem(VirtualSystem* vs, VirtualSystemGlobals* constants)
 {
 	std::vector<ComponentID> requiredComponents = vs->requiredComponents();
 	std::vector<VirtualComponentVector*> comps;
@@ -175,4 +247,10 @@ void VirtualArchetype::runSystem(VirtualSystem* vs, VirtualSystemConstants* cons
 		}
 		vs->run(currentComponents, constants);
 	}
+}
+
+ArchetypeEdge::ArchetypeEdge(ComponentID component, VirtualArchetype* archetype)
+{
+	this->component = component;
+	this->archetype = archetype;
 }

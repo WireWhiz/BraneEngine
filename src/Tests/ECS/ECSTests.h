@@ -218,13 +218,13 @@ namespace tests
 		{
 			return {3, 4};
 		};
-		void run(const std::vector<byte*> data, VirtualSystemConstants* constants) const override
+		void run(const std::vector<byte*> data, VirtualSystemGlobals* constants) const override
 		{
 			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(data[0]);
 			c1->var1 = true;
 			c1->var2 = 42;
 			c1->var3 = 32;
-			TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(data[1]);
+			TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(data[sizeof(void*)]);
 			c2->var1 = true;
 
 		};
@@ -253,8 +253,17 @@ namespace tests
 			if(i >= 49)
 				em.addComponent(e, 4);
 		}
-		VirtualSystemConstants vsc;
-		em.runSystem(&ts, &vsc);
+		VirtualSystemGlobals vsc;
+
+		em.forEach(ts.requiredComponents(), [&](byte* components[]) {
+			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
+			c1->var1 = true;
+			c1->var2 += 42;
+			c1->var3 += 32;
+			TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
+			c2->var1 = true;
+
+		});
 
 		int  testValue  = TestNativeComponent::fromVirtual( em.getEntityComponent(99, 3).data())->var2;
 		bool testValue2 = TestNativeComponent2::fromVirtual(em.getEntityComponent(99, 4).data())->var1;
