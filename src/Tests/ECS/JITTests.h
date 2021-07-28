@@ -6,6 +6,6 @@ namespace tests
 	void runJITTests()
 	{
 		VirtualSystemCompiler vsc;
-		//vsc.testFunction();
+		vsc.testFunction();
 	}
 }
