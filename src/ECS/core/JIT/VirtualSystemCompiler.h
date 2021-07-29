@@ -1,5 +1,5 @@
 #include <core/Entity.h>
-#include <asmjit.h>
+#include <asmjit/asmjit.h>
 
 class VirtualSystemCompiler
 {

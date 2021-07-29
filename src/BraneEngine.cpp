@@ -8,7 +8,8 @@ int main()
 	tests::runTests();
 #endif // !NDEBUG
 
-	
+	graphics::GraphicsRuntime gr;
+	gr.init();
 	
 
 #if defined( DEBUG) && defined(__linux__)
