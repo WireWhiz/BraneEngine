@@ -132,6 +132,11 @@ VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition)
 	_def = definition;
 }
 
+VirtualComponentVector::VirtualComponentVector(const VirtualComponentVector& other)
+{
+	_def = other._def;
+}
+
 VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition, size_t initalSize)
 {
 	_def = definition;
@@ -171,9 +176,9 @@ void VirtualComponentVector::swapRemove(size_t index)
 	_data.resize(_data.size() - _def->size());
 }
 
-void VirtualComponentVector::copy(const VirtualComponentVector& source, size_t sourceIndex, size_t destIndex)
+void VirtualComponentVector::copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex)
 {
-	std::memcpy(&_data[byteIndex(destIndex)], &source._data[sourceIndex], _def->size());
+	std::memcpy(&_data[byteIndex(destIndex)], &source->_data[sourceIndex], _def->size());
 }
 
 void VirtualComponentVector::pushBack(VirtualComponent& virtualStruct)

@@ -32,7 +32,7 @@ class EntityManager
 
 	VirtualArchetype* makeArchetype(std::vector<ComponentDefinition*>& cdefs);
 	void updateArchetypeRoots(VirtualArchetype* archtype);
-	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed);
+	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed, bool searching);
 public:
 	void regesterComponent(const ComponentDefinition& newComponent);
 	void deregesterComponent(ComponentID component);
@@ -40,7 +40,6 @@ public:
 	EntityID createEntity(); 
 	void destroyEntity(EntityID entity);
 	void forEach(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f);
-	void runSystem(VirtualSystem* vs, VirtualSystemGlobals* constants);
 	VirtualArchetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity);  
 	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID component) const;

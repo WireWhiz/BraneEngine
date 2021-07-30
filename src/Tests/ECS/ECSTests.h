@@ -54,7 +54,7 @@ namespace tests
 		VirtualComponentVector vcvc(&vcd);
 		vcvc.pushEmpty();
 
-		vcvc.copy(vcv, 0, 0);
+		vcvc.copy(&vcv, 0, 0);
 		expectValue(42, vcvc.readComponentVar<int>(0, 1));
 	}
 #pragma region  native struct

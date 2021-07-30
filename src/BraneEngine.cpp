@@ -9,7 +9,9 @@ int main()
 #endif // !NDEBUG
 
 	graphics::GraphicsRuntime gr;
-	gr.init();
+
+	while(!gr.windowClosed())
+		gr.update();
 	
 
 #if defined( DEBUG) && defined(__linux__)

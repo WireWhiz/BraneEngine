@@ -4,6 +4,7 @@
 #include "VirtualSystem.h"
 #include <memory>
 #include <functional>
+#include <unordered_map>
 typedef uint64_t ArchetypeID;
 
 class VirtualArchetype;
@@ -21,11 +22,10 @@ private:
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 public:
+	std::unordered_map<ComponentID, std::unique_ptr<VirtualComponentVector>> components;
 	VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs);
-	std::vector<VirtualComponentVector> components;
 	bool hasComponent(ComponentID component) const;
 	bool hasComponents(const std::vector<ComponentID>& comps) const;
-	byte** getComponents(const std::vector<ComponentID>& comps);
 	const VirtualComponentVector* getComponentVector(ComponentID component) const;
 	bool isChildOf(const VirtualArchetype* parent, ComponentID& connectingComponent) const;
 	bool isRootForComponent(ComponentID component);
@@ -41,5 +41,4 @@ public:
 	void swapRemove(size_t index);
 
 	void forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f);
-	void runSystem(VirtualSystem* vs, VirtualSystemGlobals* constants);
 }; 

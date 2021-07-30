@@ -147,6 +147,7 @@ private:
 public:
 	VirtualComponentVector(ComponentDefinition* definition, size_t initalSize);
 	VirtualComponentVector(ComponentDefinition* definition);
+	VirtualComponentVector(const VirtualComponentVector& other);
 	byte* getComponentData(size_t index) const;
 	VirtualComponentPtr getComponent(size_t index) const;
 	template<class T>
@@ -171,6 +172,6 @@ public:
 	void pushBack(VirtualComponentPtr& virtualComponentPtr);
 	void pushEmpty();
 	void swapRemove(size_t index);
-	void copy(const VirtualComponentVector& source, size_t sourceIndex, size_t destIndex);
+	void copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex);
 };
 

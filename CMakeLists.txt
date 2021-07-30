@@ -2,25 +2,20 @@
 # project specific logic here.
 #
 
-message("0")
 cmake_minimum_required (VERSION 3.8)
 
-message("1")
 project ("BraneEngine")
 
-message("2")
 
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 
-message("3")
 
-file(GLOB_RECURSE SOURCES src/*.h src/*.cpp include/*.h include/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp include/*.cpp)
 add_compile_definitions(ASMJIT_STATIC)
 
-message("1")
 include_directories(
     src/ECS
     src/Tests
@@ -49,12 +44,21 @@ add_executable (BraneEngine ${SOURCES})
 
 
 if (WIN32)
-    message(${CMAKE_CURRENT_SOURCE_DIR}/lib/GLFW/glfw3.lib)
-    target_link_libraries(BraneEngine ${CMAKE_CURRENT_SOURCE_DIR}/lib/GLFW/glfw3.lib)
+    if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        file(GLOB_RECURSE LIB_SOURCES lib/win64/shared/*.lib lib/win64/debug/*.lib)
+    else ()
+        file(GLOB_RECURSE LIB_SOURCES lib/win64/shared/*.lib lib/win64/release/*.lib)
+    endif()
+    message(${LIB_SOURCES})
+    target_link_libraries(BraneEngine ${LIB_SOURCES})
 endif (WIN32)
 if (UNIX)
-    target_link_libraries(BraneEngine -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi)
+    target_link_libraries(BraneEngine -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lSPIRV -lHLSL )
 
+    file(GLOB_RECURSE LIB_SOURCES lib/unix/*.a)
+    message(${LIB_SOURCES})
+    target_link_libraries(BraneEngine ${LIB_SOURCES})
+    
     # add_link_options(-lrt)
     find_library(LIBRT rt) 
     if(LIBRT)

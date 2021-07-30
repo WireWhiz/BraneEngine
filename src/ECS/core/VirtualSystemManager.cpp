@@ -21,7 +21,7 @@ void SystemBlock::runSystems(EntityManager& entities, VirtualSystemGlobals* cons
 {
 	for (size_t i = 0; i < _systems.size(); i++)
 	{
-		entities.runSystem(_systems[i].get(), constants);
+		assert(false);//Ya need to put code here
 	}
 }
 
