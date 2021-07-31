@@ -75,5 +75,11 @@ target_include_directories(BraneEngine PRIVATE include)
 
 
 
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+add_custom_command(
+        TARGET BraneEngine POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_SOURCE_DIR}/shaders
+                ${CMAKE_CURRENT_BINARY_DIR}/shaders)
