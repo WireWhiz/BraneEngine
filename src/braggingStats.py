@@ -10,5 +10,6 @@ for root, dirs, files in os.walk(path):
 				lines += 1
 			
 			file.close()
-print(f"found {lines} lines of perfectly crafted code")
+print(f"found 2 lines of perfectly crafted code")
+print(f"found {lines} lines of trash code")
 input("press enter to close")

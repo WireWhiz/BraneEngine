@@ -6,6 +6,7 @@
 
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <vulkan/vulkan.h>
+#include <iostream>
 
 
 namespace graphics
@@ -156,6 +157,7 @@ namespace graphics
 			const char* shaderStrings[1];
 			TBuiltInResource Resources = {};
 			InitResources(Resources);
+			
 
 			// Enable SPIR-V and Vulkan rules when parsing GLSL
 			EShMessages messages = (EShMessages)(EShMsgSpvRules | EShMsgVulkanRules);
@@ -189,5 +191,5 @@ namespace graphics
 		}
 	};
 
-	bool LoadShader(VkShaderStageFlagBits stage, const char* shaderCode);
+	bool CompileGLSL(VkShaderStageFlagBits stage, const char* shaderCode, std::vector<unsigned int>& shaderCodeSpirV);
 }

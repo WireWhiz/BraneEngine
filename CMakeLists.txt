@@ -75,5 +75,5 @@ target_include_directories(BraneEngine PRIVATE include)
 
 
 
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/scripts
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

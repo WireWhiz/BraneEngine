@@ -17,6 +17,7 @@
 #include <set>
 #include <optional>
 #include <algorithm>
+#include <fstream>
 
 #include "shaders.h"
 
@@ -48,15 +49,25 @@ namespace graphics
 		VkDevice _device;
 		VkSurfaceKHR _surface;
 		VkSwapchainKHR _swapChain;
+		VkRenderPass _renderPass;
+		VkPipelineLayout _pipelineLayout;
+		VkPipeline _graphicsPipeline;
+		VkCommandPool _commandPool;
+		std::vector<VkCommandBuffer> _commandBuffers;
 
 		VkQueue _graphicsQueue;
 		VkQueue _presentQueue;
 
+		std::vector<VkSemaphore> _imageAvailableSemaphores;
+		std::vector<VkSemaphore> _renderFinishedSemaphores;
 
+		std::vector<VkFramebuffer> _swapChainFramebuffers;
 		std::vector<VkImage> _swapChainImages;
 		std::vector<VkImageView> _swapChainImageViews;
 		VkFormat _swapChainImageFormat;
 		VkExtent2D _swapChainExtent;
+
+		std::unordered_map<std::string, VkShaderModule> _shaders;
 
 		bool _validationLayersEnabled;
 		VkDebugUtilsMessengerEXT _debugMessenger;
@@ -84,6 +95,11 @@ namespace graphics
 			std::vector<VkPresentModeKHR> presentModes;
 		};
 
+		const int MAX_FRAMES_IN_FLIGHT = 2;
+		std::vector<VkFence> _inFlightFences;
+		std::vector<VkFence> _imagesInFlight;
+		size_t currentFrame = 0;
+
 		void init();
 		void cleanup();
 		void createInstance();
@@ -92,6 +108,12 @@ namespace graphics
 		void createLogicalDevice();
 		void createSwapChain();
 		void createImageViews();
+		void createRenderPass();
+		void createGraphicsPipline();
+		void createFramebuffers();
+		void createCommandPool();
+		void createCommandBuffers();
+		void createSyncObjects();
 
 		bool validationLayersSupported();
 		std::vector<const char*> requiredExtensions();
@@ -104,20 +126,24 @@ namespace graphics
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
+		void clearShaders();
+
 		void setDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void setupDebugMessenger();
 		static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 		static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-														    VkDebugUtilsMessageTypeFlagsEXT messageType,
-														    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-														    void* pUserData);
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
 		
 	public:
 		VulkanRuntime(Window* window);
 		~VulkanRuntime();
-		void update();
+
+		// Behold, the only function we care about:
+		void draw();
+		// Bask in it's glory!
+
+		VkShaderModule loadShaderFromFile(VkShaderStageFlagBits shaderType, const std::string& filename);
 	};
 
 	class GraphicsRuntime
