@@ -5,95 +5,154 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/vec4.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/vec2.hpp>
+#include <glm/glm.hpp>
 
 #include <iostream>
 #include <assert.h>
 #include <vector>
+#include <array>
 #include <cstring>
 #include <map>
 #include <set>
 #include <optional>
 #include <algorithm>
 #include <fstream>
+#include <thread>
 
 #include "shaders.h"
+#include "graphicsBuffer.h"
+#include "graphicsDevice.h"
+#include "validationLayers.h"
 
 namespace graphics
 {
+
+	
+
 	class Window
 	{
 	private:
 		GLFWwindow* _window;
 		glm::ivec2 _size;
+		VkSurfaceKHR _surface;
 		void init();
 		void cleanup();
 	public:
 		Window();
 		~Window();
-		void createSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface);
+		void createSurface(VkInstance instance, const VkAllocationCallbacks* allocator);
+		void destroySurface(VkInstance instance, const VkAllocationCallbacks* allocator);
+		VkSurfaceKHR surface();
 		void update();
 		bool closed();
 		glm::ivec2 size();
 		void setSize(glm::ivec2& newSize);
 	};
 
-	class VulkanRuntime
+	struct Vertex
+	{
+		glm::vec2 pos;
+		glm::vec3 color;
+
+		static VkVertexInputBindingDescription getVkBindingDescription()
+		{
+			VkVertexInputBindingDescription bindingDescription{};
+			bindingDescription.binding = 0;
+			bindingDescription.stride = sizeof(Vertex);
+			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+			return bindingDescription;
+		}
+
+		static std::array<VkVertexInputAttributeDescription, 2> getVkAttributeDescriptions()
+		{
+			std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+			attributeDescriptions[0].binding = 0;
+			attributeDescriptions[0].location = 0;
+			attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+			attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+			attributeDescriptions[1].binding = 0;
+			attributeDescriptions[1].location = 1;
+			attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+			attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+			return attributeDescriptions;
+		}
+	};
+
+	const std::vector<Vertex> vertices = {
+	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+	};
+
+
+	class GraphicsPipeline
 	{
 		Window* _window;
+		GraphicsDevice* _device;
 
-		VkInstance _instance;
-		VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
-		VkDevice _device;
-		VkSurfaceKHR _surface;
 		VkSwapchainKHR _swapChain;
 		VkRenderPass _renderPass;
 		VkPipelineLayout _pipelineLayout;
-		VkPipeline _graphicsPipeline;
-		VkCommandPool _commandPool;
-		std::vector<VkCommandBuffer> _commandBuffers;
-
-		VkQueue _graphicsQueue;
-		VkQueue _presentQueue;
-
-		std::vector<VkSemaphore> _imageAvailableSemaphores;
-		std::vector<VkSemaphore> _renderFinishedSemaphores;
+		VkFormat _swapChainImageFormat;
+		VkExtent2D _swapChainExtent;
+		GraphicsBuffer<Vertex>* _vertexBuffer;
 
 		std::vector<VkFramebuffer> _swapChainFramebuffers;
 		std::vector<VkImage> _swapChainImages;
 		std::vector<VkImageView> _swapChainImageViews;
-		VkFormat _swapChainImageFormat;
-		VkExtent2D _swapChainExtent;
+		std::vector<VkCommandBuffer> _commandBuffers;
+
+		VkPipeline _graphicsPipeline;
+
 
 		std::unordered_map<std::string, VkShaderModule> _shaders;
+		
+		void createSwapChain();
+		void createImageViews();
+		void createRenderPass();
+		void createGraphicsPipline();
+		void createFramebuffers();
+		void createVertexBuffer();
+		void createCommandBuffers(VkCommandPool commandPool);
+
+		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+		void clearShaders();
+		std::thread asyncLoadShaderFromFile(VkShaderStageFlagBits shaderType, const std::string& filename, VkShaderModule* shader);
+		static void loadShaderFromFile(VkDevice device, VkShaderStageFlagBits shaderType, const std::string& filename, VkShaderModule* shader);
+
+	public:
+		GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool commandPool);
+		~GraphicsPipeline();
+
+		size_t swapChainLength();
+		VkResult acquireNextImage(VkSemaphore semaphore, uint32_t& index);
+		VkCommandBuffer* commandBuffer(size_t index);
+		VkSwapchainKHR swapchain();
+	};
+
+	
+
+	class VulkanRuntime
+	{
+		Window* _window;
+		GraphicsDevice* _device;
+		GraphicsPipeline* _pipeline;
+
+		VkInstance _instance;
+		VkCommandPool _commandPool;
+
+		std::vector<VkSemaphore> _imageAvailableSemaphores;
+		std::vector<VkSemaphore> _renderFinishedSemaphores;
 
 		bool _validationLayersEnabled;
 		VkDebugUtilsMessengerEXT _debugMessenger;
-		const std::vector<const char*> _validationLayers = {
-			"VK_LAYER_KHRONOS_validation"
-		};
-		const std::vector<const char*> _deviceExtensions = {
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME
-		};
 
-		struct QueueFamilyIndices
-		{
-			std::optional<uint32_t> graphicsFamily;
-			std::optional<uint32_t> presentFamily;
-			bool isComplete()
-			{
-				return graphicsFamily.has_value() && presentFamily.has_value();
-			}
-		};
-
-		struct SwapChainSupportDetails
-		{
-			VkSurfaceCapabilitiesKHR capabilities;
-			std::vector<VkSurfaceFormatKHR> formats;
-			std::vector<VkPresentModeKHR> presentModes;
-		};
+		std::vector<const char*> requiredExtensions();
+		
 
 		const int MAX_FRAMES_IN_FLIGHT = 2;
 		std::vector<VkFence> _inFlightFences;
@@ -103,31 +162,10 @@ namespace graphics
 		void init();
 		void cleanup();
 		void createInstance();
-		void getSurface();
-		void pickPhysicalDevice();
-		void createLogicalDevice();
-		void createSwapChain();
-		void createImageViews();
-		void createRenderPass();
-		void createGraphicsPipline();
-		void createFramebuffers();
 		void createCommandPool();
-		void createCommandBuffers();
 		void createSyncObjects();
 
 		bool validationLayersSupported();
-		std::vector<const char*> requiredExtensions();
-
-		bool deviceHasExtentionSupport(VkPhysicalDevice device);
-		int deviceValue(VkPhysicalDevice device);
-		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-		void clearShaders();
-
 		void setDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 		void setupDebugMessenger();
 		static VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
@@ -136,14 +174,21 @@ namespace graphics
 
 		
 	public:
+		
 		VulkanRuntime(Window* window);
 		~VulkanRuntime();
+
+		VkInstance instance();
+		VkDevice device();
+		VkPhysicalDevice physicalDevice();
+		VkCommandPool commandPool();
+		Window* window();
+
 
 		// Behold, the only function we care about:
 		void draw();
 		// Bask in it's glory!
-
-		VkShaderModule loadShaderFromFile(VkShaderStageFlagBits shaderType, const std::string& filename);
+		
 	};
 
 	class GraphicsRuntime

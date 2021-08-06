@@ -2,10 +2,7 @@
 
 using namespace asmjit;
 
-int testCalledFunction(int a, int b)
-{
-	return a + b;
-}
+
 
 
 typedef int (*Func)(void);
