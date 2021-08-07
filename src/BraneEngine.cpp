@@ -1,12 +1,13 @@
 ﻿#include "BraneEngine.h"
 #include "core/VirtualSystemManager.h"
 #include <atomic>
+#include <thread>
 
 void printFps(std::atomic<bool>* printing)
 {
-	while(printing)
+	while(*printing)
 	{
-		printf("Fps: %u\n", Timer::fps);
+		std::cout << "Fps: " << Timer::fps << std::endl;
 		std::this_thread::sleep_for(std::chrono::milliseconds(500));   
 	}
 }
