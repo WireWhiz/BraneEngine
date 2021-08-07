@@ -21,8 +21,10 @@ namespace graphics
 
 		VkDevice _device;
 		VkPhysicalDevice _physicalDevice = VK_NULL_HANDLE;
+
 		VkQueue _graphicsQueue;
 		VkQueue _presentQueue;
+		VkQueue _transferQueue;
 
 		const std::vector<const char*> _deviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -32,9 +34,10 @@ namespace graphics
 		{
 			std::optional<uint32_t> graphicsFamily;
 			std::optional<uint32_t> presentFamily;
+			std::optional<uint32_t> transferFamily;
 			bool isComplete()
 			{
-				return graphicsFamily.has_value() && presentFamily.has_value();
+				return graphicsFamily.has_value() && presentFamily.has_value() && transferFamily.has_value();
 			}
 		};
 
@@ -72,12 +75,13 @@ namespace graphics
 		VkDevice logicalDevice();
 		VkPhysicalDevice physicalDevice();
 
-		SwapChainSupportDetails swapChainSupport();
+		SwapChainSupportDetails swapChainSupport(VkSurfaceKHR surface);
 		VkSurfaceFormatKHR swapSurfaceFormat();
 		VkPresentModeKHR swapPresentMode();
 		QueueFamilyIndices queueFamilyIndices();
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		VkQueue graphicsQueue();
 		VkQueue presentQueue();
+		VkQueue transferQueue();
 	};
 }

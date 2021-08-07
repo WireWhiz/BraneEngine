@@ -99,6 +99,7 @@ namespace graphics
 		VkFormat _swapChainImageFormat;
 		VkExtent2D _swapChainExtent;
 		GraphicsBuffer<Vertex>* _vertexBuffer;
+		GraphicsBuffer<Vertex>* _vertexStagingBuffer;
 
 		std::vector<VkFramebuffer> _swapChainFramebuffers;
 		std::vector<VkImage> _swapChainImages;
@@ -115,7 +116,7 @@ namespace graphics
 		void createRenderPass();
 		void createGraphicsPipline();
 		void createFramebuffers();
-		void createVertexBuffer();
+		void createVertexBuffer(VkCommandPool commandPool);
 		void createCommandBuffers(VkCommandPool commandPool);
 
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -125,7 +126,7 @@ namespace graphics
 		static void loadShaderFromFile(VkDevice device, VkShaderStageFlagBits shaderType, const std::string& filename, VkShaderModule* shader);
 
 	public:
-		GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool commandPool);
+		GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool vertexCommandPool, VkCommandPool graphicsCommandPool);
 		~GraphicsPipeline();
 
 		size_t swapChainLength();
@@ -143,7 +144,8 @@ namespace graphics
 		GraphicsPipeline* _pipeline;
 
 		VkInstance _instance;
-		VkCommandPool _commandPool;
+		VkCommandPool _graphicsCommandPool;
+		VkCommandPool _transferCommandPool;
 
 		std::vector<VkSemaphore> _imageAvailableSemaphores;
 		std::vector<VkSemaphore> _renderFinishedSemaphores;
@@ -162,7 +164,7 @@ namespace graphics
 		void init();
 		void cleanup();
 		void createInstance();
-		void createCommandPool();
+		void createCommandPools();
 		void createSyncObjects();
 
 		bool validationLayersSupported();

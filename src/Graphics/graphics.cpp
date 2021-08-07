@@ -109,7 +109,7 @@ namespace graphics
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             delete _pipeline;
-            _pipeline = new GraphicsPipeline(_window, _device, _commandPool);
+            _pipeline = new GraphicsPipeline(_window, _device, _transferCommandPool,  _graphicsCommandPool);
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -172,9 +172,9 @@ namespace graphics
         _window->createSurface(_instance, nullptr);
         _device = new GraphicsDevice(_instance, _window->surface());
 
-        createCommandPool();
+        createCommandPools();
 
-        _pipeline = new GraphicsPipeline(_window, _device, _commandPool);
+        _pipeline = new GraphicsPipeline(_window, _device, _transferCommandPool, _graphicsCommandPool);
 
         createSyncObjects();
 
@@ -193,7 +193,7 @@ namespace graphics
             vkDestroyFence(_device->logicalDevice(), _inFlightFences[i], nullptr);
         }
 
-        vkDestroyCommandPool(_device->logicalDevice(), _commandPool, nullptr);
+        vkDestroyCommandPool(_device->logicalDevice(), _graphicsCommandPool, nullptr);
 
         delete _device;
 
@@ -266,7 +266,7 @@ namespace graphics
 
     void GraphicsPipeline::createSwapChain()
     {
-        auto swapChainSupport = _device->swapChainSupport();
+        auto swapChainSupport = _device->swapChainSupport(_window->surface());
 
         VkSurfaceFormatKHR surfaceFormat = _device->swapSurfaceFormat();
         VkPresentModeKHR presentMode = _device->swapPresentMode();
@@ -584,25 +584,69 @@ namespace graphics
         }
     }
 
-    void VulkanRuntime::createCommandPool()
+    void VulkanRuntime::createCommandPools()
     {
         auto queueFamilyIndices = _device->queueFamilyIndices();
 
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-        poolInfo.flags = 0; // Optional
+        VkCommandPoolCreateInfo graphicsPoolInfo{};
+        graphicsPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        graphicsPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+        graphicsPoolInfo.flags = 0; // Optional
 
-        if (vkCreateCommandPool(_device->logicalDevice(), &poolInfo, nullptr, &_commandPool) != VK_SUCCESS)
+        if (vkCreateCommandPool(_device->logicalDevice(), &graphicsPoolInfo, nullptr, &_graphicsCommandPool) != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create command pool!");
+            throw std::runtime_error("failed to create graphics command pool!");
+        }
+
+        VkCommandPoolCreateInfo transferPoolInfo{};
+        transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        transferPoolInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
+        transferPoolInfo.flags = 0; // Optional
+
+        if (vkCreateCommandPool(_device->logicalDevice(), &transferPoolInfo, nullptr, &_transferCommandPool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create transfer command pool!");
         }
     }
 
-    void GraphicsPipeline:: createVertexBuffer()
+    void GraphicsPipeline:: createVertexBuffer(VkCommandPool commandPool)
     {
-        _vertexBuffer = new GraphicsBuffer<Vertex>(_device, vertices.size());
-        _vertexBuffer->setData(vertices, 0);
+        _vertexStagingBuffer = new GraphicsBuffer<Vertex>(_device, vertices.size(), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT 
+                                                                                                                    | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        _vertexStagingBuffer->setData(vertices, 0);
+
+        _vertexBuffer = new GraphicsBuffer<Vertex>(_device, vertices.size(), VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = commandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer commandBuffer;
+        vkAllocateCommandBuffers(_device->logicalDevice(), &allocInfo, &commandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+
+        _vertexBuffer->copy(_vertexStagingBuffer, commandBuffer);
+
+
+        vkEndCommandBuffer(commandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+
+        vkQueueSubmit(_device->transferQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(_device->transferQueue());
+
+        vkFreeCommandBuffers(_device->logicalDevice(), commandPool, 1, &commandBuffer);
     }
 
     void GraphicsPipeline::createCommandBuffers(VkCommandPool commandPool)
@@ -865,7 +909,7 @@ namespace graphics
 
     VkCommandPool VulkanRuntime::commandPool()
     {
-        return _commandPool;
+        return _graphicsCommandPool;
     }
 
     Window* VulkanRuntime::window()
@@ -918,7 +962,7 @@ namespace graphics
         return t;
     }
 
-    GraphicsPipeline::GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool commandPool)
+    GraphicsPipeline::GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool transferCommandPool, VkCommandPool graphicsCommandPool)
     {
         _window = window;
         _device = device;
@@ -928,8 +972,8 @@ namespace graphics
         createRenderPass();
         createGraphicsPipline();
         createFramebuffers();
-        createVertexBuffer();
-        createCommandBuffers(commandPool);
+        createVertexBuffer(transferCommandPool);
+        createCommandBuffers(graphicsCommandPool);
 
     }
 
@@ -943,6 +987,7 @@ namespace graphics
         }
         
         delete _vertexBuffer;
+        delete _vertexStagingBuffer;
 
         vkDestroyPipeline(_device->logicalDevice(), _graphicsPipeline, nullptr);
         vkDestroyPipelineLayout(_device->logicalDevice(), _pipelineLayout, nullptr);

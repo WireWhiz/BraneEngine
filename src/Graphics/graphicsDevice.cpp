@@ -36,7 +36,7 @@ namespace graphics
         QueueFamilyIndices& indices = _queueFamilyIndices;
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+        std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.transferFamily.value() };
 
         float queuePriority = 1.0f;
         for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -79,6 +79,7 @@ namespace graphics
 
         vkGetDeviceQueue(_device, indices.graphicsFamily.value(), 0, &_graphicsQueue);
         vkGetDeviceQueue(_device, indices.graphicsFamily.value(), 0, &_presentQueue);
+        vkGetDeviceQueue(_device, indices.transferFamily.value(), 0, &_transferQueue);
     }
 
     bool GraphicsDevice::deviceHasExtentionSupport(VkPhysicalDevice device)
@@ -153,6 +154,10 @@ namespace graphics
             if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
                 indices.graphicsFamily = i;
+            }
+            else if (queueFamilies[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+            {
+                indices.transferFamily = i;
             }
             if (indices.isComplete())
                 break;
@@ -263,6 +268,11 @@ namespace graphics
         return _presentQueue;
     }
 
+    VkQueue GraphicsDevice::transferQueue()
+    {
+        return _transferQueue;
+    }
+
     VkDevice GraphicsDevice::logicalDevice()
     {
         return _device;
@@ -273,8 +283,9 @@ namespace graphics
         return _physicalDevice;
     }
 
-    GraphicsDevice::SwapChainSupportDetails GraphicsDevice::swapChainSupport()
+    GraphicsDevice::SwapChainSupportDetails GraphicsDevice::swapChainSupport(VkSurfaceKHR surface)
     {
+        _swapChainSupport = querySwapChainSupport(_physicalDevice, surface);
         return _swapChainSupport;
     }
 
