@@ -63,13 +63,15 @@ ComponentDefinition::ComponentDefinition(const ComponentDefinition& source)
 
 ComponentDefinition::ComponentDefinition(size_t numTypes, ComponentID id)
 {
-	assert(numTypes > 0);
 	_numTypes = numTypes;
 	_size = 0;
 	_id = id;
 	_initalized = false;
-	_byteIndices = new size_t[numTypes];
-	_types = new VirtualType[numTypes];
+	if (_numTypes != 0)
+	{
+		_byteIndices = new size_t[numTypes];
+		_types = new VirtualType[numTypes];
+	}
 	for (size_t i = 0; i < numTypes; i++)
 	{
 		_types[i] = virtualNone;
@@ -78,8 +80,12 @@ ComponentDefinition::ComponentDefinition(size_t numTypes, ComponentID id)
 
 ComponentDefinition::~ComponentDefinition()
 {
-	delete[] _types;
-	delete[] _byteIndices;
+	if (_numTypes != 0)
+	{
+		delete[] _types;
+		delete[] _byteIndices;
+
+	}
 }
 
 void ComponentDefinition::setIndexType(size_t index, VirtualType type)
@@ -155,12 +161,16 @@ ComponentDefinition* VirtualComponentVector::def() const
 
 size_t VirtualComponentVector::size() const
 {
+	if (_def->size() == 0)
+		return 0;
 	return _data.size() / _def->size();
 }
 
 byte* VirtualComponentVector::getComponentData(size_t index) const
 {
-	assert(index >= 0 && index < _data.size() / _def->size());
+	if (_def->size() == 0)
+		return nullptr;
+	assert(index >= 0 && index * _def->size() < _data.size());
 	return (byte*)&_data[ byteIndex(index)];
 }
 

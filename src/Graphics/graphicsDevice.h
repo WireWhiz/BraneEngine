@@ -1,8 +1,7 @@
+
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
+#include <vulkan/vulkan.h>
 
 #include <optional>
 #include <vector>
@@ -15,7 +14,7 @@
 
 namespace graphics
 {
-
+	
 	class GraphicsDevice
 	{
 
@@ -25,6 +24,9 @@ namespace graphics
 		VkQueue _graphicsQueue;
 		VkQueue _presentQueue;
 		VkQueue _transferQueue;
+
+		VkCommandPool _graphicsCommandPool;
+		VkCommandPool _transferCommandPool;
 
 		const std::vector<const char*> _deviceExtensions = {
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -50,13 +52,11 @@ namespace graphics
 	private:
 		bool _validationLayersEnabled;
 		QueueFamilyIndices _queueFamilyIndices;
-		SwapChainSupportDetails _swapChainSupport;
-		VkSurfaceFormatKHR _swapSurfaceFormat;
-		VkPresentModeKHR _swapPresentMode;
 
 
 		void pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface);
 		void createLogicalDevice();
+		void createCommandPools();
 
 		bool deviceHasExtentionSupport(VkPhysicalDevice device);
 		int deviceValue(VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -65,23 +65,24 @@ namespace graphics
 
 		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
 
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
 	public:
 		GraphicsDevice(VkInstance instance, VkSurfaceKHR surface);
 		~GraphicsDevice();
 
-		VkDevice logicalDevice();
+		VkDevice get();
 		VkPhysicalDevice physicalDevice();
 
 		SwapChainSupportDetails swapChainSupport(VkSurfaceKHR surface);
-		VkSurfaceFormatKHR swapSurfaceFormat();
-		VkPresentModeKHR swapPresentMode();
 		QueueFamilyIndices queueFamilyIndices();
 		uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 		VkQueue graphicsQueue();
 		VkQueue presentQueue();
 		VkQueue transferQueue();
+		VkCommandPool graphicsPool();
+		VkCommandPool transferPool();
+		VkPhysicalDeviceProperties properties();
 	};
+
+	extern GraphicsDevice* device;
 }

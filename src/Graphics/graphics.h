@@ -1,151 +1,36 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
-
-#include <iostream>
-#include <assert.h>
-#include <vector>
-#include <array>
-#include <cstring>
-#include <map>
-#include <set>
-#include <optional>
-#include <algorithm>
-#include <fstream>
-#include <thread>
-
-#include "shaders.h"
+#include "window.h"
 #include "graphicsBuffer.h"
-#include "graphicsDevice.h"
 #include "validationLayers.h"
+#include "material.h"
+#include "renderer.h"
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <chrono>
+#include "core/Entity.h"
+#include "NativeTypes/transform.h"
+
+
 
 namespace graphics
 {
-
-	
-
-	class Window
-	{
-	private:
-		GLFWwindow* _window;
-		glm::ivec2 _size;
-		VkSurfaceKHR _surface;
-		void init();
-		void cleanup();
-	public:
-		Window();
-		~Window();
-		void createSurface(VkInstance instance, const VkAllocationCallbacks* allocator);
-		void destroySurface(VkInstance instance, const VkAllocationCallbacks* allocator);
-		VkSurfaceKHR surface();
-		void update();
-		bool closed();
-		glm::ivec2 size();
-		void setSize(glm::ivec2& newSize);
-	};
-
-	struct Vertex
-	{
-		glm::vec2 pos;
-		glm::vec3 color;
-
-		static VkVertexInputBindingDescription getVkBindingDescription()
-		{
-			VkVertexInputBindingDescription bindingDescription{};
-			bindingDescription.binding = 0;
-			bindingDescription.stride = sizeof(Vertex);
-			bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-			return bindingDescription;
-		}
-
-		static std::array<VkVertexInputAttributeDescription, 2> getVkAttributeDescriptions()
-		{
-			std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
-			attributeDescriptions[0].binding = 0;
-			attributeDescriptions[0].location = 0;
-			attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-			attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-			attributeDescriptions[1].binding = 0;
-			attributeDescriptions[1].location = 1;
-			attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-			attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-			return attributeDescriptions;
-		}
-	};
-
-	const std::vector<Vertex> vertices = {
-	{{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-	{{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-	{{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
-	};
-
-
-	class GraphicsPipeline
-	{
-		Window* _window;
-		GraphicsDevice* _device;
-
-		VkSwapchainKHR _swapChain;
-		VkRenderPass _renderPass;
-		VkPipelineLayout _pipelineLayout;
-		VkFormat _swapChainImageFormat;
-		VkExtent2D _swapChainExtent;
-		GraphicsBuffer<Vertex>* _vertexBuffer;
-		GraphicsBuffer<Vertex>* _vertexStagingBuffer;
-
-		std::vector<VkFramebuffer> _swapChainFramebuffers;
-		std::vector<VkImage> _swapChainImages;
-		std::vector<VkImageView> _swapChainImageViews;
-		std::vector<VkCommandBuffer> _commandBuffers;
-
-		VkPipeline _graphicsPipeline;
-
-
-		std::unordered_map<std::string, VkShaderModule> _shaders;
-		
-		void createSwapChain();
-		void createImageViews();
-		void createRenderPass();
-		void createGraphicsPipline();
-		void createFramebuffers();
-		void createVertexBuffer(VkCommandPool commandPool);
-		void createCommandBuffers(VkCommandPool commandPool);
-
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-
-		void clearShaders();
-		std::thread asyncLoadShaderFromFile(VkShaderStageFlagBits shaderType, const std::string& filename, VkShaderModule* shader);
-		static void loadShaderFromFile(VkDevice device, VkShaderStageFlagBits shaderType, const std::string& filename, VkShaderModule* shader);
-
-	public:
-		GraphicsPipeline(Window* window, GraphicsDevice* device, VkCommandPool vertexCommandPool, VkCommandPool graphicsCommandPool);
-		~GraphicsPipeline();
-
-		size_t swapChainLength();
-		VkResult acquireNextImage(VkSemaphore semaphore, uint32_t& index);
-		VkCommandBuffer* commandBuffer(size_t index);
-		VkSwapchainKHR swapchain();
-	};
-
-	
 
 	class VulkanRuntime
 	{
 		Window* _window;
 		GraphicsDevice* _device;
-		GraphicsPipeline* _pipeline;
+		SwapChain* _swapChain;
+		ShaderManager* _shaderManager;
+		std::vector<VkCommandBuffer> _drawBuffers;
+
+		std::unordered_map<MaterialID, std::unique_ptr<Material>> _materials;
+		std::unordered_map<MaterialID, std::unique_ptr<Renderer>> _renderers;
+		std::unordered_map<TextureID, std::unique_ptr<Texture>> _textures;
+		std::unordered_map<MeshID, std::unique_ptr<Mesh>> _meshes;
 
 		VkInstance _instance;
-		VkCommandPool _graphicsCommandPool;
-		VkCommandPool _transferCommandPool;
 
 		std::vector<VkSemaphore> _imageAvailableSemaphores;
 		std::vector<VkSemaphore> _renderFinishedSemaphores;
@@ -164,8 +49,9 @@ namespace graphics
 		void init();
 		void cleanup();
 		void createInstance();
-		void createCommandPools();
 		void createSyncObjects();
+
+		void createDrawBuffers();
 
 		bool validationLayersSupported();
 		void setDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -177,34 +63,27 @@ namespace graphics
 		
 	public:
 		
-		VulkanRuntime(Window* window);
+		VulkanRuntime();
 		~VulkanRuntime();
 
 		VkInstance instance();
 		VkDevice device();
 		VkPhysicalDevice physicalDevice();
-		VkCommandPool commandPool();
 		Window* window();
 
+		void updateWindow();
 
 		// Behold, the only function we care about:
-		void draw();
+		void draw(EntityManager& em);
 		// Bask in it's glory!
+		
+		Texture* loadTexture(TextureID id);
+		Shader* loadShader(ShaderID id);
+		Material* createMaterial(MaterialID id);
+		void initMaterial(EntityManager& em, MaterialID id);
+		void addMesh(std::unique_ptr<Mesh> mesh, MeshID id);
+		void updateUniformBuffer(EntityManager& em, ComponentID component);
 		
 	};
 
-	class GraphicsRuntime
-	{
-	private:
-		Window* _window;
-		VulkanRuntime* _vkRuntime;
-		void init();
-		void cleanup();
-	public:
-		GraphicsRuntime();
-		~GraphicsRuntime();
-		void update();
-		bool windowClosed();
-		
-	};
 }

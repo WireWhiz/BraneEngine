@@ -1,5 +1,7 @@
 #include "Archetype.h"
 
+
+
 VirtualArchetype::VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs)
 {
 	for (size_t i = 0; i < componentDefs.size(); i++)
@@ -121,6 +123,11 @@ void VirtualArchetype::forRemoveEdge(std::function<void(std::shared_ptr<Archetyp
 	}
 }
 
+size_t VirtualArchetype::size()
+{
+	return components.begin()->second->size();
+}
+
 size_t VirtualArchetype::createEntity()
 {
 	size_t index;
@@ -156,13 +163,13 @@ void VirtualArchetype::swapRemove(size_t index)
 
 void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponents, const std::function<void(byte* [])>& f)
 {
-	std::vector<byte*> data;
-	data.resize(requiredComponents.size(), nullptr);
-
-	std::vector<VirtualComponentVector*> requiredComponentVectors;
+	assert(requiredComponents.size() > 0);
+	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
+	byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * requiredComponents.size());
+	VirtualComponentVector** requiredComponentVectors = (VirtualComponentVector**)STACK_ALLOCATE(sizeof(VirtualComponentVector*) * requiredComponents.size());
 	for (size_t i = 0; i < requiredComponents.size(); i++)
 	{
-		requiredComponentVectors.push_back(components[requiredComponents[i]].get());
+		requiredComponentVectors[i] = components[requiredComponents[i]].get();
 	}
 
 	for (size_t entityIndex = 0; entityIndex < requiredComponentVectors[0]->size(); entityIndex++)
@@ -171,7 +178,7 @@ void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponent
 		{
 			data[i] = requiredComponentVectors[i]->getComponentData(entityIndex);
 		}
-		f(data.data());
+		f(data);
 	}
 	
 }

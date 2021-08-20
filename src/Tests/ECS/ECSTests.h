@@ -3,6 +3,7 @@
 #include <ecs.h>
 #include "JITTests.h"
 
+
 namespace tests
 {
 	void testVirtualStruct()
@@ -67,9 +68,9 @@ namespace tests
 		float var3;
 		void getVariableIndicies(std::vector<NativeVarDef>& variables) override
 		{
-			variables.emplace_back(getVarIndex(&var1), virtualBool);
-			variables.emplace_back(getVarIndex(&var2), virtualInt);
-			variables.emplace_back(getVarIndex(&var3), virtualFloat);
+			variables.emplace_back(offsetof(TestNativeComponent, var1), virtualBool);
+			variables.emplace_back(offsetof(TestNativeComponent, var2), virtualInt);
+			variables.emplace_back(offsetof(TestNativeComponent, var3), virtualFloat);
 		}
 	
 	};
@@ -202,7 +203,7 @@ namespace tests
 		bool var1;
 		void getVariableIndicies(std::vector<NativeVarDef>& variables) override
 		{
-			variables.emplace_back(getVarIndex(&var1), virtualBool);
+			variables.emplace_back(offsetof(TestNativeComponent2, var1), virtualBool);
 		}
 
 	};
@@ -242,6 +243,7 @@ namespace tests
 
 
 		EntityManager em;
+		EnityForEachID forEachID = em.getForEachID({ 3, 4 });
 		em.regesterComponent(*TestNativeComponent::def());
 		em.regesterComponent(*TestNativeComponent2::def());
 		
@@ -253,8 +255,8 @@ namespace tests
 			if(i >= 49)
 				em.addComponent(e, 4);
 		}
-
-		em.forEach(ts.requiredComponents(), [&](byte* components[]) {
+		
+		em.forEach(forEachID, [&](byte* components[]) {
 			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
 			c1->var1 = true;
 			c1->var2 += 42;

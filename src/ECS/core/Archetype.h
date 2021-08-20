@@ -5,8 +5,9 @@
 #include <memory>
 #include <functional>
 #include <unordered_map>
-typedef uint64_t ArchetypeID;
+#include "../stackAllocate.h"
 
+typedef uint64_t ArchetypeID;
 class VirtualArchetype;
 
 struct ArchetypeEdge
@@ -36,6 +37,7 @@ public:
 	void addRemoveEdge(ComponentID component, VirtualArchetype* archetype);
 	void forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f);
 	void forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f);
+	size_t size();
 	size_t createEntity();
 	size_t copyEntity(VirtualArchetype* source, size_t index);
 	void swapRemove(size_t index);

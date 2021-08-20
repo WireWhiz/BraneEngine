@@ -2,6 +2,7 @@
 
 namespace graphics
 {
+    GraphicsDevice* device;
     void GraphicsDevice::pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface)
     {
         uint32_t deviceCount = 0;
@@ -49,8 +50,8 @@ namespace graphics
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        // add stuff here later
         VkPhysicalDeviceFeatures deviceFeatures{};
+        deviceFeatures.samplerAnisotropy = VK_TRUE;
 
         VkDeviceCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -111,6 +112,11 @@ namespace graphics
 
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);
         if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty())
+            return 0;
+
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+        if (!supportedFeatures.samplerAnisotropy)
             return 0;
 
         VkPhysicalDeviceProperties deviceProperties;
@@ -194,52 +200,51 @@ namespace graphics
         return details;
     }
 
-    VkSurfaceFormatKHR GraphicsDevice::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-    {
-        // Find the best format
-        for (const auto& availableFormat : availableFormats)
-        {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return availableFormat;
-            }
-        }
-
-        return availableFormats[0];
-    }
-
-    VkPresentModeKHR GraphicsDevice::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
-    {
-        for (const auto& availablePresentMode : availablePresentModes)
-        {
-            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                return availablePresentMode;
-            }
-        }
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
     GraphicsDevice::GraphicsDevice(VkInstance instance, VkSurfaceKHR surface)
     {
         pickPhysicalDevice(instance, surface);
         _queueFamilyIndices = findQueueFamilies(_physicalDevice, surface);
         createLogicalDevice();
-        _swapChainSupport = querySwapChainSupport(_physicalDevice, surface);
-        _swapSurfaceFormat = chooseSwapSurfaceFormat(_swapChainSupport.formats);
-        _swapPresentMode = chooseSwapPresentMode(_swapChainSupport.presentModes);
-
-
+        device = this;
+        createCommandPools();
     }
 
     GraphicsDevice::~GraphicsDevice()
     {
+        vkDestroyCommandPool(_device, _graphicsCommandPool, nullptr);
+        vkDestroyCommandPool(_device, _transferCommandPool, nullptr);
         vkDestroyDevice(_device, nullptr);
     }
 
     GraphicsDevice::QueueFamilyIndices GraphicsDevice::queueFamilyIndices()
     {
         return _queueFamilyIndices;
+    }
+
+
+    void GraphicsDevice::createCommandPools()
+    {
+        auto queueFamilyIndices = _queueFamilyIndices;
+
+        VkCommandPoolCreateInfo graphicsPoolInfo{};
+        graphicsPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        graphicsPoolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+        graphicsPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+
+        if (vkCreateCommandPool(_device, &graphicsPoolInfo, nullptr, &_graphicsCommandPool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create graphics command pool!");
+        }
+
+        VkCommandPoolCreateInfo transferPoolInfo{};
+        transferPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        transferPoolInfo.queueFamilyIndex = queueFamilyIndices.transferFamily.value();
+        transferPoolInfo.flags = 0; // Optional
+
+        if (vkCreateCommandPool(_device, &transferPoolInfo, nullptr, &_transferCommandPool) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create transfer command pool!");
+        }
     }
 
     uint32_t GraphicsDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
@@ -273,7 +278,24 @@ namespace graphics
         return _transferQueue;
     }
 
-    VkDevice GraphicsDevice::logicalDevice()
+    VkCommandPool GraphicsDevice::graphicsPool()
+    {
+        return _graphicsCommandPool;
+    }
+
+    VkCommandPool GraphicsDevice::transferPool()
+    {
+        return _transferCommandPool;
+    }
+
+    VkPhysicalDeviceProperties GraphicsDevice::properties()
+    {
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(_physicalDevice, &props);
+        return props;
+    }
+
+    VkDevice GraphicsDevice::get()
     {
         return _device;
     }
@@ -285,17 +307,6 @@ namespace graphics
 
     GraphicsDevice::SwapChainSupportDetails GraphicsDevice::swapChainSupport(VkSurfaceKHR surface)
     {
-        _swapChainSupport = querySwapChainSupport(_physicalDevice, surface);
-        return _swapChainSupport;
-    }
-
-    VkSurfaceFormatKHR GraphicsDevice::swapSurfaceFormat()
-    {
-        return _swapSurfaceFormat;
-    }
-
-    VkPresentModeKHR GraphicsDevice::swapPresentMode()
-    {
-        return _swapPresentMode;
+        return querySwapChainSupport(_physicalDevice, surface);
     }
 }

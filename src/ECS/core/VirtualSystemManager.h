@@ -1,3 +1,4 @@
+#pragma once
 #include "VirtualSystem.h"
 #include "Entity.h"
 #include <unordered_map>

@@ -13,8 +13,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 
 
-file(GLOB_RECURSE SOURCES src/*.cpp include/*.cpp)
+file(GLOB_RECURSE SOURCES src/*.cpp include/*.cpp include/*.h include/*.hpp)
 add_compile_definitions(ASMJIT_STATIC)
+add_compile_definitions(GLFW_INCLUDE_VULKAN)
+add_compile_definitions(GLM_FORCE_RADIANS)
+add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
 
 include_directories(
     src/ECS
@@ -53,7 +56,7 @@ if (WIN32)
     target_link_libraries(BraneEngine ${LIB_SOURCES})
 endif (WIN32)
 if (UNIX)
-    target_link_libraries(BraneEngine -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lSPIRV -lHLSL )
+    target_link_libraries(BraneEngine -lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi -lglslang -lSPIRV -lHLSL)
 
     file(GLOB_RECURSE LIB_SOURCES lib/unix/*.a)
     message(${LIB_SOURCES})
@@ -72,14 +75,16 @@ target_include_directories(BraneEngine PRIVATE src/ECS)
 target_include_directories(BraneEngine PRIVATE src/Tests)
 target_include_directories(BraneEngine PRIVATE lib)
 target_include_directories(BraneEngine PRIVATE include)
-
-
-
-#file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
-#     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
+ 
 add_custom_command(
         TARGET BraneEngine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_SOURCE_DIR}/shaders
                 ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+
+file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

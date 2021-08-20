@@ -50,11 +50,39 @@ VirtualArchetype* EntityManager::makeArchetype(std::vector<ComponentDefinition*>
 				otherArch->addRemoveEdge(connectingComponent, newArch);
 
 				updateArchetypeRoots(otherArch);
+				updateForEachRoots(otherArch, newArch);
 			}
 		}
 	}
 	updateArchetypeRoots(newArch);
+	updateForEachRoots(nullptr, newArch);
 	return newArch;
+}
+
+void EntityManager::getArchetypeRoots(const std::vector<ComponentID>& components, std::vector<VirtualArchetype*>& roots)
+{
+	roots.clear();
+	std::unordered_set<VirtualArchetype*> found;
+	// Serch through any archetypes of the exact size that we want to see if there's one that fits
+	if (_archetypes.size() >= components.size())
+	{
+		for (auto& archetype : _archetypes[components.size() - 1])
+		{
+			if (archetype->hasComponents(components))
+			{
+				roots.push_back(archetype.get());
+				found.insert(archetype.get());
+				break;
+			}
+		}
+	}
+	// Search through all the archetypes that have the poetental to have just turned into what we want
+	for (ComponentID component : components)
+	{
+		for(VirtualArchetype* archetype : _rootArchetypes[component])
+			if (archetype->hasComponents(components) && !found.count(archetype))
+				roots.push_back(archetype);
+	}
 }
 
 void EntityManager::updateArchetypeRoots(VirtualArchetype* archtype)
@@ -88,6 +116,35 @@ void EntityManager::updateArchetypeRoots(VirtualArchetype* archtype)
 					_rootArchetypes[component].resize(_rootArchetypes[component].size() - 1);
 				}
 			}
+		}
+	}
+}
+
+void EntityManager::updateForEachRoots(VirtualArchetype* oldArchetype, VirtualArchetype* newArchetype)
+{
+	for (ForEachData& data : _forEachData)
+	{
+		if (oldArchetype != nullptr)
+		{
+			for (size_t i = 0; i < data.archetypeRoots.size(); i++)
+			{
+				if (oldArchetype == data.archetypeRoots[i])
+				{
+					if (newArchetype == nullptr)
+					{
+						data.archetypeRoots[i] == data.archetypeRoots[data.archetypeRoots.size() - 1];
+						data.archetypeRoots.resize(data.archetypeRoots.size() - 1);
+					}
+					else if (newArchetype->hasComponents(data.components))
+					{
+						data.archetypeRoots[i] = newArchetype;
+					}
+				}
+			}
+		}
+		else if(newArchetype->hasComponents(data.components))
+		{
+			data.archetypeRoots.push_back(newArchetype);
 		}
 	}
 }
@@ -146,6 +203,24 @@ EntityID EntityManager::createEntity()
 	return id;
 }
 
+EntityID EntityManager::createEntity(const std::vector<ComponentID>& components)
+{
+	VirtualArchetype* arch = getArcheytpe(components);
+	if (arch == nullptr)
+	{
+		std::vector<ComponentDefinition*> compdefs(components.size());
+		for (size_t i = 0; i < components.size(); i++)
+		{
+			compdefs[i] = _components[components[i]].get();
+		}
+		arch = makeArchetype(compdefs);
+	}
+	EntityID ent = createEntity();
+	_entities[ent].archetype = arch;
+	_entities[ent].index = arch->createEntity();
+	return ent;
+}
+
 void EntityManager::destroyEntity(EntityID entity)
 {
 	assert(0 <= entity && entity < _entities.size());
@@ -155,17 +230,40 @@ void EntityManager::destroyEntity(EntityID entity)
 	archetype->swapRemove(_entities[entity].index);
 }
 
-void EntityManager::forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f)
+void EntityManager::forEach(EnityForEachID id, const std::function<void(byte* [])>& f)
 {
-	assert(components.size() > 0);
+	assert(id >= 0);
+	assert(id < _forEachData.size());
 	std::unordered_set<VirtualArchetype*> executed;
-	for (size_t i = 0; i < components.size(); i++)
+	for (VirtualArchetype* archetype : getForEachArchetypes(id))
 	{
-		for (size_t j = 0; j < _rootArchetypes[components[i]].size(); j++)
-		{
-			forEachRecursive(_rootArchetypes[components[i]][j], components, f, executed, true);
-		}
+		forEachRecursive(archetype, _forEachData[id].components, f, executed, true);
 	}
+}
+
+size_t EntityManager::forEachCount(EnityForEachID id)
+{
+	size_t count = 0;
+	for (VirtualArchetype* archetype : getForEachArchetypes(id))
+	{
+		count += archetype->size();
+	}
+	return count;
+}
+
+EnityForEachID EntityManager::getForEachID(const std::vector<ComponentID>& components)
+{
+	//std::sort(components.begin(), components.end());
+	EnityForEachID id = 0;
+	for (ForEachData& cfe : _forEachData)
+	{
+		if (cfe.components == components)
+			return id;
+		++id;
+	}
+	//If we reatch here there is no prexisting cache
+	_forEachData.push_back(ForEachData(components));
+	return id;
 }
 
 void EntityManager::forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed, bool searching)
@@ -191,6 +289,21 @@ void EntityManager::forEachRecursive(VirtualArchetype* archetype, const std::vec
 		forEachRecursive(edge->archetype, components, f, executed, searching);
 	});
 	executed.insert(archetype);
+}
+
+std::vector<VirtualArchetype*>& EntityManager::getForEachArchetypes(EnityForEachID id)
+{
+	assert(_forEachData.size() > id);
+	// If the list is more then
+	if (!_forEachData[id].cached)
+	{
+		//create new cache
+		 getArchetypeRoots(_forEachData[id].components, _forEachData[id].archetypeRoots);
+
+		_forEachData[id].cached = true;
+	}
+
+	return _forEachData[id].archetypeRoots;
 }
 
 

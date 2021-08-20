@@ -12,6 +12,11 @@ struct NativeVarDef
 {
 	VirtualType type;
 	size_t index;
+	NativeVarDef()
+	{
+		type = virtualNone;
+		index = 0;
+	}
 	NativeVarDef(size_t index, VirtualType type)
 	{
 		this->type = type;
@@ -112,13 +117,8 @@ private:
 	}
 protected:
 	static ComponentDefinition* _def;
+	// This virtual is actually never used, keeping it for reference
 	virtual void getVariableIndicies(std::vector<NativeVarDef>& variables) = 0;
-	size_t getVarIndex(void* var)
-	{
-		size_t index = (size_t)var - (size_t)this;;
-		assert(0 <= index && index < sizeof(T));
-		return index;
-	}
 public:
 	NativeComponent()
 	{

@@ -1,24 +1,34 @@
 #pragma once
 #include <cstdlib>
-
+#include <glm/glm.hpp>
 
 typedef unsigned char byte;
 
 enum VirtualType
 {
 	virtualNone = 0,
-	virtualBool = 1,
-	virtualInt = 2,
-	virtualFloat = 3,
+	virtualAddress,
+	virtualBool,
+	virtualInt,
+	virtualFloat,
+	virtualFloat2,
+	virtualFloat3,
+	virtualFloat4,
+	virtualFloat4x4
 };
 
 constexpr size_t sizeofVirtual(VirtualType vt)
 {
-	size_t sizes[4] = {
+	size_t sizes[] = {
 		0,
+		sizeof(uint64_t),
 		sizeof(bool),
 		sizeof(int),
-		sizeof(float)
+		sizeof(float),
+		sizeof(glm::vec2),
+		sizeof(glm::vec3),
+		sizeof(glm::vec4),
+		sizeof(glm::mat4x4)
 	};
 	return sizes[(byte)vt];
 };
