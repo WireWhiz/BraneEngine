@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <array>
 
 namespace graphics
 {
@@ -17,6 +18,10 @@ namespace graphics
 		std::vector<VkImage> _images;
 		std::vector<VkImageView> _imageViews;
 
+		VkImage _depthImage;
+		VkDeviceMemory _depthImageMemory;
+		VkImageView _depthImageView;
+
 		VkFormat _imageFormat;
 		VkImageLayout _imageLayout;
 		VkExtent2D _extent;
@@ -24,11 +29,17 @@ namespace graphics
 
 		void createSwapChain();
 		void createImageViews();
+		void createDepthResources();
 		void createRenderPass();
 		void createFramebuffers();
+
+
 		VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
+
+		VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+		VkFormat findDepthFormat();
 
 	public:
 		SwapChain(Window* window);
@@ -41,7 +52,6 @@ namespace graphics
 		static size_t size();
 		VkExtent2D extent();
 		VkFormat imageFormat();
-		VkImageLayout imageLayout();
 		VkRenderPass renderPass();
 		VkImage getImage(size_t index);
 	};
