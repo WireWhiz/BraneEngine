@@ -20,6 +20,7 @@ struct ArchetypeEdge
 class VirtualArchetype
 {
 private:
+	size_t _size = 0;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 public:

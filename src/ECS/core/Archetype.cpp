@@ -125,7 +125,7 @@ void VirtualArchetype::forRemoveEdge(std::function<void(std::shared_ptr<Archetyp
 
 size_t VirtualArchetype::size()
 {
-	return components.begin()->second->size();
+	return _size;
 }
 
 size_t VirtualArchetype::createEntity()
@@ -136,6 +136,7 @@ size_t VirtualArchetype::createEntity()
 		index = c.second->size();
 		c.second->pushEmpty();
 	}
+	_size++;
 	return index;
 }
 
@@ -150,6 +151,7 @@ size_t VirtualArchetype::copyEntity(VirtualArchetype* source, size_t index)
 			c.second->copy(sourceComponent->second.get(), index, newIndex);
 		}
 	}
+	_size++;
 	return newIndex;
 }
 
@@ -159,6 +161,7 @@ void VirtualArchetype::swapRemove(size_t index)
 	{
 		c.second->swapRemove(index);
 	}
+	_size--;
 }
 
 void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponents, const std::function<void(byte* [])>& f)

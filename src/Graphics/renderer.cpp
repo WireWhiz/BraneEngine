@@ -58,13 +58,16 @@ namespace graphics
     void Renderer::createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::unordered_map<MeshID,std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
     {
         size_t count = em.forEachCount(_forEachID);
+        if(count == 0)
+            return;
         std::vector<glm::mat4x4> transforms(count);
         std::vector<MeshID> meshIndicies(count);
 
         size_t index = 0;
-        em.forEach(_forEachID, [&index, &transforms, &meshIndicies](byte** components) {
+        em.forEach(_forEachID, [&index, &transforms, &meshIndicies](byte** components){
             meshIndicies[index] = MeshComponent::fromVirtual(components[1])->id;
-            transforms[index++] = Transform::fromVirtual(components[0])->value;
+            transforms[index] = Transform::fromVirtual(components[0])->value;
+            index++;
         });
 
         

@@ -21,7 +21,6 @@ namespace graphics
         {
             imageCount = swapChainSupport.capabilities.maxImageCount;
         }
-        _size = imageCount;
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -67,6 +66,7 @@ namespace graphics
         }
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, nullptr);
         _images.resize(imageCount);
+        _size = imageCount;
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, _images.data());
     }
 
