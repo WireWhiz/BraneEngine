@@ -25,7 +25,6 @@ mono_crash.*
 [Rr]elease/
 [Rr]eleases/
 x64/
-x86/
 !asmjit/x86
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/

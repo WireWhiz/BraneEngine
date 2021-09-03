@@ -5,7 +5,7 @@
 #include <memory>
 #include <functional>
 #include <unordered_map>
-#include "../stackAllocate.h"
+#include "stackAllocate.h"
 
 typedef uint64_t ArchetypeID;
 class VirtualArchetype;

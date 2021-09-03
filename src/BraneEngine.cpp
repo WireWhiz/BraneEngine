@@ -3,7 +3,7 @@
 #include <atomic>
 #include <thread>
 #include "threadPool.h"
-#include "Graphics/mesh.h"
+#include <Graphics/mesh.h>
 
 int main()
 {

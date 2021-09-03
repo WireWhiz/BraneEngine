@@ -52,6 +52,7 @@ VirtualSystem* SystemBlock::getSystem(SystemID id) const
 			return _systems[i].get();
 	}
 	assert(false); // system not found
+	return nullptr;
 }
 
 bool SystemBlockList::sort()

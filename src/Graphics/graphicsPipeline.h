@@ -7,7 +7,7 @@
 #include "swapChain.h"
 #include "texture.h"
 #include "../threadPool.h"
-#include "../time.h"
+#include "../clock.h"
 
 #include <unordered_map>
 #include <thread>

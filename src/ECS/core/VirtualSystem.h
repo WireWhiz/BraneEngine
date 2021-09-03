@@ -1,11 +1,7 @@
 #pragma once
 #include "VirtualType.h"
 #include "Component.h"
-#include <cstdint>
 #include <vector>
-#include <string>
-#include <memory>
-#include <system_error>
 
 struct VirtualSystemGlobals
 {
@@ -22,14 +18,8 @@ class VirtualSystem
 protected:
 	SystemID _id;
 public:
-	VirtualSystem(SystemID id)
-	{
-		_id = id;
-	}
-	SystemID id() const
-	{
-		return _id;
-	}
+	VirtualSystem(SystemID id);
+	SystemID id() const;
 	virtual void run(const std::vector<byte*> data, VirtualSystemGlobals* constants) const = 0;
 	virtual const std::vector<ComponentID> requiredComponents() const = 0;
 };

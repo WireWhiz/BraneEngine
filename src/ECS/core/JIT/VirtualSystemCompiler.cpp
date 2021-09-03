@@ -1,5 +1,5 @@
 #include "VirtualSystemCompiler.h"
-
+#include <core/VirtualType.h>
 using namespace asmjit;
 
 
