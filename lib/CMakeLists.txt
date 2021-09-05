@@ -2,6 +2,8 @@
 if (WIN32)
     message("windows build")
     if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+        set(LIBDIR ${CMAKE_CURRENT_SOURCE_DIR}/win64/debug/)
+        
 
         file(GLOB_RECURSE LLIBS win64/shared/*.lib win64/debug/*.lib)
     else ()
@@ -13,10 +15,8 @@ endif (WIN32)
 if (UNIX)
     message("linux build")
 
-    file(GLOB_RECURSE LLIBS unix/*.a)
+    add_subdirectory(unix)
     
-    set(LIBS -ldl  -lglslang -lHLSL -lSPIRV ${LLIBS} 
-	PARENT_SCOPE)
    
 
 endif (UNIX)

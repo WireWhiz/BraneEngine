@@ -32,6 +32,7 @@ set(ASSET_SERVER_DEFS ASSET_SERVER)
 
 set(LIBS "")
 
+
 # Run subdir cmakelists
 add_subdirectory(include)
 add_subdirectory(lib)

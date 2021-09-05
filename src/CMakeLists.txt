@@ -29,6 +29,5 @@ target_include_directories(BraneAssetServer PRIVATE
 	ECS
 	Tests
 )
-message("LIBS: " ${LIBS})
 target_link_libraries(BraneAssetServer PRIVATE ${LIBS})
 target_compile_definitions(BraneAssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS})
