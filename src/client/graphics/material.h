@@ -4,7 +4,7 @@
 
 #include "graphicsPipeline.h"
 #include <vulkan/vulkan.h>
-#include <core/Entity.h>
+#include <ecs/core/Entity.h>
 
 namespace graphics
 {

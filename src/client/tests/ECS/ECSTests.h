@@ -1,8 +1,7 @@
 #pragma once
 #ifdef DEBUG
-#include <ecs.h>
+#include <common/ecs/ecs.h>
 #include "JITTests.h"
-
 
 namespace tests
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "core/Entity.h"
-#include "NativeTypes/transform.h"
+#include "ecs/core/Entity.h"
+#include "ecs/nativeTypes/transform.h"
 #include "mesh.h"
 #include "material.h"
 

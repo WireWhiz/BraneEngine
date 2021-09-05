@@ -2,9 +2,6 @@
 #include <core/VirtualType.h>
 using namespace asmjit;
 
-
-
-
 typedef int (*Func)(void);
 void VirtualSystemCompiler::testFunction()
 {

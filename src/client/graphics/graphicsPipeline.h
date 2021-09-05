@@ -6,8 +6,8 @@
 #include "shader.h"
 #include "swapChain.h"
 #include "texture.h"
-#include "../threadPool.h"
-#include "../clock.h"
+#include <utility/threadPool.h>
+#include <utility/clock.h>
 
 #include <unordered_map>
 #include <thread>

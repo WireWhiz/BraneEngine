@@ -132,7 +132,7 @@ void EntityManager::updateForEachRoots(VirtualArchetype* oldArchetype, VirtualAr
 				{
 					if (newArchetype == nullptr)
 					{
-						data.archetypeRoots[i] == data.archetypeRoots[data.archetypeRoots.size() - 1];
+						data.archetypeRoots[i] = data.archetypeRoots[data.archetypeRoots.size() - 1];
 						data.archetypeRoots.resize(data.archetypeRoots.size() - 1);
 					}
 					else if (newArchetype->hasComponents(data.components))

@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 
+
 namespace graphics
 {
 	class Window

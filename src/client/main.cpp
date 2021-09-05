@@ -1,22 +1,17 @@
-﻿#include "BraneEngine.h"
-#include "core/VirtualSystemManager.h"
-#include <atomic>
-#include <thread>
-#include "threadPool.h"
-#include <Graphics/mesh.h>
+#include <iostream>
+#include "tests/tests.h"
+#include "graphics/graphics.h"
 
 int main()
 {
-	//Run all our tests if we are in debug mode
 #ifdef DEBUG
 	tests::runTests();
-#endif // !NDEBUG
-	ThreadPool::init();
-	Timer::startTimer();
+#endif
+	std::cout << "BraneSurfer starting up\n";
 
 	graphics::VulkanRuntime vkr;
 	EntityManager em;
-	
+
 	std::unique_ptr<graphics::Mesh> quad = std::make_unique<graphics::Mesh>(std::vector<uint32_t>({ 0, 1, 2, 2, 3, 0 }),
 																			std::vector<graphics::Vertex>({
 																			   {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
@@ -36,16 +31,14 @@ int main()
 	em.regesterComponent(*Transform::def());
 	em.regesterComponent(*graphics::MeshComponent::def()); //Regester mesh component
 	EntityID quadEntity = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
-	EntityID quadEntity2 = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2});
+	EntityID quadEntity2 = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
 
 	while (!vkr.window()->closed())
 	{
 		vkr.updateWindow();
 		vkr.updateUniformBuffer(em, 0);
 		vkr.draw(em);
-		Timer::updateTimer();
-		
+
 	}
-	ThreadPool::cleanup();
 	return 0;
 }

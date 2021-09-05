@@ -9,8 +9,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <chrono>
-#include "core/Entity.h"
-#include "NativeTypes/transform.h"
+#include "ecs/core/Entity.h"
+#include "ecs/nativeTypes/transform.h"
 
 
 

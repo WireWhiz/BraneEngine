@@ -1,5 +1,5 @@
 #pragma once
-#include <core/Component.h>
+#include <ecs/core/Component.h>
 #include <glm/mat4x4.hpp>
 
 class Transform : public NativeComponent<Transform, 0>

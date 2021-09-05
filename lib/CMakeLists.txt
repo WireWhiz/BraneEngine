@@ -1,8 +1,4 @@
 #file: lib
-
-
-
-
 if (WIN32)
     message("windows build")
     if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
@@ -19,9 +15,7 @@ if (UNIX)
 
     file(GLOB_RECURSE LLIBS unix/*.a)
     
-    # add_link_options(-lrt)
-    find_library(LIBRT rt) 
-    set(LIBS -lvulkan -lglfw -ldl  -lX11 -lXxf86vm -lXrandr -lXi  -lglslang -lHLSL -lpthread -lrt -lSPIRV ${LLIBS} 
+    set(LIBS -lvulkan -lglfw -ldl  -lX11 -lXxf86vm -lXrandr -lXi  -lglslang -lHLSL -lSPIRV -pthread -lrt ${LLIBS} 
 	PARENT_SCOPE)
    
 

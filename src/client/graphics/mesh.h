@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "graphicsBuffer.h"
-#include <core/Component.h>
+#include <common/ecs/core/Component.h>
 
 namespace graphics
 {
