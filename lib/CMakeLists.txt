@@ -15,7 +15,7 @@ if (UNIX)
 
     file(GLOB_RECURSE LLIBS unix/*.a)
     
-    set(LIBS -lvulkan -lglfw -ldl  -lX11 -lXxf86vm -lXrandr -lXi  -lglslang -lHLSL -lSPIRV -pthread -lrt ${LLIBS} 
+    set(LIBS -ldl  -lglslang -lHLSL -lSPIRV ${LLIBS} 
 	PARENT_SCOPE)
    
 
