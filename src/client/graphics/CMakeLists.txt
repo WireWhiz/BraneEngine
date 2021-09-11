@@ -13,7 +13,9 @@ add_library(graphics STATIC
 	window.cpp
 )
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
-target_link_libraries(graphics PRIVATE utility)
-if (UNIX)
-target_link_libraries(graphics PUBLIC -lvulkan -lglfw -lX11 -lXxf86vm -lXrandr -lXi glslang)
-endif (UNIX)
+target_link_libraries(graphics PRIVATE utility glslang)
+if(WIN32)
+target_link_libraries(graphics PUBLIC vulkan glfw)
+else (WIN32)
+target_link_libraries(graphics PUBLIC -lvulkan -lglfw -lX11 -lXxf86vm -lXrandr -lXi)
+endif (WIN32)

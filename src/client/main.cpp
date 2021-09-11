@@ -1,6 +1,8 @@
+// Client
 #include <iostream>
 #include "tests/tests.h"
 #include "graphics/graphics.h"
+#include "networking/networking.h"
 
 int main()
 {
@@ -8,6 +10,8 @@ int main()
 	tests::runTests();
 #endif
 	std::cout << "BraneSurfer starting up\n";
+
+	net::NetworkManager nm;
 
 	graphics::VulkanRuntime vkr;
 	EntityManager em;

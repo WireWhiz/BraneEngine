@@ -10,7 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Library Complie Definitions
 set(COMMON_DEFS GLM_FORCE_RADIANS
-                GLM_FORCE_DEPTH_ZERO_TO_ONE)
+                GLM_FORCE_DEPTH_ZERO_TO_ONE
+                ASIO_STANDALONE)
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message("debug mode")

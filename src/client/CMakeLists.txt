@@ -7,10 +7,10 @@ add_executable(BraneSurfer main.cpp)
 target_include_directories(BraneSurfer PRIVATE
 	${CMAKE_CURRENT_SOURCE_DIR}
 )
-message("LIBS: " ${LIBS})
 target_compile_definitions(BraneSurfer PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
-target_link_libraries(BraneSurfer PRIVATE 
-	ecs 
-	graphics
-	${LIBS}
-)
+target_link_libraries(BraneSurfer PRIVATE ecs graphics networking json)
+
+
+file(REMOVE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json)
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.json
+     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})

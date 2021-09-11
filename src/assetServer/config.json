@@ -1,0 +1,7 @@
+// Configuration file for brane asset server
+
+{
+  "network": {
+    "port" : 80
+  }
+}
