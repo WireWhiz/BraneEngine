@@ -2,7 +2,7 @@
 #include <iostream>
 #include "tests/tests.h"
 #include "graphics/graphics.h"
-#include "networking/networking.h"
+#include "networking/client.h"
 
 int main()
 {
@@ -11,7 +11,14 @@ int main()
 #endif
 	std::cout << "BraneSurfer starting up\n";
 
-	net::NetworkManager nm;
+	std::string serverAddress = Config::json()["network"]["asset server"].get("address", "127.0.0.1").asString();
+	uint16_t serverPort = Config::json()["network"]["asset server"].get("tcp port", 80).asUInt();
+	net::ClientConnection cc;
+	cc.Connect(serverAddress, serverPort, net::ConnectionType::reliable);
+	if (cc.IsConnected())
+		std::cout << "Connected to asset server!" << std::endl;
+
+	std::cout << std::endl;
 
 	graphics::VulkanRuntime vkr;
 	EntityManager em;

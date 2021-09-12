@@ -27,9 +27,10 @@ namespace net
 				case ConnectionType::reliable:
 					tcpEndpoints = tcpresolver.resolve(host, std::to_string(port));
 
+					
 
-
-					//_connection = std::make_unique<ReliableConnection>(); //TODO
+					_connection = std::make_unique<ReliableConnection>(Connection::Owner::client, std::make_unique<tcp_socket>(_ctx));
+					_connection->connect(host, port);
 					break;
 				default:
 					throw std::runtime_error("Unimplemented connection type " + std::to_string((int)type) + "was used");

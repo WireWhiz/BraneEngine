@@ -6,13 +6,19 @@
 #include <fstream>
 #include <string>
 
+#include "assetNetworking/assetServer.h"
+
 int main()
 {
 	Config::loadConfig();
 
-	std::cout << Config::json()["network"].get("port", 80).asUInt();
-	net::NetworkManager nm;
+	uint16_t serverPort = Config::json()["network"].get("tcp port", 80).asUInt();
+	
+	net::AssetServerInterface si(serverPort);
+	si.start();
 
+	while (true)
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
 	return 0;
 }

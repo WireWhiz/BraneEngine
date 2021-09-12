@@ -26,6 +26,12 @@ namespace net
 	class Connection
 	{
 	public:
+		enum Owner
+		{
+			client,
+			server
+		};
+
 		struct OwnedIMessage
 		{
 			IMessage message;
@@ -42,10 +48,13 @@ namespace net
 		NetQueue<OwnedIMessage> _ibuffer;
 		NetQueue<OwnedOMessage> _obuffer;
 
+		Owner _owner;
+
 	public:
 
 		//Each Connection derived class has it's own unique connect call due to the need to pass a socket
-		virtual bool dissconnect() = 0;
+		virtual bool connect(const std::string& ip, uint16_t port) = 0;
+		virtual void dissconnect() = 0;
 		virtual bool isConnected() = 0;
 
 		virtual bool send(const OMessage& msg) = 0;
@@ -58,9 +67,10 @@ namespace net
 	{
 		std::unique_ptr<tcp_socket> _socket;
 	public:
-		ReliableConnection(std::unique_ptr<tcp_socket>& socket);
-		virtual bool dissconnect();
-		virtual bool isConnected();
+		ReliableConnection(Owner owner, std::unique_ptr<tcp_socket>& socket);
+		bool connect(const std::string& ip, uint16_t port) override;
+		void dissconnect() override;
+		bool isConnected() override;
 
 		virtual bool send(const OMessage& msg);
 		ConnectionType type() override;
@@ -73,10 +83,10 @@ namespace net
 		ssl_socket _socket;
 	public:
 		SecureConnection(ssl_socket socket);
-		virtual bool dissconnect();
-		virtual bool isConnected();
+		void dissconnect();
+		bool isConnected();
 
-		virtual bool send(const OMessage& msg);
+		bool send(const OMessage& msg);
 		ConnectionType type() override;
 
 	};
@@ -86,10 +96,10 @@ namespace net
 	{
 		udp_socket _socket;
 	public:
-		virtual bool dissconnect();
-		virtual bool isConnected();
+		void dissconnect();
+		bool isConnected();
 
-		virtual bool send(const OMessage& msg) = 0;
+		bool send(const OMessage& msg) = 0;
 		ConnectionType type() override;
 	};
 	
