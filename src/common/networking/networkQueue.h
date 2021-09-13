@@ -1,6 +1,7 @@
 #pragma once
 #include <mutex>
 #include <queue>
+#include <iterator>
 
 namespace net
 {
@@ -11,6 +12,8 @@ namespace net
 		std::mutex _m;
 		std::deque<T> _queue;
 	public:
+		NetQueue() = default;
+		NetQueue(const NetQueue&) = delete;
 		~NetQueue()
 		{
 			_queue.clear();
@@ -42,7 +45,24 @@ namespace net
 		size_t count()
 		{
 			std::scoped_lock lock(_m);
-			return _queue.count();
+			return _queue.size();
+		}
+
+		bool empty()
+		{
+			return count() == 0;
+		}
+
+		void clean()
+		{
+			std::scoped_lock lock(_m);
+			_queue.erase(std::remove(_queue.begin(), _queue.end(), nullptr));
+		}
+
+		void erase(T& value)
+		{
+			std::scoped_lock lock(_m);
+			_queue.erase(std::remove(_queue.begin(), _queue.end(), value));
 		}
 
 		void clear()
@@ -66,5 +86,17 @@ namespace net
 			_queue.pop_back();
 			return value;
 		}
+
+		void lock()
+		{
+			_m.lock();
+		}
+
+		void unlock()
+		{
+			_m.unlock();
+		}
+		 typename std::deque<T>::iterator begin() { return _queue.begin(); }
+		 typename std::deque<T>::iterator end() { return _queue.end(); }
 	};
 }

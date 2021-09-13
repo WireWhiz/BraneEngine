@@ -10,7 +10,11 @@ namespace net
 	enum class MessageType
 	{
 		assetRequest, 
-		assetData
+		assetData,
+		one, 
+		two, 
+		three, 
+		four
 	};
 
 	struct MessageHeader
@@ -28,7 +32,7 @@ namespace net
 
 		size_t size() const
 		{
-			return sizeof(MessageHeader) + data.size();
+			return data.size();
 		}
 
 		friend std::ostream& operator << (std::ostream& os, const IMessage& msg)
@@ -68,7 +72,7 @@ namespace net
 
 		size_t size() const
 		{
-			return sizeof(MessageHeader) + data.size();
+			return data.size();
 		}
 
 		friend std::ostream& operator << (std::ostream& os, const OMessage& msg) 

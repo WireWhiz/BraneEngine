@@ -21,43 +21,57 @@ namespace net
 		fast = 2
 	};
 
-	
+	typedef uint32_t ConnectionID;
 
 	class Connection
 	{
 	public:
-		enum Owner
-		{
+		enum class Owner
+		{ 
 			client,
 			server
 		};
 
 		struct OwnedIMessage
 		{
-			IMessage message;
 			std::shared_ptr<Connection> owner;
+			IMessage message;
 		};
 
 		struct OwnedOMessage
 		{
-			OMessage message;
 			std::shared_ptr<Connection> owner;
+			OMessage message;
 		};
 
 	protected:
-		NetQueue<OwnedIMessage> _ibuffer;
-		NetQueue<OwnedOMessage> _obuffer;
-
+		std::shared_ptr<Connection> sharedThis;
+		asio::io_context& _ctx;
+		NetQueue<OwnedIMessage>& _ibuffer;
+		NetQueue<OMessage> _obuffer;
+		ConnectionID _id;
 		Owner _owner;
 
+		IMessage _tempIn;
+
+		virtual void async_readHeader() = 0;
+		virtual void async_readBody() = 0;
+		virtual void async_writeHeader() = 0;
+		virtual void async_writeBody() = 0;
+
+		void addToIMessageQueue();
+
 	public:
+		Connection(asio::io_context& ctx, NetQueue<OwnedIMessage>& ibuffer);
 
 		//Each Connection derived class has it's own unique connect call due to the need to pass a socket
-		virtual bool connect(const std::string& ip, uint16_t port) = 0;
+		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) = 0;
+		virtual void connectToClient(ConnectionID id) = 0;
 		virtual void dissconnect() = 0;
 		virtual bool isConnected() = 0;
+		ConnectionID id();
 
-		virtual bool send(const OMessage& msg) = 0;
+		virtual void send(const OMessage& msg) = 0;
 		virtual ConnectionType type() = 0;
 
 	};
@@ -65,15 +79,25 @@ namespace net
 	typedef asio::ip::tcp::socket tcp_socket;
 	class ReliableConnection : public Connection
 	{
-		std::unique_ptr<tcp_socket> _socket;
+		tcp_socket _socket;
+
+	protected:
+		void async_readHeader() override;
+		void async_readBody() override;
+		void async_writeHeader() override;
+		void async_writeBody() override;
+
 	public:
-		ReliableConnection(Owner owner, std::unique_ptr<tcp_socket>& socket);
-		bool connect(const std::string& ip, uint16_t port) override;
+		ReliableConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
+		bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
+		void connectToClient(ConnectionID id) override;
 		void dissconnect() override;
 		bool isConnected() override;
 
-		virtual bool send(const OMessage& msg);
+		virtual void send(const OMessage& msg);
 		ConnectionType type() override;
+
+		
 	};
 
 	typedef asio::ssl::stream<tcp_socket> ssl_socket;
@@ -86,7 +110,7 @@ namespace net
 		void dissconnect();
 		bool isConnected();
 
-		bool send(const OMessage& msg);
+		void send(const OMessage& msg);
 		ConnectionType type() override;
 
 	};
@@ -99,7 +123,7 @@ namespace net
 		void dissconnect();
 		bool isConnected();
 
-		bool send(const OMessage& msg) = 0;
+		void send(const OMessage& msg);
 		ConnectionType type() override;
 	};
 	

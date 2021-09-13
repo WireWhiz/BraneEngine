@@ -14,9 +14,23 @@ int main()
 	std::string serverAddress = Config::json()["network"]["asset server"].get("address", "127.0.0.1").asString();
 	uint16_t serverPort = Config::json()["network"]["asset server"].get("tcp port", 80).asUInt();
 	net::ClientConnection cc;
-	cc.Connect(serverAddress, serverPort, net::ConnectionType::reliable);
-	if (cc.IsConnected())
+	cc.connect(serverAddress, serverPort, net::ConnectionType::reliable);
+	if (cc.connected())
 		std::cout << "Connected to asset server!" << std::endl;
+
+	std::string text = "Hello there!";
+	net::OMessage msg;
+	msg.header.type = net::MessageType::one;
+	msg.write(text.data(), text.size());
+	cc.send(msg);
+	while (cc.incoming().count() == 0)
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+	
+	net::IMessage response = cc.incoming().pop_front().message;
+	text.resize(response.header.size);
+	response.read(text.data(), response.header.size);
+	std::cout << "Recived: " << text << std::endl;
+	
 
 	std::cout << std::endl;
 
@@ -41,7 +55,7 @@ int main()
 
 	em.regesterComponent(*Transform::def());
 	em.regesterComponent(*graphics::MeshComponent::def()); //Regester mesh component
-	EntityID quadEntity = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
+	EntityID quadEntity  = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
 	EntityID quadEntity2 = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
 
 	while (!vkr.window()->closed())
@@ -49,7 +63,7 @@ int main()
 		vkr.updateWindow();
 		vkr.updateUniformBuffer(em, 0);
 		vkr.draw(em);
-
+		
 	}
 	return 0;
 }

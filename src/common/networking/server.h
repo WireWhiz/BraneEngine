@@ -10,7 +10,7 @@ namespace net
 	protected:
 		asio::io_context _ctx;
 		std::thread _thread;
-		std::vector<std::shared_ptr<Connection>> _connections;
+		NetQueue<std::shared_ptr<Connection>> _connections;
 		NetQueue<Connection::OwnedIMessage> _imessages;
 		ConnectionType _type;
 		uint16_t _port;
@@ -25,6 +25,7 @@ namespace net
 
 		bool start();
 		void stop();
+		void update(size_t maxMessages = -1);
 
 
 		void asyc_waitForConnection();
