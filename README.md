@@ -3,4 +3,4 @@
 
 The insperation is that scripting is all done through nodes, so they are connected by "strings' thus string theory. 
 
-All code in the src folder © Elijah Knisley
+All code except lib and include files Â© Elijah Knisley
