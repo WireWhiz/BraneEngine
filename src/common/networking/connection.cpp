@@ -162,9 +162,8 @@ namespace net
 		else
 			base = asio::ssl::stream_base::client;
 
-		
 		_socket.async_handshake(base, [this](std::error_code ec) {
-			if (!ec || ec == asio::error::eof)
+			if (!ec)
 			{
 				async_readHeader();
 			}
@@ -260,6 +259,7 @@ namespace net
 	SecureConnection::SecureConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer), _socket(std::move(socket))
 	{
 		_owner = owner;
+		_socket.set_verify_mode(asio::ssl::verify_peer);
 	}
 	bool SecureConnection::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
 	{

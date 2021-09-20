@@ -10,6 +10,8 @@ target_include_directories(BraneSurfer PRIVATE
 target_compile_definitions(BraneSurfer PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneSurfer PRIVATE ecs graphics networking config)
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/keys
+     DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 file(REMOVE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/config.json

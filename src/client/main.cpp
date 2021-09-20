@@ -18,6 +18,8 @@ int main()
 	if (cc.connect(serverAddress, serverSSLPort, net::ConnectionType::secure))
 		std::cout << "Connected to asset server!" << std::endl;
 
+	std::this_thread::sleep_for(std::chrono::milliseconds(200)); //See if we're trying to send data before the handshake is done
+
 	std::string text = "Hello there!";
 	net::OMessage msg;
 	msg.header.type = net::MessageType::one;

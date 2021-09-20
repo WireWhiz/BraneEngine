@@ -79,14 +79,14 @@ namespace net
 	void ServerInterface::asyc_waitForSSLConnection()
 	{
 		ssl_socket* secureSocket = new ssl_socket(_ctx, _ssl_ctx);
-		_sslAcceptor.async_accept(secureSocket->next_layer(), [this, secureSocket](std::error_code ec) {
+		_sslAcceptor.async_accept(secureSocket->lowest_layer(), [this, secureSocket](std::error_code ec) {
 			if (!ec)
 			{
 				std::cout << "New SSL Connection: " << secureSocket->next_layer().remote_endpoint() << std::endl;
 
 				
 
-				std::shared_ptr<Connection> newConnection = std::make_shared<SecureConnection>(Connection::Owner::server, _ctx, std::move(*secureSocket), _imessages);
+				std::shared_ptr<Connection> newConnection = std::make_shared<SecureConnection>(Connection::Owner::server, _ctx, *secureSocket, _imessages);
 				delete secureSocket;
 
 				if (onClientConnect(newConnection))

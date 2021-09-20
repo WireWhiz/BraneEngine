@@ -4,7 +4,12 @@ namespace net
 {
 	ClientConnection::ClientConnection() : _ssl_ctx(asio::ssl::context::tls)
 	{
-
+		_ssl_ctx.set_options(
+			asio::ssl::context::default_workarounds
+			| asio::ssl::context::no_sslv2
+			| asio::ssl::context::single_dh_use
+		);
+		_ssl_ctx.load_verify_file("keys\\rootca.crt");
 	}
 	ClientConnection::~ClientConnection()
 	{
