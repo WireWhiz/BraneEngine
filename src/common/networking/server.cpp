@@ -3,8 +3,10 @@
 
 namespace net
 {
-	ServerInterface::ServerInterface(uint16_t port) 
-		: _tcpAcceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port))
+	ServerInterface::ServerInterface(uint16_t port, uint16_t ssl_port) 
+		: _tcpAcceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), 
+		_sslAcceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), ssl_port)), 
+		_ssl_ctx(asio::ssl::context::tls)
 	{
 		_port = port;
 	}
@@ -17,6 +19,7 @@ namespace net
 		try
 		{
 			asyc_waitForConnection();
+			asyc_waitForSSLConnection();
 
 			_thread = std::thread([this]() {
 				_ctx.run();
@@ -70,6 +73,37 @@ namespace net
 			}
 
 			asyc_waitForConnection();
+		});
+		
+	}
+	void ServerInterface::asyc_waitForSSLConnection()
+	{
+		ssl_socket* secureSocket = new ssl_socket(_ctx, _ssl_ctx);
+		_sslAcceptor.async_accept(secureSocket->next_layer(), [this, secureSocket](std::error_code ec) {
+			if (!ec)
+			{
+				std::cout << "New SSL Connection: " << secureSocket->next_layer().remote_endpoint() << std::endl;
+
+				
+
+				std::shared_ptr<Connection> newConnection = std::make_shared<SecureConnection>(Connection::Owner::server, _ctx, std::move(*secureSocket), _imessages);
+				delete secureSocket;
+
+				if (onClientConnect(newConnection))
+				{
+					_connections.push_back(std::move(newConnection));
+					_connections.back()->connectToClient(_idCounter++);
+					std::cout << "[" << _connections.back()->id() << "] Connection Accepted" << std::endl;
+				}
+				else
+					std::cout << "Connection denied" << std::endl;
+			}
+			else
+			{
+				std::cout << "SSL Connection Error: " << ec.message() << std::endl;
+			}
+
+			asyc_waitForSSLConnection();
 		});
 	}
 	void ServerInterface::messageClient(std::shared_ptr<Connection> client, const OMessage& msg)

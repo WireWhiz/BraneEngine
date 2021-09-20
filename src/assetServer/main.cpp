@@ -12,9 +12,10 @@ int main()
 {
 	Config::loadConfig();
 
-	uint16_t serverPort = Config::json()["network"].get("tcp port", 80).asUInt();
+	uint16_t tcpPort = Config::json()["network"].get("tcp port", 80).asUInt();
+	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
 	
-	net::AssetServerInterface si(serverPort);
+	net::AssetServerInterface si(tcpPort, sslPort);
 	si.start();
 
 	while (true)

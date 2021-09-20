@@ -13,9 +13,9 @@ int main()
 
 	std::string serverAddress = Config::json()["network"]["asset server"].get("address", "127.0.0.1").asString();
 	uint16_t serverPort = Config::json()["network"]["asset server"].get("tcp port", 80).asUInt();
+	uint16_t serverSSLPort = Config::json()["network"]["asset server"].get("ssl port", 81).asUInt();
 	net::ClientConnection cc;
-	cc.connect(serverAddress, serverPort, net::ConnectionType::reliable);
-	if (cc.connected())
+	if (cc.connect(serverAddress, serverSSLPort, net::ConnectionType::secure))
 		std::cout << "Connected to asset server!" << std::endl;
 
 	std::string text = "Hello there!";

@@ -89,12 +89,12 @@ namespace net
 
 	public:
 		ReliableConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
-		bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
-		void connectToClient(ConnectionID id) override;
+		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
+		virtual void connectToClient(ConnectionID id) override;
 		void dissconnect() override;
 		bool isConnected() override;
 
-		virtual void send(const OMessage& msg);
+		void send(const OMessage& msg) override;
 		ConnectionType type() override;
 
 		
@@ -105,12 +105,21 @@ namespace net
 	{
 		
 		ssl_socket _socket;
-	public:
-		SecureConnection(ssl_socket socket);
-		void dissconnect();
-		bool isConnected();
 
-		void send(const OMessage& msg);
+		void async_handshake();
+	protected:
+		void async_readHeader() override;
+		void async_readBody() override;
+		void async_writeHeader() override;
+		void async_writeBody() override;
+	public:
+		SecureConnection(Owner owner, asio::io_context& ctx, ssl_socket & socket, NetQueue<OwnedIMessage>& ibuffer);
+		bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
+		void connectToClient(ConnectionID id) override;
+		void dissconnect() override;
+		bool isConnected() override;
+
+		void send(const OMessage& msg) override;
 		ConnectionType type() override;
 
 	};

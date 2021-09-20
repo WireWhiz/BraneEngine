@@ -2,6 +2,7 @@
 
 {
   "network": {
-    "port" : 80
+    "tcp port": 80,
+    "ssl port": 81
   }
 }

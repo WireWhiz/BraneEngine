@@ -9,6 +9,7 @@ namespace net
 	{
 	protected:
 		asio::io_context _ctx;
+		asio::ssl::context _ssl_ctx;
 		std::thread _thread;
 		NetQueue<std::shared_ptr<Connection>> _connections;
 		NetQueue<Connection::OwnedIMessage> _imessages;
@@ -16,10 +17,11 @@ namespace net
 		uint16_t _port;
 
 		asio::ip::tcp::acceptor _tcpAcceptor;
+		asio::ip::tcp::acceptor _sslAcceptor;
 
 		uint32_t _idCounter = 10000;
 	public:
-		ServerInterface(uint16_t port);
+		ServerInterface(uint16_t port, uint16_t ssl_port);
 
 		~ServerInterface();
 
@@ -29,6 +31,7 @@ namespace net
 
 
 		void asyc_waitForConnection();
+		void asyc_waitForSSLConnection();
 		void messageClient(std::shared_ptr<Connection> client, const OMessage& msg);
 		void messageAll(const OMessage& msg, std::shared_ptr<Connection> ignore = nullptr);
 

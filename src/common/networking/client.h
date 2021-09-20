@@ -8,6 +8,7 @@ namespace net
 	class ClientConnection
 	{
 		asio::io_context _ctx;
+		asio::ssl::context _ssl_ctx;
 		std::thread _thread;
 		std::unique_ptr<Connection> _connection;
 		NetQueue<Connection::OwnedIMessage> _imessages;

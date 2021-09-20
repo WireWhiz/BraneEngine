@@ -2,7 +2,7 @@
 
 namespace net
 {
-	AssetServerInterface::AssetServerInterface(uint16_t port) : ServerInterface(port)
+	AssetServerInterface::AssetServerInterface(uint16_t port, uint16_t ssl_port) : ServerInterface(port, ssl_port)
 	{
 
 	}
