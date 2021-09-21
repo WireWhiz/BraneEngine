@@ -28,7 +28,7 @@ namespace net
 				{
 					asio::ip::tcp::resolver tcpresolver(_ctx);
 					auto tcpEndpoints = tcpresolver.resolve(host, std::to_string(port));
-					_connection = std::make_unique<ReliableConnection>(Connection::Owner::client, _ctx, tcp_socket(_ctx), _imessages);
+					_connection = std::make_unique<TCPConnection>(Connection::Owner::client, _ctx, tcp_socket(_ctx), _imessages);
 					_connection->connectToServer(tcpEndpoints);
 				}
 					break;
@@ -36,7 +36,7 @@ namespace net
 				{
 					asio::ip::tcp::resolver tcpresolver(_ctx);
 					auto tcpEndpoints = tcpresolver.resolve(host, std::to_string(port));
-					_connection = std::make_unique<SecureConnection>(Connection::Owner::client, _ctx, ssl_socket(_ctx, _ssl_ctx), _imessages);
+					_connection = std::make_unique<TCPConnection>(Connection::Owner::client, _ctx, ssl_socket(_ctx, _ssl_ctx), _imessages);
 					_connection->connectToServer(tcpEndpoints);
 				}
 					break;
@@ -58,7 +58,7 @@ namespace net
 	{
 		if (_connection)
 			if (_connection->isConnected())
-				_connection->dissconnect();
+				_connection->disconnect();
 
 		_ctx.stop();
 

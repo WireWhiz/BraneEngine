@@ -67,7 +67,7 @@ namespace net
 		//Each Connection derived class has it's own unique connect call due to the need to pass a socket
 		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) = 0;
 		virtual void connectToClient(ConnectionID id) = 0;
-		virtual void dissconnect() = 0;
+		virtual void disconnect() = 0;
 		virtual bool isConnected() = 0;
 		ConnectionID id();
 
@@ -77,9 +77,15 @@ namespace net
 	};
 
 	typedef asio::ip::tcp::socket tcp_socket;
-	class ReliableConnection : public Connection
+	typedef asio::ssl::stream<tcp_socket> ssl_socket;
+	class TCPConnection : public Connection
 	{
-		tcp_socket _socket;
+		tcp_socket* _tcpSocket;
+		ssl_socket* _sslSocket;
+		bool _secure;
+		bool _handshakeDone;
+		
+		void async_handshake();
 
 	protected:
 		void async_readHeader() override;
@@ -88,10 +94,12 @@ namespace net
 		void async_writeBody() override;
 
 	public:
-		ReliableConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
+		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
+		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
+		~TCPConnection();
 		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
 		virtual void connectToClient(ConnectionID id) override;
-		void dissconnect() override;
+		void disconnect() override;
 		bool isConnected() override;
 
 		void send(const OMessage& msg) override;
@@ -99,14 +107,12 @@ namespace net
 
 		
 	};
-
-	typedef asio::ssl::stream<tcp_socket> ssl_socket;
+	/*
 	class SecureConnection : public Connection
 	{
 		
 		ssl_socket _socket;
 
-		void async_handshake();
 	protected:
 		void async_readHeader() override;
 		void async_readBody() override;
@@ -116,24 +122,24 @@ namespace net
 		SecureConnection(Owner owner, asio::io_context& ctx, ssl_socket & socket, NetQueue<OwnedIMessage>& ibuffer);
 		bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
 		void connectToClient(ConnectionID id) override;
-		void dissconnect() override;
+		void disconnect() override;
 		bool isConnected() override;
 
 		void send(const OMessage& msg) override;
 		ConnectionType type() override;
 
 	};
+	*/
 	
 	typedef asio::ip::udp::socket udp_socket;
 	class FastConnection : public Connection
 	{
 		udp_socket _socket;
 	public:
-		void dissconnect();
+		void disconnect();
 		bool isConnected();
 
 		void send(const OMessage& msg);
 		ConnectionType type() override;
 	};
-	
 }

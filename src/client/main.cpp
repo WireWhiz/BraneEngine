@@ -15,7 +15,7 @@ int main()
 	uint16_t serverPort = Config::json()["network"]["asset server"].get("tcp port", 80).asUInt();
 	uint16_t serverSSLPort = Config::json()["network"]["asset server"].get("ssl port", 81).asUInt();
 	net::ClientConnection cc;
-	if (cc.connect(serverAddress, serverSSLPort, net::ConnectionType::secure))
+	if (cc.connect(serverAddress, serverPort, net::ConnectionType::reliable))
 		std::cout << "Connected to asset server!" << std::endl;
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(200)); //See if we're trying to send data before the handshake is done

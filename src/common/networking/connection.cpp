@@ -14,78 +14,110 @@ namespace net
 	{
 		sharedThis = std::shared_ptr<Connection>(this);
 	}
-	void ReliableConnection::async_readHeader()
+	void TCPConnection::async_handshake()
 	{
-		asio::async_read(_socket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)),
-			[this](std::error_code ec, std::size_t length) 
+		assert(_secure);
+		assert(_sslSocket);
+		asio::ssl::stream_base::handshake_type base;
+		if (_owner == Owner::server)
+			base = asio::ssl::stream_base::server;
+		else
+			base = asio::ssl::stream_base::client;
+
+		_sslSocket->async_handshake(base, [this](std::error_code ec) {
+			if (!ec)
 			{
-				if (!ec)
+				_handshakeDone = true;
+				async_readHeader();
+			}
+			else
+			{
+				std::cout << "SSL handshake failed: " << ec.message() << std::endl;
+			}
+		});
+	}
+	void TCPConnection::async_readHeader()
+	{
+		auto callback = [this](std::error_code ec, std::size_t length) {
+			if (!ec)
+			{
+				if (_tempIn.header.size > 0)
 				{
-					if (_tempIn.header.size > 0)
-					{
-						_tempIn.data.resize(_tempIn.header.size);
-						async_readBody();
-					}
-					else
-					{
-						addToIMessageQueue();
-						async_readHeader();
-					}
-					
+					_tempIn.data.resize(_tempIn.header.size);
+					async_readBody();
 				}
 				else
-				{
-					std::cout << "[" << _id << "] Header Parse Fail: " << ec.message() << std::endl;
-					_socket.close();
-				}
-				
-			});
-	}
-	void ReliableConnection::async_readBody()
-	{
-		asio::async_read(_socket, asio::buffer(_tempIn.data.data(), _tempIn.data.size()),
-			[this](std::error_code ec, std::size_t length) {
-				if (!ec)
 				{
 					addToIMessageQueue();
 					async_readHeader();
 				}
-				else
-				{
-					std::cout << "[" << _id << "] Read message body fail: " << ec.message() << std::endl;
-					_socket.close();
-				}
-			});
-	}
-	void ReliableConnection::async_writeHeader()
-	{
-		asio::async_write(_socket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)),
-			[this](std::error_code ec, std::size_t length) 
-			{
-				if (!ec)
-				{
-					if (_obuffer.front().data.size() > 0)
-						async_writeBody();
-					else
-					{
-						_obuffer.pop_front();
 
-						if (!_obuffer.empty())
-							async_writeHeader();
-					}
-						
-				}
+			}
+			else
+			{
+				std::cout << "[" << _id << "] Header Parse Fail: " << ec.message() << std::endl;
+				disconnect();
+			}
+
+		};
+
+		if(_secure)
+			asio::async_read(*_sslSocket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)), callback);
+		else
+			asio::async_read(*_tcpSocket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)), callback);
+
+	}
+	void TCPConnection::async_readBody()
+	{
+		auto callback = [this](std::error_code ec, std::size_t length) {
+			if (!ec)
+			{
+				addToIMessageQueue();
+				async_readHeader();
+			}
+			else
+			{
+				std::cout << "[" << _id << "] Read message body fail: " << ec.message() << std::endl;
+				disconnect();
+			}
+		};
+		if(_secure)
+			asio::async_read(*_sslSocket, asio::buffer(_tempIn.data.data(), _tempIn.data.size()), callback);
+		else
+			asio::async_read(*_tcpSocket, asio::buffer(_tempIn.data.data(), _tempIn.data.size()), callback);
+
+	}
+	void TCPConnection::async_writeHeader()
+	{
+		auto callback = [this](std::error_code ec, std::size_t length) {
+			if (!ec)
+			{
+				if (_obuffer.front().data.size() > 0)
+					async_writeBody();
 				else
 				{
-					std::cout << "[" << _id << "] Write header fail: " << ec.message() << std::endl;
-					_socket.close();
+					_obuffer.pop_front();
+
+					if (!_obuffer.empty())
+						async_writeHeader();
 				}
-			});
+
+			}
+			else
+			{
+				std::cout << "[" << _id << "] Write header fail: " << ec.message() << std::endl;
+				disconnect();
+			}
+		};
+		if (_secure)
+			asio::async_write(*_sslSocket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), callback);
+		else
+			asio::async_write(*_tcpSocket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), callback);
+
 	}
-	void ReliableConnection::async_writeBody()
+	void TCPConnection::async_writeBody()
 	{
-		asio::async_write(_socket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()),
-						  [this](std::error_code ec, std::size_t length) {
+		auto callback = [this](std::error_code ec, std::size_t length) {
 			if (!ec)
 			{
 				_obuffer.pop_front();
@@ -95,54 +127,100 @@ namespace net
 			else
 			{
 				std::cout << "[" << _id << "] Write body fail: " << ec.message() << std::endl;
-				_socket.close();
+				disconnect();
 			}
-		});
+		};
+		if (_secure)
+			asio::async_write(*_sslSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
+		else
+			asio::async_write(*_tcpSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
+
 	}
-	ReliableConnection::ReliableConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer), _socket(std::move(socket))
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer)
 	{
+		_tcpSocket = new tcp_socket(std::move(socket));
+		_sslSocket = nullptr;
 		_owner = owner;
+		_secure = false;
+		_handshakeDone = true;
 	}
-	bool ReliableConnection::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer)
+	{
+		_sslSocket = new ssl_socket(std::move(socket));
+		_tcpSocket = nullptr;
+		_owner = owner;
+		_secure = true;
+		_handshakeDone = false;
+	}
+	TCPConnection::~TCPConnection()
+	{
+		if (_tcpSocket)
+			delete _tcpSocket;
+		if (_sslSocket)
+			delete _sslSocket;
+	}
+	bool TCPConnection::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
 	{
 		assert(_owner == Owner::client);
-		asio::async_connect(_socket, endpoints,
-			[this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
-				if (!ec)
-				{
-					async_readHeader();
-				}
+		auto callback = [this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+			if (!ec)
+			{
+				if (_secure)
+					async_handshake();
 				else
-				{
-					std::cerr << "Failed to connect to server.";
-					return false;
-				}
-			});
-		
+					async_readHeader();
+			}
+			else
+			{
+				std::cerr << "Failed to connect to server.";
+				return false;
+			}
+		};
+		if(_secure)
+			asio::async_connect(_sslSocket->lowest_layer(), endpoints, callback);
+		else 
+			asio::async_connect(*_tcpSocket, endpoints, callback);
 		
 		return true;
 	}
-	void ReliableConnection::connectToClient(ConnectionID id)
+	void TCPConnection::connectToClient(ConnectionID id)
 	{
 		assert(_owner == Owner::server);
-		if (_socket.is_open())
+		if (isConnected())
 		{
 			_id = id;
-			async_readHeader();
+			if (_secure)
+				async_handshake();
+			else
+				async_readHeader();
 		}
 		
 	}
-	void ReliableConnection::dissconnect()
+	void TCPConnection::disconnect()
 	{
-		_socket.close();
+		if (_secure)
+			return _sslSocket->lowest_layer().close();
+		else
+			return _tcpSocket->close();
 	}
-	bool ReliableConnection::isConnected()
+	bool TCPConnection::isConnected()
 	{
-		return _socket.is_open();
+		if (_secure)
+			return _sslSocket->lowest_layer().is_open();
+		else
+			return _tcpSocket->is_open();
 	}
-	void ReliableConnection::send(const OMessage& msg)
+	void TCPConnection::send(const OMessage& msg)
 	{
-
+		//We can't send messages until handshake is complete, so just requeue this function until it is.
+		if (!_handshakeDone)
+		{
+			if(isConnected()) // If the handshake failed we will disconnect, therefore we shouldn't requeue;
+				asio::post(_ctx, [this, msg]() {
+					send(msg);
+				});
+			return;
+		};
 		asio::post(_ctx, [this, msg]() {
 			bool sending = !_obuffer.empty();
 			_obuffer.push_back(msg);
@@ -150,29 +228,14 @@ namespace net
 				async_writeHeader();
 		});
 	}
-	ConnectionType ReliableConnection::type()
+	ConnectionType TCPConnection::type()
 	{
-		return ConnectionType::reliable;
-	}
-	void SecureConnection::async_handshake()
-	{
-		asio::ssl::stream_base::handshake_type base;
-		if (_owner == Owner::server)
-			base = asio::ssl::stream_base::server;
+		if(_secure)
+			return ConnectionType::secure;
 		else
-			base = asio::ssl::stream_base::client;
-
-		_socket.async_handshake(base, [this](std::error_code ec) {
-			if (!ec)
-			{
-				async_readHeader();
-			}
-			else
-			{
-				std::cout << "SSL handshake failed: " << ec.message() << std::endl;
-			}
-		});
+			return ConnectionType::reliable;
 	}
+	/*
 	void SecureConnection::async_readHeader()
 	{
 		asio::async_read(_socket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)),
@@ -289,7 +352,7 @@ namespace net
 			async_handshake();
 		}
 	}
-	void SecureConnection::dissconnect()
+	void SecureConnection::disconnect()
 	{
 		_socket.next_layer().close();
 	}
@@ -311,6 +374,7 @@ namespace net
 	{
 		return ConnectionType::secure;
 	}
+	*/
 	ConnectionType FastConnection::type()
 	{
 		return ConnectionType::fast;

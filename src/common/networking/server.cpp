@@ -56,7 +56,7 @@ namespace net
 			{
 				std::cout << "New Connection: " << socket.remote_endpoint() << std::endl;
 
-				std::shared_ptr<Connection> newConnection = std::make_shared<ReliableConnection>(Connection::Owner::server, _ctx, std::move(socket), _imessages);
+				std::shared_ptr<Connection> newConnection = std::make_shared<TCPConnection>(Connection::Owner::server, _ctx, std::move(socket), _imessages);
 				
 				if (onClientConnect(newConnection))
 				{
@@ -86,7 +86,7 @@ namespace net
 
 				
 
-				std::shared_ptr<Connection> newConnection = std::make_shared<SecureConnection>(Connection::Owner::server, _ctx, *secureSocket, _imessages);
+				std::shared_ptr<Connection> newConnection = std::make_shared<TCPConnection>(Connection::Owner::server, _ctx, *secureSocket, _imessages);
 				delete secureSocket;
 
 				if (onClientConnect(newConnection))
