@@ -11,7 +11,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Library Complie Definitions
 set(COMMON_DEFS GLM_FORCE_RADIANS
                 GLM_FORCE_DEPTH_ZERO_TO_ONE
-                ASIO_STANDALONE)
+                ASIO_STANDALONE
+                STATIC_CONCPP)
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message("debug mode")
@@ -36,6 +37,7 @@ set(LIBS "")
 
 # Run subdir cmakelists
 add_subdirectory(include)
+add_subdirectory(bin)
 add_subdirectory(lib)
 add_subdirectory(src)
 

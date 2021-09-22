@@ -5,6 +5,7 @@
 
 #Large files
 SPIRV-Tools-optd.lib
+mysqlcppconn8-static.lib
 
 # Bison debugging files
 *.output
@@ -31,7 +32,6 @@ x64/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
 [Oo]bj/
 [Bb]uild/
 [Oo]ut/
