@@ -4,5 +4,11 @@
   "network": {
     "tcp port": 80,
     "ssl port": 81
+  },
+  "database" : {
+    "ip": "localhost",
+    "port": 33060,
+    "user": "assetServer",
+    "password": "assetServerPass"
   }
 }
