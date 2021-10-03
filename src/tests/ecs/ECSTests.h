@@ -218,7 +218,7 @@ namespace tests
 		{
 			return {3, 4};
 		};
-		void run(const std::vector<byte*> data, VirtualSystemGlobals* constants) const override
+		void run(const std::vector<byte*>& data, VirtualSystemGlobals* constants) const override
 		{
 			TestNativeComponent* c1 = TestNativeComponent::fromVirtual(data[0]);
 			c1->var1 = true;

@@ -1,4 +1,5 @@
-#include "VirtualSystemManager.h"
+#include "virtualSystemBlock.h"
+#include "entity.h"
 
 SystemBlock::SystemBlock(const std::string& identifier, const std::string& after, const std::string& before)
 {
@@ -17,7 +18,7 @@ SystemBlock* SystemBlock::next() const
 	return _next;
 }
 
-void SystemBlock::runSystems(EntityManager& entities, VirtualSystemGlobals* constants) const
+void SystemBlock::runSystems(const EntityManager& entities, VirtualSystemGlobals* constants) const
 {
 	for (size_t i = 0; i < _systems.size(); i++)
 	{
@@ -188,28 +189,4 @@ void SystemBlockList::SystemBlockNode::sort(SystemBlock*& last, SystemBlock*& fi
 void SystemBlockList::SystemBlockNode::addAfter(SystemBlockNode* node)
 {
 	_after.push_back(node);
-}
-
-void SystemManager::addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before)
-{
-	_systems.addBlock(identifier, after, before);
-}
-
-void SystemManager::removeSystemBlock(const std::string& identifier)
-{
-	_systems.removeBlock(identifier);
-}
-
-SystemBlock* SystemManager::getSystemBlock(const std::string& identifier)
-{
-	return _systems.find(identifier);
-}
-
-void SystemManager::runSystems(EntityManager& entities, VirtualSystemGlobals* constants) const
-{
-	SystemBlock* currentSystem = _systems[0];
-	for (size_t i = 0; i < _systems.size(); i++)
-	{
-		_systems[i]->runSystems(entities, constants);
-	}
 }

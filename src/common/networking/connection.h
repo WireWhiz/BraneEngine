@@ -107,29 +107,6 @@ namespace net
 
 		
 	};
-	/*
-	class SecureConnection : public Connection
-	{
-		
-		ssl_socket _socket;
-
-	protected:
-		void async_readHeader() override;
-		void async_readBody() override;
-		void async_writeHeader() override;
-		void async_writeBody() override;
-	public:
-		SecureConnection(Owner owner, asio::io_context& ctx, ssl_socket & socket, NetQueue<OwnedIMessage>& ibuffer);
-		bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
-		void connectToClient(ConnectionID id) override;
-		void disconnect() override;
-		bool isConnected() override;
-
-		void send(const OMessage& msg) override;
-		ConnectionType type() override;
-
-	};
-	*/
 	
 	typedef asio::ip::udp::socket udp_socket;
 	class FastConnection : public Connection

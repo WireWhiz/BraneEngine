@@ -11,6 +11,7 @@ include_directories(
 add_subdirectory(common)
 
 # create executables
+add_subdirectory(tests)
 add_subdirectory(client)
 add_subdirectory(runtimeServer)
 add_subdirectory(assetServer)

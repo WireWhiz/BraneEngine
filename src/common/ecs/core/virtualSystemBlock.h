@@ -1,7 +1,11 @@
 #pragma once
 #include "VirtualSystem.h"
-#include "Entity.h"
+//#include "entity.h"
 #include <unordered_map>
+#include <memory>
+#include <stdexcept>
+
+class EntityManager;
 
 class SystemBlock
 {
@@ -14,7 +18,7 @@ public:
 	SystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void setNext(SystemBlock* next);
 	SystemBlock* next() const;
-	void runSystems(EntityManager& entities, VirtualSystemGlobals* constants) const;
+	void runSystems(const EntityManager& entities, VirtualSystemGlobals* constants) const;
 	void addSystem(VirtualSystem* system);
 	void removeSystem(SystemID id);
 	VirtualSystem* getSystem(SystemID id) const;
@@ -60,15 +64,4 @@ public:
 		insertion_error(const std::string& message) : runtime_error(message) {}
 	};
 
-};
-
-class SystemManager
-{
-	SystemBlockList _systems;
-
-public:
-	void addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
-	void removeSystemBlock(const std::string& identifier);
-	SystemBlock* getSystemBlock(const std::string& identifier);
-	void runSystems(EntityManager& entities, VirtualSystemGlobals* constants) const;
 };

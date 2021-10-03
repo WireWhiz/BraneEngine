@@ -1,7 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Archetype.h"
-#include "VirtualSystem.h"
+#include "VirtualSystemBlock.h"
 
 #include <stdexcept>
 #include <cstdint>
@@ -12,9 +12,6 @@
 #include <memory>
 #include <functional>
 #include <unordered_set>
-
-
-
 
 typedef uint64_t EntityID;
 typedef uint64_t EnityForEachID;
@@ -32,7 +29,6 @@ class EntityManager
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
 	std::unordered_map<ComponentID, std::vector<VirtualArchetype*>> _rootArchetypes;
-
 
 	struct ForEachData
 	{
@@ -55,19 +51,28 @@ class EntityManager
 	void updateForEachRoots(VirtualArchetype* oldArchetype, VirtualArchetype* newArchetype);
 	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed, bool searching);
 	std::vector<VirtualArchetype*>& getForEachArchetypes(EnityForEachID id);
+	SystemBlockList _systems;
 public:
+	EntityManager() = default;
+	EntityManager(const EntityManager&) = delete;
 	void regesterComponent(const ComponentDefinition& newComponent);
 	void deregesterComponent(ComponentID component);
 	VirtualArchetype* getArcheytpe(const std::vector<ComponentID>& components);
 	EntityID createEntity(); 
 	EntityID createEntity(const std::vector<ComponentID>& components);
 	void destroyEntity(EntityID entity);
-	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
-	size_t forEachCount(EnityForEachID id);
-	EnityForEachID getForEachID(const std::vector<ComponentID>& components);
 	VirtualArchetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity);  
 	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID component) const;
 	void addComponent(EntityID entity, ComponentID component);
 	void removeComponent(EntityID entity, ComponentID component);
+
+	//system stuff
+	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
+	size_t forEachCount(EnityForEachID id);
+	EnityForEachID getForEachID(const std::vector<ComponentID>& components);
+	void addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
+	void removeSystemBlock(const std::string& identifier);
+	SystemBlock* getSystemBlock(const std::string& identifier);
+	void runSystems(VirtualSystemGlobals* constants) const;
 };

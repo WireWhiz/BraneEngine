@@ -1,6 +1,6 @@
 {
   "network": {
-    "asset server": {
+    "runtime server": {
       "tcp port": 80,
       "ssl port": 81
     }

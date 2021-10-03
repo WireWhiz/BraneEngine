@@ -426,3 +426,27 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	currentArchetype->swapRemove(oldIndex);
 	_entities[entity].archetype = destArchetype;
 }
+
+void EntityManager::addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before)
+{
+	_systems.addBlock(identifier, after, before);
+}
+
+void EntityManager::removeSystemBlock(const std::string& identifier)
+{
+	_systems.removeBlock(identifier);
+}
+
+SystemBlock* EntityManager::getSystemBlock(const std::string& identifier)
+{
+	return _systems.find(identifier);
+}
+
+void EntityManager::runSystems(VirtualSystemGlobals* constants) const
+{
+	SystemBlock* currentSystem = _systems[0];
+	for (size_t i = 0; i < _systems.size(); i++)
+	{
+		_systems[i]->runSystems(*this, constants);
+	}
+}
