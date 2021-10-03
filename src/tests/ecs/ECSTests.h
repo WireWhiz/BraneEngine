@@ -8,7 +8,6 @@ namespace tests
 	void testVirtualStruct()
 	{
 		TestRunner::setTestCatagory("Virtual Component");
-		
 		//Initalize a struct with one of every type of value and set them to test values, then read them back and make sure that they are correct
 		ComponentDefinition vcd(3, 0);
 		vcd.setIndexType(0, virtualBool);
@@ -19,6 +18,7 @@ namespace tests
 		vc.setVar(0, true);
 		vc.setVar(1, 69);
 		vc.setVar<float>(2, 420);
+		testAssert(*vc.getVar<bool>(0));
 		expectValue(true, *vc.getVar<bool> (0));
 		expectValue(69,   *vc.getVar<int>  (1));
 		expectValue(420,  *vc.getVar<float>(2));
