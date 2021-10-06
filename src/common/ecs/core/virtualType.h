@@ -1,9 +1,7 @@
 #pragma once
 #include <cstdlib>
-#include <cstdint>
 #include <glm/glm.hpp>
-
-typedef uint8_t byte;
+#include <byte.h>
 
 enum VirtualType
 {
