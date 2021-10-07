@@ -2,11 +2,10 @@
 #include <cstdint>
 #include <vector>
 #include <sstream>
-
+#include <byte.h>
 
 namespace net
 {
-	typedef uint8_t byte;
 	enum class MessageType
 	{
 		assetRequest, 
