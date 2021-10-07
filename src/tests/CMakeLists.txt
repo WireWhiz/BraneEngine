@@ -9,13 +9,14 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-
-add_executable(test main.cpp)
-message("tests enabled!")
 enable_testing()
+add_executable(test 
+ "ecs/ecs_test.cpp"
+ "ecs/jit_test.cpp"
+ 
+ )
 
-set(TestDir ${CMAKE_CURRENT_BINARY_DIR}/test.exe)
-add_subdirectory(ecs)
+include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(test gtest_main ecs)
 

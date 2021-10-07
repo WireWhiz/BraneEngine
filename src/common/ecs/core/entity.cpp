@@ -447,6 +447,6 @@ void EntityManager::runSystems(VirtualSystemGlobals* constants) const
 	SystemBlock* currentSystem = _systems[0];
 	for (size_t i = 0; i < _systems.size(); i++)
 	{
-		_systems[i]->runSystems(*this, constants);
+		_systems[i]->runSystems(*this, constants);//TODO use itterator instead of index, because index operator is O(N)!!!!
 	}
 }

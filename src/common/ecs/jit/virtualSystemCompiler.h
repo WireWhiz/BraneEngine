@@ -4,7 +4,7 @@
 class VirtualSystemCompiler
 {
 public:
-	void testFunction();
+	int testFunction();
 	static int testCalledFunction(int a, int b)
 	{
 		return a + b;
