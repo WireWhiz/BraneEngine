@@ -3,7 +3,7 @@
 using namespace asmjit;
 
 typedef int (*Func)(void);
-void VirtualSystemCompiler::testFunction()
+int VirtualSystemCompiler::testFunction()
 {
 	JitRuntime rt;
 	CodeHolder code; 
@@ -36,12 +36,11 @@ void VirtualSystemCompiler::testFunction()
 
 	Func fn;
 	Error err = rt.add(&fn, &code);   // Add the generated code to the runtime.
-	if (err) return;                // Handle a possible error returned by AsmJit.
+	if (err) return -1;                // Handle a possible error returned by AsmJit.
 	// ----> CodeHolder is no longer needed from here and can be destroyed <----
 
 
-	int result = fn();                // Execute the generated code.
-	printf("%d\n", result);           // Print the resulting "1".
+	return fn();                // Execute the generated code.
 
 	rt.release(fn);
 }
