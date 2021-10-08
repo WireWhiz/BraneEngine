@@ -13,6 +13,10 @@ VirtualComponent::VirtualComponent(ComponentDefinition* definition)
 {
 	_def = definition;
 	_data = new byte[_def->size()];
+	for(auto& type : _def->types())
+	{
+		type->construct(&_data[type->offset()]);
+	}
 }
 
 VirtualComponent::VirtualComponent(ComponentDefinition* definition, byte* data)
@@ -24,6 +28,10 @@ VirtualComponent::VirtualComponent(ComponentDefinition* definition, byte* data)
 
 VirtualComponent::~VirtualComponent()
 {
+	for (auto& type : _def->types())
+	{
+		type->deconstruct(&_data[type->offset()]);
+	}
 	delete[] _data;
 }
 
@@ -37,13 +45,6 @@ byte* VirtualComponent::data() const
 	return _data;
 }
 
-
-
-ComponentDefinition::ComponentDefinition()
-{
-	assert(false);
-}
-
 ComponentID ComponentDefinition::id() const
 {
 	return _id;
@@ -51,86 +52,63 @@ ComponentID ComponentDefinition::id() const
 
 ComponentDefinition::ComponentDefinition(const ComponentDefinition& source)
 {
-	_numTypes = source._numTypes;
 	_size = source._size;
-	_initalized = source._initalized;
-	_types = new VirtualType[_numTypes];
-	std::copy(source._types, source._types + _numTypes, _types);
-	_byteIndices = new size_t[_numTypes];
-	std::copy(source._byteIndices, source._byteIndices + _numTypes, _byteIndices);
+	_types.resize(source._types.size());
+	for (size_t i = 0; i < source._types.size(); i++)
+	{
+		_types[i] = source._types[i];
+	}
+	_types = source._types;
 	_id = source._id;
 }
 
-ComponentDefinition::ComponentDefinition(size_t numTypes, ComponentID id)
+ComponentDefinition::ComponentDefinition(std::vector<std::shared_ptr<VirtualType>>& types, ComponentID id)
 {
-	_numTypes = numTypes;
 	_size = 0;
 	_id = id;
-	_initalized = false;
-	if (_numTypes != 0)
+	if (types.size() != 0)
 	{
-		_byteIndices = new size_t[numTypes];
-		_types = new VirtualType[numTypes];
+
+		_types.resize(types.size());
+		for (size_t i = 0; i < types.size(); i++)
+		{
+			_types[i] = types[i];
+		}
+		for (size_t i = 0; i < _types.size(); i++)
+		{
+			if (_types[i]->offset() != 0)
+				break; // This means that they have already been set
+			_types[i]->setOffset(_size);
+			_size += _types[i]->size();
+		}
 	}
-	for (size_t i = 0; i < numTypes; i++)
-	{
-		_types[i] = virtualNone;
-	}
+
+	
 }
 
 ComponentDefinition::~ComponentDefinition()
 {
-	if (_numTypes != 0)
-	{
-		delete[] _types;
-		delete[] _byteIndices;
-
-	}
 }
 
-void ComponentDefinition::setIndexType(size_t index, VirtualType type)
+void ComponentDefinition::setSize(size_t size)
 {
-	assert(0 <= index && index < _numTypes);
-	assert(type != virtualNone); // Can't set type to none
-	_types[index] = type;
-	
-}
-
-void ComponentDefinition::initalize()
-{
-	_initalized = true;
-	for (size_t i = 0; i < _numTypes; i++)
-	{
-		assert(_types[i] != virtualNone); // Make sure all _types are initallized
-		_byteIndices[i] = _size;
-		_size += sizeofVirtual(_types[i]);
-	}
-}
-
-void ComponentDefinition::initalize(const std::vector<NativeVarDef> vars, size_t size)
-{
-	assert(vars.size() == _numTypes);
-	_initalized = true;
 	_size = size;
-	for (size_t i = 0; i < _numTypes; i++)
-	{
-		assert(vars[i].type != virtualNone); // Make sure all _types are initallized
-		_types[i] = vars[i].type;
-		_byteIndices[i] = vars[i].index;
-	}
 }
 
 size_t ComponentDefinition::size() const
 {
-	assert(_initalized);
 	return _size;
 }
 
 size_t ComponentDefinition::getByteIndex(size_t index) const
 {
-	assert(_initalized);
-	assert(index >= 0 && index < _numTypes);
-	return _byteIndices[index];
+	assert(index >= 0 && index < _types.size());
+	return _types[index]->offset();
+}
+
+const std::vector<std::shared_ptr<VirtualType>>& ComponentDefinition::types()
+{
+	return _types;
 }
 
 VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition)
@@ -149,9 +127,9 @@ VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition, 
 	reserve(initalSize * _def->size());
 }
 
-size_t VirtualComponentVector::byteIndex(size_t structIndex) const
+size_t VirtualComponentVector::structIndex(size_t index) const
 {
-	return structIndex * _def->size();
+	return index * _def->size();
 }
 
 ComponentDefinition* VirtualComponentVector::def() const
@@ -171,7 +149,7 @@ byte* VirtualComponentVector::getComponentData(size_t index) const
 	if (_def->size() == 0)
 		return nullptr;
 	assert(index >= 0 && index * _def->size() < _data.size());
-	return (byte*)&_data[ byteIndex(index)];
+	return (byte*)&_data[ structIndex(index)];
 }
 
 VirtualComponentPtr VirtualComponentVector::getComponent(size_t index) const
@@ -182,13 +160,18 @@ VirtualComponentPtr VirtualComponentVector::getComponent(size_t index) const
 void VirtualComponentVector::swapRemove(size_t index)
 {
 	assert(index >= 0 && index < _data.size() / _def->size());
-	std::memcpy(&_data[byteIndex(index)], &_data[_data.size() -_def->size()], _def->size());
+	for (auto& type : _def->types())
+	{
+		type->deconstruct(&_data[structIndex(index) + type->offset()]);
+	}
+	std::memcpy(&_data[structIndex(index)], &_data[_data.size() -_def->size()], _def->size());
 	_data.resize(_data.size() - _def->size());
+	
 }
 
 void VirtualComponentVector::copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex)
 {
-	std::memcpy(&_data[byteIndex(destIndex)], &source->_data[sourceIndex], _def->size());
+	std::memcpy(&_data[structIndex(destIndex)], &source->_data[sourceIndex], _def->size());
 }
 
 void VirtualComponentVector::pushBack(VirtualComponent& virtualStruct)
@@ -213,7 +196,12 @@ void VirtualComponentVector::pushBack(VirtualComponentPtr& virtualComponentPtr)
 
 void VirtualComponentVector::pushEmpty()
 {
-	_data.resize(_def->size() + _data.size());
+	size_t index = _data.size();
+	_data.resize(_def->size() + index);
+	for (auto& type : _def->types())
+	{
+		type->construct(&_data[index + type->offset()]);
+	}
 }
 
 void VirtualComponentVector::reserve(size_t size)

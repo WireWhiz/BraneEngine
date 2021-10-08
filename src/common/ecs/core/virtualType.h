@@ -3,41 +3,6 @@
 #include <glm/glm.hpp>
 #include <byte.h>
 
-enum VirtualType
-{
-	virtualNone = 0,
-	virtualAddress,
-	virtualBool,
-	virtualInt,
-	virtualFloat,
-	virtualFloat2,
-	virtualFloat3,
-	virtualFloat4,
-	virtualFloat4x4
-};
-
-constexpr size_t sizeofVirtual(VirtualType vt)
-{
-	size_t sizes[] = {
-		0,
-		sizeof(uint64_t),
-		sizeof(bool),
-		sizeof(int),
-		sizeof(float),
-		sizeof(glm::vec2),
-		sizeof(glm::vec3),
-		sizeof(glm::vec4),
-		sizeof(glm::mat4x4)
-	};
-	return sizes[(byte)vt];
-};
-
-template <class T>
-constexpr inline
-T* getVirtual(byte* var)
-{
-	return (T*)var;
-}
 
 template <class T>
 constexpr inline
@@ -62,7 +27,61 @@ T readVirtual(const byte* var)
 
 template <class T>
 constexpr inline
-void setVirtual(byte* var, T value)
+void setVirtual(const byte* var, T value)
 {
 	*(T*)var = value;
 }
+
+class VirtualComponentPtr;
+
+class VirtualType
+{
+protected:
+	size_t _offset;
+public:
+	VirtualType(size_t offset);
+	void setOffset(size_t offset);
+	size_t offset();
+	virtual const size_t size() const = 0;
+	virtual void construct(byte*) = 0;
+	void construct(VirtualComponentPtr& vcp);
+	virtual void deconstruct(byte*) = 0;
+	void deconstruct(VirtualComponentPtr& vcp);
+};
+
+template<typename T>
+class VirtualVariable : public VirtualType
+{
+public:
+	VirtualVariable() : VirtualType(0)
+	{
+	};
+	VirtualVariable(size_t offset) : VirtualType(offset)
+	{
+	};
+	void construct(byte* var) override
+	{
+		new(var) T();
+	}
+	template<class... Params>
+	void construct(byte* var, Params... params)
+	{
+		new(var) T(params...);
+	}
+	void deconstruct(byte* var) override
+	{
+		((T*)var)->~T();
+	}
+	T* get(const byte* var)
+	{
+		return (T*)var;
+	}
+	const size_t size() const override
+	{
+		return sizeof(T);
+	}
+};
+
+typedef VirtualVariable<bool> VirtualBool;
+typedef VirtualVariable<int64_t> VirtualInt;
+typedef VirtualVariable<float> VirtualFloat;

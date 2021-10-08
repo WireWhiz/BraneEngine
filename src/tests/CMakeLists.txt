@@ -13,7 +13,7 @@ enable_testing()
 add_executable(test 
  "ecs/ecs_test.cpp"
  "ecs/jit_test.cpp"
- 
+ "ecs/virtualType_test.cpp"
  )
 
 include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -10,12 +10,14 @@ SystemID VirtualSystem::id() const
 	return _id;
 }
 
-FunctionPointerSystem::FunctionPointerSystem(SystemID id, SystemFunction function) : VirtualSystem(id)
+FunctionPointerSystem::FunctionPointerSystem(SystemID id, SystemFunction function, void* data) : VirtualSystem(id)
 {
+	_id = id;
 	_function = function;
+	_data = data;
 }
 
-void FunctionPointerSystem::run(const std::vector<byte*>& data, VirtualSystemGlobals* constants) const
+void FunctionPointerSystem::run(const EntityManager* em)
 {
-	_function((byte**)data.data(), constants);
+	_function(em, _data);
 }

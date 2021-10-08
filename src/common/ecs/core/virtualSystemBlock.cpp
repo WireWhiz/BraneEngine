@@ -18,11 +18,11 @@ SystemBlock* SystemBlock::next() const
 	return _next;
 }
 
-void SystemBlock::runSystems(const EntityManager& entities, VirtualSystemGlobals* constants) const
+void SystemBlock::runSystems(const EntityManager* entities) const
 {
 	for (size_t i = 0; i < _systems.size(); i++)
 	{
-		assert(false);//Ya need to put code here
+		_systems[i]->run(entities);
 	}
 }
 
@@ -67,7 +67,7 @@ bool SystemBlockList::sort()
 	try
 	{
 		for (auto& node : _nodes)
-			node.second->sort(last, first);
+			node.second->sort(last, _first);
 	}
 	catch (const insertion_error& error)
 	{
@@ -91,7 +91,7 @@ SystemBlock* SystemBlockList::operator[](size_t index) const
 	if (index >= _nodes.size() || index < 0)
 		throw new std::out_of_range("System Block List index was out of range");
 
-	SystemBlock* currentBlock = first;
+	SystemBlock* currentBlock = _first;
 	for (size_t i = 0; i < index; i++)
 		currentBlock = currentBlock->next();
 
@@ -161,7 +161,17 @@ size_t SystemBlockList::size() const
 	return _nodes.size();
 }
 
-void SystemBlockList::SystemBlockNode::sort(SystemBlock*& last, SystemBlock*& first)
+void SystemBlockList::runSystems(const EntityManager* em)
+{
+	SystemBlock* current = _first;
+	while (current)
+	{
+		current->runSystems(em);
+		current = current->next();
+	}
+}
+
+void SystemBlockList::SystemBlockNode::sort(SystemBlock*& last, SystemBlock*& _first)
 {
 	if (sorted)
 		return;
@@ -171,14 +181,14 @@ void SystemBlockList::SystemBlockNode::sort(SystemBlock*& last, SystemBlock*& fi
 	visited = true;
 	for (size_t i = 0; i < _after.size(); i++)
 	{
-		_after[i]->sort(last, first);
+		_after[i]->sort(last, _first);
 	}
 	visited = false;
 	
 	if (last != nullptr)
 		last->setNext(block.get());
 	else
-		first = block.get();
+		_first = block.get();
 		
 	last = block.get();
 

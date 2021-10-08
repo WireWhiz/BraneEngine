@@ -18,7 +18,7 @@ public:
 	SystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void setNext(SystemBlock* next);
 	SystemBlock* next() const;
-	void runSystems(const EntityManager& entities, VirtualSystemGlobals* constants) const;
+	void runSystems(const EntityManager* entities) const;
 	void addSystem(VirtualSystem* system);
 	void removeSystem(SystemID id);
 	VirtualSystem* getSystem(SystemID id) const;
@@ -26,7 +26,7 @@ public:
 
 class SystemBlockList
 {
-	SystemBlock* first;
+	SystemBlock* _first;
 
 	class SystemBlockNode
 	{
@@ -41,7 +41,7 @@ class SystemBlockList
 		}
 		bool sorted;
 		bool visited;
-		void sort(SystemBlock*& last, SystemBlock*& first);
+		void sort(SystemBlock*& last, SystemBlock*& _first);
 		void addAfter(SystemBlockNode* node);
 
 	};
@@ -56,6 +56,7 @@ public:
 	bool addBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void removeBlock(const std::string& identifier);
 	size_t size() const;
+	void runSystems(const EntityManager* em);
 
 	class insertion_error : public std::runtime_error
 	{

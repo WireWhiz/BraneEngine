@@ -74,5 +74,5 @@ public:
 	void addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void removeSystemBlock(const std::string& identifier);
 	SystemBlock* getSystemBlock(const std::string& identifier);
-	void runSystems(VirtualSystemGlobals* constants) const;
+	void runSystems();
 };

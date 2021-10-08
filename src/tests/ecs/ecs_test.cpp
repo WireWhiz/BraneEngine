@@ -5,11 +5,13 @@
 TEST(ECS, VirtualComponentTest)
 {
 	//Create a definiton for our virtual struct/component
-	ComponentDefinition vcd(3, 0);
-	vcd.setIndexType(0, virtualBool);
-	vcd.setIndexType(1, virtualInt);
-	vcd.setIndexType(2, virtualFloat);
-	vcd.initalize();
+
+	std::vector<std::shared_ptr<VirtualType>> components;
+	components.push_back(std::make_unique<VirtualBool>());
+	components.push_back(std::make_unique<VirtualInt>());
+	components.push_back(std::make_unique<VirtualFloat>());
+
+	ComponentDefinition vcd(components, 0);
 
 	//Create a component using that definition
 	VirtualComponent vc(&vcd);
@@ -23,18 +25,31 @@ TEST(ECS, VirtualComponentTest)
 	EXPECT_EQ(true, vc.readVar<bool>(0));
 	EXPECT_EQ(69, vc.readVar<int>(1));
 	EXPECT_EQ(420, vc.readVar<float>(2));
-	EXPECT_STRNE("hello", "world");
-	EXPECT_EQ(7 * 6, 42);
+}
+
+TEST(ECS, VirtualComponentComplexTypesTest)
+{
+	//Create a definiton for our virtual struct/component
+
+	std::vector<std::shared_ptr<VirtualType>> components;
+	components.push_back(std::make_unique<VirtualVariable<std::string>>());
+
+	ComponentDefinition vcd(components, 0);
+
+	//Create a component using that definition
+	VirtualComponent vc(&vcd);
+	vc.setVar<std::string>(0, "Hello there! General Kenobi!");
+	EXPECT_EQ("Hello there! General Kenobi!", *vc.getVar<std::string>(0));
 }
 
 TEST(ECS, VirtualComponentVectorTest)
 {
+	std::vector<std::shared_ptr<VirtualType>> components;
+	components.push_back(std::make_unique<VirtualBool>());
+	components.push_back(std::make_unique<VirtualInt>());
+	components.push_back(std::make_unique<VirtualFloat>());
 	// Create a definiton for our virtual struct/component
-	ComponentDefinition vcd(3, 0);
-	vcd.setIndexType(0, virtualBool);
-	vcd.setIndexType(1, virtualInt);
-	vcd.setIndexType(2, virtualFloat);
-	vcd.initalize();
+	ComponentDefinition vcd(components, 0);
 
 	// Create a test component
 	VirtualComponent vc(&vcd);
@@ -82,13 +97,13 @@ class TestNativeComponent : public NativeComponent<TestNativeComponent, 3>
 {
 public:
 	bool var1;
-	int var2;
+	int64_t var2;
 	float var3;
-	void getVariableIndicies(std::vector<NativeVarDef>& variables) override
+	void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) override
 	{
-		variables.emplace_back(offsetof(TestNativeComponent, var1), virtualBool);
-		variables.emplace_back(offsetof(TestNativeComponent, var2), virtualInt);
-		variables.emplace_back(offsetof(TestNativeComponent, var3), virtualFloat);
+		types.emplace_back(std::make_unique<VirtualBool>(offsetof(TestNativeComponent, var1)));
+		types.emplace_back(std::make_unique<VirtualInt>(offsetof(TestNativeComponent, var2)));
+		types.emplace_back(std::make_unique<VirtualFloat>(offsetof(TestNativeComponent, var3)));
 	}
 
 };
@@ -155,18 +170,19 @@ TEST(ECS, NativeComponentVectorTest)
 
 TEST(ECS, EntityManagerTest)
 {
-	ComponentDefinition vcd1(1, 1);
-	vcd1.setIndexType(0, virtualBool);
-	vcd1.initalize();
+	std::vector<std::shared_ptr<VirtualType>> comps1;
+	comps1.push_back(std::make_unique<VirtualBool>());
+	ComponentDefinition vcd1(comps1, 1);
 
-	ComponentDefinition vcd2(1, 2);
-	vcd2.setIndexType(0, virtualFloat);
-	vcd2.initalize();
+	std::vector<std::shared_ptr<VirtualType>> comps2;
+	comps2.push_back(std::make_unique<VirtualFloat>());
+	ComponentDefinition vcd2(comps2, 2);
 
-	ComponentDefinition vcd3(2, 3);
-	vcd3.setIndexType(0, virtualBool);
-	vcd3.setIndexType(1, virtualFloat);
-	vcd3.initalize();
+
+	std::vector<std::shared_ptr<VirtualType>> comps3;
+	comps3.push_back(std::make_unique<VirtualBool>());
+	comps3.push_back(std::make_unique<VirtualFloat>());
+	ComponentDefinition vcd3(comps3, 3);
 
 
 	EntityManager em;
@@ -222,9 +238,9 @@ class TestNativeComponent2 : public NativeComponent<TestNativeComponent2, 4>
 {
 public:
 	bool var1;
-	void getVariableIndicies(std::vector<NativeVarDef>& variables) override
+	void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) override
 	{
-		variables.emplace_back(offsetof(TestNativeComponent2, var1), virtualBool);
+		types.emplace_back(std::make_unique<VirtualBool>(offsetof(TestNativeComponent2, var1)));
 	}
 
 };
