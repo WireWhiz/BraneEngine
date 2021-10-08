@@ -15,10 +15,9 @@ add_executable(test
  "ecs/jit_test.cpp"
  "ecs/virtualType_test.cpp"
  )
-
 include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(test gtest_main ecs)
+target_link_libraries(test gtest_main ecs jit)
 
 include(GoogleTest)
 gtest_discover_tests(test)
