@@ -7,7 +7,7 @@ class EntityManager;
 typedef uint64_t SystemID;
 // argument 1 is reference to the different variables in the struct
 // argument 2 is constant values and native functions
-using SystemFunction = void (*)(const EntityManager*, void*);
+using SystemFunction = void (*)(EntityManager*, void*);
 
 class VirtualSystem
 {
@@ -16,7 +16,7 @@ protected:
 public:
 	VirtualSystem(SystemID id);
 	SystemID id() const;
-	virtual void run(const EntityManager* em) = 0;
+	virtual void run(EntityManager* em) = 0;
 };
 
 class FunctionPointerSystem : VirtualSystem
@@ -25,5 +25,5 @@ class FunctionPointerSystem : VirtualSystem
 	void* _data;
 public:
 	FunctionPointerSystem(SystemID id, SystemFunction function, void* data);
-	void run(const EntityManager* em) override;
+	void run(EntityManager* em) override;
 };

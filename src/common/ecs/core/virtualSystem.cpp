@@ -17,7 +17,7 @@ FunctionPointerSystem::FunctionPointerSystem(SystemID id, SystemFunction functio
 	_data = data;
 }
 
-void FunctionPointerSystem::run(const EntityManager* em)
+void FunctionPointerSystem::run(EntityManager* em)
 {
 	_function(em, _data);
 }

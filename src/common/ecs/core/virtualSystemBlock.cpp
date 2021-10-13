@@ -18,7 +18,7 @@ SystemBlock* SystemBlock::next() const
 	return _next;
 }
 
-void SystemBlock::runSystems(const EntityManager* entities) const
+void SystemBlock::runSystems(EntityManager* entities) const
 {
 	for (size_t i = 0; i < _systems.size(); i++)
 	{
@@ -161,7 +161,7 @@ size_t SystemBlockList::size() const
 	return _nodes.size();
 }
 
-void SystemBlockList::runSystems(const EntityManager* em)
+void SystemBlockList::runSystems(EntityManager* em)
 {
 	SystemBlock* current = _first;
 	while (current)

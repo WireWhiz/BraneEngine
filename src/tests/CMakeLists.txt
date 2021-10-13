@@ -12,9 +12,10 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 add_executable(test 
  "ecs/ecs_test.cpp"
- "ecs/jit_test.cpp"
+ "ecs/systems_test.cpp"
  "ecs/virtualType_test.cpp"
- )
+ "jit/jit_test.cpp"
+  )
 include_directories(test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(test gtest_main ecs jit)

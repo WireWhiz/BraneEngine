@@ -18,7 +18,7 @@ public:
 	SystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void setNext(SystemBlock* next);
 	SystemBlock* next() const;
-	void runSystems(const EntityManager* entities) const;
+	void runSystems(EntityManager* entities) const;
 	void addSystem(VirtualSystem* system);
 	void removeSystem(SystemID id);
 	VirtualSystem* getSystem(SystemID id) const;
@@ -56,7 +56,7 @@ public:
 	bool addBlock(const std::string& identifier, const std::string& after, const std::string& before);
 	void removeBlock(const std::string& identifier);
 	size_t size() const;
-	void runSystems(const EntityManager* em);
+	void runSystems(EntityManager* em);
 
 	class insertion_error : public std::runtime_error
 	{
