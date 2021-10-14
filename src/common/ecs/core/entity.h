@@ -1,7 +1,7 @@
 #pragma once
 #include "Component.h"
 #include "Archetype.h"
-#include "VirtualSystemBlock.h"
+#include "systemList.h"
 
 #include <stdexcept>
 #include <cstdint>
@@ -51,7 +51,7 @@ class EntityManager
 	void updateForEachRoots(VirtualArchetype* oldArchetype, VirtualArchetype* newArchetype);
 	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed, bool searching);
 	std::vector<VirtualArchetype*>& getForEachArchetypes(EnityForEachID id);
-	SystemBlockList _systems;
+	SystemList _systems;
 public:
 	EntityManager() = default;
 	EntityManager(const EntityManager&) = delete;
@@ -71,8 +71,8 @@ public:
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	size_t forEachCount(EnityForEachID id);
 	EnityForEachID getForEachID(const std::vector<ComponentID>& components);
-	void addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before);
-	void removeSystemBlock(const std::string& identifier);
-	SystemBlock* getSystemBlock(const std::string& identifier);
+	void addSystem(std::unique_ptr<VirtualSystem>& system);
+	void removeSystemBlock(SystemID id);
+	VirtualSystem* getSystem(SystemID id);
 	void runSystems();
 };

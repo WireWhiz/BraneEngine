@@ -97,8 +97,8 @@ protected:
 	static std::once_flag _flag;
 	static ComponentDefinition* _def;
 	// This virtual is actually never used, keeping it for reference
-	virtual void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) = 0;
 public:
+	virtual void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) = 0;
 	NativeComponent()
 	{
 		

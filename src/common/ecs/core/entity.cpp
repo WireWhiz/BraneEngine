@@ -309,6 +309,7 @@ std::vector<VirtualArchetype*>& EntityManager::getForEachArchetypes(EnityForEach
 
 VirtualArchetype* EntityManager::getEntityArchetype(EntityID entity) const
 {
+	assert(entity < _entities.size());
 	return _entities[entity].archetype;
 }
 
@@ -319,7 +320,7 @@ bool EntityManager::hasArchetype(EntityID entity)
 
 VirtualComponentPtr EntityManager::getEntityComponent(EntityID entity, ComponentID component) const
 {
-	(getEntityArchetype(entity)->hasComponent(component));
+	assert(getEntityArchetype(entity)->hasComponent(component));
 	return getEntityArchetype(entity)->getComponentVector(component)->getComponent(_entities[entity].index);
 }
 
@@ -427,19 +428,19 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	_entities[entity].archetype = destArchetype;
 }
 
-void EntityManager::addSystemBlock(const std::string& identifier, const std::string& after, const std::string& before)
+void EntityManager::addSystem(std::unique_ptr<VirtualSystem>& system)
 {
-	_systems.addBlock(identifier, after, before);
+	_systems.addSystem(system);
 }
 
-void EntityManager::removeSystemBlock(const std::string& identifier)
+void EntityManager::removeSystemBlock(SystemID id)
 {
-	_systems.removeBlock(identifier);
+	_systems.removeSystem(id);
 }
 
-SystemBlock* EntityManager::getSystemBlock(const std::string& identifier)
+VirtualSystem* EntityManager::getSystem(SystemID id)
 {
-	return _systems.find(identifier);
+	return _systems.findSystem(id);
 }
 
 void EntityManager::runSystems()
