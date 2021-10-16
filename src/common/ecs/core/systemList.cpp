@@ -41,6 +41,7 @@ bool SystemList::sort()
 	{
 		node.second->sorted = false;
 		node.second->visited = false;
+		node.second->setNext(nullptr);
 	}
 	_first = nullptr;
 	try
@@ -146,9 +147,11 @@ bool SystemList::addBeforeConstraint(SystemID id, SystemID before)
 	if (!sort())
 	{
 		if (beforeNode != _nodes.end())
-			beforeNode->second->after.resize(beforeNode->second->after.size());
+			beforeNode->second->after.resize(beforeNode->second->after.size() - 1);
 		node->beforeConstraints.resize(node->beforeConstraints.size() - 1);
-		sort();
+		bool result = sort();
+		assert(result);
+		return false;
 	}
 	return true;
 }
@@ -166,9 +169,11 @@ bool SystemList::addAfterConstraint(SystemID id, SystemID after)
 	if (!sort())
 	{
 		if (afterNode != _nodes.end())
-			node->after.resize(node->after.size());
+			node->after.resize(node->after.size() - 1);
 		node->afterConstraints.resize(node->afterConstraints.size() - 1);
-		sort();
+		bool result = sort();
+		assert(result);
+		return false;
 	}
 	return true;
 }

@@ -71,8 +71,10 @@ public:
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	size_t forEachCount(EnityForEachID id);
 	EnityForEachID getForEachID(const std::vector<ComponentID>& components);
-	void addSystem(std::unique_ptr<VirtualSystem>& system);
-	void removeSystemBlock(SystemID id);
+	bool addSystem(std::unique_ptr<VirtualSystem>& system);
+	void removeSystem(SystemID id);
+	bool addBeforeConstraint(SystemID id, SystemID before);
+	bool addAfterConstraint(SystemID id, SystemID after);
 	VirtualSystem* getSystem(SystemID id);
 	void runSystems();
 };

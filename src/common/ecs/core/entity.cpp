@@ -428,14 +428,24 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	_entities[entity].archetype = destArchetype;
 }
 
-void EntityManager::addSystem(std::unique_ptr<VirtualSystem>& system)
+bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>& system)
 {
-	_systems.addSystem(system);
+	return _systems.addSystem(system);
 }
 
-void EntityManager::removeSystemBlock(SystemID id)
+void EntityManager::removeSystem(SystemID id)
 {
 	_systems.removeSystem(id);
+}
+
+bool EntityManager::addBeforeConstraint(SystemID id, SystemID before)
+{
+	return _systems.addBeforeConstraint(id, before);
+}
+
+bool EntityManager::addAfterConstraint(SystemID id, SystemID after)
+{
+	return _systems.addAfterConstraint(id, after);
 }
 
 VirtualSystem* EntityManager::getSystem(SystemID id)

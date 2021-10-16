@@ -82,6 +82,6 @@ public:
 	}
 };
 
-typedef VirtualVariable<bool> VirtualBool;
+typedef VirtualVariable<bool>    VirtualBool;
 typedef VirtualVariable<int64_t> VirtualInt;
-typedef VirtualVariable<float> VirtualFloat;
+typedef VirtualVariable<float>   VirtualFloat;

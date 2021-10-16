@@ -168,6 +168,11 @@ TEST(ECS, NativeComponentVectorTest)
 	EXPECT_EQ(42 * 2, ncp->var3);
 }
 
+TEST(ECS, VirtualComponentChunkTest)
+{
+	//Put stuff here later
+}
+
 TEST(ECS, EntityManagerTest)
 {
 	std::vector<std::shared_ptr<VirtualType>> comps1;

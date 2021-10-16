@@ -41,7 +41,6 @@ const VirtualComponentVector* VirtualArchetype::getComponentVector(ComponentID c
 bool VirtualArchetype::isChildOf(const VirtualArchetype* parent, ComponentID& connectingComponent) const
 {
 	assert(components.size() + 1 == parent->components.size()); //Make sure this is a valid comparason
-
 	byte miss_count = 0;
 	for (auto& c : parent->components)
 	{
@@ -134,7 +133,7 @@ size_t VirtualArchetype::size()
 
 size_t VirtualArchetype::createEntity()
 {
-	size_t index;
+	size_t index = 0 ;
 	for (auto& c : components)
 	{
 		index = c.second->size();
@@ -172,20 +171,24 @@ void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponent
 {
 	assert(requiredComponents.size() > 0);
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
-	byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * requiredComponents.size());
-	VirtualComponentVector** requiredComponentVectors = (VirtualComponentVector**)STACK_ALLOCATE(sizeof(VirtualComponentVector*) * requiredComponents.size());
-	for (size_t i = 0; i < requiredComponents.size(); i++)
 	{
-		requiredComponentVectors[i] = components[requiredComponents[i]].get();
-	}
-
-	for (size_t entityIndex = 0; entityIndex < requiredComponentVectors[0]->size(); entityIndex++)
-	{
-		for (size_t i = 0; i < requiredComponents.size(); i++)              
+		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * requiredComponents.size());
+		//std::vector<byte*> data(requiredComponents.size());
+		VirtualComponentVector** requiredComponentVectors = (VirtualComponentVector**)STACK_ALLOCATE(sizeof(VirtualComponentVector*) * requiredComponents.size());
+		//std::vector <VirtualComponentVector*> requiredComponentVectors(requiredComponents.size());
+		for (size_t i = 0; i < requiredComponents.size(); i++)
 		{
-			data[i] = requiredComponentVectors[i]->getComponentData(entityIndex);
+			requiredComponentVectors[i] = components[requiredComponents[i]].get();
 		}
-		f(data);
+
+		for (size_t entityIndex = 0; entityIndex < requiredComponentVectors[0]->size(); entityIndex++)
+		{
+			for (size_t i = 0; i < requiredComponents.size(); i++)
+			{
+				data[i] = requiredComponentVectors[i]->getComponentData(entityIndex);
+			}
+			f(data);
+		}
 	}
 	
 }
