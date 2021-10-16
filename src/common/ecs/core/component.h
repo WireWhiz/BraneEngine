@@ -96,8 +96,8 @@ private:
 protected:
 	static std::once_flag _flag;
 	static ComponentDefinition* _def;
-	// This virtual is actually never used, keeping it for reference
 public:
+	// This virtual is actually never used, keeping it for reference
 	virtual void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) = 0;
 	NativeComponent()
 	{
@@ -117,7 +117,6 @@ public:
 		return _def;
 	}
 };
-//This is a memory leak, but as we want to keep the def around for the enitre lifetime of the program it doesn't matter
 template <class T, size_t id> ComponentDefinition* NativeComponent<T, id>::_def;
 template <class T, size_t id> std::once_flag NativeComponent<T, id>::_flag;
 
@@ -157,3 +156,14 @@ public:
 	void copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex);
 };
 
+class VirtualComponentChunk
+{
+	const size_t _size;
+	size_t _maxCapacity;
+	std::vector<byte> _data;
+	std::vector<ComponentDefinition*> _componentDefs;
+	std::vector<size_t> _componentIndices;
+public:
+	VirtualComponentChunk(size_t size);
+	void setDef(std::vector<ComponentDefinition*>& components);
+};

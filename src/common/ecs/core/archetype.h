@@ -25,6 +25,7 @@ private:
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 public:
 	std::unordered_map<ComponentID, std::unique_ptr<VirtualComponentVector>> components;
+
 	VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs);
 	bool hasComponent(ComponentID component) const;
 	bool hasComponents(const std::vector<ComponentID>& comps) const;

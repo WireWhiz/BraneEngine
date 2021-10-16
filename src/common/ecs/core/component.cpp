@@ -74,10 +74,10 @@ ComponentDefinition::ComponentDefinition(std::vector<std::shared_ptr<VirtualType
 		{
 			_types[i] = types[i];
 		}
+		if (_types[0]->offset() != 0 || _types.size() > 1 && _types[1]->offset() != 0)
+			return; // This means that they have already been set
 		for (size_t i = 0; i < _types.size(); i++)
 		{
-			if (_types[i]->offset() != 0)
-				break; // This means that they have already been set
 			_types[i]->setOffset(_size);
 			_size += _types[i]->size();
 		}
@@ -223,4 +223,14 @@ ComponentDefinition* VirtualComponentPtr::def() const
 byte* VirtualComponentPtr::data() const
 {
 	return _data;
+}
+
+void VirtualComponentChunk::setDef(std::vector<ComponentDefinition*>& _def)
+{
+
+}
+
+VirtualComponentChunk::VirtualComponentChunk(size_t size) : _size(size)
+{
+	_maxCapacity = 0;
 }
