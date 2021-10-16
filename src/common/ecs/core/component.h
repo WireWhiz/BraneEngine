@@ -27,6 +27,17 @@ public:
 	const std::vector<std::shared_ptr<VirtualType>>& types();
 };
 
+// Class that always has components sorted
+class ComponentSet
+{
+private:
+	std::vector<ComponentDefinition*> _components;
+public:
+	void add(ComponentDefinition* component);
+	void remove(ComponentDefinition* component);
+	const std::vector<ComponentDefinition*>& components();
+};
+
 class VirtualComponent
 {
 protected:

@@ -4,19 +4,23 @@
 
 VirtualArchetype::VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs)
 {
-	for (size_t i = 0; i < componentDefs.size(); i++)
-	{
-		components.insert({ componentDefs[i]->id(), std::make_unique<VirtualComponentVector>(componentDefs[i]) });
-	}
+	std::copy(componentDefs.front(), componentDefs.back(), _components)
 }
 
 bool VirtualArchetype::hasComponent(ComponentID component) const
 {
-	return components.find(component) != components.end();
+	for (size_t i = 0; i < _components.size(); i++)
+	{
+		if (component = _components[i]->id())
+			return true;
+	}
+	return false;
 }
 
 bool VirtualArchetype::hasComponents(const std::vector<ComponentID>& comps) const
 {
+	uint8_t count = 0;
+
 	for (size_t i = 0; i < comps.size(); i++)
 	{
 		if (components.find(comps[i]) == components.end())

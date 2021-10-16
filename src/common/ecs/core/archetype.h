@@ -23,9 +23,10 @@ private:
 	size_t _size = 0;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
+	ComponentSet _components;
 public:
-	std::unordered_map<ComponentID, std::unique_ptr<VirtualComponentVector>> components;
-	VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs);
+	//std::unordered_map<ComponentID, std::unique_ptr<VirtualComponentVector>> components;
+	VirtualArchetype(const ComponentSet& componentDefs);
 	bool hasComponent(ComponentID component) const;
 	bool hasComponents(const std::vector<ComponentID>& comps) const;
 	const VirtualComponentVector* getComponentVector(ComponentID component) const;
@@ -42,6 +43,7 @@ public:
 	size_t createEntity();
 	size_t copyEntity(VirtualArchetype* source, size_t index);
 	void swapRemove(size_t index);
+	const std::vector<ComponentDefinition>& components();
 
 	void forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f);
 }; 
