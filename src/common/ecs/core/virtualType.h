@@ -82,6 +82,7 @@ public:
 	}
 };
 
+#define nullindex size_t(-1)
 typedef VirtualVariable<bool>    VirtualBool;
 typedef VirtualVariable<int64_t> VirtualInt;
 typedef VirtualVariable<float>   VirtualFloat;

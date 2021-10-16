@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <memory>
 #include <mutex>
+#include <iterator>
 
 typedef uint64_t ComponentID;
 const ComponentID nullComponent = 0;
@@ -18,35 +19,46 @@ private:
 	std::vector<std::shared_ptr<VirtualType>> _types;
 public:
 	ComponentDefinition(const ComponentDefinition& source);
-	ComponentDefinition(std::vector<std::shared_ptr<VirtualType>>& types , ComponentID id);
+	ComponentDefinition(const std::vector<std::shared_ptr<VirtualType>>& types , ComponentID id);
 	~ComponentDefinition();
 	void setSize(size_t size);
 	ComponentID id() const;
 	size_t size() const;
 	size_t getByteIndex(size_t index) const;
-	const std::vector<std::shared_ptr<VirtualType>>& types();
+	const std::vector<std::shared_ptr<VirtualType>>& types() const;
 };
 
 // Class that always has components sorted
 class ComponentSet
 {
 private:
-	std::vector<ComponentDefinition*> _components;
+	std::vector<const  ComponentDefinition*> _components;
 public:
-	void add(ComponentDefinition* component);
-	void remove(ComponentDefinition* component);
-	const std::vector<ComponentDefinition*>& components();
+	void add(const ComponentDefinition* component);
+	void remove(const  ComponentDefinition* component);
+	const std::vector<const ComponentDefinition*>& components() const;
+
+	bool contains(const ComponentDefinition* component) const;
+	bool contains(const ComponentSet& subset) const;
+	size_t index(const ComponentDefinition* component) const;
+	void indicies(const ComponentSet& subset, size_t* indices) const;
+
+	size_t size() const;
+
+	const ComponentDefinition* operator[](size_t index) const;
+	typename std::vector<const ComponentDefinition*>::const_iterator begin() const;
+	typename std::vector<const ComponentDefinition*>::const_iterator end() const;
 };
 
 class VirtualComponent
 {
 protected:
 	byte* _data;
-	ComponentDefinition* _def;
+	const ComponentDefinition* _def;
 public:
 	VirtualComponent(const VirtualComponent& source);
-	VirtualComponent(ComponentDefinition* definition);
-	VirtualComponent(ComponentDefinition* definition, byte* data);
+	VirtualComponent(const ComponentDefinition* definition);
+	VirtualComponent(const ComponentDefinition* definition, const byte* data);
 	~VirtualComponent();
 	template<class T>
 	T* getVar(size_t index) const
@@ -64,15 +76,15 @@ public:
 		return *(T*)&_data[_def->getByteIndex(index)];
 	}
 	byte* data() const;
-	ComponentDefinition* def() const;
+	const ComponentDefinition* def() const;
 };
 
 class VirtualComponentPtr
 {
 	byte* _data;
-	ComponentDefinition* _def;
+	const ComponentDefinition* _def;
 public:
-	VirtualComponentPtr(ComponentDefinition* definition, byte* data);
+	VirtualComponentPtr(const ComponentDefinition* definition, byte* const data);
 	template<class T>
 	T* getVar(size_t index) const
 	{
@@ -88,7 +100,7 @@ public:
 	{
 		return readVirtual<T>(&_data[_def->getByteIndex(index)]);
 	}
-	ComponentDefinition* def() const;
+	const ComponentDefinition* def() const;
 	byte* data() const;
 };
 
@@ -135,10 +147,10 @@ class VirtualComponentVector
 {
 private:
 	std::vector<byte> _data;
-	ComponentDefinition* _def;
+	const ComponentDefinition* _def;
 public:
-	VirtualComponentVector(ComponentDefinition* definition, size_t initalSize);
-	VirtualComponentVector(ComponentDefinition* definition);
+	VirtualComponentVector(const ComponentDefinition* definition, size_t initalSize);
+	VirtualComponentVector(const ComponentDefinition* definition);
 	VirtualComponentVector(const VirtualComponentVector& other);
 	byte* getComponentData(size_t index) const;
 	VirtualComponentPtr getComponent(size_t index) const;
@@ -158,23 +170,11 @@ public:
 	}
 	size_t structIndex(size_t index) const;
 	size_t size() const;
-	ComponentDefinition* def() const;
+	const ComponentDefinition* def() const;
 	void reserve(size_t size);
 	void pushBack(VirtualComponent& virtualComponent);
 	void pushBack(VirtualComponentPtr& virtualComponentPtr);
 	void pushEmpty();
-	void swapRemove(size_t index);
+	void remove(size_t index);
 	void copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex);
-};
-
-class VirtualComponentChunk
-{
-	const size_t _size;
-	size_t _maxCapacity;
-	std::vector<byte> _data;
-	std::vector<ComponentDefinition*> _componentDefs;
-	std::vector<size_t> _componentIndices;
-public:
-	VirtualComponentChunk(size_t size);
-	void setDef(std::vector<ComponentDefinition*>& components);
 };

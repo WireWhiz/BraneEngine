@@ -18,7 +18,7 @@ typedef uint64_t EnityForEachID;
 
 struct EntityIndex
 {
-	VirtualArchetype* archetype;
+	Archetype* archetype;
 	size_t index;
 	bool alive;
 };
@@ -28,14 +28,14 @@ class EntityManager
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
-	std::unordered_map<ComponentID, std::vector<VirtualArchetype*>> _rootArchetypes;
+	std::unordered_map<const ComponentDefinition*, std::vector<Archetype*>> _rootArchetypes;
 
 	struct ForEachData
 	{
 		bool cached = false;
-		std::vector<ComponentID> components;
-		std::vector<VirtualArchetype*> archetypeRoots;
-		ForEachData(std::vector<ComponentID> components)
+		ComponentSet components;
+		std::vector<Archetype*> archetypeRoots;
+		ForEachData(ComponentSet components)
 		{
 			this->components = std::move(components);
 		}
@@ -43,34 +43,35 @@ class EntityManager
 	std::vector<ForEachData> _forEachData;
 
 	// Index 1: number of components, Index 2: archetype
-	std::vector<std::vector<std::unique_ptr<VirtualArchetype>>> _archetypes;
+	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
 
-	VirtualArchetype* makeArchetype(std::vector<ComponentDefinition*>& cdefs);
-	void getArchetypeRoots(const std::vector<ComponentID>& components, std::vector<VirtualArchetype*>& roots);
-	void updateArchetypeRoots(VirtualArchetype* archtype);
-	void updateForEachRoots(VirtualArchetype* oldArchetype, VirtualArchetype* newArchetype);
-	void forEachRecursive(VirtualArchetype* archetype, const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, std::unordered_set<VirtualArchetype*>& executed, bool searching);
-	std::vector<VirtualArchetype*>& getForEachArchetypes(EnityForEachID id);
+	Archetype* makeArchetype(const ComponentSet& cdefs);
+	void getArchetypeRoots(const ComponentSet& components, std::vector<Archetype*>& roots) const;
+	void updateArchetypeRoots(Archetype* archtype);
+	void updateForEachRoots(Archetype* oldArchetype, Archetype* newArchetype);
+	void forEachRecursive(Archetype* archetype, const ComponentSet& components, const std::function <void(byte* [])>& f, std::unordered_set<Archetype*>& executed, bool searching);
+	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
 	SystemList _systems;
 public:
 	EntityManager() = default;
 	EntityManager(const EntityManager&) = delete;
 	void regesterComponent(const ComponentDefinition& newComponent);
 	void deregesterComponent(ComponentID component);
-	VirtualArchetype* getArcheytpe(const std::vector<ComponentID>& components);
+	Archetype* getArcheytpe(const ComponentSet& components);
 	EntityID createEntity(); 
-	EntityID createEntity(const std::vector<ComponentID>& components);
+	EntityID createEntity(const ComponentSet& components);
 	void destroyEntity(EntityID entity);
-	VirtualArchetype* getEntityArchetype(EntityID entity) const;
+	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity);  
-	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID component) const;
-	void addComponent(EntityID entity, ComponentID component);
-	void removeComponent(EntityID entity, ComponentID component);
+	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID componentID) const;
+	void addComponent(EntityID entity, ComponentID componentID);
+	void removeComponent(EntityID entity, ComponentID componentID);
+	const ComponentDefinition* componentDef(ComponentID componentID);
 
 	//system stuff
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	size_t forEachCount(EnityForEachID id);
-	EnityForEachID getForEachID(const std::vector<ComponentID>& components);
+	EnityForEachID getForEachID(const ComponentSet& components);
 	bool addSystem(std::unique_ptr<VirtualSystem>& system);
 	void removeSystem(SystemID id);
 	bool addBeforeConstraint(SystemID id, SystemID before);

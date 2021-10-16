@@ -42,6 +42,43 @@ TEST(ECS, VirtualComponentComplexTypesTest)
 	EXPECT_EQ("Hello there! General Kenobi!", *vc.getVar<std::string>(0));
 }
 
+TEST(ECS, ComponentSetTest)
+{
+	ComponentSet cs;
+
+	cs.add((ComponentDefinition*)2);
+	cs.add((ComponentDefinition*)3);
+
+	EXPECT_EQ(cs.components()[0], (ComponentDefinition*)2);
+	EXPECT_EQ(cs.components()[1], (ComponentDefinition*)3);
+	EXPECT_TRUE(cs.contains((ComponentDefinition*)2));
+	EXPECT_TRUE(cs.contains((ComponentDefinition*)3));
+	EXPECT_FALSE(cs.contains((ComponentDefinition*)1));
+	EXPECT_FALSE(cs.contains((ComponentDefinition*)4));
+	EXPECT_TRUE(cs.contains(cs));
+
+	ComponentSet cs2 = cs;
+
+	cs2.add((ComponentDefinition*)1);
+	EXPECT_EQ(cs2.components()[0], (ComponentDefinition*)1);
+	EXPECT_EQ(cs2.components()[1], (ComponentDefinition*)2);
+	EXPECT_EQ(cs2.components()[2], (ComponentDefinition*)3);
+
+	EXPECT_TRUE(cs2.contains(cs));
+
+	cs2.remove((ComponentDefinition*)2);
+	EXPECT_EQ(cs2.components()[0], (ComponentDefinition*)1);
+	EXPECT_EQ(cs2.components()[1], (ComponentDefinition*)3);
+
+	EXPECT_FALSE(cs2.contains(cs));
+
+}
+
+TEST(ECS, VirtualComponentChunkTest)
+{
+	//Put stuff here later
+}
+
 TEST(ECS, VirtualComponentVectorTest)
 {
 	std::vector<std::shared_ptr<VirtualType>> components;
@@ -79,7 +116,7 @@ TEST(ECS, VirtualComponentVectorTest)
 	EXPECT_EQ(42, vcv.readComponentVar<int>(2, 1));
 
 	// Test removal 
-	vcv.swapRemove(0);
+	vcv.remove(0);
 	EXPECT_EQ(42, vcv.readComponentVar<int>(0, 1));
 	EXPECT_EQ(1234, vcv.readComponentVar<int>(1, 1));
 	EXPECT_EQ(42, vcv.readComponentVar<float>(1, 2));
@@ -168,10 +205,6 @@ TEST(ECS, NativeComponentVectorTest)
 	EXPECT_EQ(42 * 2, ncp->var3);
 }
 
-TEST(ECS, VirtualComponentChunkTest)
-{
-	//Put stuff here later
-}
 
 TEST(ECS, EntityManagerTest)
 {
@@ -232,10 +265,12 @@ TEST(ECS, EntityManagerTest)
 	em.removeComponent(entity, 1);
 
 	//We now should have some archetypes that we can fetch
-	std::vector<ComponentID> arch1components = { 1, 2 };
-	std::vector<ComponentID> arch2components = { 1, 2, 3 };
-	EXPECT_EQ(true, (em.getArcheytpe(arch1components) != nullptr));
-	EXPECT_EQ(true, (em.getArcheytpe(arch2components) != nullptr));
+	ComponentSet archComponents;
+	archComponents.add(em.componentDef(1));
+	archComponents.add(em.componentDef(2));
+	EXPECT_EQ(true, (em.getArcheytpe(archComponents) != nullptr));
+	archComponents.add(em.componentDef(3));
+	EXPECT_EQ(true, (em.getArcheytpe(archComponents) != nullptr));
 }
 
 //Classes for native system test
@@ -254,10 +289,13 @@ TEST(ECS, ForEachTest)
 {
 	EntityManager em;
 	//Create two for each ID one for entities with one component, another for those with two
-	EnityForEachID forEachID = em.getForEachID({ 3 });
-	EnityForEachID forEachID2 = em.getForEachID({ 3, 4 });
 	em.regesterComponent(*TestNativeComponent::def());
 	em.regesterComponent(*TestNativeComponent2::def());
+	ComponentSet comps;
+	comps.add(em.componentDef(3));
+	EnityForEachID forEachID = em.getForEachID(comps);
+	comps.add(em.componentDef(4));
+	EnityForEachID forEachID2 = em.getForEachID(comps);
 
 	//Create 50 entities with one component, and 50 with two
 	for (size_t i = 0; i < 100; i++)

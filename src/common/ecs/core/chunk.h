@@ -3,10 +3,12 @@
 
 class Chunk
 {
-	VirtualArchetype _archetype;
+	const size_t _size;
+	size_t _maxCapacity;
+	std::vector<byte> _data;
+	VirtualArchetype* _archetype;
+	std::vector<size_t> _componentIndices;
 public:
-	void setArchetype(VirtualArchetype* archetype)
-	{
-
-	}
+	VirtualComponentChunk(size_t size);
+	void setDef(VirtualArchetype* archetype);
 };

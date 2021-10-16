@@ -2,85 +2,65 @@
 
 
 
-VirtualArchetype::VirtualArchetype(const std::vector<ComponentDefinition*>& componentDefs)
+Archetype::Archetype(const ComponentSet& componentDefs) : _componentDefs(componentDefs)
 {
-	std::copy(componentDefs.front(), componentDefs.back(), _components)
+	_components.reserve(componentDefs.size());
+	for (size_t i = 0; i < _componentDefs.size(); i++)
+	{
+		_components.push_back(VirtualComponentVector(_componentDefs.components()[i]));
+	}
+
 }
 
-bool VirtualArchetype::hasComponent(ComponentID component) const
+bool Archetype::hasComponent(const ComponentDefinition* component) const
 {
-	for (size_t i = 0; i < _components.size(); i++)
+	return _componentDefs.contains(component);
+}
+
+bool Archetype::hasComponents(const ComponentSet& comps) const
+{
+	return _componentDefs.contains(comps);
+}
+
+const VirtualComponentPtr Archetype::getComponent(size_t entity, const ComponentDefinition* component) const
+{
+	assert(entity < _size);
+	return _components[_componentDefs.index(component)].getComponent(entity);
+}
+
+bool Archetype::isChildOf(const Archetype* parent, const ComponentDefinition*& connectingComponent) const
+{
+	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparason
+	byte miss_count = 0;
+	for (size_t i = 0; i < parent->_componentDefs.size(); i++)
 	{
-		if (component = _components[i]->id())
+		if (_componentDefs.components()[i] != parent->_componentDefs.components()[i + miss_count])
+		{
+			connectingComponent = parent->_componentDefs.components()[i];
+			if (++miss_count > 1)
+				return false;
+		}
+	}
+	return true;
+}
+
+bool Archetype::isRootForComponent(const ComponentDefinition* component) const
+{
+	for (size_t i = 0; i < _removeEdges.size(); i++)
+	{
+		if (_removeEdges[i]->component == component)
 			return true;
 	}
 	return false;
 }
 
-bool VirtualArchetype::hasComponents(const std::vector<ComponentID>& comps) const
-{
-	uint8_t count = 0;
 
-	for (size_t i = 0; i < comps.size(); i++)
-	{
-		if (components.find(comps[i]) == components.end())
-			return false;
-	}
-	return true;
+const ComponentSet& Archetype::componentDefs() const
+{
+	return _componentDefs;
 }
 
-const VirtualComponentVector* VirtualArchetype::getComponentVector(ComponentID component) const
-{
-	auto vec = components.find(component);
-	if (vec != components.end())
-		return vec->second.get();
-	else
-		return nullptr;
-}
-
-bool VirtualArchetype::isChildOf(const VirtualArchetype* parent, ComponentID& connectingComponent) const
-{
-	assert(components.size() + 1 == parent->components.size()); //Make sure this is a valid comparason
-	byte miss_count = 0;
-	for (auto& c : parent->components)
-	{
-		if (!hasComponent(c.first))
-		{
-			connectingComponent = c.first;
-			if (++miss_count > 1)
-				return false;
-		}
-	}
-	
-	return true;
-}
-
-bool VirtualArchetype::isRootForComponent(ComponentID component)
-{
-	size_t edges = _removeEdges.size();
-	if(edges > 1)
-	{
-		return false;
-	}
-	else if (edges == 1)
-	{
-		return _removeEdges[0]->component == component;
-	}
-	return true;
-}
-
-
-std::vector<ComponentDefinition*> VirtualArchetype::getComponentDefs()
-{
-	std::vector<ComponentDefinition*> componentDefs;
-	for (auto& c : components)
-	{
-		componentDefs.push_back(c.second->def());
-	}
-	return componentDefs;
-}
-
-std::shared_ptr<ArchetypeEdge> VirtualArchetype::getAddEdge(ComponentID component)
+std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentDefinition* component)
 {
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
@@ -90,7 +70,7 @@ std::shared_ptr<ArchetypeEdge> VirtualArchetype::getAddEdge(ComponentID componen
 	return std::shared_ptr<ArchetypeEdge>();
 }
 
-std::shared_ptr<ArchetypeEdge> VirtualArchetype::getRemoveEdge(ComponentID component)
+std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentDefinition* component)
 {
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
@@ -100,17 +80,17 @@ std::shared_ptr<ArchetypeEdge> VirtualArchetype::getRemoveEdge(ComponentID compo
 	return std::shared_ptr<ArchetypeEdge>();
 }
 
-void VirtualArchetype::addAddEdge(ComponentID component, VirtualArchetype* archetype)
+void Archetype::addAddEdge(const ComponentDefinition* component, Archetype* archetype)
 {
 	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
 
-void VirtualArchetype::addRemoveEdge(ComponentID component, VirtualArchetype* archetype)
+void Archetype::addRemoveEdge(const ComponentDefinition* component, Archetype* archetype)
 {
 	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
 
-void VirtualArchetype::forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
+void Archetype::forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
 {
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
@@ -118,7 +98,7 @@ void VirtualArchetype::forAddEdge(const std::function<void(std::shared_ptr<Arche
 	}
 }
 
-void VirtualArchetype::forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
+void Archetype::forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f)
 {
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
@@ -126,66 +106,70 @@ void VirtualArchetype::forRemoveEdge(std::function<void(std::shared_ptr<Archetyp
 	}
 }
 
-size_t VirtualArchetype::size()
+size_t Archetype::size()
 {
 	return _size;
 }
 
-size_t VirtualArchetype::createEntity()
+size_t Archetype::createEntity()
 {
 	size_t index = 0 ;
-	for (auto& c : components)
+	for (size_t i = 0; i < _components.size(); i++)
 	{
-		index = c.second->size();
-		c.second->pushEmpty();
+		_components[i].pushEmpty();
 	}
-	_size++;
-	return index;
+	return _size++;
 }
 
-size_t VirtualArchetype::copyEntity(VirtualArchetype* source, size_t index)
+size_t Archetype::copyEntity(Archetype* source, size_t index)
 {
 	size_t newIndex = createEntity();
-	for (auto& c : components)
+	for (size_t i = 0; i < _components.size(); i++)
 	{
-		auto sourceComponent = source->components.find(c.first);
-		if (sourceComponent != source->components.end())
-		{
-			c.second->copy(sourceComponent->second.get(), index, newIndex);
-		}
+		size_t sourceIndex = source->_componentDefs.index(_componentDefs.components()[i]);
+		if (sourceIndex != nullindex)
+			_components[i].copy(&source->_components[sourceIndex], index, newIndex);
+		
 	}
 	_size++;
 	return newIndex;
 }
 
-void VirtualArchetype::swapRemove(size_t index)
+void Archetype::remove(size_t index)
 {
-	for (auto& c : components)
+	for (auto& c : _components)
 	{
-		c.second->swapRemove(index);
+		c.remove(index);
 	}
 	_size--;
 }
 
-void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponents, const std::function<void(byte* [])>& f)
+void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f)
 {
-	assert(requiredComponents.size() > 0);
+	assert(components.size() > 0);
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
-		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * requiredComponents.size());
-		//std::vector<byte*> data(requiredComponents.size());
-		VirtualComponentVector** requiredComponentVectors = (VirtualComponentVector**)STACK_ALLOCATE(sizeof(VirtualComponentVector*) * requiredComponents.size());
-		//std::vector <VirtualComponentVector*> requiredComponentVectors(requiredComponents.size());
-		for (size_t i = 0; i < requiredComponents.size(); i++)
+		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * components.size());
+		{ //Component Indicies is only needed in this scope
+			size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
+			_componentDefs.indicies(components, componentIndicies);
+			for (size_t i = 0; i < components.size(); i++)
+			{
+				data[i] = _components[componentIndicies[i]].getComponentData(0);
+			}
+		}
+		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
+		for (size_t i = 0; i < components.size(); i++)
 		{
-			requiredComponentVectors[i] = components[requiredComponents[i]].get();
+			componentSizes[i] = components.components()[i]->size();
 		}
 
-		for (size_t entityIndex = 0; entityIndex < requiredComponentVectors[0]->size(); entityIndex++)
+
+		for (size_t entityIndex = 0; entityIndex < _size; entityIndex++)
 		{
-			for (size_t i = 0; i < requiredComponents.size(); i++)
+			for (size_t i = 0; i < components.size(); i++)
 			{
-				data[i] = requiredComponentVectors[i]->getComponentData(entityIndex);
+				data[i] += componentSizes[i]; // Since we know the size of a struct, we can just increment by that
 			}
 			f(data);
 		}
@@ -193,7 +177,7 @@ void VirtualArchetype::forEach(const std::vector<ComponentID>& requiredComponent
 	
 }
 
-ArchetypeEdge::ArchetypeEdge(ComponentID component, VirtualArchetype* archetype)
+ArchetypeEdge::ArchetypeEdge(const ComponentDefinition* component, Archetype* archetype)
 {
 	this->component = component;
 	this->archetype = archetype;

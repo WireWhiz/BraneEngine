@@ -9,7 +9,7 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 	std::copy(source._data, source._data + _def->size() - 1, _data);
 }
 
-VirtualComponent::VirtualComponent(ComponentDefinition* definition)
+VirtualComponent::VirtualComponent(const ComponentDefinition* definition)
 {
 	_def = definition;
 	_data = new byte[_def->size()];
@@ -19,7 +19,7 @@ VirtualComponent::VirtualComponent(ComponentDefinition* definition)
 	}
 }
 
-VirtualComponent::VirtualComponent(ComponentDefinition* definition, byte* data)
+VirtualComponent::VirtualComponent(const ComponentDefinition* definition, const byte* const data)
 {
 	_def = definition;
 	_data = new byte[_def->size()];
@@ -35,7 +35,7 @@ VirtualComponent::~VirtualComponent()
 	delete[] _data;
 }
 
-ComponentDefinition* VirtualComponent::def() const
+const ComponentDefinition* VirtualComponent::def() const
 {
 	return _def;
 }
@@ -62,7 +62,7 @@ ComponentDefinition::ComponentDefinition(const ComponentDefinition& source)
 	_id = source._id;
 }
 
-ComponentDefinition::ComponentDefinition(std::vector<std::shared_ptr<VirtualType>>& types, ComponentID id)
+ComponentDefinition::ComponentDefinition(const std::vector<std::shared_ptr<VirtualType>>& types, ComponentID id)
 {
 	_size = 0;
 	_id = id;
@@ -106,12 +106,12 @@ size_t ComponentDefinition::getByteIndex(size_t index) const
 	return _types[index]->offset();
 }
 
-const std::vector<std::shared_ptr<VirtualType>>& ComponentDefinition::types()
+const std::vector<std::shared_ptr<VirtualType>>& ComponentDefinition::types() const
 {
 	return _types;
 }
 
-VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition)
+VirtualComponentVector::VirtualComponentVector(const ComponentDefinition* definition)
 {
 	_def = definition;
 }
@@ -121,7 +121,7 @@ VirtualComponentVector::VirtualComponentVector(const VirtualComponentVector& oth
 	_def = other._def;
 }
 
-VirtualComponentVector::VirtualComponentVector(ComponentDefinition* definition, size_t initalSize)
+VirtualComponentVector::VirtualComponentVector(const ComponentDefinition* const definition, size_t initalSize)
 {
 	_def = definition;
 	reserve(initalSize * _def->size());
@@ -132,7 +132,7 @@ size_t VirtualComponentVector::structIndex(size_t index) const
 	return index * _def->size();
 }
 
-ComponentDefinition* VirtualComponentVector::def() const
+const ComponentDefinition* VirtualComponentVector::def() const
 {
 	return _def;
 }
@@ -157,7 +157,7 @@ VirtualComponentPtr VirtualComponentVector::getComponent(size_t index) const
 	return VirtualComponentPtr(_def, (byte*)getComponentData(index));
 }
 
-void VirtualComponentVector::swapRemove(size_t index)
+void VirtualComponentVector::remove(size_t index)
 {
 	assert(index >= 0 && index < _data.size() / _def->size());
 	for (auto& type : _def->types())
@@ -209,13 +209,13 @@ void VirtualComponentVector::reserve(size_t size)
 	_data.reserve(size * _def->size());
 }
 
-VirtualComponentPtr::VirtualComponentPtr(ComponentDefinition* definition, byte* data)
+VirtualComponentPtr::VirtualComponentPtr(const ComponentDefinition* definition, byte* const data)
 {
 	_def = definition;
 	_data = data;
 }
 
-ComponentDefinition* VirtualComponentPtr::def() const
+const ComponentDefinition* VirtualComponentPtr::def() const
 {
 	return _def;
 }
@@ -225,12 +225,133 @@ byte* VirtualComponentPtr::data() const
 	return _data;
 }
 
-void VirtualComponentChunk::setDef(std::vector<ComponentDefinition*>& _def)
+void ComponentSet::add(const ComponentDefinition* component)
 {
-
+	bool insertionIndex = 0;
+	for (size_t i = 0; i < _components.size(); i++)
+	{
+		assert(component != _components[i]); // Can't add the same item twice
+		if (component > _components[i])
+		{
+			insertionIndex += 1;
+		}
+		else
+			break;
+	}
+	_components.insert(_components.begin() + insertionIndex, component);
 }
 
-VirtualComponentChunk::VirtualComponentChunk(size_t size) : _size(size)
+void ComponentSet::remove(const ComponentDefinition* component)
 {
-	_maxCapacity = 0;
+	for (size_t i = 0; i < _components.size(); i++)
+	{
+		if (_components[i] == component)
+		{
+			_components.erase(_components.begin() + i);
+			break;
+		}
+	}
+}
+
+const std::vector<const ComponentDefinition*>& ComponentSet::components() const
+{
+	return _components;
+}
+
+bool ComponentSet::contains(const ComponentDefinition* component) const
+{
+	size_t start = 0;
+	size_t end = _components.size();
+	while(true)
+	{
+		size_t middle = (start + end) / 2;
+		if (_components[middle] == component)
+			return true;
+
+		if (_components[middle] < component)
+			start = middle + 1;
+		else if (_components[middle] > component && middle != 0)
+			end = middle - 1;
+
+		if (end <= start)
+			return false;
+		
+	}
+	return false;
+}
+
+bool ComponentSet::contains(const ComponentSet& subset) const
+{
+	size_t count = 0;
+	for (size_t i = 0; i < _components.size(); i++)
+	{
+		if (_components[i] > subset._components[count])
+			return false;
+		if (_components[i] == subset._components[count])
+		{
+			if (++count = subset._components.size())
+				return true;
+		}
+			
+	}
+	return false;
+}
+
+size_t ComponentSet::index(const ComponentDefinition* component) const
+{
+	size_t start = 0;
+	size_t end = _components.size();
+	while (true)
+	{
+		size_t middle = (start + end) / 2;
+		if (_components[middle] == component)
+			return middle;
+
+		if (_components[middle] < component)
+			start = middle + 1;
+		else if (_components[middle] > component)
+			end = middle - 1;
+
+		if (end <= start)
+		{
+			return nullindex;
+		}
+	}
+}
+
+void ComponentSet::indicies(const ComponentSet& subset, size_t* indices) const
+{
+	size_t count = 0;
+	for (size_t i = 0; i < _components.size(); i++)
+	{
+		if (_components[i] > subset._components[count])
+			assert(false && "values not found");
+		if (_components[i] == subset._components[count])
+		{
+			indices[count] = i;
+			if (++count = subset._components.size())
+				return;
+		}
+
+	}
+}
+
+size_t ComponentSet::size() const
+{
+	return _components.size();
+}
+
+const ComponentDefinition* ComponentSet::operator[](size_t index) const
+{
+	return _components[index];
+}
+
+typename std::vector<const ComponentDefinition*>::const_iterator ComponentSet::begin() const
+{
+	return _components.begin();
+}
+
+typename  std::vector<const ComponentDefinition*>::const_iterator ComponentSet::end() const
+{
+	return _components.end();
 }

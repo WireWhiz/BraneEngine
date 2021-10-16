@@ -65,7 +65,9 @@ TEST(Systems, NativeTest)
 	em.addComponent(0, 0);
 
 	//Create test system
-	std::unique_ptr<VirtualSystem> aos = std::make_unique<AddSystem>(0, em.getForEachID({ 0 }), 1);
+	ComponentSet components;
+	components.add(em.componentDef(0));
+	std::unique_ptr<VirtualSystem> aos = std::make_unique<AddSystem>(0, em.getForEachID(components), 1);
 	EXPECT_TRUE(em.addSystem(aos));
 
 	//Run system
@@ -90,7 +92,9 @@ TEST(Systems, BeforeConstraint)
 	em.addComponent(0, 0);
 
 	//Create test systems
-	EnityForEachID feid = em.getForEachID({ 0 });
+	ComponentSet components;
+	components.add(em.componentDef(0));
+	EnityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
 	EXPECT_TRUE(em.addSystem(mul));
 
@@ -122,7 +126,9 @@ TEST(Systems, AfterConstraint)
 	em.addComponent(0, 0);
 
 	//Create test systems
-	EnityForEachID feid = em.getForEachID({ 0 });
+	ComponentSet components;
+	components.add(em.componentDef(0));
+	EnityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
 	EXPECT_TRUE(em.addSystem(mul));
 
