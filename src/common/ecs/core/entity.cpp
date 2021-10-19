@@ -220,11 +220,22 @@ void EntityManager::forEach(EnityForEachID id, const std::function<void(byte* []
 {
 	assert(id >= 0);
 	assert(id < _forEachData.size());
-	std::unordered_set<Archetype*> executed;
-	for (Archetype* archetype : getForEachArchetypes(id))
+	//std::unordered_set<Archetype*> executed;
+	for (size_t size = _forEachData[id].components.size() - 1; size < _archetypes.size(); size++)
 	{
-		forEachRecursive(archetype, _forEachData[id].components, f, executed, true);
+		for (size_t i = 0; i < _archetypes[size].size(); i++)
+		{
+			if (_archetypes[size][i]->hasComponents(_forEachData[id].components))
+			{
+				_archetypes[size][i]->forEach(_forEachData[id].components, f);
+			}
+		}
+		
 	}
+	//for (Archetype* archetype : getForEachArchetypes(id))
+	//{
+	//	forEachRecursive(archetype, _forEachData[id].components, f, executed, true);
+	//}
 }
 
 size_t EntityManager::forEachCount(EnityForEachID id)
@@ -270,11 +281,12 @@ void EntityManager::forEachRecursive(Archetype* archetype, const ComponentSet& c
 	else // if we are just run it
 		archetype->forEach(components, f);
 	
+	executed.insert(archetype);
 	
 	archetype->forAddEdge([this, &components, &f, &executed, &searching](std::shared_ptr<ArchetypeEdge> edge) {
 		forEachRecursive(edge->archetype, components, f, executed, searching);
 	});
-	executed.insert(archetype);
+	
 }
 
 std::vector<Archetype*>& EntityManager::getForEachArchetypes(EnityForEachID id)
@@ -299,22 +311,21 @@ Archetype* EntityManager::getEntityArchetype(EntityID entity) const
 	return _entities[entity].archetype;
 }
 
-bool EntityManager::hasArchetype(EntityID entity)
+bool EntityManager::hasArchetype(EntityID entity) const
 {
 	return _entities[entity].archetype != nullptr;
 }
 
 VirtualComponentPtr EntityManager::getEntityComponent(EntityID entity, ComponentID componentID) const
 {
-	assert(_components.find(componentID) != _components.end());
-	assert(getEntityArchetype(entity)->hasComponent(_components.find(componentID)->second.get()));
-	return getEntityArchetype(entity)->getComponent(_entities[entity].index, _components.find(componentID)->second.get());
+	assert(getEntityArchetype(entity)->hasComponent(componentDef(componentID)));
+	return getEntityArchetype(entity)->getComponent(_entities[entity].index, componentDef(componentID));
 }
 
 void EntityManager::addComponent(EntityID entity, ComponentID componentID)
 {
 	assert(_components.find(componentID) != _components.end());
-	const ComponentDefinition* component = _components.find(componentID)->second.get();
+	const ComponentDefinition* component = componentDef(componentID);
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
 	if (hasArchetype(entity))
@@ -379,7 +390,7 @@ void EntityManager::removeComponent(EntityID entity, ComponentID componentID)
 	assert(hasArchetype(entity)); // Can't remove anything from an entity without any components
 	assert(_components.find(componentID) != _components.end());
 
-	const ComponentDefinition* component = _components.find(componentID)->second.get();
+	const ComponentDefinition* component = componentDef(componentID);
 	Archetype* currentArchetype = getEntityArchetype(entity);
 
 	assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
@@ -411,7 +422,7 @@ void EntityManager::removeComponent(EntityID entity, ComponentID componentID)
 	_entities[entity].archetype = destArchetype;
 }
 
-const ComponentDefinition* EntityManager::componentDef(ComponentID componentID)
+const ComponentDefinition* EntityManager::componentDef(ComponentID componentID) const
 {
 	assert(_components.find(componentID) != _components.end());
 	return _components.find(componentID)->second.get();

@@ -32,7 +32,7 @@ bool Archetype::isChildOf(const Archetype* parent, const ComponentDefinition*& c
 {
 	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparason
 	byte miss_count = 0;
-	for (size_t i = 0; i < parent->_componentDefs.size(); i++)
+	for (size_t i = 0; i < _componentDefs.size(); i++)
 	{
 		if (_componentDefs.components()[i] != parent->_componentDefs.components()[i + miss_count])
 		{
@@ -67,7 +67,7 @@ std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentDefinition* 
 		if (component == _addEdges[i]->component)
 			return _addEdges[i];
 	}
-	return std::shared_ptr<ArchetypeEdge>();
+	return nullptr;
 }
 
 std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentDefinition* component)
@@ -113,12 +113,12 @@ size_t Archetype::size()
 
 size_t Archetype::createEntity()
 {
-	size_t index = 0 ;
 	for (size_t i = 0; i < _components.size(); i++)
 	{
 		_components[i].pushEmpty();
 	}
-	return _size++;
+	++_size;
+	return _size - 1;
 }
 
 size_t Archetype::copyEntity(Archetype* source, size_t index)
@@ -131,7 +131,6 @@ size_t Archetype::copyEntity(Archetype* source, size_t index)
 			_components[i].copy(&source->_components[sourceIndex], index, newIndex);
 		
 	}
-	_size++;
 	return newIndex;
 }
 
@@ -147,15 +146,18 @@ void Archetype::remove(size_t index)
 void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f)
 {
 	assert(components.size() > 0);
+	printf("running for each on archetype with %u components and %u elements.\n", _componentDefs.size(), _size);
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
-		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte**) * components.size());
+		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte*) * components.size());
 		{ //Component Indicies is only needed in this scope
-			size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
+			size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
 			_componentDefs.indicies(components, componentIndicies);
 			for (size_t i = 0; i < components.size(); i++)
 			{
+				assert(componentIndicies[i] >= 0 && componentIndicies[i] < _components.size());
 				data[i] = _components[componentIndicies[i]].getComponentData(0);
+				printf("Component %u address: %p\n", i, data[i]);
 			}
 		}
 		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
@@ -167,11 +169,11 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 
 		for (size_t entityIndex = 0; entityIndex < _size; entityIndex++)
 		{
+			f(data);
 			for (size_t i = 0; i < components.size(); i++)
 			{
 				data[i] += componentSizes[i]; // Since we know the size of a struct, we can just increment by that
 			}
-			f(data);
 		}
 	}
 	

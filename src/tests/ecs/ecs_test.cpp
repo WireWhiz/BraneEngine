@@ -303,51 +303,78 @@ TEST(ECS, ForEachTest)
 		EntityID e = em.createEntity();
 		em.addComponent(e, 3);
 		// Create a new archetype
-		if (i >= 49)
+		if (i > 49)
 			em.addComponent(e, 4);
 	}
-
 	//Set the variables on all the entites with component 3
+	size_t counter = 0;
+
 	em.forEach(forEachID, [&](byte* components[]) {
 		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
 		c1->var1 = false;
 		c1->var2 += 32;
 		c1->var3 += 42;
-
+		counter++;
 	});
+	std::cout << "ran first for-each: " << counter << " times." << std::endl;
+
+	size_t firstComp = comps.index(em.componentDef(3));
+	size_t secondComp = comps.index(em.componentDef(4));
 
 	//Set the variables on all the entites with two components
+	counter = 0;
 	em.forEach(forEachID2, [&](byte* components[]) {
-		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
-		c1->var1 = true;
-		c1->var2 += 42;
-		c1->var3 += 32;
-		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
+		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[secondComp]);
 		c2->var1 = true;
+		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[firstComp]);
+		c1->var1 = true;
+		if (counter == 0)
+		{
+			std::cout << "Variable before: " << c1->var2 << std::endl;
+			printf("Component %u address in foreach: %p\n", 0u, c1);
+			printf("Component %u address in foreach: %p\n", 1u, c2);
+		}
+		c1->var2 += 42;
+		if (counter == 0)
+		{
+			std::cout << "Variable after: " << c1->var2 << std::endl;
+		}
+		c1->var3 += 32;
+		
+		counter++;
 
 	});
+	std::cout << "ran second for-each " << counter << " times." << std::endl;
 
 
 	//Check that all the variables are what we set them too
 	for (size_t i = 0; i < 100; i++)
 	{
-		if (i >= 49)
+		if (i > 49)
 		{
 			//Entites with two
 			TestNativeComponent*  ts1 = TestNativeComponent::fromVirtual(em.getEntityComponent(i, 3).data());
-			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
-			EXPECT_EQ(74, ts1->var2) << "entity: " << i;
-			EXPECT_EQ(74, ts1->var3) << "entity: " << i;
 			TestNativeComponent2* ts2 = TestNativeComponent2::fromVirtual(em.getEntityComponent(i, 4).data());
+			if (i == 50)
+			{
+				printf("Component %u address expect check: %p\n", 0u, ts1);
+				printf("Component %u address expect check: %p\n", 1u, ts2);
+			}
+			
+			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
+			EXPECT_EQ(74, ts1->var2)   << "entity: " << i;
+			EXPECT_EQ(74, ts1->var3)   << "entity: " << i;
 			EXPECT_EQ(true, ts2->var1);
+
+			
 		}
 		else
 		{
 			//Entites with one
 			TestNativeComponent* ts1 = TestNativeComponent::fromVirtual(em.getEntityComponent(i, 3).data());
 			EXPECT_EQ(false, ts1->var1) << "entity: " << i;
-			EXPECT_EQ(32, ts1->var2) << "entity: " << i;
-			EXPECT_EQ(42, ts1->var3) << "entity: " << i;
+			EXPECT_EQ(32, ts1->var2)    << "entity: " << i;
+			EXPECT_EQ(42, ts1->var3)    << "entity: " << i;
 		}
 	}
 	

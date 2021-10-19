@@ -171,7 +171,7 @@ void VirtualComponentVector::remove(size_t index)
 
 void VirtualComponentVector::copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex)
 {
-	std::memcpy(&_data[structIndex(destIndex)], &source->_data[sourceIndex], _def->size());
+	std::memcpy(&_data[structIndex(destIndex)], &source->_data[structIndex(sourceIndex)], _def->size());
 }
 
 void VirtualComponentVector::pushBack(VirtualComponent& virtualStruct)
@@ -261,7 +261,7 @@ const std::vector<const ComponentDefinition*>& ComponentSet::components() const
 bool ComponentSet::contains(const ComponentDefinition* component) const
 {
 	size_t start = 0;
-	size_t end = _components.size();
+	size_t end = _components.size() - 1;
 	while(true)
 	{
 		size_t middle = (start + end) / 2;
@@ -270,10 +270,10 @@ bool ComponentSet::contains(const ComponentDefinition* component) const
 
 		if (_components[middle] < component)
 			start = middle + 1;
-		else if (_components[middle] > component && middle != 0)
+		else if (_components[middle] > component)
 			end = middle - 1;
 
-		if (end <= start)
+		if (end < start || end > _components.size())
 			return false;
 		
 	}
@@ -300,7 +300,7 @@ bool ComponentSet::contains(const ComponentSet& subset) const
 size_t ComponentSet::index(const ComponentDefinition* component) const
 {
 	size_t start = 0;
-	size_t end = _components.size();
+	size_t end = _components.size() - 1;
 	while (true)
 	{
 		size_t middle = (start + end) / 2;
@@ -312,10 +312,8 @@ size_t ComponentSet::index(const ComponentDefinition* component) const
 		else if (_components[middle] > component)
 			end = middle - 1;
 
-		if (end <= start)
-		{
+		if (end < start || end > _components.size())
 			return nullindex;
-		}
 	}
 }
 
@@ -329,7 +327,7 @@ void ComponentSet::indicies(const ComponentSet& subset, size_t* indices) const
 		if (_components[i] == subset._components[count])
 		{
 			indices[count] = i;
-			if (++count = subset._components.size())
+			if (++count == subset._components.size())
 				return;
 		}
 

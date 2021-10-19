@@ -62,11 +62,11 @@ public:
 	EntityID createEntity(const ComponentSet& components);
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
-	bool hasArchetype(EntityID entity);  
+	bool hasArchetype(EntityID entity) const;  
 	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID componentID) const;
 	void addComponent(EntityID entity, ComponentID componentID);
 	void removeComponent(EntityID entity, ComponentID componentID);
-	const ComponentDefinition* componentDef(ComponentID componentID);
+	const ComponentDefinition* componentDef(ComponentID componentID) const;
 
 	//system stuff
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
