@@ -14,10 +14,10 @@ add_executable(gtests
  "ecs/systems_test.cpp"
  "ecs/virtualType_test.cpp"
  "jit/jit_test.cpp"
-  )
+   "assets/assets_test.cpp")
 include_directories(gtests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(gtests gtest_main ecs jit)
+target_link_libraries(gtests gtest_main ecs jit assets)
 
 include(GoogleTest)
 gtest_discover_tests(gtests)
