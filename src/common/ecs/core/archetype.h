@@ -19,7 +19,11 @@ struct ArchetypeEdge
 
 class Archetype
 {
-private:
+#ifdef TEST_BUILD
+public:
+#endif
+
+
 	size_t _size = 0;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;

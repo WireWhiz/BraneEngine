@@ -49,13 +49,17 @@ TEST(ECS, ComponentSetTest)
 
 	cs.add((ComponentAsset*)2);
 	cs.add((ComponentAsset*)3);
+	cs.add((ComponentAsset*)4);
+	cs.add((ComponentAsset*)5);
 
 	EXPECT_EQ(cs.components()[0], (ComponentAsset*)2);
 	EXPECT_EQ(cs.components()[1], (ComponentAsset*)3);
+	EXPECT_EQ(cs.components()[2], (ComponentAsset*)4);
+	EXPECT_EQ(cs.components()[3], (ComponentAsset*)5);
 	EXPECT_TRUE(cs.contains((ComponentAsset*)2));
 	EXPECT_TRUE(cs.contains((ComponentAsset*)3));
 	EXPECT_FALSE(cs.contains((ComponentAsset*)1));
-	EXPECT_FALSE(cs.contains((ComponentAsset*)4));
+	EXPECT_FALSE(cs.contains((ComponentAsset*)6));
 	EXPECT_TRUE(cs.contains(cs));
 
 	ComponentSet cs2 = cs;
@@ -64,6 +68,8 @@ TEST(ECS, ComponentSetTest)
 	EXPECT_EQ(cs2.components()[0], (ComponentAsset*)1);
 	EXPECT_EQ(cs2.components()[1], (ComponentAsset*)2);
 	EXPECT_EQ(cs2.components()[2], (ComponentAsset*)3);
+	EXPECT_EQ(cs2.components()[3], (ComponentAsset*)4);
+	EXPECT_EQ(cs2.components()[4], (ComponentAsset*)5);
 
 	EXPECT_TRUE(cs2.contains(cs));
 
@@ -71,6 +77,7 @@ TEST(ECS, ComponentSetTest)
 	EXPECT_EQ(cs2.components()[0], (ComponentAsset*)1);
 	EXPECT_EQ(cs2.components()[1], (ComponentAsset*)3);
 
+	EXPECT_TRUE(cs.contains(cs));
 	EXPECT_FALSE(cs2.contains(cs));
 
 }
@@ -291,6 +298,82 @@ public:
 
 };
 
+TEST(ECS, ForEachCachingTest)
+{
+	EntityManager em;
+
+	std::vector<std::shared_ptr<VirtualType>> comps1;
+	comps1.push_back(std::make_unique<VirtualBool>());
+
+	AssetID aID1("localhost/testRunner/component/testComponent1");
+	ComponentAsset ca1(comps1, aID1);
+
+	std::vector<std::shared_ptr<VirtualType>> comps2;
+	comps2.push_back(std::make_unique<VirtualFloat>());
+	AssetID aID2("localhost/testRunner/component/testComponent2");
+	ComponentAsset ca2(comps2, aID2);
+
+
+	std::vector<std::shared_ptr<VirtualType>> comps3;
+	comps3.push_back(std::make_unique<VirtualBool>());
+	comps3.push_back(std::make_unique<VirtualFloat>());
+	AssetID aID3("localhost/testRunner/component/testComponent3");
+	ComponentAsset ca3(comps3, aID3);
+
+	std::vector<std::shared_ptr<VirtualType>> comps4;
+	AssetID aID4("localhost/testRunner/component/testComponent1");
+	ComponentAsset ca4(comps4, aID4);
+
+
+	// Create entity
+	EntityID entity = em.createEntity();
+
+	ComponentSet components;
+	components.add(&ca1);
+	EnityForEachID fe1 = em.getForEachID(components);
+	EXPECT_EQ(em._forEachData.size(), 1);
+
+	em.addComponent(entity, &ca1); // archetype: ca1
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+
+	em.addComponent(entity, &ca2); // archetype: ca1, ca2
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+
+	em.addComponent(entity, &ca3); // archetype: ca1, ca2, ca3
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 1);
+
+	em.addComponent(entity, &ca4); // archetype: ca1, ca2, ca3, ca4
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
+
+	em.removeComponent(entity, &ca2); // archetype: ca1, ca3, ca4
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 2);
+
+	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
+	EXPECT_EQ(em._archetypes[0][0]->_addEdges.size(), 2);
+
+	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 2);
+
+
+}
+
 TEST(ECS, ForEachTest)
 {
 	EntityManager em;
@@ -323,7 +406,7 @@ TEST(ECS, ForEachTest)
 	});
 
 	// Get index of components in set so that in the foreach we can get them from the array
-	size_t firstComp = comps.index(TestNativeComponent::def());
+	size_t firstComp  = comps.index(TestNativeComponent::def());
 	size_t secondComp = comps.index(TestNativeComponent2::def());
 
 	//Set the variables on all the entites with two components

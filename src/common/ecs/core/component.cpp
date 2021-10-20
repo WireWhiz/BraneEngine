@@ -96,6 +96,9 @@ VirtualComponentPtr VirtualComponentVector::getComponent(size_t index) const
 
 void VirtualComponentVector::remove(size_t index)
 {
+	if (_def->size() == 0)
+		return;
+
 	assert(index >= 0 && index < _data.size() / _def->size());
 	for (auto& type : _def->types())
 	{
@@ -165,11 +168,11 @@ byte* VirtualComponentPtr::data() const
 void ComponentSet::add(const ComponentAsset* component)
 {
 	assert(component != nullptr);
-	bool insertionIndex = 0;
+	size_t insertionIndex = 0;
 	for (size_t i = 0; i < _components.size(); i++)
 	{
 		assert(component != _components[i]); // Can't add the same item twice
-		if (component > _components[i])
+		if ((size_t)component > (size_t)_components[i])
 		{
 			insertionIndex += 1;
 		}
@@ -207,9 +210,9 @@ bool ComponentSet::contains(const ComponentAsset* component) const
 		if (_components[middle] == component)
 			return true;
 
-		if (_components[middle] < component)
+		if ((size_t)_components[middle] < (size_t)component)
 			start = middle + 1;
-		else if (_components[middle] > component)
+		else if ((size_t)_components[middle] > (size_t)component)
 			end = middle - 1;
 
 		if (end < start || end > _components.size())
@@ -224,7 +227,7 @@ bool ComponentSet::contains(const ComponentSet& subset) const
 	size_t count = 0;
 	for (size_t i = 0; i < _components.size(); i++)
 	{
-		if (_components[i] > subset._components[count])
+		if ((size_t)_components[i] > (size_t)subset._components[count])
 			return false;
 		if (_components[i] == subset._components[count])
 		{
@@ -246,9 +249,9 @@ size_t ComponentSet::index(const ComponentAsset* component) const
 		if (_components[middle] == component)
 			return middle;
 
-		if (_components[middle] < component)
+		if ((size_t)_components[middle] < (size_t)component)
 			start = middle + 1;
-		else if (_components[middle] > component)
+		else if ((size_t)_components[middle] > (size_t)component)
 			end = middle - 1;
 
 		if (end < start || end > _components.size())
@@ -261,7 +264,7 @@ void ComponentSet::indicies(const ComponentSet& subset, size_t* indices) const
 	size_t count = 0;
 	for (size_t i = 0; i < _components.size(); i++)
 	{
-		if (_components[i] > subset._components[count])
+		if ((size_t)_components[i] > (size_t)subset._components[count])
 			assert(false && "values not found");
 		if (_components[i] == subset._components[count])
 		{

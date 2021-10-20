@@ -16,41 +16,75 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs));
 
 	Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
+
+
 	
-	bool isRootArch = false;
-	// find edges to other archetypes lower then this one
-	if (numComps > 1)
-	{
-		const ComponentAsset* connectingComponent = nullptr;
-		for (size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
+	{//Scope for bool array
+		bool* isRootArch = (bool*)STACK_ALLOCATE(sizeof(bool) * cdefs.size());
+		for (size_t i = 0; i < cdefs.size(); i++)
 		{
-			if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
-			{
-				assert(connectingComponent != nullptr);
-				_archetypes[numComps - 2][i]->addAddEdge(connectingComponent, newArch);
-				newArch->addRemoveEdge(connectingComponent, _archetypes[numComps - 2][i].get());
-			}
+			isRootArch[i] = true;
 		}
-	}
-	// find edges to other archetypes higher then this one
-	if (_archetypes.size() > numComps)
-	{
-		for (size_t i = 0; i < _archetypes[numComps].size(); i++)
+
+		// find edges to other archetypes lower then this one
+		if (numComps > 1)
 		{
 			const ComponentAsset* connectingComponent = nullptr;
-			if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
+			for (size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
 			{
-				Archetype* otherArch = _archetypes[numComps][i].get();
-				newArch->addAddEdge(connectingComponent, otherArch);
-				otherArch->addRemoveEdge(connectingComponent, newArch);
+				if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
+				{
+					assert(connectingComponent != nullptr);
+					Archetype* otherArch = _archetypes[numComps - 2][i].get();
+					otherArch->addAddEdge(connectingComponent, newArch);
+					newArch->addRemoveEdge(connectingComponent, otherArch);
 
-				updateArchetypeRoots(otherArch);
-				updateForEachRoots(otherArch, newArch);
+					for (size_t i = 0; i < cdefs.size(); i++)
+					{
+						if(isRootArch[i] && connectingComponent != cdefs[i])
+							isRootArch[i] = false;
+					}
+				}
 			}
 		}
+
+		// find edges to other archetypes higher then this one
+		if (_archetypes.size() > numComps)
+		{
+			for (size_t i = 0; i < _archetypes[numComps].size(); i++)
+			{
+				const ComponentAsset* connectingComponent = nullptr;
+				if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
+				{
+					assert(connectingComponent != nullptr);
+					Archetype* otherArch = _archetypes[numComps][i].get();
+					newArch->addAddEdge(connectingComponent, otherArch);
+					otherArch->addRemoveEdge(connectingComponent, newArch);
+
+					if (!_rootArchetypes.count(connectingComponent))
+						continue;
+
+					for (size_t i = 0; i < _rootArchetypes[connectingComponent].size(); i++)
+					{
+						if (_rootArchetypes[connectingComponent][i] == otherArch)
+						{
+							_rootArchetypes[connectingComponent][i] == *(_rootArchetypes[connectingComponent].end() - 1);
+							_rootArchetypes[connectingComponent].resize(_rootArchetypes[connectingComponent].size() - 1);
+
+						}
+					}
+				}
+			}
+		}
+
+		for (size_t i = 0; i < cdefs.size(); i++)
+		{
+			if (isRootArch[i])
+				_rootArchetypes[cdefs[i]].push_back(newArch);
+		}
 	}
-	updateArchetypeRoots(newArch);
-	updateForEachRoots(nullptr, newArch);
+	updateForeachCache(cdefs);
+
 	return newArch;
 }
 
@@ -61,6 +95,7 @@ void EntityManager::getArchetypeRoots(const ComponentSet& components, std::vecto
 	// Serch through any archetypes of the exact size that we want to see if there's one that fits
 	if (_archetypes.size() >= components.size())
 	{
+		// Searches through all archetypes with the same number of components as the for each
 		for (auto& archetype : _archetypes[components.size() - 1])
 		{
 			if (archetype->hasComponents(components))
@@ -71,75 +106,32 @@ void EntityManager::getArchetypeRoots(const ComponentSet& components, std::vecto
 			}
 		}
 	}
-	// Search through all the archetypes that have the poetental to have just turned into what we want
+	// Search through all the archetypes that have components we want, but won't be found through an add edge chain
 	for (const ComponentAsset* compDef : components)
-		for(Archetype * archetype : _rootArchetypes.find(compDef)->second)
-			if (!found.count(archetype) && archetype->hasComponents(components))
-				roots.push_back(archetype);
-	
-	
-}
-
-void EntityManager::updateArchetypeRoots(Archetype* archtype)
-{
-	for (auto component : archtype->componentDefs())
 	{
-		if (archtype->isRootForComponent(component))
+		if (_rootArchetypes.count(compDef))
 		{
-			bool isRoot = false;
-			for (size_t i = 0; i < _rootArchetypes[component].size(); i++)
+			for (Archetype* archetype : _rootArchetypes.find(compDef)->second)
 			{
-				if (_rootArchetypes[component][i] == archtype)
+				if (!found.count(archetype) && archetype->hasComponents(components))
 				{
-					isRoot = true;
-					break;
-				}
-			}
-			if (!isRoot)
-				_rootArchetypes[component].push_back(archtype);
-		}
-		else // remove from root
-		{
-			for (size_t i = 0; i < _rootArchetypes[component].size(); i++)
-			{
-				if (_rootArchetypes[component][i] == archtype)
-				{
-					// swap with last
-					_rootArchetypes[component][i] = _rootArchetypes[component][_rootArchetypes[component].size() - 1];
-					// remove last
-					_rootArchetypes[component].resize(_rootArchetypes[component].size() - 1);
+					roots.push_back(archetype);
+					found.insert(archetype);
 				}
 			}
 		}
 	}
+		
+	
+	
 }
 
-void EntityManager::updateForEachRoots(Archetype* oldArchetype, Archetype* newArchetype)
+void EntityManager::updateForeachCache(const ComponentSet& components)
 {
 	for (ForEachData& data : _forEachData)
 	{
-		if (oldArchetype != nullptr)
-		{
-			for (size_t i = 0; i < data.archetypeRoots.size(); i++)
-			{
-				if (oldArchetype == data.archetypeRoots[i])
-				{
-					if (newArchetype == nullptr)
-					{
-						data.archetypeRoots[i] = data.archetypeRoots[data.archetypeRoots.size() - 1];
-						data.archetypeRoots.resize(data.archetypeRoots.size() - 1);
-					}
-					else if (newArchetype->hasComponents(data.components))
-					{
-						data.archetypeRoots[i] = newArchetype;
-					}
-				}
-			}
-		}
-		else if(newArchetype->hasComponents(data.components))
-		{
-			data.archetypeRoots.push_back(newArchetype);
-		}
+		if (components.contains(data.components))
+			data.cached = false;
 	}
 }
 
@@ -208,22 +200,22 @@ void EntityManager::forEach(EnityForEachID id, const std::function<void(byte* []
 {
 	assert(id >= 0);
 	assert(id < _forEachData.size());
-	//std::unordered_set<Archetype*> executed;
-	for (size_t size = _forEachData[id].components.size() - 1; size < _archetypes.size(); size++)
-	{
-		for (size_t i = 0; i < _archetypes[size].size(); i++)
-		{
-			if (_archetypes[size][i]->hasComponents(_forEachData[id].components))
-			{
-				_archetypes[size][i]->forEach(_forEachData[id].components, f);
-			}
-		}
-		
-	}
-	//for (Archetype* archetype : getForEachArchetypes(id))
+	//for (size_t size = _forEachData[id].components.size() - 1; size < _archetypes.size(); size++)
 	//{
-	//	forEachRecursive(archetype, _forEachData[id].components, f, executed, true);
+	//	for (size_t i = 0; i < _archetypes[size].size(); i++)
+	//	{
+	//		if (_archetypes[size][i]->hasComponents(_forEachData[id].components))
+	//		{
+	//			_archetypes[size][i]->forEach(_forEachData[id].components, f);
+	//		}
+	//	}
+	//	
 	//}
+	std::unordered_set<Archetype*> executed;
+	for (Archetype* archetype : getForEachArchetypes(id))
+	{
+		forEachRecursive(archetype, _forEachData[id].components, f, executed, true);
+	}
 }
 
 size_t EntityManager::forEachCount(EnityForEachID id)

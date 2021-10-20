@@ -25,18 +25,22 @@ struct EntityIndex
 
 class EntityManager
 {
+#ifdef TEST_BUILD
+public:
+#endif
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 	std::unordered_map<const ComponentAsset*, std::vector<Archetype*>> _rootArchetypes;
 
 	struct ForEachData
 	{
-		bool cached = false;
+		bool cached;
 		ComponentSet components;
 		std::vector<Archetype*> archetypeRoots;
 		ForEachData(ComponentSet components)
 		{
 			this->components = std::move(components);
+			cached = false;
 		}
 	};
 	std::vector<ForEachData> _forEachData;
@@ -46,8 +50,7 @@ class EntityManager
 
 	Archetype* makeArchetype(const ComponentSet& cdefs);
 	void getArchetypeRoots(const ComponentSet& components, std::vector<Archetype*>& roots) const;
-	void updateArchetypeRoots(Archetype* archtype);
-	void updateForEachRoots(Archetype* oldArchetype, Archetype* newArchetype);
+	void updateForeachCache(const ComponentSet& components);
 	void forEachRecursive(Archetype* archetype, const ComponentSet& components, const std::function <void(byte* [])>& f, std::unordered_set<Archetype*>& executed, bool searching);
 	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
 	SystemList _systems;

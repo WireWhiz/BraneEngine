@@ -50,6 +50,8 @@ bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connec
 
 bool Archetype::isRootForComponent(const ComponentAsset* component) const
 {
+	if (_componentDefs.size() == 1)
+		return true;
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
 		if (_removeEdges[i]->component == component)
@@ -130,6 +132,8 @@ size_t Archetype::copyEntity(Archetype* source, size_t index)
 	size_t newIndex = createEntity();
 	for (size_t i = 0; i < _components.size(); i++)
 	{
+		if (_componentDefs[i]->size() == 0)
+			continue;
 		size_t sourceIndex = source->_componentDefs.index(_componentDefs.components()[i]);
 		if (sourceIndex != nullindex)
 			_components[i].copy(&source->_components[sourceIndex], index, newIndex);
