@@ -1,13 +1,27 @@
 #include "testing.h"
-#include "assets/assetAddress.h"
+#include "assets/assetManager.h"
 
-TEST(assets, AssetAddressTest)
+TEST(assets, AssetIDTest)
 {
-	AssetAddress aa;
-	aa.parseString("server.ip.goes.here/owner/model/test asset");
+	AssetID aa;
+	aa.parseString("server.ip.goes.here/owner/mesh/test asset");
 	EXPECT_EQ(aa.serverAddress, "server.ip.goes.here");
 	EXPECT_EQ(aa.owner, "owner");
-	EXPECT_EQ(aa.type.string(), "model");
+	EXPECT_EQ(aa.type.string(), "mesh");
 	EXPECT_EQ(aa.name, "test asset");
-	EXPECT_EQ(aa.string(), "server.ip.goes.here/owner/model/test asset");
+	EXPECT_EQ(aa.string(), "server.ip.goes.here/owner/mesh/test asset");
+} 
+
+TEST(assets, AssetManagerTest)
+{
+	AssetID aID;
+	aID.parseString("localhost/tester/component/testComponent");
+	std::vector<std::shared_ptr<VirtualType>> components;
+	components.push_back(std::make_shared<VirtualBool>(0));
+	ComponentAsset* ca = new ComponentAsset(components, aID);
+
+	AssetManager am;
+	am.addComponent(ca);
+
+	EXPECT_EQ(am.getComponent(aID)->id(), aID);
 }

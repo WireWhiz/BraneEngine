@@ -83,10 +83,11 @@ namespace graphics
 
 	};
 
+	
 	class MeshComponent : public NativeComponent<MeshComponent, 1>
 	{
 	public:
-		void getVariableIndicies(std::vector<NativeVarDef>& variables);
+		void getVariableIndicies(const ComponentSet& variables);
 		MeshID id;
 	};
 	

@@ -1,11 +1,12 @@
 #include "testing.h"
 #include <ecs/ecs.h>
 
-class CounterComponent : public NativeComponent<CounterComponent, 0>
+class CounterComponent : public NativeComponent<CounterComponent>
 {
 public:
-	virtual void getVariableTypes(std::vector<std::shared_ptr<VirtualType>>& types) override
+	void getComponentData(std::vector<std::shared_ptr<VirtualType>>& types, AssetID& id)
 	{
+		id.parseString("localhost/native/component/CounterComponent");
 		types.push_back(std::make_shared<VirtualInt>(offsetof(CounterComponent, counter)));
 	}
 public:
@@ -59,14 +60,13 @@ TEST(Systems, NativeTest)
 
 	//Create entity and add test component
 	CounterComponent cc;
-	em.regesterComponent(*cc.def());
 
 	em.createEntity();
-	em.addComponent(0, 0);
+	em.addComponent(0, CounterComponent::def());
 
 	//Create test system
 	ComponentSet components;
-	components.add(em.componentDef(0));
+	components.add(cc.def());
 	std::unique_ptr<VirtualSystem> aos = std::make_unique<AddSystem>(0, em.getForEachID(components), 1);
 	EXPECT_TRUE(em.addSystem(aos));
 
@@ -75,8 +75,8 @@ TEST(Systems, NativeTest)
 	em.runSystems();
 	em.runSystems();
 
-	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, 0).data())->counter, 3);
-	EXPECT_EQ(em.getEntityComponent(0, 0).readVar<uint64_t>(0), 3);
+	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, CounterComponent::def()).data())->counter, 3);
+	EXPECT_EQ(em.getEntityComponent(0, CounterComponent::def()).readVar<uint64_t>(0), 3);
 
 }
 
@@ -86,14 +86,13 @@ TEST(Systems, BeforeConstraint)
 
 	//Create entity and add test component
 	CounterComponent cc;
-	em.regesterComponent(*cc.def());
 
 	em.createEntity();
-	em.addComponent(0, 0);
+	em.addComponent(0, CounterComponent::def());
 
 	//Create test systems
 	ComponentSet components;
-	components.add(em.componentDef(0));
+	components.add(cc.def());
 	EnityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
 	EXPECT_TRUE(em.addSystem(mul));
@@ -110,8 +109,8 @@ TEST(Systems, BeforeConstraint)
 	//Run system
 	em.runSystems();
 
-	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, 0).data())->counter, 6);
-	EXPECT_EQ(em.getEntityComponent(0, 0).readVar<uint64_t>(0), 6);
+	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, CounterComponent::def()).data())->counter, 6);
+	EXPECT_EQ(em.getEntityComponent(0, CounterComponent::def()).readVar<uint64_t>(0), 6);
 }
 
 TEST(Systems, AfterConstraint)
@@ -120,14 +119,13 @@ TEST(Systems, AfterConstraint)
 
 	//Create entity and add test component
 	CounterComponent cc;
-	em.regesterComponent(*cc.def());
 
 	em.createEntity();
-	em.addComponent(0, 0);
+	em.addComponent(0, CounterComponent::def());
 
 	//Create test systems
 	ComponentSet components;
-	components.add(em.componentDef(0));
+	components.add(cc.def());
 	EnityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
 	EXPECT_TRUE(em.addSystem(mul));
@@ -143,6 +141,6 @@ TEST(Systems, AfterConstraint)
 	//Run system
 	em.runSystems();
 
-	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, 0).data())->counter, 6);
-	EXPECT_EQ(em.getEntityComponent(0, 0).readVar<uint64_t>(0), 6);
+	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, CounterComponent::def()).data())->counter, 6);
+	EXPECT_EQ(em.getEntityComponent(0, CounterComponent::def()).readVar<uint64_t>(0), 6);
 }

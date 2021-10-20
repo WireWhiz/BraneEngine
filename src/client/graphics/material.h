@@ -29,7 +29,8 @@ namespace graphics
 
 	public:
 		~Material();
-		ComponentDefinition createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment);
+		
+		createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment);
 		ComponentID componentID();
 		void addTextureDescriptor(Texture* texture);
 		void setGeometry(Shader* shader);

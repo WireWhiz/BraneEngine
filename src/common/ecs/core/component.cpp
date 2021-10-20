@@ -9,7 +9,7 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 	std::copy(source._data, source._data + _def->size() - 1, _data);
 }
 
-VirtualComponent::VirtualComponent(const ComponentDefinition* definition)
+VirtualComponent::VirtualComponent(const ComponentAsset* definition)
 {
 	_def = definition;
 	_data = new byte[_def->size()];
@@ -19,7 +19,7 @@ VirtualComponent::VirtualComponent(const ComponentDefinition* definition)
 	}
 }
 
-VirtualComponent::VirtualComponent(const ComponentDefinition* definition, const byte* const data)
+VirtualComponent::VirtualComponent(const ComponentAsset* definition, const byte* const data)
 {
 	_def = definition;
 	_data = new byte[_def->size()];
@@ -35,83 +35,20 @@ VirtualComponent::~VirtualComponent()
 	delete[] _data;
 }
 
-const ComponentDefinition* VirtualComponent::def() const
-{
-	return _def;
-}
-
 byte* VirtualComponent::data() const
 {
 	return _data;
 }
 
-ComponentID ComponentDefinition::id() const
+
+const ComponentAsset* VirtualComponent::def() const
 {
-	return _id;
+	return _def;
 }
 
-ComponentDefinition::ComponentDefinition(const ComponentDefinition& source)
-{
-	_size = source._size;
-	_types.resize(source._types.size());
-	for (size_t i = 0; i < source._types.size(); i++)
-	{
-		_types[i] = source._types[i];
-	}
-	_types = source._types;
-	_id = source._id;
-}
 
-ComponentDefinition::ComponentDefinition(const std::vector<std::shared_ptr<VirtualType>>& types, ComponentID id)
-{
-	_size = 0;
-	_id = id;
-	if (types.size() != 0)
-	{
 
-		_types.resize(types.size());
-		for (size_t i = 0; i < types.size(); i++)
-		{
-			_types[i] = types[i];
-		}
-		if (_types[0]->offset() != 0 || _types.size() > 1 && _types[1]->offset() != 0)
-			return; // This means that they have already been set
-		for (size_t i = 0; i < _types.size(); i++)
-		{
-			_types[i]->setOffset(_size);
-			_size += _types[i]->size();
-		}
-	}
-
-	
-}
-
-ComponentDefinition::~ComponentDefinition()
-{
-}
-
-void ComponentDefinition::setSize(size_t size)
-{
-	_size = size;
-}
-
-size_t ComponentDefinition::size() const
-{
-	return _size;
-}
-
-size_t ComponentDefinition::getByteIndex(size_t index) const
-{
-	assert(index >= 0 && index < _types.size());
-	return _types[index]->offset();
-}
-
-const std::vector<std::shared_ptr<VirtualType>>& ComponentDefinition::types() const
-{
-	return _types;
-}
-
-VirtualComponentVector::VirtualComponentVector(const ComponentDefinition* definition)
+VirtualComponentVector::VirtualComponentVector(const ComponentAsset* definition)
 {
 	_def = definition;
 }
@@ -121,7 +58,7 @@ VirtualComponentVector::VirtualComponentVector(const VirtualComponentVector& oth
 	_def = other._def;
 }
 
-VirtualComponentVector::VirtualComponentVector(const ComponentDefinition* const definition, size_t initalSize)
+VirtualComponentVector::VirtualComponentVector(const ComponentAsset* const definition, size_t initalSize)
 {
 	_def = definition;
 	reserve(initalSize * _def->size());
@@ -132,7 +69,7 @@ size_t VirtualComponentVector::structIndex(size_t index) const
 	return index * _def->size();
 }
 
-const ComponentDefinition* VirtualComponentVector::def() const
+const ComponentAsset* VirtualComponentVector::def() const
 {
 	return _def;
 }
@@ -209,13 +146,13 @@ void VirtualComponentVector::reserve(size_t size)
 	_data.reserve(size * _def->size());
 }
 
-VirtualComponentPtr::VirtualComponentPtr(const ComponentDefinition* definition, byte* const data)
+VirtualComponentPtr::VirtualComponentPtr(const ComponentAsset* definition, byte* const data)
 {
 	_def = definition;
 	_data = data;
 }
 
-const ComponentDefinition* VirtualComponentPtr::def() const
+const ComponentAsset* VirtualComponentPtr::def() const
 {
 	return _def;
 }
@@ -225,8 +162,9 @@ byte* VirtualComponentPtr::data() const
 	return _data;
 }
 
-void ComponentSet::add(const ComponentDefinition* component)
+void ComponentSet::add(const ComponentAsset* component)
 {
+	assert(component != nullptr);
 	bool insertionIndex = 0;
 	for (size_t i = 0; i < _components.size(); i++)
 	{
@@ -241,8 +179,9 @@ void ComponentSet::add(const ComponentDefinition* component)
 	_components.insert(_components.begin() + insertionIndex, component);
 }
 
-void ComponentSet::remove(const ComponentDefinition* component)
+void ComponentSet::remove(const ComponentAsset* component)
 {
+	assert(component != nullptr);
 	for (size_t i = 0; i < _components.size(); i++)
 	{
 		if (_components[i] == component)
@@ -253,12 +192,12 @@ void ComponentSet::remove(const ComponentDefinition* component)
 	}
 }
 
-const std::vector<const ComponentDefinition*>& ComponentSet::components() const
+const std::vector<const ComponentAsset*>& ComponentSet::components() const
 {
 	return _components;
 }
 
-bool ComponentSet::contains(const ComponentDefinition* component) const
+bool ComponentSet::contains(const ComponentAsset* component) const
 {
 	size_t start = 0;
 	size_t end = _components.size() - 1;
@@ -297,7 +236,7 @@ bool ComponentSet::contains(const ComponentSet& subset) const
 	return false;
 }
 
-size_t ComponentSet::index(const ComponentDefinition* component) const
+size_t ComponentSet::index(const ComponentAsset* component) const
 {
 	size_t start = 0;
 	size_t end = _components.size() - 1;
@@ -339,17 +278,17 @@ size_t ComponentSet::size() const
 	return _components.size();
 }
 
-const ComponentDefinition* ComponentSet::operator[](size_t index) const
+const ComponentAsset* ComponentSet::operator[](size_t index) const
 {
 	return _components[index];
 }
 
-typename std::vector<const ComponentDefinition*>::const_iterator ComponentSet::begin() const
+typename std::vector<const ComponentAsset*>::const_iterator ComponentSet::begin() const
 {
 	return _components.begin();
 }
 
-typename  std::vector<const ComponentDefinition*>::const_iterator ComponentSet::end() const
+typename  std::vector<const ComponentAsset*>::const_iterator ComponentSet::end() const
 {
 	return _components.end();
 }

@@ -27,8 +27,7 @@ class EntityManager
 {
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
-	std::unordered_map<ComponentID, std::unique_ptr<ComponentDefinition>> _components;
-	std::unordered_map<const ComponentDefinition*, std::vector<Archetype*>> _rootArchetypes;
+	std::unordered_map<const ComponentAsset*, std::vector<Archetype*>> _rootArchetypes;
 
 	struct ForEachData
 	{
@@ -55,18 +54,16 @@ class EntityManager
 public:
 	EntityManager() = default;
 	EntityManager(const EntityManager&) = delete;
-	void regesterComponent(const ComponentDefinition& newComponent);
-	void deregesterComponent(ComponentID component);
 	Archetype* getArcheytpe(const ComponentSet& components);
 	EntityID createEntity(); 
 	EntityID createEntity(const ComponentSet& components);
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity) const;  
-	VirtualComponentPtr getEntityComponent(EntityID entity, ComponentID componentID) const;
-	void addComponent(EntityID entity, ComponentID componentID);
-	void removeComponent(EntityID entity, ComponentID componentID);
-	const ComponentDefinition* componentDef(ComponentID componentID) const;
+	size_t archetypeCount(size_t archetypeSize);
+	VirtualComponentPtr getEntityComponent(EntityID entity, const ComponentAsset* component) const;
+	void addComponent(EntityID entity, const ComponentAsset* component);
+	void removeComponent(EntityID entity, const ComponentAsset* component);
 
 	//system stuff
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);

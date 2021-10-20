@@ -12,9 +12,9 @@ class Archetype;
 
 struct ArchetypeEdge
 {
-	const ComponentDefinition* component;
+	const ComponentAsset* component;
 	Archetype* archetype;
-	ArchetypeEdge(const ComponentDefinition* component, Archetype* archetype);
+	ArchetypeEdge(const ComponentAsset* component, Archetype* archetype);
 };
 
 class Archetype
@@ -27,16 +27,16 @@ private:
 	std::vector<VirtualComponentVector> _components;
 public:
 	Archetype(const ComponentSet& componentDefs);
-	bool hasComponent(const ComponentDefinition* component) const;
+	bool hasComponent(const ComponentAsset* component) const;
 	bool hasComponents(const ComponentSet& comps) const;
-	const VirtualComponentPtr getComponent(size_t entity, const ComponentDefinition* component) const;
-	bool isChildOf(const Archetype* parent, const ComponentDefinition*& connectingComponent) const;
-	bool isRootForComponent(const ComponentDefinition* component) const;
+	const VirtualComponentPtr getComponent(size_t entity, const ComponentAsset* component) const;
+	bool isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const;
+	bool isRootForComponent(const ComponentAsset* component) const;
 	const ComponentSet& componentDefs() const;
-	std::shared_ptr<ArchetypeEdge> getAddEdge(const ComponentDefinition* component);
-	std::shared_ptr<ArchetypeEdge> getRemoveEdge(const ComponentDefinition* component);
-	void addAddEdge(const ComponentDefinition* component, Archetype* archetype);
-	void addRemoveEdge(const ComponentDefinition* component, Archetype* archetype);
+	std::shared_ptr<ArchetypeEdge> getAddEdge(const ComponentAsset* component);
+	std::shared_ptr<ArchetypeEdge> getRemoveEdge(const ComponentAsset* component);
+	void addAddEdge(const ComponentAsset* component, Archetype* archetype);
+	void addRemoveEdge(const ComponentAsset* component, Archetype* archetype);
 	void forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f);
 	void forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f);
 	size_t size();

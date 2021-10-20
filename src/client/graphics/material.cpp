@@ -79,7 +79,8 @@ namespace graphics
         vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
     }
 
-    ComponentDefinition Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
+    
+    Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
     {
         assert(_id == ULONG_MAX && "createUniformComponent can only be called once");
         std::vector<NativeVarDef> varDefs(vars.size());
@@ -93,7 +94,7 @@ namespace graphics
                 index += 16 - (index % 16);
         }
 
-        ComponentDefinition compDef(vars.size(), id);
+        ComponentAsset compDef(vars.size(), id);
         compDef.initalize(varDefs, index);
         _id = compDef.id();
 

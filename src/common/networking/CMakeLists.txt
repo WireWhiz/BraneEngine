@@ -6,5 +6,5 @@ add_library(networking STATIC
    "networkError.cpp"
    "client.cpp" 
    "server.cpp"
-   )
+    "serverAddress.h" "serverAddress.cpp")
  target_link_libraries(networking PUBLIC ssl)

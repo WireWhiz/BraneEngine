@@ -12,7 +12,7 @@ Archetype::Archetype(const ComponentSet& componentDefs) : _componentDefs(compone
 
 }
 
-bool Archetype::hasComponent(const ComponentDefinition* component) const
+bool Archetype::hasComponent(const ComponentAsset* component) const
 {
 	return _componentDefs.contains(component);
 }
@@ -22,29 +22,33 @@ bool Archetype::hasComponents(const ComponentSet& comps) const
 	return _componentDefs.contains(comps);
 }
 
-const VirtualComponentPtr Archetype::getComponent(size_t entity, const ComponentDefinition* component) const
+const VirtualComponentPtr Archetype::getComponent(size_t entity, const ComponentAsset* component) const
 {
 	assert(entity < _size);
 	return _components[_componentDefs.index(component)].getComponent(entity);
 }
 
-bool Archetype::isChildOf(const Archetype* parent, const ComponentDefinition*& connectingComponent) const
+bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const
 {
 	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparason
-	byte miss_count = 0;
-	for (size_t i = 0; i < _componentDefs.size(); i++)
+	byte missCount = 0;
+	for (size_t i = 0; i - missCount < _componentDefs.size(); i++)
 	{
-		if (_componentDefs.components()[i] != parent->_componentDefs.components()[i + miss_count])
+		assert(i - missCount < _componentDefs.size());
+			
+		if (_componentDefs.components()[i - missCount] != parent->_componentDefs.components()[i])
 		{
 			connectingComponent = parent->_componentDefs.components()[i];
-			if (++miss_count > 1)
+			if (++missCount > 1)
 				return false;
 		}
 	}
+	if(!connectingComponent)
+		connectingComponent = parent->_componentDefs[parent->_componentDefs.size() - 1];
 	return true;
 }
 
-bool Archetype::isRootForComponent(const ComponentDefinition* component) const
+bool Archetype::isRootForComponent(const ComponentAsset* component) const
 {
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
@@ -60,7 +64,7 @@ const ComponentSet& Archetype::componentDefs() const
 	return _componentDefs;
 }
 
-std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentDefinition* component)
+std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* component)
 {
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
@@ -70,7 +74,7 @@ std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentDefinition* 
 	return nullptr;
 }
 
-std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentDefinition* component)
+std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentAsset* component)
 {
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
@@ -80,12 +84,12 @@ std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentDefinitio
 	return std::shared_ptr<ArchetypeEdge>();
 }
 
-void Archetype::addAddEdge(const ComponentDefinition* component, Archetype* archetype)
+void Archetype::addAddEdge(const ComponentAsset* component, Archetype* archetype)
 {
 	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
 
-void Archetype::addRemoveEdge(const ComponentDefinition* component, Archetype* archetype)
+void Archetype::addRemoveEdge(const ComponentAsset* component, Archetype* archetype)
 {
 	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
@@ -146,7 +150,6 @@ void Archetype::remove(size_t index)
 void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f)
 {
 	assert(components.size() > 0);
-	printf("running for each on archetype with %u components and %u elements.\n", _componentDefs.size(), _size);
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
 		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte*) * components.size());
@@ -157,7 +160,6 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 			{
 				assert(componentIndicies[i] >= 0 && componentIndicies[i] < _components.size());
 				data[i] = _components[componentIndicies[i]].getComponentData(0);
-				printf("Component %u address: %p\n", i, data[i]);
 			}
 		}
 		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
@@ -179,8 +181,9 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 	
 }
 
-ArchetypeEdge::ArchetypeEdge(const ComponentDefinition* component, Archetype* archetype)
+ArchetypeEdge::ArchetypeEdge(const ComponentAsset* component, Archetype* archetype)
 {
+	assert(component && archetype);
 	this->component = component;
 	this->archetype = archetype;
 }

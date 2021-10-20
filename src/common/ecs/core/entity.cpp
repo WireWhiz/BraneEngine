@@ -21,11 +21,12 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 	// find edges to other archetypes lower then this one
 	if (numComps > 1)
 	{
-		const ComponentDefinition* connectingComponent;
+		const ComponentAsset* connectingComponent = nullptr;
 		for (size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
 		{
 			if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
 			{
+				assert(connectingComponent != nullptr);
 				_archetypes[numComps - 2][i]->addAddEdge(connectingComponent, newArch);
 				newArch->addRemoveEdge(connectingComponent, _archetypes[numComps - 2][i].get());
 			}
@@ -36,7 +37,7 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 	{
 		for (size_t i = 0; i < _archetypes[numComps].size(); i++)
 		{
-			const ComponentDefinition* connectingComponent;
+			const ComponentAsset* connectingComponent = nullptr;
 			if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
 			{
 				Archetype* otherArch = _archetypes[numComps][i].get();
@@ -71,7 +72,7 @@ void EntityManager::getArchetypeRoots(const ComponentSet& components, std::vecto
 		}
 	}
 	// Search through all the archetypes that have the poetental to have just turned into what we want
-	for (const ComponentDefinition* compDef : components)
+	for (const ComponentAsset* compDef : components)
 		for(Archetype * archetype : _rootArchetypes.find(compDef)->second)
 			if (!found.count(archetype) && archetype->hasComponents(components))
 				roots.push_back(archetype);
@@ -140,19 +141,6 @@ void EntityManager::updateForEachRoots(Archetype* oldArchetype, Archetype* newAr
 			data.archetypeRoots.push_back(newArchetype);
 		}
 	}
-}
-
-void EntityManager::regesterComponent(const ComponentDefinition& newComponent)
-{
-	assert(_components.find(newComponent.id()) == _components.end());
-	// AParEntly std::unordered_map uses std::vector so whenever I add stuff to it, IT REALOCATES and RESIZES the memory Meaning all the pointers that I want to set to the data it contains just BREAK! but no longer... I WILL USE MORE POINTERS, THAT WILL DEFEAT THIS ANTI POINTER TIRANY!!!! this memory does not need to be contigougs like components so no Index maddness here, no maddnes at all... - WireWhiz, 2:40am 
-	_components.insert({ newComponent.id(), std::make_unique<ComponentDefinition>(newComponent)});
-}
-
-void EntityManager::deregesterComponent(ComponentID component)
-{
-	assert(_components.find(component) != _components.end());
-	_components.erase(component);
 }
 
 Archetype* EntityManager::getArcheytpe(const ComponentSet& components)
@@ -316,16 +304,22 @@ bool EntityManager::hasArchetype(EntityID entity) const
 	return _entities[entity].archetype != nullptr;
 }
 
-VirtualComponentPtr EntityManager::getEntityComponent(EntityID entity, ComponentID componentID) const
+size_t EntityManager::archetypeCount(size_t archetypeSize)
 {
-	assert(getEntityArchetype(entity)->hasComponent(componentDef(componentID)));
-	return getEntityArchetype(entity)->getComponent(_entities[entity].index, componentDef(componentID));
+	assert(archetypeSize < _archetypes.size());
+	return _archetypes[archetypeSize].size();
 }
 
-void EntityManager::addComponent(EntityID entity, ComponentID componentID)
+VirtualComponentPtr EntityManager::getEntityComponent(EntityID entity, const ComponentAsset* component) const
 {
-	assert(_components.find(componentID) != _components.end());
-	const ComponentDefinition* component = componentDef(componentID);
+	assert(component != nullptr);
+	assert(getEntityArchetype(entity)->hasComponent(component));
+	return getEntityArchetype(entity)->getComponent(_entities[entity].index, component);
+}
+
+void EntityManager::addComponent(EntityID entity, const ComponentAsset* component)
+{
+	assert(component != nullptr);
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
 	if (hasArchetype(entity))
@@ -383,14 +377,13 @@ void EntityManager::addComponent(EntityID entity, ComponentID componentID)
 	_entities[entity].archetype = destArchetype;
 }
 
-void EntityManager::removeComponent(EntityID entity, ComponentID componentID)
+void EntityManager::removeComponent(EntityID entity, const ComponentAsset* component)
 {
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
 	assert(hasArchetype(entity)); // Can't remove anything from an entity without any components
-	assert(_components.find(componentID) != _components.end());
-
-	const ComponentDefinition* component = componentDef(componentID);
+	
+		
 	Archetype* currentArchetype = getEntityArchetype(entity);
 
 	assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
@@ -420,12 +413,6 @@ void EntityManager::removeComponent(EntityID entity, ComponentID componentID)
 		_entities[entity].index = 0;
 	currentArchetype->remove(oldIndex);
 	_entities[entity].archetype = destArchetype;
-}
-
-const ComponentDefinition* EntityManager::componentDef(ComponentID componentID) const
-{
-	assert(_components.find(componentID) != _components.end());
-	return _components.find(componentID)->second.get();
 }
 
 bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>& system)

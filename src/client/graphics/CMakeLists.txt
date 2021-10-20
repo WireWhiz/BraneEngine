@@ -4,8 +4,8 @@ add_library(graphics STATIC
 	graphics.cpp
 	graphicsDevice.cpp
 	graphicsPipeline.cpp
-	material.cpp
-	mesh.cpp
+	"material.cpp"
+	"mesh.cpp"
 	renderer.cpp
 	shader.cpp
 	swapChain.cpp
