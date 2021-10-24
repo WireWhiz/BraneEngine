@@ -39,11 +39,11 @@ public:
 	const ComponentSet _components;
 	std::vector<std::unique_ptr<Chunk>> _chunks;
 
-	ChunkPool& _chunkAllocator;
+	std::shared_ptr<ChunkPool> _chunkAllocator;
 
 	size_t chunkIndex(size_t entity) const;
 public:
-	Archetype(const ComponentSet& components, ChunkPool& chunkAllocator);
+	Archetype(const ComponentSet& components, std::shared_ptr<ChunkPool>& _chunkAllocator);
 	~Archetype();
 	bool hasComponent(const ComponentAsset* component) const;
 	bool hasComponents(const ComponentSet& comps) const;

@@ -13,7 +13,7 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 		_archetypes.resize(numComps);
 
 	size_t newIndex = _archetypes[numComps - 1].size();
-	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs, chunkAllocator));
+	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs, _chunkAllocator));
 
 	Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
 
@@ -136,6 +136,11 @@ void EntityManager::updateForeachCache(const ComponentSet& components)
 		if (components.contains(data.components))
 			data.cached = false;
 	}
+}
+
+EntityManager::EntityManager()
+{
+	_chunkAllocator = std::make_unique<ChunkPool>();
 }
 
 Archetype* EntityManager::getArcheytpe(const ComponentSet& components)

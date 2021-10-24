@@ -48,7 +48,7 @@ public:
 
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
-	ChunkPool chunkAllocator;
+	std::shared_ptr<ChunkPool> _chunkAllocator;
 
 	Archetype* makeArchetype(const ComponentSet& cdefs);
 	void getArchetypeRoots(const ComponentSet& components, std::vector<Archetype*>& roots) const;
@@ -57,7 +57,7 @@ public:
 	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
 	SystemList _systems;
 public:
-	EntityManager() = default;
+	EntityManager();
 	EntityManager(const EntityManager&) = delete;
 	Archetype* getArcheytpe(const ComponentSet& components);
 	EntityID createEntity(); 

@@ -3,6 +3,7 @@
 #include "../assetID.h"
 #include <memory>
 #include <ecs/core/virtualType.h>
+#include <vector>
 
 class ComponentAsset
 {

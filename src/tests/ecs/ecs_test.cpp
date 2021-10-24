@@ -102,7 +102,7 @@ TEST(ECS, ArchetypeTest)
 	components.add(&helloWorldComponent);
 	components.add(&helloThereComponent);
 	components.add(&generalKenobiComponent);
-	ChunkPool cp;
+	std::shared_ptr<ChunkPool> cp = std::make_shared<ChunkPool>();
 	Archetype arch(components, cp);
 
 	EXPECT_EQ(arch.entitySize(), sizeof(std::string) * 6);
@@ -349,7 +349,7 @@ TEST(ECS, ForEachCachingTest)
 	ComponentAsset ca3(comps3, aID3);
 
 	std::vector<std::unique_ptr<VirtualType>> comps4;
-	AssetID aID4("localhost/testRunner/component/testComponent1");
+	AssetID aID4("localhost/testRunner/component/testComponent4");
 	ComponentAsset ca4(comps4, aID4);
 
 

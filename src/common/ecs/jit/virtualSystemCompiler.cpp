@@ -39,9 +39,11 @@ int VirtualSystemCompiler::testFunction()
 	if (err) return -1;                // Handle a possible error returned by AsmJit.
 	// ----> CodeHolder is no longer needed from here and can be destroyed <----
 
-
-	return fn();                // Execute the generated code.
+	int result = fn();
 
 	rt.release(fn);
+
+	return result;                // Execute the generated code.
+
 }
 

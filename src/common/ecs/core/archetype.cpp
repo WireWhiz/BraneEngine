@@ -8,13 +8,12 @@ size_t Archetype::chunkIndex(size_t entity) const
 	return entity / (Chunk::allocationSize() / _entitySize);
 }
 
-Archetype::Archetype(const ComponentSet& components, ChunkPool& chunkAllocator) : _components(components), _chunkAllocator(chunkAllocator)
+Archetype::Archetype(const ComponentSet& components, std::shared_ptr<ChunkPool>& chunkAllocator) : _components(components)
 {
-	//_components.reserve(componentDefs.size());
+	_chunkAllocator = chunkAllocator;
 	_entitySize = 0;
 	for (size_t i = 0; i < components.size(); i++)
 	{
-		//_components.push_back(VirtualComponentVector(_componentDefs[i]));
 		_entitySize += components[i]->size();
 	}
 
@@ -24,8 +23,8 @@ Archetype::~Archetype()
 {
 	while (!_chunks.empty())
 	{
-		_chunkAllocator << _chunks[_chunks.size() - 1];
-		_chunks.resize(_chunks.size() - 1);
+		*_chunkAllocator << _chunks[_chunks.size() - 1];
+		_chunks.erase(_chunks.end() - 1);
 	}
 }
 
@@ -152,7 +151,7 @@ size_t Archetype::createEntity()
 	if (chunk >= _chunks.size())
 	{
 		_chunks.resize(_chunks.size() + 1);
-		_chunkAllocator >> _chunks[_chunks.size() - 1];
+		*_chunkAllocator >> _chunks[_chunks.size() - 1];
 		_chunks[_chunks.size() - 1]->setArchetype(this);
 	}
 
@@ -212,7 +211,7 @@ void Archetype::remove(size_t index)
 
 	if (lastChunk->size() == 0)
 	{
-		_chunkAllocator << _chunks[_chunks.size() - 1];
+		*_chunkAllocator << _chunks[_chunks.size() - 1];
 		_chunks.resize(_chunks.size() - 1);
 	}
 		

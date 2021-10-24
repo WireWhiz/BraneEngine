@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <vector>
 #include "virtualType.h"
 #include "archetype.h"
 #include <algorithm>
@@ -17,6 +18,16 @@ public:
 	std::vector<size_t> _componentIndices;
 
 public:
+	ChunkBase()
+	{
+		_size = 0;
+		_archetype = nullptr;
+	}
+	ChunkBase(const ChunkBase&) = delete;
+	~ChunkBase()
+	{
+		clear();
+	}
 	void setArchetype(Archetype* archetype)
 	{
 		clear();
@@ -96,7 +107,7 @@ public:
 			{
 				for (size_t i = 0; i < _size; i++)
 				{
-					_archetype->components()[c]->deconstruct(getComponent(c, i));
+					//_archetype->components()[c]->deconstruct(getComponent(c, i));
 				}
 			}
 		}
@@ -142,6 +153,7 @@ public:
 	std::vector<std::unique_ptr<Chunk>> _unused;
 
 public:
+	~ChunkPool();
 	friend void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest);
 	friend void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& dest);
 };
