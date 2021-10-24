@@ -1,56 +1,85 @@
 #include "Archetype.h"
 
+#include "chunk.h"
 
 
-Archetype::Archetype(const ComponentSet& componentDefs) : _componentDefs(componentDefs)
+size_t Archetype::chunkIndex(size_t entity) const
 {
-	_components.reserve(componentDefs.size());
-	for (size_t i = 0; i < _componentDefs.size(); i++)
+	return entity / (Chunk::allocationSize() / _entitySize);
+}
+
+Archetype::Archetype(const ComponentSet& components, ChunkPool& chunkAllocator) : _components(components), _chunkAllocator(chunkAllocator)
+{
+	//_components.reserve(componentDefs.size());
+	_entitySize = 0;
+	for (size_t i = 0; i < components.size(); i++)
 	{
-		_components.push_back(VirtualComponentVector(_componentDefs.components()[i]));
+		//_components.push_back(VirtualComponentVector(_componentDefs[i]));
+		_entitySize += components[i]->size();
 	}
 
 }
 
+Archetype::~Archetype()
+{
+	while (!_chunks.empty())
+	{
+		_chunkAllocator << _chunks[_chunks.size() - 1];
+		_chunks.resize(_chunks.size() - 1);
+	}
+}
+
 bool Archetype::hasComponent(const ComponentAsset* component) const
 {
-	return _componentDefs.contains(component);
+	return _components.contains(component);
 }
 
 bool Archetype::hasComponents(const ComponentSet& comps) const
 {
-	return _componentDefs.contains(comps);
+	return _components.contains(comps);
 }
 
 const VirtualComponentPtr Archetype::getComponent(size_t entity, const ComponentAsset* component) const
 {
-	assert(entity < _size);
-	return _components[_componentDefs.index(component)].getComponent(entity);
+	assert(_components.contains(component));
+	return VirtualComponentPtr(component, getComponent(entity, _components.index(component)));
+}
+
+byte* Archetype::getComponent(size_t entity, size_t component) const
+{
+	assert(component < _components.size());
+
+	size_t chunk = chunkIndex(entity);
+	assert(chunk < _chunks.size());
+
+	size_t index = entity - chunk * _chunks[0]->maxCapacity();
+	assert(index < _chunks[chunk]->size());
+	return _chunks[chunk]->getComponent(component, index);
 }
 
 bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const
 {
 	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparason
 	byte missCount = 0;
-	for (size_t i = 0; i - missCount < _componentDefs.size(); i++)
+	for (size_t i = 0; i - missCount < _components.size(); i++)
 	{
-		assert(i - missCount < _componentDefs.size());
+		assert(i - missCount < _components.size());
 			
-		if (_componentDefs.components()[i - missCount] != parent->_componentDefs.components()[i])
+		if (_components[i - missCount] != parent->_components[i])
 		{
-			connectingComponent = parent->_componentDefs.components()[i];
+			connectingComponent = parent->_components.components()[i];
 			if (++missCount > 1)
 				return false;
 		}
 	}
 	if(!connectingComponent)
-		connectingComponent = parent->_componentDefs[parent->_componentDefs.size() - 1];
+		connectingComponent = parent->_components[parent->_components.size() - 1];
 	return true;
 }
 
 bool Archetype::isRootForComponent(const ComponentAsset* component) const
 {
-	if (_componentDefs.size() == 1)
+	if (_components.size() == 1)
 		return true;
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
@@ -61,9 +90,9 @@ bool Archetype::isRootForComponent(const ComponentAsset* component) const
 }
 
 
-const ComponentSet& Archetype::componentDefs() const
+const ComponentSet& Archetype::components() const
 {
-	return _componentDefs;
+	return _components;
 }
 
 std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* component)
@@ -119,10 +148,17 @@ size_t Archetype::size()
 
 size_t Archetype::createEntity()
 {
-	for (size_t i = 0; i < _components.size(); i++)
+	size_t chunk = chunkIndex(_size);
+	if (chunk >= _chunks.size())
 	{
-		_components[i].pushEmpty();
+		_chunks.resize(_chunks.size() + 1);
+		_chunkAllocator >> _chunks[_chunks.size() - 1];
+		_chunks[_chunks.size() - 1]->setArchetype(this);
 	}
+
+	assert(chunk < _chunks.size());
+	_chunks[chunk]->createEntity();
+
 	++_size;
 	return _size - 1;
 }
@@ -130,55 +166,87 @@ size_t Archetype::createEntity()
 size_t Archetype::copyEntity(Archetype* source, size_t index)
 {
 	size_t newIndex = createEntity();
+	
+	size_t srcChunkIndex = source->chunkIndex(index);
+	size_t destChunkIndex = chunkIndex(newIndex);
+
+	Chunk* src = source->_chunks[srcChunkIndex].get();
+	Chunk* dest = _chunks[destChunkIndex].get();  
+
+	//Index within chunk
+	size_t srcEntityIndex = index - srcChunkIndex * src->maxCapacity();
+	size_t destEntityIndex = newIndex - srcChunkIndex * dest->maxCapacity();
+
 	for (size_t i = 0; i < _components.size(); i++)
 	{
-		if (_componentDefs[i]->size() == 0)
+		if (_components[i]->size() == 0)
 			continue;
-		size_t sourceIndex = source->_componentDefs.index(_componentDefs.components()[i]);
-		if (sourceIndex != nullindex)
-			_components[i].copy(&source->_components[sourceIndex], index, newIndex);
-		
+		if (source->_components.contains(_components[i]))
+			dest->copyComponenet(src, srcEntityIndex, destEntityIndex, _components[i]);
 	}
 	return newIndex;
 }
 
+Chunk* Archetype::getChunk(size_t entity) const
+{
+	return _chunks[chunkIndex(entity)].get();
+}
+
+const size_t Archetype::entitySize()
+{
+	return _entitySize;
+}
+
 void Archetype::remove(size_t index)
 {
-	for (auto& c : _components)
+	Chunk* chunk = getChunk(index);
+	Chunk* lastChunk = _chunks[_chunks.size() - 1].get();
+	size_t entityIndex = index - chunkIndex(index) * chunk->maxCapacity();
+
+	for (size_t i = 0; i < _components.size(); i++)
 	{
-		c.remove(index);
+		chunk->copyComponenet(lastChunk, lastChunk->size() - 1, entityIndex, _components[i]);
 	}
+	
+	lastChunk->removeEntity(lastChunk->size() - 1);
+
+	if (lastChunk->size() == 0)
+	{
+		_chunkAllocator << _chunks[_chunks.size() - 1];
+		_chunks.resize(_chunks.size() - 1);
+	}
+		
+
+
 	_size--;
 }
 
 void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f)
 {
+	if (_chunks.size() == 0)
+		return;
 	assert(components.size() > 0);
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
 		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte*) * components.size());
-		{ //Component Indicies is only needed in this scope
-			size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
-			_componentDefs.indicies(components, componentIndicies);
-			for (size_t i = 0; i < components.size(); i++)
-			{
-				assert(componentIndicies[i] >= 0 && componentIndicies[i] < _components.size());
-				data[i] = _components[componentIndicies[i]].getComponentData(0);
-			}
-		}
-		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t*) * components.size());
+		size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
+		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
+
 		for (size_t i = 0; i < components.size(); i++)
 		{
-			componentSizes[i] = components.components()[i]->size();
+			componentIndicies[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
+			componentSizes[i] = components[i]->size();
 		}
-
-
-		for (size_t entityIndex = 0; entityIndex < _size; entityIndex++)
+		
+		for (size_t chunk = 0; chunk < _chunks.size(); chunk++)
 		{
-			f(data);
-			for (size_t i = 0; i < components.size(); i++)
+			for (size_t i = 0; i < _chunks[chunk]->size(); i++)
 			{
-				data[i] += componentSizes[i]; // Since we know the size of a struct, we can just increment by that
+				for (size_t c = 0; c < components.size(); c++)
+				{
+					data[c] = _chunks[chunk]->data() + componentIndicies[c] + componentSizes[c] * i;
+				}
+				f(data);
 			}
 		}
 	}

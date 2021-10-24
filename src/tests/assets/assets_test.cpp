@@ -16,8 +16,8 @@ TEST(assets, AssetManagerTest)
 {
 	AssetID aID;
 	aID.parseString("localhost/tester/component/testComponent");
-	std::vector<std::shared_ptr<VirtualType>> components;
-	components.push_back(std::make_shared<VirtualBool>(0));
+	std::vector<std::unique_ptr<VirtualType>> components;
+	components.push_back(std::make_unique<VirtualBool>(0));
 	ComponentAsset* ca = new ComponentAsset(components, aID);
 
 	AssetManager am;

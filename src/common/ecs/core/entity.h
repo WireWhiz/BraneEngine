@@ -2,6 +2,7 @@
 #include "Component.h"
 #include "Archetype.h"
 #include "systemList.h"
+#include "chunk.h"
 
 #include <stdexcept>
 #include <cstdint>
@@ -47,6 +48,7 @@ public:
 
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
+	ChunkPool chunkAllocator;
 
 	Archetype* makeArchetype(const ComponentSet& cdefs);
 	void getArchetypeRoots(const ComponentSet& components, std::vector<Archetype*>& roots) const;
@@ -63,7 +65,6 @@ public:
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity) const;  
-	size_t archetypeCount(size_t archetypeSize);
 	VirtualComponentPtr getEntityComponent(EntityID entity, const ComponentAsset* component) const;
 	void addComponent(EntityID entity, const ComponentAsset* component);
 	void removeComponent(EntityID entity, const ComponentAsset* component);

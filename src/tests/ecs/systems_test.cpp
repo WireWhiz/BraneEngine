@@ -4,10 +4,10 @@
 class CounterComponent : public NativeComponent<CounterComponent>
 {
 public:
-	void getComponentData(std::vector<std::shared_ptr<VirtualType>>& types, AssetID& id)
+	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 	{
 		id.parseString("localhost/native/component/CounterComponent");
-		types.push_back(std::make_shared<VirtualInt>(offsetof(CounterComponent, counter)));
+		types.push_back(std::make_unique<VirtualInt>(offsetof(CounterComponent, counter)));
 	}
 public:
 	uint64_t counter = 0;

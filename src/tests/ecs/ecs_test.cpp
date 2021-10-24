@@ -1,17 +1,16 @@
 #include <testing.h>
 #include <ecs/ecs.h>
 
-
 TEST(ECS, VirtualComponentTest)
 {
 	//Create a definiton for our virtual struct/component
 
-	std::vector<std::shared_ptr<VirtualType>> components;
-	components.push_back(std::make_unique<VirtualBool>());
-	components.push_back(std::make_unique<VirtualInt>());
-	components.push_back(std::make_unique<VirtualFloat>());
+	std::vector<std::unique_ptr<VirtualType>> variables;
+	variables.push_back(std::make_unique<VirtualBool>());
+	variables.push_back(std::make_unique<VirtualInt>());
+	variables.push_back(std::make_unique<VirtualFloat>());
 	AssetID aID("localhost/testRunner/component/testComponent");
-	ComponentAsset vcd(components, aID);
+	ComponentAsset vcd(variables, aID);
 
 	//Create a component using that definition
 	VirtualComponent vc(&vcd);
@@ -31,11 +30,11 @@ TEST(ECS, VirtualComponentComplexTypesTest)
 {
 	//Create a definiton for our virtual struct/component
 
-	std::vector<std::shared_ptr<VirtualType>> components;
-	components.push_back(std::make_unique<VirtualVariable<std::string>>());
+	std::vector<std::unique_ptr<VirtualType>> variables;
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
 
 	AssetID aID("localhost/testRunner/component/testComponent");
-	ComponentAsset vcd(components, aID);
+	ComponentAsset vcd(variables, aID);
 
 	//Create a component using that definition
 	VirtualComponent vc(&vcd);
@@ -82,21 +81,50 @@ TEST(ECS, ComponentSetTest)
 
 }
 
-TEST(ECS, VirtualComponentChunkTest)
+TEST(ECS, ArchetypeTest)
+{
+	std::vector<std::unique_ptr<VirtualType>> variables;
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+
+	ComponentAsset helloWorldComponent(variables, AssetID("localhost/tests/component/helloWorld"));
+	variables = std::vector<std::unique_ptr<VirtualType>>();
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+	ComponentAsset helloThereComponent(variables, AssetID("localhost/tests/component/helloThere"));
+
+	variables = std::vector<std::unique_ptr<VirtualType>>();
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
+	ComponentAsset generalKenobiComponent(variables, AssetID("localhost/tests/component/generalKenobi"));
+
+	ComponentSet components;
+	components.add(&helloWorldComponent);
+	components.add(&helloThereComponent);
+	components.add(&generalKenobiComponent);
+	ChunkPool cp;
+	Archetype arch(components, cp);
+
+	EXPECT_EQ(arch.entitySize(), sizeof(std::string) * 6);
+
+	
+
+}
+TEST(ECS, ChunkTest)
 {
 	//Put stuff here later
 }
 
 TEST(ECS, VirtualComponentVectorTest)
 {
-	std::vector<std::shared_ptr<VirtualType>> components;
-	components.push_back(std::make_unique<VirtualBool>());
-	components.push_back(std::make_unique<VirtualInt>());
-	components.push_back(std::make_unique<VirtualFloat>());
+	std::vector<std::unique_ptr<VirtualType>> variables;
+	variables.push_back(std::make_unique<VirtualBool>());
+	variables.push_back(std::make_unique<VirtualInt>());
+	variables.push_back(std::make_unique<VirtualFloat>());
 	// Create a definiton for our virtual struct/component
 
 	AssetID aID("localhost/testRunner/component/testComponent");
-	ComponentAsset vcd(components, aID);
+	ComponentAsset vcd(variables, aID);
 
 	// Create a test component
 	VirtualComponent vc(&vcd);
@@ -146,7 +174,7 @@ public:
 	bool var1;
 	int64_t var2;
 	float var3;
-	void getComponentData(std::vector<std::shared_ptr<VirtualType>>& types, AssetID& id)
+	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 	{
 		id.parseString("localhost/native/component/testNativeComponent");
 		types.emplace_back(std::make_unique<VirtualBool>(offsetof(TestNativeComponent, var1)));
@@ -219,19 +247,19 @@ TEST(ECS, NativeComponentVectorTest)
 
 TEST(ECS, EntityManagerTest)
 {
-	std::vector<std::shared_ptr<VirtualType>> comps1;
+	std::vector<std::unique_ptr<VirtualType>> comps1;
 	comps1.push_back(std::make_unique<VirtualBool>());
 
 	AssetID aID1("localhost/testRunner/component/testComponent1");
 	ComponentAsset vcd1(comps1, aID1);
 
-	std::vector<std::shared_ptr<VirtualType>> comps2;
+	std::vector<std::unique_ptr<VirtualType>> comps2;
 	comps2.push_back(std::make_unique<VirtualFloat>());
 	AssetID aID2("localhost/testRunner/component/testComponent2");
 	ComponentAsset vcd2(comps2, aID2);
 
 
-	std::vector<std::shared_ptr<VirtualType>> comps3;
+	std::vector<std::unique_ptr<VirtualType>> comps3;
 	comps3.push_back(std::make_unique<VirtualBool>());
 	comps3.push_back(std::make_unique<VirtualFloat>());
 	AssetID aID3("localhost/testRunner/component/testComponent3");
@@ -290,10 +318,10 @@ class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 {
 public:
 	bool var1;
-	void getComponentData(std::vector<std::shared_ptr<VirtualType>>& types, AssetID& id)
+	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 	{
 		id.parseString("localhost/native/component/testNativeComponent2");
-		types.emplace_back(std::make_unique<VirtualBool>(offsetof(TestNativeComponent2, var1)));
+		types.emplace_back(std::make_unique<VirtualVariable<bool>>(offsetof(TestNativeComponent2, var1)));
 	}
 
 };
@@ -302,25 +330,25 @@ TEST(ECS, ForEachCachingTest)
 {
 	EntityManager em;
 
-	std::vector<std::shared_ptr<VirtualType>> comps1;
+	std::vector<std::unique_ptr<VirtualType>> comps1;
 	comps1.push_back(std::make_unique<VirtualBool>());
 
 	AssetID aID1("localhost/testRunner/component/testComponent1");
 	ComponentAsset ca1(comps1, aID1);
 
-	std::vector<std::shared_ptr<VirtualType>> comps2;
+	std::vector<std::unique_ptr<VirtualType>> comps2;
 	comps2.push_back(std::make_unique<VirtualFloat>());
 	AssetID aID2("localhost/testRunner/component/testComponent2");
 	ComponentAsset ca2(comps2, aID2);
 
 
-	std::vector<std::shared_ptr<VirtualType>> comps3;
+	std::vector<std::unique_ptr<VirtualType>> comps3;
 	comps3.push_back(std::make_unique<VirtualBool>());
 	comps3.push_back(std::make_unique<VirtualFloat>());
 	AssetID aID3("localhost/testRunner/component/testComponent3");
 	ComponentAsset ca3(comps3, aID3);
 
-	std::vector<std::shared_ptr<VirtualType>> comps4;
+	std::vector<std::unique_ptr<VirtualType>> comps4;
 	AssetID aID4("localhost/testRunner/component/testComponent1");
 	ComponentAsset ca4(comps4, aID4);
 
@@ -360,7 +388,7 @@ TEST(ECS, ForEachCachingTest)
 	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 2);
 	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
 	EXPECT_EQ(em._archetypes[0][0]->_addEdges.size(), 2);
@@ -369,7 +397,7 @@ TEST(ECS, ForEachCachingTest)
 	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
 	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 2);
+	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
 
 
 }
@@ -394,8 +422,8 @@ TEST(ECS, ForEachTest)
 			em.addComponent(e, TestNativeComponent2::def());
 	}
 
-	EXPECT_EQ(em.archetypeCount(0), 1);
-	EXPECT_EQ(em.archetypeCount(1), 1);
+	EXPECT_EQ(em._archetypes[0].size(), 1);
+	EXPECT_EQ(em._archetypes[1].size(), 1);
 
 	//Set the variables on all the entites with component 3
 	em.forEach(forEachID, [&](byte* components[]) {
@@ -408,7 +436,7 @@ TEST(ECS, ForEachTest)
 	// Get index of components in set so that in the foreach we can get them from the array
 	size_t firstComp  = comps.index(TestNativeComponent::def());
 	size_t secondComp = comps.index(TestNativeComponent2::def());
-
+	size_t count = 50;
 	//Set the variables on all the entites with two components
 	em.forEach(forEachID2, [&](byte* components[]) {
 		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[secondComp]);
@@ -432,7 +460,7 @@ TEST(ECS, ForEachTest)
 			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(74, ts1->var2)   << "entity: " << i;
 			EXPECT_EQ(74, ts1->var3)   << "entity: " << i;
-			EXPECT_EQ(true, ts2->var1);
+			EXPECT_EQ(true, ts2->var1) << "entity: " << i;
 
 			
 		}

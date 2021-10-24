@@ -1,20 +1,6 @@
 #include "componentAsset.h"
 
-
-
-ComponentAsset::ComponentAsset(const ComponentAsset& source)
-{
-	_size = source._size;
-	_types.resize(source._types.size());
-	for (size_t i = 0; i < source._types.size(); i++)
-	{
-		_types[i] = source._types[i];
-	}
-	_types = source._types;
-	_id = source._id;
-}
-
-ComponentAsset::ComponentAsset(const std::vector<std::shared_ptr<VirtualType>>& types, AssetID id)
+ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types, AssetID id)
 {
 	_size = 0;
 	_id = id;
@@ -22,10 +8,11 @@ ComponentAsset::ComponentAsset(const std::vector<std::shared_ptr<VirtualType>>& 
 	{
 
 		_types.resize(types.size());
-		for (size_t i = 0; i < types.size(); i++)
+		for (size_t i = 0; i < _types.size(); i++)
 		{
-			_types[i] = types[i];
+			_types[i] = std::move(types[i]);
 		}
+		
 		if (_types[0]->offset() != 0 || _types.size() > 1 && _types[1]->offset() != 0)
 			return; // This means that they have already been set
 		for (size_t i = 0; i < _types.size(); i++)
@@ -63,7 +50,23 @@ const AssetID& ComponentAsset::id() const
 	return _id;
 }
 
-const std::vector<std::shared_ptr<VirtualType>>& ComponentAsset::types() const
+const std::vector<std::unique_ptr<VirtualType>>& ComponentAsset::types() const
 {
 	return _types;
+}
+
+void ComponentAsset::construct(byte* component) const
+{
+	for (size_t i = 0; i < _types.size(); i++)
+	{
+		_types[i]->construct(component + _types[i]->offset());
+	}
+}
+
+void ComponentAsset::deconstruct(byte* component) const
+{
+	for (size_t i = 0; i < _types.size(); i++)
+	{
+		_types[i]->deconstruct(component + _types[i]->offset());
+	}
 }

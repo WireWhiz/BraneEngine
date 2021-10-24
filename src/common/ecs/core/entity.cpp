@@ -13,7 +13,7 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 		_archetypes.resize(numComps);
 
 	size_t newIndex = _archetypes[numComps - 1].size();
-	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs));
+	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs, chunkAllocator));
 
 	Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
 
@@ -61,16 +61,19 @@ Archetype* EntityManager::makeArchetype(const ComponentSet& cdefs)
 					newArch->addAddEdge(connectingComponent, otherArch);
 					otherArch->addRemoveEdge(connectingComponent, newArch);
 
-					if (!_rootArchetypes.count(connectingComponent))
-						continue;
-
-					for (size_t i = 0; i < _rootArchetypes[connectingComponent].size(); i++)
+					for (const ComponentAsset* component : cdefs.components())
 					{
-						if (_rootArchetypes[connectingComponent][i] == otherArch)
+						if (!_rootArchetypes.count(component))
+							continue;
+						std::vector<Archetype*>& componentRoots = _rootArchetypes[component];
+						for (size_t i = 0; i < componentRoots.size(); i++)
 						{
-							_rootArchetypes[connectingComponent][i] == *(_rootArchetypes[connectingComponent].end() - 1);
-							_rootArchetypes[connectingComponent].resize(_rootArchetypes[connectingComponent].size() - 1);
+							if (componentRoots[i] == otherArch)
+							{
+								componentRoots[i] == *(componentRoots.end() - 1);
+								componentRoots.resize(componentRoots.size() - 1);
 
+							}
 						}
 					}
 				}
@@ -145,7 +148,7 @@ Archetype* EntityManager::getArcheytpe(const ComponentSet& components)
 
 	for (size_t a = 0; a < archetypes.size(); a++)
 	{
-		assert(archetypes[a] -> componentDefs().size() == components.size());
+		assert(archetypes[a] -> components().size() == components.size());
 		if(archetypes[a]->hasComponents(components))
 			return archetypes[a].get();
 	}
@@ -250,7 +253,7 @@ void EntityManager::forEachRecursive(Archetype* archetype, const ComponentSet& c
 	
 	if (searching) // If we are not the child of a runnable archetype, see if we are
 	{
-		if (archetype->componentDefs().size() >= components.size())
+		if (archetype->components().size() >= components.size())
 			if (archetype->hasComponents(components))
 			{
 				archetype->forEach(components, f);
@@ -296,11 +299,6 @@ bool EntityManager::hasArchetype(EntityID entity) const
 	return _entities[entity].archetype != nullptr;
 }
 
-size_t EntityManager::archetypeCount(size_t archetypeSize)
-{
-	assert(archetypeSize < _archetypes.size());
-	return _archetypes[archetypeSize].size();
-}
 
 VirtualComponentPtr EntityManager::getEntityComponent(EntityID entity, const ComponentAsset* component) const
 {
@@ -327,7 +325,7 @@ void EntityManager::addComponent(EntityID entity, const ComponentAsset* componen
 		else
 		{
 			// Otherwise create one
-			ComponentSet compDefs = currentArchetype->componentDefs();
+			ComponentSet compDefs = currentArchetype->components();
 			compDefs.add(component);
 			destArchetype = makeArchetype(compDefs);
 			
@@ -383,13 +381,13 @@ void EntityManager::removeComponent(EntityID entity, const ComponentAsset* compo
 	std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getRemoveEdge(component);
 	if (ae != nullptr)
 	{
-		assert(_entities[entity].archetype->componentDefs().size() >= 2); // Must be an archtype level beneath this one
+		assert(_entities[entity].archetype->components().size() >= 2); // Must be an archtype level beneath this one
 		destArchetype = ae->archetype;
 	}
 	else
 	{
 		// Otherwise create one
-		ComponentSet compDefs = currentArchetype->componentDefs();
+		ComponentSet compDefs = currentArchetype->components();
 		//Remove the component definition for the component that we want to remove
 		compDefs.remove(component);
 		if (compDefs.size() > 0)

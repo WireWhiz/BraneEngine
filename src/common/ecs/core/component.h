@@ -91,7 +91,7 @@ class NativeComponent
 private:
 	static void constructDef()
 	{
-		std::vector<std::shared_ptr<VirtualType>> vars;
+		std::vector<std::unique_ptr<VirtualType>> vars;
 		AssetID id;
 		T o;
 		o.getComponentData(vars, id);
