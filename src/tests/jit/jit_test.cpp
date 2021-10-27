@@ -5,4 +5,5 @@ TEST(ECS, BasicJITTest)
 {
 	VirtualSystemCompiler vsc;
 	EXPECT_EQ(5, vsc.testFunction());
+	EXPECT_EQ(5, vsc.testFunction2());
 }
