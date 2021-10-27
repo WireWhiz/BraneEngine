@@ -274,43 +274,43 @@ TEST(ECS, EntityManagerTest)
 	// Add component, this creates first archetype
 	em.addComponent(entity, &vcd1);
 	// Get component, make sure we can read and write to it
-	VirtualComponentPtr compPtr = em.getEntityComponent(entity, &vcd1);
-	compPtr.setVar<bool>(0, true);
-	EXPECT_EQ(true, compPtr.readVar<bool>(0));
+	VirtualComponent comp = em.getEntityComponent(entity, &vcd1);
+	comp.setVar<bool>(0, true);
+	EXPECT_EQ(true, comp.readVar<bool>(0));
+	em.setEntityComponent(entity, comp);
 
 	// Adds a second component, this creates a second archetype and copies the data over,
 	em.addComponent(entity, &vcd2);
 
 	//  make sure the copied data is still valid
-	compPtr = em.getEntityComponent(entity, &vcd1);
-	EXPECT_EQ(true, compPtr.readVar<bool>(0));
+	comp = em.getEntityComponent(entity, &vcd1);
+	EXPECT_EQ(true, comp.readVar<bool>(0));
 
 	// Get second component, make sure we can read and write
-	compPtr = em.getEntityComponent(entity, &vcd2);
-	compPtr.setVar<float>(0, 42);
-	EXPECT_EQ(42, compPtr.readVar<float>(0));
+	comp = em.getEntityComponent(entity, &vcd2);
+	comp.setVar<float>(0, 42);
+	EXPECT_EQ(42, comp.readVar<float>(0));
+	em.setEntityComponent(entity, comp);
 
 	// make sure this throws no errors
 	em.removeComponent(entity, &vcd1);
 
 	// Make sure that we still have the second component and can still read from it after the copy
-	compPtr = em.getEntityComponent(entity, &vcd2);
-	EXPECT_EQ(42, compPtr.readVar<float>(0));
+	comp = em.getEntityComponent(entity, &vcd2);
+	EXPECT_EQ(42, comp.readVar<float>(0));
 
 	// just make sure these throw no errors
 	em.addComponent(entity, &vcd3);
 	em.addComponent(entity, &vcd1);
-	em.removeComponent(entity, &vcd3);
 	em.removeComponent(entity, &vcd2);
+	em.removeComponent(entity, &vcd3);
 	em.removeComponent(entity, &vcd1);
 
 	//We now should have some archetypes that we can fetch
-	ComponentSet archComponents;
-	archComponents.add(&vcd1);
-	archComponents.add(&vcd2);
-	EXPECT_EQ(true, (em.getArcheytpe(archComponents) != nullptr));
-	archComponents.add(&vcd3);
-	EXPECT_EQ(true, (em.getArcheytpe(archComponents) != nullptr));
+	EXPECT_EQ(em._archetypes._archetypes.size(), 3);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 2);
+	EXPECT_EQ(em._archetypes._archetypes[1].size(), 3);
+	EXPECT_EQ(em._archetypes._archetypes[2].size(), 1);
 }
 
 //Classes for native system test
@@ -359,45 +359,45 @@ TEST(ECS, ForEachCachingTest)
 	ComponentSet components;
 	components.add(&ca1);
 	EnityForEachID fe1 = em.getForEachID(components);
-	EXPECT_EQ(em._forEachData.size(), 1);
+	EXPECT_EQ(em._archetypes._forEachData.size(), 1);
 
 	em.addComponent(entity, &ca1); // archetype: ca1
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 
 	em.addComponent(entity, &ca2); // archetype: ca1, ca2
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 
 	em.addComponent(entity, &ca3); // archetype: ca1, ca2, ca3
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
 
 	em.addComponent(entity, &ca4); // archetype: ca1, ca2, ca3, ca4
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca2); // archetype: ca1, ca3, ca4
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 2);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 2);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
-	EXPECT_EQ(em._archetypes[0][0]->_addEdges.size(), 2);
+	EXPECT_EQ(em._archetypes._archetypes[0][0]->_addEdges.size(), 2);
 
-	EXPECT_EQ(em.getForEachArchetypes(fe1).size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca1].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca2].size(), 1);
-	EXPECT_EQ(em._rootArchetypes[&ca3].size(), 2);
-	EXPECT_EQ(em._rootArchetypes[&ca4].size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
+	EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 
 }
@@ -422,8 +422,8 @@ TEST(ECS, ForEachTest)
 			em.addComponent(e, TestNativeComponent2::def());
 	}
 
-	EXPECT_EQ(em._archetypes[0].size(), 1);
-	EXPECT_EQ(em._archetypes[1].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[1].size(), 1);
 
 	//Set the variables on all the entites with component 3
 	em.forEach(forEachID, [&](byte* components[]) {
@@ -436,7 +436,6 @@ TEST(ECS, ForEachTest)
 	// Get index of components in set so that in the foreach we can get them from the array
 	size_t firstComp  = comps.index(TestNativeComponent::def());
 	size_t secondComp = comps.index(TestNativeComponent2::def());
-	size_t count = 50;
 	//Set the variables on all the entites with two components
 	em.forEach(forEachID2, [&](byte* components[]) {
 		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[secondComp]);
@@ -449,13 +448,27 @@ TEST(ECS, ForEachTest)
 
 
 	//Check that all the variables are what we set them too
+	// 
+	//Checking the variables on all the entites with two components
+	em.constForEach(forEachID2, [&](const byte* components[]) {
+		const TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[secondComp]);
+		const TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[firstComp]);
+		EXPECT_EQ(true, c1->var1);
+		EXPECT_EQ(74, c1->var2);
+		EXPECT_EQ(74, c1->var3);
+		EXPECT_EQ(true, c2->var1);
+	});
+
+
 	for (size_t i = 0; i < 100; i++)
 	{
 		if (i > 49)
 		{
 			//Entites with two
-			TestNativeComponent*  ts1 = TestNativeComponent::fromVirtual(em.getEntityComponent(i, TestNativeComponent::def()).data());
-			TestNativeComponent2* ts2 = TestNativeComponent2::fromVirtual(em.getEntityComponent(i, TestNativeComponent2::def()).data());
+			VirtualComponent vc1 = em.getEntityComponent(i, TestNativeComponent::def());
+			TestNativeComponent*  ts1 = TestNativeComponent::fromVirtual(vc1.data());
+			VirtualComponent vc2 = em.getEntityComponent(i, TestNativeComponent2::def());
+			TestNativeComponent2* ts2 = TestNativeComponent2::fromVirtual(vc2.data());
 			
 			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(74, ts1->var2)   << "entity: " << i;
@@ -467,7 +480,8 @@ TEST(ECS, ForEachTest)
 		else
 		{
 			//Entites with one
-			TestNativeComponent* ts1 = TestNativeComponent::fromVirtual(em.getEntityComponent(i, TestNativeComponent::def()).data());
+			VirtualComponent vc1 = em.getEntityComponent(i, TestNativeComponent::def());
+			TestNativeComponent* ts1 = TestNativeComponent::fromVirtual(vc1.data());
 			EXPECT_EQ(false, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(32, ts1->var2)    << "entity: " << i;
 			EXPECT_EQ(42, ts1->var3)    << "entity: " << i;

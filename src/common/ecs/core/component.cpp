@@ -6,7 +6,17 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {
 	_def = source._def;
 	_data = new byte[_def->size()];
-	std::copy(source._data, source._data + _def->size() - 1, _data);
+	for (auto& type : _def->types())
+	{
+		type->copy(&_data[type->offset()], &source._data[type->offset()]);
+	}
+}
+
+VirtualComponent::VirtualComponent(VirtualComponent&& source)
+{
+	_def = source._def;
+	_data = source._data;
+	source._data = nullptr;
 }
 
 VirtualComponent::VirtualComponent(const ComponentAsset* definition)
@@ -23,7 +33,10 @@ VirtualComponent::VirtualComponent(const ComponentAsset* definition, const byte*
 {
 	_def = definition;
 	_data = new byte[_def->size()];
-	std::copy(data, data + _def->size() - 1, _data);
+	for (auto& type : _def->types())
+	{
+		type->copy(&_data[type->offset()], &data[type->offset()]);
+	}
 }
 
 VirtualComponent::~VirtualComponent()
@@ -32,7 +45,19 @@ VirtualComponent::~VirtualComponent()
 	{
 		type->deconstruct(&_data[type->offset()]);
 	}
-	delete[] _data;
+	if(_data)
+		delete[] _data;
+}
+
+VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
+{
+	_def = source._def;
+	_data = new byte[_def->size()];
+	for (auto& type : _def->types())
+	{
+		type->copy(&_data[type->offset()], &source._data[type->offset()]);
+	}
+	return *this;
 }
 
 byte* VirtualComponent::data() const
@@ -231,7 +256,7 @@ bool ComponentSet::contains(const ComponentSet& subset) const
 			return false;
 		if (_components[i] == subset._components[count])
 		{
-			if (++count = subset._components.size())
+			if (++count == subset._components.size())
 				return true;
 		}
 			

@@ -45,6 +45,7 @@ public:
 	virtual const size_t size() const = 0;
 	virtual void construct(byte*) = 0;
 	void construct(VirtualComponentPtr& vcp);
+	virtual void copy(byte* dest, const byte* source) = 0;
 	virtual void deconstruct(byte*) = 0;
 	void deconstruct(VirtualComponentPtr& vcp);
 };
@@ -67,6 +68,10 @@ public:
 	void construct(byte* var, Params... params)
 	{
 		new(var) T(params...);
+	}
+	virtual void copy(byte* dest, const byte* source)
+	{
+		new(dest) T(*((T*)source));
 	}
 	void deconstruct(byte* var) override
 	{

@@ -2,6 +2,7 @@
 
 void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
 {
+	std::scoped_lock lock(pool._m);
 	if (pool._unused.size() > 0)
 	{
 		dest = std::move(pool._unused[pool._unused.size() - 1]);
@@ -13,7 +14,8 @@ void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
 
 void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
 {
-	pool._unused.emplace_back(); 
+	std::scoped_lock lock(pool._m);
+	pool._unused.emplace_back();
 	pool._unused[pool._unused.size() - 1] = std::move(dest);
 }
 

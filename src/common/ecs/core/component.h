@@ -38,9 +38,11 @@ protected:
 	const ComponentAsset* _def;
 public:
 	VirtualComponent(const VirtualComponent& source);
+	VirtualComponent(VirtualComponent&& source);
 	VirtualComponent(const ComponentAsset* definition);
 	VirtualComponent(const ComponentAsset* definition, const byte* data);
 	~VirtualComponent();
+	VirtualComponent& operator=(const VirtualComponent& source);
 	template<class T>
 	T* getVar(size_t index) const
 	{
@@ -106,6 +108,10 @@ public:
 	static T* fromVirtual(byte* data)
 	{
 		return (T*)data;
+	}
+	static const T* fromVirtual(const byte* data)
+	{
+		return (const T*)data;
 	}
 	VirtualComponentPtr toVirtual()
 	{

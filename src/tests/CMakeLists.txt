@@ -17,7 +17,7 @@ add_executable(gtests
    "assets/assets_test.cpp")
 include_directories(gtests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(gtests gtest_main ecs_test jit assets)
+target_link_libraries(gtests gtest_main ecs_test jit assets utility)
 target_compile_definitions(gtests PUBLIC TEST_BUILD)
 
 include(GoogleTest)
