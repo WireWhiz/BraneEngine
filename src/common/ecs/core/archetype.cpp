@@ -267,7 +267,7 @@ void Archetype::remove(size_t index)
 	_mutex.unlock();
 }
 
-void Archetype::forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f)
+void Archetype::forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f, size_t start, size_t end)
 {
 	_mutex.lock_shared();
 	if (_chunks.size() == 0)
@@ -288,10 +288,15 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 			componentSizes[i] = components[i]->size();
 		}
 
-		for (size_t chunk = 0; chunk < _chunks.size(); chunk++)
+		size_t startChunk = chunkIndex(start);
+		size_t endChunk = chunkIndex(end);
+		
+
+		for (size_t chunk = startChunk; chunk <= endChunk; chunk++)
 		{
+			size_t lastIndex = std::min(_chunks[chunk]->size(), end - chunk * _chunks[0]->maxCapacity());
 			_chunks[chunk]->lock_shared();
-			for (size_t i = 0; i < _chunks[chunk]->size(); i++)
+			for (size_t i = 0; i < lastIndex; i++)
 			{
 				for (size_t c = 0; c < components.size(); c++)
 				{
@@ -306,7 +311,7 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 
 }
 
-void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f)
+void Archetype::forEach(const ComponentSet& components, const std::function<void(byte* [])>& f, size_t start, size_t end)
 {
 	_mutex.lock_shared();
 	if (_chunks.size() == 0)
@@ -326,9 +331,13 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 			componentIndicies[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
 			componentSizes[i] = components[i]->size();
 		}
-		
-		for (size_t chunk = 0; chunk < _chunks.size(); chunk++)
+
+		size_t startChunk = chunkIndex(start);
+		size_t endChunk = chunkIndex(end);
+
+		for (size_t chunk = startChunk; chunk <= endChunk; chunk++)
 		{
+			size_t lastIndex = std::min(_chunks[chunk]->size(), end - chunk * _chunks[0]->maxCapacity());
 			_chunks[chunk]->lock();
 			for (size_t i = 0; i < _chunks[chunk]->size(); i++)
 			{
@@ -560,9 +569,53 @@ void ArchetypeManager::constForEach(EnityForEachID id, const std::function<void(
 	_forEachLock.unlock_shared();
 }
 
+void ArchetypeManager::constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
+{
+	std::unordered_set<Archetype*> executed;
+	std::list<std::shared_ptr<JobHandle>> jobs;
+	_archetypeLock.lock_shared();
+	_forEachLock.lock_shared();
+	assert(id < _forEachData.size());
+
+	for (Archetype* archetype : getForEachArchetypes(id))
+	{
+		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, jobs);
+	}
+
+	for (std::shared_ptr<JobHandle>& job : jobs)
+	{
+		job->finish();
+	}
+
+	_archetypeLock.unlock_shared();
+	_forEachLock.unlock_shared();
+}
+
+void ArchetypeManager::forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
+{
+	std::unordered_set<Archetype*> executed;
+	std::list<std::shared_ptr<JobHandle>> jobs;
+	_archetypeLock.lock_shared();
+	_forEachLock.lock_shared();
+	assert(id < _forEachData.size());
+
+	for (Archetype* archetype : getForEachArchetypes(id))
+	{
+		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, jobs);
+	}
+
+	for(std::shared_ptr<JobHandle>& job : jobs)
+	{
+		job->finish();
+	}
+
+	_archetypeLock.unlock_shared();
+	_forEachLock.unlock_shared();
+}
+
 ArchetypeManager::ArchetypeManager()
 {
-	_chunkAllocator = std::make_unique<ChunkPool>();
+	_chunkAllocator = std::make_shared<ChunkPool>();
 }
 
 Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)

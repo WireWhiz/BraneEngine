@@ -2,7 +2,12 @@
 
 EntityManager::EntityManager()
 {
-	
+	ThreadPool::init();
+}
+
+EntityManager::~EntityManager()
+{
+	ThreadPool::cleanup();
 }
 
 Archetype* EntityManager::getArchetype(const ComponentSet& components)
@@ -76,6 +81,16 @@ void EntityManager::forEach(EnityForEachID id, const std::function<void(byte* []
 void EntityManager::constForEach(EnityForEachID id, const std::function<void(const byte* [])>& f)
 {
 	_archetypes.constForEach(id, f);
+}
+
+void EntityManager::forEachParellel(EnityForEachID id, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
+{
+	_archetypes.forEachParellel(id, f, entitiesPerThread);
+}
+
+void EntityManager::constForEachParellel(EnityForEachID id, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
+{
+	_archetypes.constForEachParellel(id, f, entitiesPerThread);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const

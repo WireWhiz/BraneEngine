@@ -22,6 +22,7 @@ public:
 
 class ThreadPool
 {
+	static size_t _instances;
 	static std::vector<std::thread> _threads;
 	struct Job
 	{

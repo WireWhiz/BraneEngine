@@ -490,3 +490,35 @@ TEST(ECS, ForEachTest)
 	
 	
 }
+
+TEST(ECS, ForEachParellelTest)
+{
+	EntityManager em;
+	//Create two for each ID one for entities with one component, another for those with two
+	
+	std::vector<std::unique_ptr<VirtualType>> variables;
+	variables.push_back(std::make_unique<VirtualVariable<size_t>>());
+
+	ComponentAsset counterComponent(variables, AssetID("localhost/tests/component/counterComponent"));
+	
+	ComponentSet comps;
+	comps.add(&counterComponent);
+	EnityForEachID forEachID = em.getForEachID(comps);
+
+	//Create 50 entities with one component, and 50 with two
+	for (size_t i = 0; i < 2000; i++)
+	{
+		EntityID e = em.createEntity(comps);
+	}
+
+	em.forEachParellel(forEachID, [&](byte* components[]) {
+		VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
+		counter.setVar(0, 420);
+	}, 450);
+
+	for (size_t i = 0; i < 2000; i++)
+	{
+		VirtualComponent c = em.getEntityComponent(i, &counterComponent);
+		EXPECT_EQ(*c.getVar<size_t>(0), 420) << "entitiy: " << i << std::endl;
+	}
+}

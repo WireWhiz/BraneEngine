@@ -1,5 +1,6 @@
 #include "threadPool.h"
 
+size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
 std::atomic_bool ThreadPool::_running = true;
 std::queue<ThreadPool::Job> ThreadPool::_jobs;
@@ -43,21 +44,41 @@ int ThreadPool::threadRuntime()
 
 void ThreadPool::init()
 {
-	int threadCount = std::thread::hardware_concurrency();
-	_threads.reserve(threadCount);
-	for (size_t i = 0; i < threadCount; i++)
+	_instances++;
+	if (_instances == 1)
 	{
-		_threads.push_back(std::thread(threadRuntime));
+		_running = true;
+		int threadCount = std::thread::hardware_concurrency();
+		_threads.reserve(threadCount);
+		for (size_t i = 0; i < threadCount; i++)
+		{
+			_threads.push_back(std::thread(threadRuntime));
+		}
 	}
+	
 }
 
 void ThreadPool::cleanup()
 {
-	_running = false;
-	for (size_t i = 0; i < _threads.size(); i++)
+	_instances--;
+	if (_instances == 0)
 	{
-		_threads[i].join();
+		_running = false;
+		for (size_t i = 0; i < _threads.size(); i++)
+		{
+			try
+			{
+				if(_threads[i].joinable())
+					_threads[i].join();
+			}
+			catch (const std::exception& e)
+			{
+				std::cout << "Error when exiting thread: " << e.what() << std::endl;
+			}
+		}
+		_threads.clear();
 	}
+	
 }
 
 std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)

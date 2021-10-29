@@ -7,7 +7,9 @@
 #include <unordered_map>
 #include <common/utility/stackAllocate.h>
 #include <utility/shared_recursive_mutex.h>
+#include <utility/threadPool.h>
 #include <unordered_set>
+#include <list>
 
 typedef uint64_t ArchetypeID;
 class Archetype;
@@ -66,8 +68,8 @@ public:
 	const size_t entitySize();
 	void remove(size_t index);
 
-	void forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f);
-	void forEach(const ComponentSet& components, const std::function<void(byte* [])>& f);
+	void forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f, size_t start, size_t end);
+	void forEach(const ComponentSet& components, const std::function<void(byte* [])>& f, size_t start, size_t end);
 }; 
 
 
@@ -78,6 +80,7 @@ class ArchetypeManager
 #ifdef TEST_BUILD
 public:
 #endif
+
 	struct ForEachData
 	{
 		bool cached;
@@ -105,11 +108,34 @@ public:
 		if (executed.count(archetype))
 			return;
 
-		archetype->forEach(components, f);
+		archetype->forEach(components, f, 0, archetype->size());
 		executed.insert(archetype);
 
 		archetype->forAddEdge([this, &components, &f, &executed](std::shared_ptr<ArchetypeEdge> edge) {
 			forEachRecursive(edge->archetype, components, f, executed);
+		});
+	}
+
+	template<typename T>
+	void forEachRecursiveParellel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitesPerThread, std::list<std::shared_ptr<JobHandle>>& jobs)
+	{
+		if (executed.count(archetype))
+			return;
+		size_t threads = archetype->size() / entitesPerThread + 1;
+
+		for (size_t t = 0; t < threads; t++)
+		{
+			size_t start = t * entitesPerThread;
+			size_t end = std::min(t * entitesPerThread + entitesPerThread, archetype->size());
+			jobs.push_back(ThreadPool::enqueue([&]() {
+				archetype->forEach(components, f, start, end);
+			}));
+		}
+
+		executed.insert(archetype);
+
+		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &jobs](std::shared_ptr<ArchetypeEdge> edge) {
+			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, jobs);
 		});
 	}
 
@@ -123,5 +149,7 @@ public:
 
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	void constForEach(EnityForEachID id, const std::function <void(const byte* [])>& f);
+	void forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	void constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
 };
