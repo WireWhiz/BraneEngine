@@ -11,7 +11,7 @@
 
 class JobHandle
 {
-	std::atomic<bool> _finished;
+	std::atomic<size_t> _instances;
 	friend class ThreadPool;
 	
 public:
@@ -41,4 +41,5 @@ public:
 	static void init();
 	static void cleanup();
 	static std::shared_ptr<JobHandle> enqueue(std::function<void()> function);
+	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle> handle);
 };

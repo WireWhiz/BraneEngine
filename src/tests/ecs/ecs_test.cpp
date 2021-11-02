@@ -1,5 +1,6 @@
 #include <testing.h>
 #include <ecs/ecs.h>
+#include <utility/clock.h>
 
 TEST(ECS, VirtualComponentTest)
 {
@@ -506,17 +507,20 @@ TEST(ECS, ForEachParellelTest)
 	EnityForEachID forEachID = em.getForEachID(comps);
 
 	//Create 50 entities with one component, and 50 with two
-	for (size_t i = 0; i < 2000; i++)
+	for (size_t i = 0; i < 2000000; i++)
 	{
 		EntityID e = em.createEntity(comps);
 	}
 
+	Stopwatch sw;
 	em.forEachParellel(forEachID, [&](byte* components[]) {
 		VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
 		counter.setVar(0, 420);
-	}, 450);
+	}, 20000)->finish();
+	long long time = sw.time();
+	std::cout << "For Each Parellel took: " << time << std::endl;
 
-	for (size_t i = 0; i < 2000; i++)
+	for (size_t i = 0; i < 2000000; i++)
 	{
 		VirtualComponent c = em.getEntityComponent(i, &counterComponent);
 		EXPECT_EQ(*c.getVar<size_t>(0), 420) << "entitiy: " << i << std::endl;

@@ -59,7 +59,7 @@ public:
 		_lock.lock_shared();
 		VirtualComponent o = VirtualComponent(component, getComponentData(component, entity));
 		_lock.unlock_shared();
-		return std::move(o);
+		return o;
 	}
 
 	void setComponent(const VirtualComponent& component, size_t entity)

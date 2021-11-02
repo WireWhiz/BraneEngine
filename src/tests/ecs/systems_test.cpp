@@ -75,7 +75,8 @@ TEST(Systems, NativeTest)
 	em.runSystems();
 	em.runSystems();
 
-	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, CounterComponent::def()).data())->counter, 3);
+	VirtualComponent counterTest = em.getEntityComponent(0, CounterComponent::def());
+	EXPECT_EQ(CounterComponent::fromVirtual(counterTest.data())->counter, 3);
 	EXPECT_EQ(em.getEntityComponent(0, CounterComponent::def()).readVar<uint64_t>(0), 3);
 
 }
@@ -109,7 +110,8 @@ TEST(Systems, BeforeConstraint)
 	//Run system
 	em.runSystems();
 
-	EXPECT_EQ(CounterComponent::fromVirtual(em.getEntityComponent(0, CounterComponent::def()).data())->counter, 6);
+	VirtualComponent counterTest = em.getEntityComponent(0, CounterComponent::def());
+	EXPECT_EQ(CounterComponent::fromVirtual(counterTest.data())->counter, 6);
 	EXPECT_EQ(em.getEntityComponent(0, CounterComponent::def()).readVar<uint64_t>(0), 6);
 }
 

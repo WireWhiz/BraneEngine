@@ -117,7 +117,7 @@ public:
 	}
 
 	template<typename T>
-	void forEachRecursiveParellel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitesPerThread, std::list<std::shared_ptr<JobHandle>>& jobs)
+	void forEachRecursiveParellel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitesPerThread, std::shared_ptr<JobHandle> handle)
 	{
 		if (executed.count(archetype))
 			return;
@@ -127,15 +127,15 @@ public:
 		{
 			size_t start = t * entitesPerThread;
 			size_t end = std::min(t * entitesPerThread + entitesPerThread, archetype->size());
-			jobs.push_back(ThreadPool::enqueue([&]() {
+			ThreadPool::enqueue([archetype, &f, &components, start, end]() {
 				archetype->forEach(components, f, start, end);
-			}));
+			}, handle);
 		}
 
 		executed.insert(archetype);
 
-		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &jobs](std::shared_ptr<ArchetypeEdge> edge) {
-			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, jobs);
+		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &handle](std::shared_ptr<ArchetypeEdge> edge) {
+			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, handle);
 		});
 	}
 
@@ -149,7 +149,7 @@ public:
 
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	void constForEach(EnityForEachID id, const std::function <void(const byte* [])>& f);
-	void forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
-	void constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
 };

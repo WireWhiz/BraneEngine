@@ -34,7 +34,7 @@ int ThreadPool::threadRuntime()
 			{
 				std::cerr << "Thread Error: " << e.what() << std::endl;
 			}
-			job.handle->_finished = true;
+			job.handle->_instances -= 1;
 		}
 
 		std::this_thread::yield();
@@ -84,19 +84,28 @@ void ThreadPool::cleanup()
 std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
 {
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
+	handle->_instances = 1;
 	_queueMutex.lock();
 	_jobs.push(Job( function, handle));
 	_queueMutex.unlock();
 	return handle;
 }
 
+void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHandle> handle)
+{
+	handle->_instances += 1;
+	_queueMutex.lock();
+	_jobs.push(Job(function, handle));
+	_queueMutex.unlock();
+}
+
 bool JobHandle::finished()
 {
-	return _finished;
+	return _instances == 0;
 }
 void JobHandle::finish()
 {
-	while (!_finished)
+	while (!finished())
 	{
 		std::this_thread::yield();
 	}
@@ -104,7 +113,7 @@ void JobHandle::finish()
 
 JobHandle::JobHandle()
 {
-	_finished = false;;
+	_instances = 0;
 }
 
 void ThreadPool::Job::operator=(const Job& job)

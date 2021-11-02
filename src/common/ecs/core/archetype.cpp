@@ -316,7 +316,7 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 	_mutex.lock_shared();
 	if (_chunks.size() == 0)
 	{
-		_mutex.lock_shared();
+		_mutex.unlock_shared();
 		return;
 	}
 	assert(components.size() > 0);
@@ -569,48 +569,40 @@ void ArchetypeManager::constForEach(EnityForEachID id, const std::function<void(
 	_forEachLock.unlock_shared();
 }
 
-void ArchetypeManager::constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> ArchetypeManager::constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
 {
 	std::unordered_set<Archetype*> executed;
-	std::list<std::shared_ptr<JobHandle>> jobs;
+	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 	_archetypeLock.lock_shared();
 	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, jobs);
-	}
-
-	for (std::shared_ptr<JobHandle>& job : jobs)
-	{
-		job->finish();
+		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, handle);
 	}
 
 	_archetypeLock.unlock_shared();
 	_forEachLock.unlock_shared();
+	return handle;
 }
 
-void ArchetypeManager::forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> ArchetypeManager::forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
 {
 	std::unordered_set<Archetype*> executed;
-	std::list<std::shared_ptr<JobHandle>> jobs;
+	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 	_archetypeLock.lock_shared();
 	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, jobs);
-	}
-
-	for(std::shared_ptr<JobHandle>& job : jobs)
-	{
-		job->finish();
+		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, handle);
 	}
 
 	_archetypeLock.unlock_shared();
 	_forEachLock.unlock_shared();
+	return handle;
 }
 
 ArchetypeManager::ArchetypeManager()

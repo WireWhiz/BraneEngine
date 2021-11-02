@@ -27,7 +27,7 @@ class SystemList
 		void run(EntityManager* entities) const;
 		VirtualSystem* system() const;
 		SystemID id() const;
-		void sort(SystemNode*& last);
+		bool sort(SystemNode*& last);
 	};
 
 	SystemNode* _first;

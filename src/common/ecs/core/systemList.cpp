@@ -44,15 +44,10 @@ bool SystemList::sort()
 		node.second->setNext(nullptr);
 	}
 	_first = nullptr;
-	try
-	{
-		for (auto& node : _nodes)
-			node.second->sort(_first);
-	}
-	catch (const insertion_error& error)
-	{
-		return false;
-	}
+	
+	for (auto& node : _nodes)
+		if (!node.second->sort(_first))
+			return false;
 	return true;
 
 }
@@ -194,17 +189,18 @@ void SystemList::runSystems(EntityManager* em)
 	}
 }
 
-void SystemList::SystemNode::sort(SystemNode*& last)
+bool SystemList::SystemNode::sort(SystemNode*& last)
 {
 	if (sorted)
-		return;
+		return true;
 	if (visited)
-		throw insertion_error("Circular dependancy found when sorting block nodes");
+		return false;
 
 	visited = true;
 	for (size_t i = 0; i < after.size(); i++)
 	{
-		after[i]->sort(last);
+		if (!after[i]->sort(last))
+			return false;
 	}
 	visited = false;
 	
@@ -214,4 +210,5 @@ void SystemList::SystemNode::sort(SystemNode*& last)
 		last = this;
 
 	sorted = true;
+	return true;
 }

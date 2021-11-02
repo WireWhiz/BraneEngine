@@ -83,14 +83,14 @@ void EntityManager::constForEach(EnityForEachID id, const std::function<void(con
 	_archetypes.constForEach(id, f);
 }
 
-void EntityManager::forEachParellel(EnityForEachID id, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> EntityManager::forEachParellel(EnityForEachID id, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
 {
-	_archetypes.forEachParellel(id, f, entitiesPerThread);
+	return _archetypes.forEachParellel(id, f, entitiesPerThread);
 }
 
-void EntityManager::constForEachParellel(EnityForEachID id, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> EntityManager::constForEachParellel(EnityForEachID id, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
 {
-	_archetypes.constForEachParellel(id, f, entitiesPerThread);
+	return _archetypes.constForEachParellel(id, f, entitiesPerThread);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
