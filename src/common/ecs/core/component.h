@@ -1,5 +1,5 @@
 #pragma once
-#include "VirtualType.h"
+#include "virtualType.h"
 #include <vector>
 #include <string>
 #include <assert.h>

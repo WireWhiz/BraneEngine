@@ -1,4 +1,4 @@
-#include "Archetype.h"
+#include "archetype.h"
 
 #include "chunk.h"
 

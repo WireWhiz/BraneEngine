@@ -1,6 +1,6 @@
 #pragma once
-#include "VirtualType.h"
-#include "Component.h"
+#include "virtualType.h"
+#include "component.h"
 #include <vector>
 
 class EntityManager;

@@ -1,6 +1,6 @@
 #pragma once
-#include "Component.h"
-#include "Archetype.h"
+#include "component.h"
+#include "archetype.h"
 #include "systemList.h"
 #include "utility/shared_recursive_mutex.h"
 #include "chunk.h"

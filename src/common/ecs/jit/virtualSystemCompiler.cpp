@@ -1,5 +1,5 @@
-#include "VirtualSystemCompiler.h"
-#include <core/VirtualType.h>
+#include "virtualSystemCompiler.h"
+#include <core/virtualType.h>
 using namespace asmjit;
 
 typedef int (*Func)(void);
