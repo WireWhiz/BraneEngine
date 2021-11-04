@@ -17,6 +17,12 @@
 
 typedef uint64_t EntityID;
 
+struct EntityIDComponent : public NativeComponent<EntityIDComponent>
+{
+	EntityID id;
+	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id);
+};
+
 struct EntityIndex
 {
 	Archetype* archetype;
@@ -42,12 +48,14 @@ public:
 	~EntityManager();
 	Archetype* getArchetype(const ComponentSet& components);
 	EntityID createEntity(); 
-	EntityID createEntity(const ComponentSet& components);
+	EntityID createEntity(ComponentSet components);
+	void createEntities(const ComponentSet& components, size_t count);
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity) const;  
 	VirtualComponent getEntityComponent(EntityID entity, const ComponentAsset* component) const;
 	void setEntityComponent(EntityID entity, const VirtualComponent& component);
+	void setEntityComponent(EntityID entity, const VirtualComponentPtr& component);
 	void addComponent(EntityID entity, const ComponentAsset* component);
 	void removeComponent(EntityID entity, const ComponentAsset* component);
 

@@ -17,37 +17,59 @@ Archetype* EntityManager::getArchetype(const ComponentSet& components)
 
 EntityID EntityManager::createEntity()
 {
+	ComponentSet components;
+	return createEntity(components);
+}
+
+EntityID EntityManager::createEntity(ComponentSet components)
+{
+	components.add(EntityIDComponent::def());
+	Archetype* arch = getArchetype(components);
+	EntityIDComponent id;
+
 	_entityLock.lock();
-	EntityID id;
 	if (_unusedEntities.size() > 0)
 	{
-		id = _unusedEntities.front();
+		id.id = _unusedEntities.front();
 		_unusedEntities.pop();
 	}
 	else
 	{
-		id = _entities.size();
+		id.id = _entities.size();
 		_entities.push_back(EntityIndex());
 	}
-	
-	EntityIndex& eIndex = _entities[id];
-	eIndex.archetype = nullptr;
-	eIndex.index = 0;
+
+	EntityIndex& eIndex = _entities[id.id];
+	eIndex.archetype = arch;
+	eIndex.index = arch->createEntity();
 	eIndex.alive = true;
+	arch->setComponent(eIndex.index, id.toVirtual());
 	_entityLock.unlock();
-	return id;
+	return id.id;
 }
 
-EntityID EntityManager::createEntity(const ComponentSet& components)
+void EntityManager::createEntities(const ComponentSet& components, size_t count)
 {
 	Archetype* arch = getArchetype(components);
 
 	_entityLock.lock();
-	EntityID ent = createEntity();
-	_entities[ent].archetype = arch;
-	_entities[ent].index = arch->createEntity();
+	for (size_t i = 0; i < count; i++)
+	{
+		EntityIDComponent id;
+		if (_unusedEntities.size() > 0)
+		{
+			id.id = _unusedEntities.front();
+			_unusedEntities.pop();
+		}
+		else
+		{
+			id.id = _entities.size();
+			_entities.push_back(EntityIndex());
+		}
+		_entities[id.id].archetype = arch;
+		_entities[id.id].index = arch->createEntity();
+	}
 	_entityLock.unlock();
-	return ent;
 }
 
 void EntityManager::destroyEntity(EntityID entity)
@@ -122,6 +144,14 @@ VirtualComponent EntityManager::getEntityComponent(EntityID entity, const Compon
 }
 
 void EntityManager::setEntityComponent(EntityID entity, const VirtualComponent& component)
+{
+	_entityLock.lock_shared();
+	assert(getEntityArchetype(entity)->hasComponent(component.def()));
+	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
+	_entityLock.unlock_shared();
+}
+
+void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentPtr& component)
 {
 	_entityLock.lock_shared();
 	assert(getEntityArchetype(entity)->hasComponent(component.def()));
@@ -249,4 +279,9 @@ VirtualSystem* EntityManager::getSystem(SystemID id)
 void EntityManager::runSystems()
 {
 	_systems.runSystems(this);
+}
+
+void EntityIDComponent::getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
+{
+	types.push_back(std::make_unique<VirtualVariable<EntityID>>(offsetof(EntityIDComponent, id)));
 }

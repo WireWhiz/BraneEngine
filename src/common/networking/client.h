@@ -11,7 +11,7 @@ namespace net
 		asio::ssl::context _ssl_ctx;
 		std::thread _thread;
 		std::unique_ptr<Connection> _connection;
-		NetQueue<Connection::OwnedIMessage> _imessages;
+		//NetQueue<OwnedIMessage> _imessages;
 		NetQueue<OMessage> _omessages;
 		ConnectionType _type;
 
@@ -26,6 +26,6 @@ namespace net
 
 		void send(const OMessage& msg);
 
-		NetQueue<Connection::OwnedIMessage>& incoming();
+		//NetQueue<OwnedIMessage>& incoming();
 	};
 }

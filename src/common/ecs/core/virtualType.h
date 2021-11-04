@@ -71,7 +71,7 @@ public:
 	}
 	virtual void copy(byte* dest, const byte* source)
 	{
-		new(dest) T(*((T*)source));
+		*((T*)dest) = *((T*)source);
 	}
 	void deconstruct(byte* var) override
 	{

@@ -10,6 +10,7 @@
 #include "config/config.h"
 #include "networkQueue.h"
 #include "message.h"
+#include <ecs/ecs.h>
 
 namespace net
 {
@@ -32,22 +33,9 @@ namespace net
 			server
 		};
 
-		struct OwnedIMessage
-		{
-			std::shared_ptr<Connection> owner;
-			IMessage message;
-		};
-
-		struct OwnedOMessage
-		{
-			std::shared_ptr<Connection> owner;
-			OMessage message;
-		};
-
 	protected:
-		std::shared_ptr<Connection> sharedThis;
 		asio::io_context& _ctx;
-		NetQueue<OwnedIMessage>& _ibuffer;
+		EntityManager* _em;
 		NetQueue<OMessage> _obuffer;
 		ConnectionID _id;
 		Owner _owner;
@@ -62,7 +50,7 @@ namespace net
 		void addToIMessageQueue();
 
 	public:
-		Connection(asio::io_context& ctx, NetQueue<OwnedIMessage>& ibuffer);
+		Connection(asio::io_context& ctx, EntityManager* em);
 
 		//Each Connection derived class has it's own unique connect call due to the need to pass a socket
 		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) = 0;
@@ -94,8 +82,8 @@ namespace net
 		void async_writeBody() override;
 
 	public:
-		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
-		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, NetQueue<OwnedIMessage>& ibuffer);
+		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, EntityManager* em);
+		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, EntityManager* em);
 		~TCPConnection();
 		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
 		virtual void connectToClient(ConnectionID id) override;
@@ -118,5 +106,23 @@ namespace net
 
 		void send(const OMessage& msg);
 		ConnectionType type() override;
+	};
+
+	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
+	{
+		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
+		{
+		};
+	};
+
+	struct ConnectionComponent : public NativeComponent<ConnectionComponent>
+	{
+		ConnectionID id;
+		std::shared_ptr<Connection> connection;
+		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
+		{
+			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(ConnectionComponent, id)));
+			types.push_back(std::make_unique<VirtualVariable<std::shared_ptr<Connection>>>(offsetof(ConnectionComponent, connection)));
+		};
 	};
 }

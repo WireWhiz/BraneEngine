@@ -53,6 +53,7 @@ public:
 	bool hasComponents(const ComponentSet& comps) const;
 	VirtualComponent getComponent(size_t entity, const ComponentAsset* component) const;
 	void setComponent(size_t entity, const VirtualComponent& component);
+	void setComponent(size_t entity, const VirtualComponentPtr& component);
 	bool isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const;
 	bool isRootForComponent(const ComponentAsset* component) const;
 	const ComponentSet& components() const;

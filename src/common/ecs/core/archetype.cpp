@@ -50,10 +50,24 @@ VirtualComponent Archetype::getComponent(size_t entity, const ComponentAsset* co
 	assert(index < _chunks[chunk]->size());
 	VirtualComponent o = _chunks[chunk]->getComponent(component, index);
 	_mutex.unlock_shared();
-	return std::move(o);
+	return o;
 }
 
 void Archetype::setComponent(size_t entity, const VirtualComponent& component)
+{
+	_mutex.lock();
+	assert(_components.contains(component.def()));
+
+	size_t chunk = chunkIndex(entity);
+	assert(chunk < _chunks.size());
+
+	size_t index = entity - chunk * _chunks[0]->maxCapacity();
+	assert(index < _chunks[chunk]->size());
+	_chunks[chunk]->setComponent(component, index);
+	_mutex.unlock();
+}
+
+void Archetype::setComponent(size_t entity, const VirtualComponentPtr& component)
 {
 	_mutex.lock();
 	assert(_components.contains(component.def()));

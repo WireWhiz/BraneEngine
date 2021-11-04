@@ -4,15 +4,22 @@ namespace net
 {
 	void Connection::addToIMessageQueue()
 	{
-		if (_owner == Owner::server)
-			_ibuffer.push_back({ sharedThis, _tempIn });
-		else
-			_ibuffer.push_back({ nullptr, _tempIn });
+		ComponentSet components;
+		components.add(IMessageComponent::def());
+		EntityID entity = _em->createEntity(components);
+
+		IMessageComponent im;
+		im.message = std::move(_tempIn);
+		im.owner = _id;
+
+		_em->setEntityComponent(entity, im.toVirtual());
+		
 
 	}
-	Connection::Connection(asio::io_context& ctx, NetQueue<OwnedIMessage>& ibuffer) : _ctx(ctx), _ibuffer(ibuffer)
+	Connection::Connection(asio::io_context& ctx, EntityManager* em) : _ctx(ctx)
 	{
-		sharedThis = std::shared_ptr<Connection>(this);
+		_em = em;
+		_id = 0;
 	}
 	void TCPConnection::async_handshake()
 	{
@@ -136,7 +143,7 @@ namespace net
 			asio::async_write(*_tcpSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
 
 	}
-	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer)
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, EntityManager* em) : Connection(ctx, em)
 	{
 		_tcpSocket = new tcp_socket(std::move(socket));
 		_sslSocket = nullptr;
@@ -144,7 +151,7 @@ namespace net
 		_secure = false;
 		_handshakeDone = true;
 	}
-	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, NetQueue<OwnedIMessage>& ibuffer) : Connection(ctx, ibuffer)
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, EntityManager* em) : Connection(ctx, em)
 	{
 		_sslSocket = new ssl_socket(std::move(socket));
 		_tcpSocket = nullptr;

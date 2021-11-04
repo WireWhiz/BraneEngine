@@ -37,8 +37,8 @@ void shared_recursive_mutex::unlock()
 {
 	std::scoped_lock lock(_m);
 	//std::cout << "Thread: " << _owner << " unlocking mutex: " << srmId << " (" << _ownerLockCount << ") times." << std::endl;
+	assert(_ownerLockCount != 0);
 	_ownerLockCount -= 1;
-	assert(_ownerLockCount != size_t(-1));
 }
 
 void shared_recursive_mutex::lock_shared()
@@ -62,8 +62,8 @@ void shared_recursive_mutex::lock_shared()
 void shared_recursive_mutex::unlock_shared()
 {
 	std::scoped_lock lock(_m);
+	assert(_sharedOwners[std::this_thread::get_id()] != 0);
 	_sharedOwners[std::this_thread::get_id()] -= 1;
 	//std::cout << "Thread: " << std::this_thread::get_id() << " shared unlocking " << _sharedOwners[std::this_thread::get_id()] << std::endl;
 
-	assert(_sharedOwners[std::this_thread::get_id()] >= 0);
 }

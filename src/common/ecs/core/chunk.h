@@ -65,7 +65,16 @@ public:
 	void setComponent(const VirtualComponent& component, size_t entity)
 	{
 		_lock.lock();
-		std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
+		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		_lock.unlock();
+	}
+
+	void setComponent(const VirtualComponentPtr& component, size_t entity)
+	{
+		_lock.lock();
+		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
+		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
 		_lock.unlock();
 	}
 
