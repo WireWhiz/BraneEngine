@@ -2,11 +2,12 @@
 
 size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
+
 std::atomic<bool> ThreadPool::_running = true;
 std::queue<ThreadPool::Job> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
 
-int ThreadPool::threadRuntime()
+void ThreadPool::threadRuntime()
 {
 	while (_running)
 	{
@@ -40,7 +41,6 @@ int ThreadPool::threadRuntime()
 		
 		std::this_thread::yield();
 	}
-	return 0;
 }
 
 void ThreadPool::init()
@@ -53,7 +53,7 @@ void ThreadPool::init()
 		_threads.reserve(threadCount);
 		for (size_t i = 0; i < threadCount; i++)
 		{
-			_threads.push_back(std::thread(threadRuntime));
+			_threads.emplace_back(threadRuntime);
 		}
 	}
 	
@@ -65,7 +65,6 @@ void ThreadPool::cleanup()
 	if (_instances == 0)
 	{
 		_running = false;
-		std::cout << "Running: " << _running << std::endl;
 		for (size_t i = 0; i < _threads.size(); i++)
 		{
 			try

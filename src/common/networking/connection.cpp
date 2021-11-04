@@ -143,7 +143,7 @@ namespace net
 			asio::async_write(*_tcpSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
 
 	}
-	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, EntityManager* em) : Connection(ctx, em)
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket socket, EntityManager* em) : Connection(ctx, em)
 	{
 		_tcpSocket = new tcp_socket(std::move(socket));
 		_sslSocket = nullptr;
@@ -151,7 +151,7 @@ namespace net
 		_secure = false;
 		_handshakeDone = true;
 	}
-	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, EntityManager* em) : Connection(ctx, em)
+	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket socket, EntityManager* em) : Connection(ctx, em)
 	{
 		_sslSocket = new ssl_socket(std::move(socket));
 		_tcpSocket = nullptr;
@@ -180,7 +180,6 @@ namespace net
 			else
 			{
 				std::cerr << "Failed to connect to server.";
-				return false;
 			}
 		};
 		if(_secure)

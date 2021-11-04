@@ -82,8 +82,8 @@ namespace net
 		void async_writeBody() override;
 
 	public:
-		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket& socket, EntityManager* em);
-		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket& socket, EntityManager* em);
+		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket socket, EntityManager* em);
+		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket socket, EntityManager* em);
 		~TCPConnection();
 		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
 		virtual void connectToClient(ConnectionID id) override;
