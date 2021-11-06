@@ -23,4 +23,6 @@ public:
 
 	void construct(byte* component) const;
 	void deconstruct(byte* component) const;
+	void copy(byte* dest, byte* source) const;
+	void move(byte* dest, byte* source) const;
 };

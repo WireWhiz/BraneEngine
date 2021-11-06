@@ -3,6 +3,7 @@
 #include <vector>
 #include <sstream>
 #include <byte.h>
+#include <ecs/ecs.h>
 
 namespace net
 {
@@ -18,8 +19,8 @@ namespace net
 
 	struct MessageHeader
 	{
-		MessageType type; //TODO define max size for different message types
-		uint32_t size = 0;
+		MessageType type; 
+		size_t size;
 	};
 
 	class IMessage
@@ -94,12 +95,23 @@ namespace net
 			return msg;
 		}
 
+		friend OMessage& operator << (OMessage& msg, const std::string& data)
+		{
+			size_t index = msg.data.size();
+			msg.data.resize(index + data.size());
+			std::memcpy(&msg.data.data()[index], data.data(), data.size());
+
+			msg.header.size = msg.size();
+
+			return msg;
+		}
+
 		void write(void* src, size_t size)
 		{
 			size_t index = data.size();
 			data.resize(index + size);
 			std::memcpy(&data.data()[index], src, size);
-			
+
 			header.size = this->size();
 		}
 
@@ -110,6 +122,29 @@ namespace net
 			o.data.resize(data.size());
 			std::memcpy(o.data.data(), data.data(), data.size());
 			return o;
+		}
+	};
+
+	typedef uint32_t ConnectionID;
+	struct IMessageComponent : public NativeComponent<IMessageComponent>
+	{
+		ConnectionID owner;
+		IMessage message;
+		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
+		{
+			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(IMessageComponent, owner)));
+			types.push_back(std::make_unique<VirtualVariable<IMessage>>(offsetof(IMessageComponent, message)));
+		}
+	};
+
+	struct OMessageComponent : public NativeComponent<OMessageComponent>
+	{
+		ConnectionID owner;
+		OMessage message;
+		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
+		{
+			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(OMessageComponent, owner)));
+			types.push_back(std::make_unique<VirtualVariable<IMessage>>(offsetof(OMessageComponent, message)));
 		}
 	};
 }

@@ -5,10 +5,29 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "Asset server",
             "type": "cppdbg",
             "request": "launch",
-            "program": "enter program name, for example ${workspaceFolder}/a.out",
+            "program": "${workspaceFolder}/build/assetServer/BraneAssetServer",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/assetServer/",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        },
+        {
+            "name": "gtest",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/src/tests/gtests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
@@ -23,5 +42,6 @@
                 }
             ]
         }
+    
     ]
 }

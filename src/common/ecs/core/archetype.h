@@ -34,6 +34,7 @@ public:
 	size_t _entitySize;
 
 	//Eventually move these to seperate node class
+	mutable shared_recursive_mutex _edgeMutex;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 	//
@@ -53,6 +54,7 @@ public:
 	bool hasComponents(const ComponentSet& comps) const;
 	VirtualComponent getComponent(size_t entity, const ComponentAsset* component) const;
 	void setComponent(size_t entity, const VirtualComponent& component);
+	void setComponent(size_t entity, const VirtualComponentPtr& component);
 	bool isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const;
 	bool isRootForComponent(const ComponentAsset* component) const;
 	const ComponentSet& components() const;
@@ -60,8 +62,10 @@ public:
 	std::shared_ptr<ArchetypeEdge> getRemoveEdge(const ComponentAsset* component);
 	void addAddEdge(const ComponentAsset* component, Archetype* archetype);
 	void addRemoveEdge(const ComponentAsset* component, Archetype* archetype);
-	void forAddEdge(const std::function<void(std::shared_ptr<ArchetypeEdge>)>& f) const;
-	void forRemoveEdge(std::function<void(std::shared_ptr<ArchetypeEdge>)>& f) const;
+	void forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
+	void forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
+	void lock() const;
+	void unlock() const;
 	size_t size();
 	size_t createEntity();
 	size_t copyEntity(Archetype* source, size_t index);
@@ -111,7 +115,7 @@ public:
 		archetype->forEach(components, f, 0, archetype->size());
 		executed.insert(archetype);
 
-		archetype->forAddEdge([this, &components, &f, &executed](std::shared_ptr<ArchetypeEdge> edge) {
+		archetype->forAddEdge([this, &components, &f, &executed](std::shared_ptr<const ArchetypeEdge> edge) {
 			forEachRecursive(edge->archetype, components, f, executed);
 		});
 	}
@@ -134,7 +138,7 @@ public:
 
 		executed.insert(archetype);
 
-		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &handle](std::shared_ptr<ArchetypeEdge> edge) {
+		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &handle](std::shared_ptr<const ArchetypeEdge> edge) {
 			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, handle);
 		});
 	}
@@ -144,6 +148,9 @@ public:
 	ArchetypeManager();
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& cdefs);
+	void lockArchetype(const ComponentSet& components);
+	void unlockArchetype(const ComponentSet& components);
+
 	EnityForEachID getForEachID(const ComponentSet& components);
 	size_t forEachCount(EnityForEachID id);
 

@@ -2,6 +2,7 @@
 
 const std::unordered_map<std::string, AssetType::Type> AssetType::_toEnumMap = {
 	{"component", AssetType::component},
+	{"system", AssetType::system},
 	{"mesh",   AssetType::mesh},
 	{"texture", AssetType::texture},
 	{"player",  AssetType::player},
@@ -10,6 +11,7 @@ const std::unordered_map<std::string, AssetType::Type> AssetType::_toEnumMap = {
 
 const std::unordered_map<AssetType::Type, std::string> AssetType::_toStringMap = {
 	{AssetType::component, "component"},
+	{AssetType::system, "system"},
 	{AssetType::mesh,   "mesh"},
 	{AssetType::texture, "texture"},
 	{AssetType::player,  "player"},

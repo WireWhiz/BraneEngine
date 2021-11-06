@@ -1,4 +1,4 @@
-#include "VirtualType.h"
+#include "virtualType.h"
 #include "component.h"
 
 VirtualType::VirtualType(size_t offset)

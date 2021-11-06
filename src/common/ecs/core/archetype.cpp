@@ -1,4 +1,4 @@
-#include "Archetype.h"
+#include "archetype.h"
 
 #include "chunk.h"
 
@@ -50,10 +50,24 @@ VirtualComponent Archetype::getComponent(size_t entity, const ComponentAsset* co
 	assert(index < _chunks[chunk]->size());
 	VirtualComponent o = _chunks[chunk]->getComponent(component, index);
 	_mutex.unlock_shared();
-	return std::move(o);
+	return o;
 }
 
 void Archetype::setComponent(size_t entity, const VirtualComponent& component)
+{
+	_mutex.lock();
+	assert(_components.contains(component.def()));
+
+	size_t chunk = chunkIndex(entity);
+	assert(chunk < _chunks.size());
+
+	size_t index = entity - chunk * _chunks[0]->maxCapacity();
+	assert(index < _chunks[chunk]->size());
+	_chunks[chunk]->setComponent(component, index);
+	_mutex.unlock();
+}
+
+void Archetype::setComponent(size_t entity, const VirtualComponentPtr& component)
 {
 	_mutex.lock();
 	assert(_components.contains(component.def()));
@@ -117,66 +131,76 @@ const ComponentSet& Archetype::components() const
 
 std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* component)
 {
-	_mutex.lock_shared();
+	_edgeMutex.lock_shared();
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
 		if (component == _addEdges[i]->component)
 		{
-			_mutex.unlock_shared();
+			_edgeMutex.unlock_shared();
 			return _addEdges[i];
 		}
 	}
-	_mutex.unlock_shared();
+	_edgeMutex.unlock_shared();
 	return nullptr;
 }
 
 std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentAsset* component)
 {
-	_mutex.lock_shared();
+	_edgeMutex.lock_shared();
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
 		if (component == _removeEdges[i]->component)
 		{
-			_mutex.unlock_shared();
+			_edgeMutex.unlock_shared();
 			return _removeEdges[i];
 		}
 	}
-	_mutex.unlock_shared();
+	_edgeMutex.unlock_shared();
 	return nullptr;
 }
 
 void Archetype::addAddEdge(const ComponentAsset* component, Archetype* archetype)
 {
-	_mutex.lock();
+	_edgeMutex.lock();
 	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
-	_mutex.unlock();
+	_edgeMutex.unlock();
 }
 
 void Archetype::addRemoveEdge(const ComponentAsset* component, Archetype* archetype)
 {
-	_mutex.lock();
+	_edgeMutex.lock();
 	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
-	_mutex.unlock();
+	_edgeMutex.unlock();
 }
 
-void Archetype::forAddEdge(const std::function<void(const std::shared_ptr<ArchetypeEdge>)>& f) const
+void Archetype::forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
-	_mutex.lock_shared();
+	_edgeMutex.lock_shared();
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
 		f(_addEdges[i]);
 	}
-	_mutex.unlock_shared();
+	_edgeMutex.unlock_shared();
 }
 
-void Archetype::forRemoveEdge(std::function<void(const std::shared_ptr<ArchetypeEdge>)>& f) const
+void Archetype::forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
-	_mutex.lock_shared();
+	_edgeMutex.lock_shared();
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
 		f(_removeEdges[i]);
 	}
-	_mutex.unlock_shared();
+	_edgeMutex.unlock_shared();
+}
+
+void Archetype::lock() const
+{
+	_mutex.lock();
+}
+
+void Archetype::unlock() const
+{
+	_mutex.unlock();
 }
 
 size_t Archetype::size()
@@ -452,6 +476,18 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 	updateForeachCache(cdefs);
 	_archetypeLock.unlock();
 	return newArch;
+}
+
+void ArchetypeManager::lockArchetype(const ComponentSet& components)
+{
+	_archetypeLock.lock_shared();
+	getArchetype(components)->lock();
+}
+
+void ArchetypeManager::unlockArchetype(const ComponentSet& components)
+{
+	getArchetype(components)->unlock();
+	_archetypeLock.unlock_shared();
 }
 
 void ArchetypeManager::getRootArchetypes(const ComponentSet& components, std::vector<Archetype*>& roots) const

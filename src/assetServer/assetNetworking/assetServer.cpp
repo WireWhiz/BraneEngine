@@ -48,8 +48,8 @@ namespace net
 	{
 		std::cout << "Receved message: " << msg << std::endl;
 		std::string text;
-		text.resize(msg.header.size);
-		msg.read(text.data(), msg.header.size);
+		text.resize(msg.header.size());
+		msg.read(text.data(), msg.header.size());
 		std::cout << "receved: " << text;
 
 		OMessage response;

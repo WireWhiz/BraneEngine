@@ -65,7 +65,16 @@ public:
 	void setComponent(const VirtualComponent& component, size_t entity)
 	{
 		_lock.lock();
-		std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
+		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		_lock.unlock();
+	}
+
+	void setComponent(const VirtualComponentPtr& component, size_t entity)
+	{
+		_lock.lock();
+		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
+		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
 		_lock.unlock();
 	}
 
@@ -90,15 +99,21 @@ public:
 		source->_lock.lock();
 		assert(source->_archetype->components().contains(component));
 		assert(_archetype->components().contains(component));
+		assert(sIndex < source->size());
+		assert(dIndex < size());
+
 		size_t sourceCompIndex = source->_archetype->components().index(component);
 		size_t destCompIndex = _archetype->components().index(component);
+
 		assert(sIndex + source->_componentIndices[sourceCompIndex] + component->size() < N);
 		assert(dIndex + _componentIndices[destCompIndex] + component->size() < N);
-		size_t src = sIndex + source->_componentIndices[sourceCompIndex];
-		size_t dest = dIndex + _componentIndices[destCompIndex];
-		std::copy(&source->_data[src], &source->_data[src + component->size()], &_data[dest]);
-		_lock.unlock();
+
+		size_t src = sIndex * component->size() + source->_componentIndices[sourceCompIndex];
+		size_t dest = dIndex * component->size() + _componentIndices[destCompIndex];
+
+		component->copy(&_data[dest], &source->_data[src]);
 		source->_lock.unlock();
+		_lock.unlock();
 	}
 	
 	void removeEntity(size_t index)
@@ -120,7 +135,7 @@ public:
 			for (size_t i = 0; i < _archetype->components().size(); i++)
 			{
 				if (_archetype->components()[i]->size() != 0)
-					std::copy(getComponentData(i, _size - 1), getComponentData(i, _size - 1), getComponentData(i, index));
+					_archetype->components()[i]->move(getComponentData(i, index), getComponentData(i, _size - 1));
 			}
 		}
 

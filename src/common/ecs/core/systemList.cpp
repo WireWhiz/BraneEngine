@@ -1,7 +1,7 @@
 #include "systemList.h"
 #include "entity.h"
 
-SystemList::SystemNode::SystemNode(std::unique_ptr<VirtualSystem>& system)
+SystemList::SystemNode::SystemNode(std::unique_ptr<VirtualSystem>&& system)
 {
 	_system = std::move(system);
 	_id = _system->id();
@@ -105,9 +105,9 @@ VirtualSystem* SystemList::findSystem(SystemID id) const
 		return nullptr;
 }
 
-bool SystemList::addSystem(std::unique_ptr<VirtualSystem>& system)
+bool SystemList::addSystem(std::unique_ptr<VirtualSystem>&& system)
 {
-	SystemNode* newNode = new SystemNode(system);
+	SystemNode* newNode = new SystemNode(std::move(system));
 
 	// Find any other references to this block
 	updateNodeConstraints(newNode);

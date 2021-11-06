@@ -1,5 +1,5 @@
 #include <testing.h>
-#include <ecs/jit/VirtualSystemCompiler.h>
+#include <ecs/jit/virtualSystemCompiler.h>
 
 TEST(ECS, BasicJITTest)
 {

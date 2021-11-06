@@ -11,10 +11,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Library Complie Definitions
-set(COMMON_DEFS GLM_FORCE_RADIANS
+add_compile_definitions(GLM_FORCE_RADIANS
                 GLM_FORCE_DEPTH_ZERO_TO_ONE
                 ASIO_STANDALONE
                 STATIC_CONCPP)
+
+
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message("debug mode")

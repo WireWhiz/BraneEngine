@@ -308,10 +308,11 @@ TEST(ECS, EntityManagerTest)
 	em.removeComponent(entity, &vcd1);
 
 	//We now should have some archetypes that we can fetch
-	EXPECT_EQ(em._archetypes._archetypes.size(), 3);
-	EXPECT_EQ(em._archetypes._archetypes[0].size(), 2);
-	EXPECT_EQ(em._archetypes._archetypes[1].size(), 3);
-	EXPECT_EQ(em._archetypes._archetypes[2].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes.size(), 4);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[1].size(), 2);
+	EXPECT_EQ(em._archetypes._archetypes[2].size(), 3);
+	EXPECT_EQ(em._archetypes._archetypes[3].size(), 1);
 }
 
 //Classes for native system test
@@ -392,7 +393,7 @@ TEST(ECS, ForEachCachingTest)
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
-	EXPECT_EQ(em._archetypes._archetypes[0][0]->_addEdges.size(), 2);
+	EXPECT_EQ(em._archetypes._archetypes[0][0]->_addEdges.size(), 1);
 
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
@@ -506,11 +507,7 @@ TEST(ECS, ForEachParellelTest)
 	comps.add(&counterComponent);
 	EnityForEachID forEachID = em.getForEachID(comps);
 
-	//Create 50 entities with one component, and 50 with two
-	for (size_t i = 0; i < 2000000; i++)
-	{
-		EntityID e = em.createEntity(comps);
-	}
+	em.createEntities(comps, 2000000);
 
 	Stopwatch sw;
 	em.forEachParellel(forEachID, [&](byte* components[]) {

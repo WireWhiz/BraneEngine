@@ -4,7 +4,7 @@
 namespace net
 {
 	ServerInterface::ServerInterface(uint16_t port, uint16_t ssl_port) 
-		: _tcpAcceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), 
+		: _acceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port)), 
 		_sslAcceptor(_ctx, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), ssl_port)), 
 		_ssl_ctx(asio::ssl::context::tls)
 	{
@@ -39,19 +39,19 @@ namespace net
 		if (_thread.joinable())
 			_thread.join();
 	}
-	void ServerInterface::update(size_t maxMessages)
-	{
-		size_t messageCount = 0;
-		while (messageCount < maxMessages && !_imessages.empty())
-		{
-			Connection::OwnedIMessage msg = _imessages.pop_front();
-			onMessage(msg.owner, msg.message); //TODO make it so that on message is called by a thread pool
-			messageCount++;
-		}
-	}
+	//void ServerInterface::update(size_t maxMessages)
+	//{
+	//	size_t messageCount = 0;
+	//	while (messageCount < maxMessages && !_imessages.empty())
+	//	{
+	//		Connection::OwnedIMessage msg = _imessages.pop_front();
+	//		onMessage(msg.owner, msg.message); //TODO make it so that on message is called by a thread pool
+	//		messageCount++;
+	//	}
+	//}
 	void ServerInterface::asyc_waitForConnection()
 	{
-		_tcpAcceptor.async_accept([this](std::error_code ec, asio::ip::tcp::socket socket) {
+		/*_tcpAcceptor.async_accept([this](std::error_code ec, asio::ip::tcp::socket socket) {
 			if (!ec)
 			{
 				std::cout << "New Connection: " << socket.remote_endpoint() << std::endl;
@@ -74,11 +74,11 @@ namespace net
 
 			asyc_waitForConnection();
 		});
-		
+		*/
 	}
 	void ServerInterface::asyc_waitForSSLConnection()
 	{
-		ssl_socket* secureSocket = new ssl_socket(_ctx, _ssl_ctx);
+		/*ssl_socket* secureSocket = new ssl_socket(_ctx, _ssl_ctx);
 		_sslAcceptor.async_accept(secureSocket->lowest_layer(), [this, secureSocket](std::error_code ec) {
 			if (!ec)
 			{
@@ -104,7 +104,7 @@ namespace net
 			}
 
 			asyc_waitForSSLConnection();
-		});
+		});*/
 	}
 	void ServerInterface::messageClient(std::shared_ptr<Connection> client, const OMessage& msg)
 	{
