@@ -47,6 +47,8 @@ public:
 	EntityManager(const EntityManager&) = delete;
 	~EntityManager();
 	Archetype* getArchetype(const ComponentSet& components);
+	void lockArchetype(ComponentSet components);
+	void unlockArchetype(ComponentSet components);
 	EntityID createEntity(); 
 	EntityID createEntity(ComponentSet components);
 	void createEntities(const ComponentSet& components, size_t count);
@@ -67,10 +69,21 @@ public:
 	std::shared_ptr<JobHandle> forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
 	std::shared_ptr<JobHandle> constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 	//system stuff
-	bool addSystem(std::unique_ptr<VirtualSystem>& system);
+	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
 	void removeSystem(SystemID id);
 	bool addBeforeConstraint(SystemID id, SystemID before);
 	bool addAfterConstraint(SystemID id, SystemID after);
 	VirtualSystem* getSystem(SystemID id);
 	void runSystems();
+};
+
+class NativeForEach
+{
+	std::vector<size_t> _componentOrder;
+	EnityForEachID _feid;
+public:
+	NativeForEach() = default;
+	NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em);
+	size_t getComponentIndex(size_t index) const;
+	EnityForEachID id() const;
 };

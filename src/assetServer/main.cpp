@@ -36,10 +36,11 @@ int main()
 			if (cc->connection && cc->connection->isConnected())
 			{
 				net::OMessage m;
-				m << "Hello there!\n\r";
+				m << "Hello there connection " << std::to_string(cc->id) << "!\n\r";
 				cc->connection->send(m);
 			}
 		});
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 
 	return 0;

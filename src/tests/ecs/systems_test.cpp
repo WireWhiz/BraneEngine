@@ -67,8 +67,8 @@ TEST(Systems, NativeTest)
 	//Create test system
 	ComponentSet components;
 	components.add(cc.def());
-	std::unique_ptr<VirtualSystem> aos = std::make_unique<AddSystem>(0, em.getForEachID(components), 1);
-	EXPECT_TRUE(em.addSystem(aos));
+	std::unique_ptr<VirtualSystem> aos = std::make_unique<AddSystem>(AssetID("localhost/this/system/addSystem"), em.getForEachID(components), 1);
+	EXPECT_TRUE(em.addSystem(std::move(aos)));
 
 	//Run system
 	em.runSystems();
@@ -95,16 +95,16 @@ TEST(Systems, BeforeConstraint)
 	ComponentSet components;
 	components.add(cc.def());
 	EnityForEachID feid = em.getForEachID(components);
-	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
-	EXPECT_TRUE(em.addSystem(mul));
+	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(AssetID("localhost/this/system/mulSystem"), feid, 2);
+	EXPECT_TRUE(em.addSystem(std::move(mul)));
 
-	std::unique_ptr<VirtualSystem> add = std::make_unique<AddSystem>(0, feid, 3);
-	EXPECT_TRUE(em.addSystem(add));
+	std::unique_ptr<VirtualSystem> add = std::make_unique<AddSystem>(AssetID("localhost/this/system/addSystem"), feid, 3);
+	EXPECT_TRUE(em.addSystem(std::move(add)));
 
 
-	EXPECT_TRUE(em.addBeforeConstraint(0, 1));
-	EXPECT_FALSE(em.addBeforeConstraint(1, 0));
-	EXPECT_FALSE(em.addAfterConstraint(0, 1));
+	EXPECT_TRUE(em.addBeforeConstraint(AssetID("localhost/this/system/addSystem"), AssetID("localhost/this/system/mulSystem")));
+	EXPECT_FALSE(em.addBeforeConstraint(AssetID("localhost/this/system/mulSystem"), AssetID("localhost/this/system/addSystem")));
+	EXPECT_FALSE(em.addAfterConstraint(AssetID("localhost/this/system/addSystem"), AssetID("localhost/this/system/mulSystem")));
 
 
 	//Run system
@@ -129,15 +129,15 @@ TEST(Systems, AfterConstraint)
 	ComponentSet components;
 	components.add(cc.def());
 	EnityForEachID feid = em.getForEachID(components);
-	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(1, feid, 2);
-	EXPECT_TRUE(em.addSystem(mul));
+	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(AssetID("localhost/this/system/mulSystem"), feid, 2);
+	EXPECT_TRUE(em.addSystem(std::move(mul)));
 
-	std::unique_ptr<VirtualSystem> add = std::make_unique<AddSystem>(0, feid, 3);
-	EXPECT_TRUE(em.addSystem(add));
+	std::unique_ptr<VirtualSystem> add = std::make_unique<AddSystem>(AssetID("localhost/this/system/addSystem"), feid, 3);
+	EXPECT_TRUE(em.addSystem(std::move(add)));
 
-	EXPECT_TRUE(em.addAfterConstraint(1, 0));
-	EXPECT_FALSE(em.addAfterConstraint(0, 1));
-	EXPECT_FALSE(em.addBeforeConstraint(1, 0));
+	EXPECT_TRUE(em.addAfterConstraint(AssetID("localhost/this/system/mulSystem"), AssetID("localhost/this/system/addSystem")));
+	EXPECT_FALSE(em.addAfterConstraint(AssetID("localhost/this/system/addSystem"), AssetID("localhost/this/system/mulSystem")));
+	EXPECT_FALSE(em.addBeforeConstraint(AssetID("localhost/this/system/mulSystem"), AssetID("localhost/this/system/addSystem")));
 
 
 	//Run system

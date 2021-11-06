@@ -32,19 +32,11 @@ namespace net
 				ComponentSet components;
 				components.add(ConnectionComponent::def());
 				components.add(NewConnectionComponent::def());
+				_em->lockArchetype(components);
 				EntityID entity = _em->createEntity(components);
 
 				_em->setEntityComponent(entity, cc.toVirtual());
-				std::cout << "Shared ptr connections: " << handle.use_count();
-
-				//if (onClientConnect(newConnection))
-				//{
-					//_connections.push_back(std::move(newConnection));
-					//_connections.back()->connectToClient(_idCounter++);
-					//std::cout << "[" << _connections.back()->id() << "] Connection Accepted" << std::endl;
-				//}
-				//else
-					//std::cout << "Connection denied" << std::endl;
+				_em->unlockArchetype(components);
 			}
 			else
 			{

@@ -12,11 +12,11 @@ public:
 	{
 		none,
 		component,
+		system,
 		mesh,
 		texture,
 		script,
-		player
-
+		player,
 	};
 
 private:

@@ -46,6 +46,7 @@ public:
 	virtual void construct(byte*) = 0;
 	void construct(VirtualComponentPtr& vcp);
 	virtual void copy(byte* dest, const byte* source) = 0;
+	virtual void move(byte* dest, const byte* source) = 0;
 	virtual void deconstruct(byte*) = 0;
 	void deconstruct(VirtualComponentPtr& vcp);
 };
@@ -72,6 +73,10 @@ public:
 	virtual void copy(byte* dest, const byte* source)
 	{
 		*((T*)dest) = *((T*)source);
+	}
+	virtual void move(byte* dest, const byte* source)
+	{
+		*((T*)dest) = std::move(*((T*)source));
 	}
 	void deconstruct(byte* var) override
 	{

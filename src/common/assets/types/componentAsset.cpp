@@ -79,3 +79,11 @@ void ComponentAsset::copy(byte* dest, byte* source) const
 		_types[i]->copy(dest + _types[i]->offset(), source +_types[i]->offset());
 	}
 }
+
+void ComponentAsset::move(byte* dest, byte* source) const
+{
+	for (size_t i = 0; i < _types.size(); i++)
+	{
+		_types[i]->move(dest + _types[i]->offset(), source + _types[i]->offset());
+	}
+}

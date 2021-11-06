@@ -21,7 +21,7 @@ class SystemList
 		std::vector<SystemNode*> after;
 		std::vector<SystemID> afterConstraints;
 		std::vector<SystemID> beforeConstraints;
-		SystemNode(std::unique_ptr<VirtualSystem>& system);
+		SystemNode(std::unique_ptr<VirtualSystem>&& system);
 		void setNext(SystemNode* next);
 		SystemNode* next() const;
 		void run(EntityManager* entities) const;
@@ -40,7 +40,7 @@ class SystemList
 public:
 	SystemList();
 	VirtualSystem* findSystem(SystemID id) const;
-	bool addSystem(std::unique_ptr<VirtualSystem>& system);
+	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
 	void removeSystem(SystemID id);
 
 	bool addBeforeConstraint(SystemID id, SystemID before);

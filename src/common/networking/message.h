@@ -95,6 +95,17 @@ namespace net
 			return msg;
 		}
 
+		friend OMessage& operator << (OMessage& msg, const std::string& data)
+		{
+			size_t index = msg.data.size();
+			msg.data.resize(index + data.size());
+			std::memcpy(&msg.data.data()[index], data.data(), data.size());
+
+			msg.header.size = msg.size();
+
+			return msg;
+		}
+
 		void write(void* src, size_t size)
 		{
 			size_t index = data.size();

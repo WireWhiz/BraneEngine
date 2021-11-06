@@ -1,10 +1,11 @@
 #pragma once
 #include "virtualType.h"
 #include "component.h"
+#include "assets/assetID.h"
 #include <vector>
 
 class EntityManager;
-typedef uint64_t SystemID;
+typedef AssetID SystemID;
 // argument 1 is reference to the different variables in the struct
 // argument 2 is constant values and native functions
 using SystemFunction = void (*)(EntityManager*, void*);
@@ -19,7 +20,7 @@ public:
 	virtual void run(EntityManager* em) = 0;
 };
 
-class FunctionPointerSystem : VirtualSystem
+class FunctionPointerSystem : public VirtualSystem
 {
 	SystemFunction _function;
 	void* _data;

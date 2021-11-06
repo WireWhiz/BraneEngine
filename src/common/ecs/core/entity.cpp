@@ -15,6 +15,18 @@ Archetype* EntityManager::getArchetype(const ComponentSet& components)
 	return _archetypes.getArchetype(components);
 }
 
+void EntityManager::lockArchetype(ComponentSet components)
+{
+	components.add(EntityIDComponent::def());
+	_archetypes.lockArchetype(components);
+}
+
+void EntityManager::unlockArchetype(ComponentSet components)
+{
+	components.add(EntityIDComponent::def());
+	_archetypes.unlockArchetype(components);
+}
+
 EntityID EntityManager::createEntity()
 {
 	ComponentSet components;
@@ -219,6 +231,7 @@ void EntityManager::removeComponent(EntityID entity, const ComponentAsset* compo
 	
 		
 	Archetype* currentArchetype = getEntityArchetype(entity);
+	assert(currentArchetype);
 
 	assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
 	// See if there's already an archetype we know about:
@@ -251,9 +264,9 @@ void EntityManager::removeComponent(EntityID entity, const ComponentAsset* compo
 	_entityLock.unlock();
 }
 
-bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>& system)
+bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>&& system)
 {
-	return _systems.addSystem(system);
+	return _systems.addSystem(std::move(system));
 }
 
 void EntityManager::removeSystem(SystemID id)
@@ -284,4 +297,26 @@ void EntityManager::runSystems()
 void EntityIDComponent::getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 {
 	types.push_back(std::make_unique<VirtualVariable<EntityID>>(offsetof(EntityIDComponent, id)));
+}
+
+NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)
+{
+	ComponentSet componentSet;
+	for (size_t i = 0; i < components.size(); i++)
+	{
+		componentSet.add(components[i]);
+	}
+	_componentOrder.resize(components.size());
+	componentSet.indicies(componentSet, _componentOrder.data());
+	_feid = em->getForEachID(componentSet);
+}
+
+size_t NativeForEach::getComponentIndex(size_t index) const
+{
+	return _componentOrder[index];
+}
+
+EnityForEachID NativeForEach::id() const
+{
+	return _feid;
 }
