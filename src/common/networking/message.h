@@ -17,17 +17,17 @@ namespace net
 		four
 	};
 
-    __attribute__((packed)) struct MessageHeader
+	struct alignas(8) MessageHeader
 	{
-		MessageType type; 
-		uint64_t size;
+		alignas(8) MessageType type;
+		alignas(8) uint64_t size;
 	};
 
 	class IMessage
 	{
 		size_t _ittr = 0;
 	public:
-		MessageHeader header;
+		 MessageHeader  header;
 		std::vector<byte> data;
 
 		size_t size() const
