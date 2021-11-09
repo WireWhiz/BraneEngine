@@ -17,10 +17,10 @@ namespace net
 		four
 	};
 
-	struct MessageHeader
+    __attribute__((packed)) struct MessageHeader
 	{
 		MessageType type; 
-		size_t size;
+		uint64_t size;
 	};
 
 	class IMessage

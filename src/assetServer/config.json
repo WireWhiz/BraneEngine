@@ -2,8 +2,8 @@
 
 {
   "network": {
-    "tcp port": 80,
-    "ssl port": 81
+    "tcp port": 2001,
+    "ssl port": 2002
   },
   "database" : {
     "ip": "localhost",
