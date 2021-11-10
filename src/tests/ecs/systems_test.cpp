@@ -3,12 +3,15 @@
 
 class CounterComponent : public NativeComponent<CounterComponent>
 {
+	REGESTER_MEMBERS_1(counter)
 public:
+	/*
 	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 	{
 		id.parseString("localhost/native/component/CounterComponent");
 		types.push_back(std::make_unique<VirtualInt>(offsetof(CounterComponent, counter)));
 	}
+	*/
 public:
 	uint64_t counter = 0;
 	

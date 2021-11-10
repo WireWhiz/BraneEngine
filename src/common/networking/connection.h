@@ -110,19 +110,14 @@ namespace net
 
 	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
 	{
-		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-		{
-		};
+		REGESTER_MEMBERS_0();
 	};
 
 	struct ConnectionComponent : public NativeComponent<ConnectionComponent>
 	{
+		REGESTER_MEMBERS_2(id, connection);
 		ConnectionID id;
 		std::shared_ptr<Connection> connection;
-		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-		{
-			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(ConnectionComponent, id)));
-			types.push_back(std::make_unique<VirtualVariable<std::shared_ptr<Connection>>>(offsetof(ConnectionComponent, connection)));
-		};
+		
 	};
 }

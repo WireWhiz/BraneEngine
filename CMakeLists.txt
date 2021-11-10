@@ -17,6 +17,14 @@ add_compile_definitions(GLM_FORCE_RADIANS
                 STATIC_CONCPP)
 
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    # 64 bits
+    add_compile_definitions(_64BIT)
+elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    # 32 bits
+    add_compile_definitions(_32BIT)
+
+endif()
 
 if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     message("debug mode")

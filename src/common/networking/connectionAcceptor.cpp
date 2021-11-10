@@ -32,11 +32,10 @@ namespace net
 				ComponentSet components;
 				components.add(ConnectionComponent::def());
 				components.add(NewConnectionComponent::def());
-				_em->lockArchetype(components);
-				EntityID entity = _em->createEntity(components);
-
-				_em->setEntityComponent(entity, cc.toVirtual());
-				_em->unlockArchetype(components);
+				_em->run( [this, cc, components]() mutable {
+					EntityID entity = _em->createEntity(components);
+					_em->setEntityComponent(entity, cc.toVirtual());
+				});
 			}
 			else
 			{

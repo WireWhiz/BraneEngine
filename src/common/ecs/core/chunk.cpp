@@ -12,11 +12,12 @@ void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
 		dest = std::make_unique<Chunk>();
 }
 
-void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
+void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& src)
 {
 	std::scoped_lock lock(pool._m);
-	pool._unused.emplace_back();
-	pool._unused[pool._unused.size() - 1] = std::move(dest);
+	src->setArchetype(nullptr);
+	pool._unused.emplace_back(std::move(src));
+	//pool._unused[pool._unused.size() - 1] = std::move(src);
 }
 
 ChunkPool::~ChunkPool()

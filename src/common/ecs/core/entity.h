@@ -17,10 +17,11 @@
 
 typedef uint64_t EntityID;
 
-struct EntityIDComponent : public NativeComponent<EntityIDComponent>
+class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
+	REGESTER_MEMBERS_1(id)
+public:
 	EntityID id;
-	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id);
 };
 
 struct EntityIndex
@@ -35,20 +36,19 @@ class EntityManager
 #ifdef TEST_BUILD
 public:
 #endif
-	mutable shared_recursive_mutex _entityLock;
 	std::vector<EntityIndex> _entities;
 	std::queue<EntityID> _unusedEntities;
 
 	ArchetypeManager _archetypes;
 	
+	mutable std::mutex _runLock;
+	std::queue<std::function<void()>> _runQueue;
 	SystemList _systems;
 public:
 	EntityManager();
 	EntityManager(const EntityManager&) = delete;
 	~EntityManager();
 	Archetype* getArchetype(const ComponentSet& components);
-	void lockArchetype(ComponentSet components);
-	void unlockArchetype(ComponentSet components);
 	EntityID createEntity(); 
 	EntityID createEntity(ComponentSet components);
 	void createEntities(const ComponentSet& components, size_t count);
@@ -69,6 +69,7 @@ public:
 	std::shared_ptr<JobHandle> forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
 	std::shared_ptr<JobHandle> constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 	//system stuff
+	void run(const std::function<void()>& task);
 	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
 	void removeSystem(SystemID id);
 	bool addBeforeConstraint(SystemID id, SystemID before);

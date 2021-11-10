@@ -9,6 +9,7 @@
 
 #include <iostream>
 
+
 class JobHandle
 {
 	std::atomic<size_t> _instances;
@@ -38,8 +39,11 @@ class ThreadPool
 	static void threadRuntime();
 
 public:
+	static std::thread::id main_thread_id;
 	static void init();
 	static void cleanup();
 	static std::shared_ptr<JobHandle> enqueue(std::function<void()> function);
 	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle> handle);
 };
+
+#define ASSERT_MAIN_THREAD() assert(std::this_thread::get_id() == ThreadPool::main_thread_id)

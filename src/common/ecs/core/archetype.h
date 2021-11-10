@@ -64,8 +64,6 @@ public:
 	void addRemoveEdge(const ComponentAsset* component, Archetype* archetype);
 	void forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
 	void forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
-	void lock() const;
-	void unlock() const;
 	size_t size();
 	size_t createEntity();
 	size_t copyEntity(Archetype* source, size_t index);
@@ -94,18 +92,18 @@ public:
 
 	};
 
-	mutable shared_recursive_mutex _forEachLock;
 	std::vector<ForEachData> _forEachData;
 
-	mutable shared_recursive_mutex _archetypeLock;
 	std::unordered_map<const ComponentAsset*, std::vector<Archetype*>> _rootArchetypes;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 
-	void getRootArchetypes(const ComponentSet& components, std::vector<Archetype*>& roots) const;
+	void findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const;
 	void updateForeachCache(const ComponentSet& components);
 	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
+
+	/*
 	template<typename T>
 	void forEachRecursive(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed)
 	{
@@ -142,14 +140,12 @@ public:
 			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, handle);
 		});
 	}
-
+	*/
 
 public:
 	ArchetypeManager();
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& cdefs);
-	void lockArchetype(const ComponentSet& components);
-	void unlockArchetype(const ComponentSet& components);
 
 	EnityForEachID getForEachID(const ComponentSet& components);
 	size_t forEachCount(EnityForEachID id);

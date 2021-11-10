@@ -52,10 +52,10 @@ TEST(ECS, ComponentSetTest)
 	cs.add((ComponentAsset*)4);
 	cs.add((ComponentAsset*)5);
 
-	EXPECT_EQ(cs.components()[0], (ComponentAsset*)2);
-	EXPECT_EQ(cs.components()[1], (ComponentAsset*)3);
-	EXPECT_EQ(cs.components()[2], (ComponentAsset*)4);
-	EXPECT_EQ(cs.components()[3], (ComponentAsset*)5);
+	EXPECT_EQ(cs[0], (ComponentAsset*)2);
+	EXPECT_EQ(cs[1], (ComponentAsset*)3);
+	EXPECT_EQ(cs[2], (ComponentAsset*)4);
+	EXPECT_EQ(cs[3], (ComponentAsset*)5);
 	EXPECT_TRUE(cs.contains((ComponentAsset*)2));
 	EXPECT_TRUE(cs.contains((ComponentAsset*)3));
 	EXPECT_FALSE(cs.contains((ComponentAsset*)1));
@@ -65,17 +65,17 @@ TEST(ECS, ComponentSetTest)
 	ComponentSet cs2 = cs;
 
 	cs2.add((ComponentAsset*)1);
-	EXPECT_EQ(cs2.components()[0], (ComponentAsset*)1);
-	EXPECT_EQ(cs2.components()[1], (ComponentAsset*)2);
-	EXPECT_EQ(cs2.components()[2], (ComponentAsset*)3);
-	EXPECT_EQ(cs2.components()[3], (ComponentAsset*)4);
-	EXPECT_EQ(cs2.components()[4], (ComponentAsset*)5);
+	EXPECT_EQ(cs2[0], (ComponentAsset*)1);
+	EXPECT_EQ(cs2[1], (ComponentAsset*)2);
+	EXPECT_EQ(cs2[2], (ComponentAsset*)3);
+	EXPECT_EQ(cs2[3], (ComponentAsset*)4);
+	EXPECT_EQ(cs2[4], (ComponentAsset*)5);
 
 	EXPECT_TRUE(cs2.contains(cs));
 
 	cs2.remove((ComponentAsset*)2);
-	EXPECT_EQ(cs2.components()[0], (ComponentAsset*)1);
-	EXPECT_EQ(cs2.components()[1], (ComponentAsset*)3);
+	EXPECT_EQ(cs2[0], (ComponentAsset*)1);
+	EXPECT_EQ(cs2[1], (ComponentAsset*)3);
 
 	EXPECT_TRUE(cs.contains(cs));
 	EXPECT_FALSE(cs2.contains(cs));
@@ -107,13 +107,11 @@ TEST(ECS, ArchetypeTest)
 	Archetype arch(components, cp);
 
 	EXPECT_EQ(arch.entitySize(), sizeof(std::string) * 6);
-
-	
-
 }
+
 TEST(ECS, ChunkTest)
 {
-	//Put stuff here later
+	//I should test this, but I would have to create multiple components and an achetype or two and that's just not really somthing I have energy for
 }
 
 TEST(ECS, VirtualComponentVectorTest)
@@ -168,22 +166,34 @@ TEST(ECS, VirtualComponentVectorTest)
 	EXPECT_EQ(42, vcvc.readComponentVar<int>(0, 1));
 }
 
+
 // Native component for testing 
 class TestNativeComponent : public NativeComponent<TestNativeComponent>
 {
+	REGESTER_MEMBERS_3(var1, var2, var3)
 public:
 	bool var1;
 	int64_t var2;
 	float var3;
-	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-	{
-		id.parseString("localhost/native/component/testNativeComponent");
-		types.emplace_back(std::make_unique<VirtualBool>(offsetof(TestNativeComponent, var1)));
-		types.emplace_back(std::make_unique<VirtualInt>(offsetof(TestNativeComponent, var2)));
-		types.emplace_back(std::make_unique<VirtualFloat>(offsetof(TestNativeComponent, var3)));
-	}
-
 };
+
+TEST(ECS, StructMembersTest)
+{
+	std::vector<VirtualType*> members = STRUCT_MEMBERS_3(TestNativeComponent, var1, var2, var3);
+	EXPECT_EQ(members.size(), 3);
+
+	EXPECT_EQ(members[0]->size(), sizeof(bool));
+	EXPECT_EQ(members[0]->offset(), offsetof(TestNativeComponent, var1));
+	EXPECT_TRUE(dynamic_cast<VirtualBool*>(members[0]) != nullptr);
+
+	EXPECT_EQ(members[1]->size(), sizeof(int64_t));
+	EXPECT_EQ(members[1]->offset(), offsetof(TestNativeComponent, var2));
+	EXPECT_TRUE(dynamic_cast<VirtualInt*>(members[1]) != nullptr);
+
+	EXPECT_EQ(members[2]->size(), sizeof(float));
+	EXPECT_EQ(members[2]->offset(), offsetof(TestNativeComponent, var3));
+	EXPECT_TRUE(dynamic_cast<VirtualFloat*>(members[2]) != nullptr);
+}
 
 TEST(ECS, NativeComponentTest)
 {
@@ -318,13 +328,16 @@ TEST(ECS, EntityManagerTest)
 //Classes for native system test
 class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 {
+	REGESTER_MEMBERS_1(var1)
 public:
 	bool var1;
+	/*
 	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 	{
 		id.parseString("localhost/native/component/testNativeComponent2");
 		types.emplace_back(std::make_unique<VirtualVariable<bool>>(offsetof(TestNativeComponent2, var1)));
 	}
+	*/
 
 };
 
@@ -368,25 +381,25 @@ TEST(ECS, ForEachCachingTest)
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 
 	em.addComponent(entity, &ca2); // archetype: ca1, ca2
-	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 2);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 
 	em.addComponent(entity, &ca3); // archetype: ca1, ca2, ca3
-	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 3);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
 
 	em.addComponent(entity, &ca4); // archetype: ca1, ca2, ca3, ca4
-	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 4);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca2); // archetype: ca1, ca3, ca4
-	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 2);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 5);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 2);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
@@ -395,7 +408,7 @@ TEST(ECS, ForEachCachingTest)
 	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
 	EXPECT_EQ(em._archetypes._archetypes[0][0]->_addEdges.size(), 1);
 
-	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
+	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 6);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 	EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
@@ -500,6 +513,9 @@ TEST(ECS, ForEachParellelTest)
 	
 	std::vector<std::unique_ptr<VirtualType>> variables;
 	variables.push_back(std::make_unique<VirtualVariable<size_t>>());
+	variables.push_back(std::make_unique<VirtualVariable<size_t>>());
+	variables.push_back(std::make_unique<VirtualVariable<size_t>>());
+	variables.push_back(std::make_unique<VirtualVariable<size_t>>());
 
 	ComponentAsset counterComponent(variables, AssetID("localhost/tests/component/counterComponent"));
 	
@@ -508,12 +524,13 @@ TEST(ECS, ForEachParellelTest)
 	EnityForEachID forEachID = em.getForEachID(comps);
 
 	em.createEntities(comps, 2000000);
+	em._archetypes.getForEachArchetypes(forEachID); //Pre cache archetypes so that we get the most impressive looking numbers
 
 	Stopwatch sw;
 	em.forEachParellel(forEachID, [&](byte* components[]) {
 		VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
 		counter.setVar(0, 420);
-	}, 20000)->finish();
+	}, 2000000 / 22)->finish();
 	long long time = sw.time();
 	std::cout << "For Each Parellel took: " << time << std::endl;
 

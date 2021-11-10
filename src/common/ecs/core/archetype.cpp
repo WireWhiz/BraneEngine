@@ -92,7 +92,7 @@ bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connec
 			
 		if (_components[i - missCount] != parent->_components[i])
 		{
-			connectingComponent = parent->_components.components()[i];
+			connectingComponent = parent->_components[i];
 			if (++missCount > 1)
 			{
 				_mutex.unlock_shared();
@@ -191,16 +191,6 @@ void Archetype::forRemoveEdge(std::function<void(std::shared_ptr<const Archetype
 		f(_removeEdges[i]);
 	}
 	_edgeMutex.unlock_shared();
-}
-
-void Archetype::lock() const
-{
-	_mutex.lock();
-}
-
-void Archetype::unlock() const
-{
-	_mutex.unlock();
 }
 
 size_t Archetype::size()
@@ -388,7 +378,7 @@ ArchetypeEdge::ArchetypeEdge(const ComponentAsset* component, Archetype* archety
 
 Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 {
-	_archetypeLock.lock();
+	ASSERT_MAIN_THREAD();
 	assert(cdefs.size() > 0);
 	size_t numComps = cdefs.size();
 
@@ -448,7 +438,7 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 					newArch->addAddEdge(connectingComponent, otherArch);
 					otherArch->addRemoveEdge(connectingComponent, newArch);
 
-					for (const ComponentAsset* component : cdefs.components())
+					for (const ComponentAsset* component : cdefs)
 					{
 						if (!_rootArchetypes.count(component))
 							continue;
@@ -474,59 +464,29 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 		}
 	}
 	updateForeachCache(cdefs);
-	_archetypeLock.unlock();
 	return newArch;
 }
 
-void ArchetypeManager::lockArchetype(const ComponentSet& components)
+void ArchetypeManager::findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const
 {
-	_archetypeLock.lock_shared();
-	getArchetype(components)->lock();
-}
-
-void ArchetypeManager::unlockArchetype(const ComponentSet& components)
-{
-	getArchetype(components)->unlock();
-	_archetypeLock.unlock_shared();
-}
-
-void ArchetypeManager::getRootArchetypes(const ComponentSet& components, std::vector<Archetype*>& roots) const
-{
-	_archetypeLock.lock_shared();
-	roots.clear();
-	std::unordered_set<Archetype*> found;
+	ASSERT_MAIN_THREAD();
+	archetypes.clear();
 	// Serch through any archetypes of the exact size that we want to see if there's one that fits
 	if (_archetypes.size() >= components.size())
 	{
 		// Searches through all archetypes with the same number of components as the for each
-		for (auto& archetype : _archetypes[components.size() - 1])
+		for (size_t i = components.size() - 1; i < _archetypes.size(); i++)
 		{
-			if (archetype->hasComponents(components))
+			for (size_t a = 0; a < _archetypes[i].size(); a++)
 			{
-				assert(archetype->components().size() >= components.size());
-				roots.push_back(archetype.get());
-				found.insert(archetype.get());
-				break;
-			}
-		}
-	}
-	// Search through all the archetypes that have components we want, but won't be found through an add edge chain
-	for (const ComponentAsset* compDef : components)
-	{
-		if (_rootArchetypes.count(compDef))
-		{
-			for (Archetype* archetype : _rootArchetypes.find(compDef)->second)
-			{
-				if (!found.count(archetype) && archetype->hasComponents(components))
+				if (_archetypes[i][a]->hasComponents(components) && (exclude.size() == 0 || !_archetypes[i][a]->hasComponents(exclude)))
 				{
-					assert(archetype->components().size() >= components.size());
-					roots.push_back(archetype);
-					found.insert(archetype);
+					assert(_archetypes[i][a]->components().size() >= components.size());
+					archetypes.push_back(_archetypes[i][a].get());
 				}
 			}
 		}
 	}
-	_archetypeLock.unlock_shared();
 
 
 }
@@ -534,28 +494,26 @@ void ArchetypeManager::getRootArchetypes(const ComponentSet& components, std::ve
 
 void ArchetypeManager::updateForeachCache(const ComponentSet& components)
 {
-	_forEachLock.lock();
+	ASSERT_MAIN_THREAD();
 	for (ForEachData& data : _forEachData)
 	{
 		if (components.contains(data.components))
 			data.cached = false;
 	}
-	_forEachLock.unlock();
 }
 
 
 
 std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EnityForEachID id)
 {
+	ASSERT_MAIN_THREAD();
 	assert(_forEachData.size() > id);
 	// If the list is more then
 	if (!_forEachData[id].cached)
 	{
 		//create new cache
-		_forEachLock.lock();
-		getRootArchetypes(_forEachData[id].components, _forEachData[id].archetypeRoots);
+		findArchetypes(_forEachData[id].components, ComponentSet(), _forEachData[id].archetypeRoots);
 		_forEachData[id].cached = true;
-		_forEachLock.unlock();
 	}
 	return _forEachData[id].archetypeRoots;
 }
@@ -563,81 +521,88 @@ std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EnityForEachID i
 
 size_t ArchetypeManager::forEachCount(EnityForEachID id)
 {
-	_forEachLock.lock_shared();
+	ASSERT_MAIN_THREAD();
 	size_t count = 0;
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
 		count += archetype->size();
 	}
-	_forEachLock.unlock_shared();
 	return count;
 }
 
 void ArchetypeManager::forEach(EnityForEachID id, const std::function<void(byte* [])>& f)
 {
+	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
-	_archetypeLock.lock_shared();
-	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursive(archetype, _forEachData[id].components, f, executed);
+		archetype->forEach(_forEachData[id].components, f, 0, archetype->size());
 	}
 
-	_archetypeLock.unlock_shared();
-	_forEachLock.unlock_shared();
 }
 
 void ArchetypeManager::constForEach(EnityForEachID id, const std::function<void(const byte* [])>& f)
 {
+	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
-	_archetypeLock.lock_shared();
-	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursive(archetype, _forEachData[id].components, f, executed);
+		archetype->forEach(_forEachData[id].components, f, 0, archetype->size());
 	}
 
-	_archetypeLock.unlock_shared();
-	_forEachLock.unlock_shared();
 }
 
 std::shared_ptr<JobHandle> ArchetypeManager::constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
 {
+	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
-	_archetypeLock.lock_shared();
-	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
+	ComponentSet& components = _forEachData[id].components;
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, handle);
+		size_t threads = archetype->size() / entitiesPerThread + 1;
+
+		for (size_t t = 0; t < threads; t++)
+		{
+			size_t start = t * entitiesPerThread;
+			size_t end = std::min(t * entitiesPerThread + entitiesPerThread, archetype->size());
+			ThreadPool::enqueue([archetype, &f, &components, start, end]() {
+				archetype->forEach(components, f, start, end);
+			}, handle);
+		}
 	}
 
-	_archetypeLock.unlock_shared();
-	_forEachLock.unlock_shared();
 	return handle;
 }
 
 std::shared_ptr<JobHandle> ArchetypeManager::forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
 {
+	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
-	_archetypeLock.lock_shared();
-	_forEachLock.lock_shared();
 	assert(id < _forEachData.size());
+	ComponentSet& components = _forEachData[id].components;
 
 	for (Archetype* archetype : getForEachArchetypes(id))
 	{
-		forEachRecursiveParellel(archetype, _forEachData[id].components, f, executed, entitiesPerThread, handle);
+		size_t threads = archetype->size() / entitiesPerThread + 1;
+
+		for (size_t t = 0; t < threads; t++)
+		{
+			size_t start = t * entitiesPerThread;
+			size_t end = std::min(t * entitiesPerThread + entitiesPerThread, archetype->size());
+			ThreadPool::enqueue([archetype, &f, &components, start, end]() {
+				archetype->forEach(components, f, start, end);
+			}, handle);
+		}
 	}
 
-	_archetypeLock.unlock_shared();
-	_forEachLock.unlock_shared();
 	return handle;
 }
 
@@ -648,12 +613,11 @@ ArchetypeManager::ArchetypeManager()
 
 Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 {
-	_archetypeLock.lock_shared();
+	ASSERT_MAIN_THREAD();
 	size_t numComps = components.size();
 	assert(numComps > 0);
 	if (numComps > _archetypes.size())
 	{
-		_archetypeLock.unlock_shared();
 		return makeArchetype(components);
 	}
 	auto& archetypes = _archetypes[numComps - 1];
@@ -663,30 +627,26 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 		assert(archetypes[a]->components().size() == components.size());
 		if (archetypes[a]->hasComponents(components))
 		{
-			_archetypeLock.unlock_shared();
 			return archetypes[a].get();
 		}
 	}
-	_archetypeLock.unlock_shared();
 	return makeArchetype(components);
 }
 EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components)
 {
+	ASSERT_MAIN_THREAD();
 	//std::sort(components.begin(), components.end());
-	_forEachLock.lock();
 	EnityForEachID id = 0;
 	for (ForEachData& d : _forEachData)
 	{
 		if (d.components.size() == components.size() && d.components.contains(components))
 		{
-			_forEachLock.unlock();
 			return id;
 		}
 		++id;
 	}
 	//If we reatch here there is no prexisting cache
 	_forEachData.push_back(ForEachData(components));
-	_forEachLock.unlock();
 	return id;
 }
 

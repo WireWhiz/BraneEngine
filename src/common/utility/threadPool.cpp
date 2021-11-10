@@ -1,5 +1,6 @@
 #include "threadPool.h"
 
+std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
 
@@ -45,6 +46,7 @@ void ThreadPool::threadRuntime()
 
 void ThreadPool::init()
 {
+	main_thread_id = std::this_thread::get_id();
 	_instances++;
 	if (_instances == 1)
 	{

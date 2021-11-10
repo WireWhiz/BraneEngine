@@ -21,8 +21,9 @@ public:
 
 private:
 	Type _type;
-	static const std::unordered_map<std::string, Type> _toEnumMap;
-	static const std::unordered_map<Type, std::string> _toStringMap;
+	Type fromString(const std::string& type) const;
+	std::string toString(Type type) const;
+
 
 public:
 	AssetType();
@@ -31,7 +32,7 @@ public:
 	void set(const std::string& type);
 	
 	Type type() const;
-	const std::string& string() const;
+	std::string string() const;
 
 	bool operator==(Type t) const;
 	bool operator==(AssetType t) const;

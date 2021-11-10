@@ -1,22 +1,32 @@
 #include "assetType.h"
 
-const std::unordered_map<std::string, AssetType::Type> AssetType::_toEnumMap = {
-	{"component", AssetType::component},
-	{"system", AssetType::system},
-	{"mesh",   AssetType::mesh},
-	{"texture", AssetType::texture},
-	{"player",  AssetType::player},
-	{"script",  AssetType::script}
-};
+AssetType::Type AssetType::fromString(const std::string& type) const
+{
+	static const std::unordered_map<std::string, AssetType::Type> _toEnumMap = {
+		{ "component", AssetType::component },
+		{ "system", AssetType::system },
+		{ "mesh",   AssetType::mesh },
+		{ "texture", AssetType::texture },
+		{ "player",  AssetType::player },
+		{ "script",  AssetType::script }
+	};
+	assert(_toEnumMap.count(type));
+	return _toEnumMap.at(type);
+}
 
-const std::unordered_map<AssetType::Type, std::string> AssetType::_toStringMap = {
+std::string AssetType::toString(Type type) const
+{
+	static const std::unordered_map<AssetType::Type, const std::string> _toStringMap = {
 	{AssetType::component, "component"},
 	{AssetType::system, "system"},
 	{AssetType::mesh,   "mesh"},
 	{AssetType::texture, "texture"},
 	{AssetType::player,  "player"},
 	{AssetType::script,  "script"}
-};
+	};
+	assert(_toStringMap.count(type));
+	return _toStringMap.at(type);
+}
 
 AssetType::AssetType()
 {
@@ -25,12 +35,11 @@ AssetType::AssetType()
 
 void AssetType::set(const std::string& type)
 {
-	assert(_toEnumMap.count(type));
-	_type = _toEnumMap.at(type);
+	
+	_type = fromString(type);
 }
 void AssetType::set(AssetType::Type type)
 {
-	assert(_toStringMap.count(type));
 	_type = type;
 }
 
@@ -39,9 +48,9 @@ AssetType::Type AssetType::type() const
 	return _type;
 }
 
-const std::string& AssetType::string() const
+std::string AssetType::string() const
 {
-	return _toStringMap.at(_type);
+	return toString(_type);
 }
 
 bool AssetType::operator==(AssetType::Type t) const

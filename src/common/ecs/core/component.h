@@ -1,5 +1,6 @@
 #pragma once
 #include "virtualType.h"
+#include "structMembers.h"
 #include <vector>
 #include <string>
 #include <assert.h>
@@ -8,16 +9,16 @@
 #include <mutex>
 #include <iterator>
 #include <assets/types/componentAsset.h>
+#include <set>
 
 // Class that always has components sorted
 class ComponentSet
 {
 private:
-	std::vector<const ComponentAsset*> _components;
+	std::set<const ComponentAsset*> _components;
 public:
 	void add(const ComponentAsset* component);
 	void remove(const  ComponentAsset* component);
-	const std::vector<const ComponentAsset*>& components() const;
 
 	bool contains(const ComponentAsset* component) const;
 	bool contains(const ComponentSet& subset) const;
@@ -27,8 +28,8 @@ public:
 	size_t size() const;
 
 	const ComponentAsset* operator[](size_t index) const;
-	typename std::vector<const ComponentAsset*>::const_iterator begin() const;
-	typename std::vector<const ComponentAsset*>::const_iterator end() const;
+	typename std::set<const ComponentAsset*>::const_iterator begin() const;
+	typename std::set<const ComponentAsset*>::const_iterator end() const;
 };
 
 class VirtualComponent
@@ -90,18 +91,16 @@ public:
 template <class T>
 class NativeComponent
 {
-private:
-	static void constructDef()
+private:  
+	static ComponentAsset* constructDef()
 	{
-		std::vector<std::unique_ptr<VirtualType>> vars;
 		AssetID id;
-		T o;
-		o.getComponentData(vars, id);
-		_def = new ComponentAsset(vars, id);
-		_def->setSize(sizeof(T));
+		std::vector<VirtualType*> vars = T::getMembers(id);
+		ComponentAsset* ca = new ComponentAsset(vars, id, sizeof(T));
+		return ca;
 	}
 protected:
-	static std::once_flag _flag;
+	typedef T ComponentType;
 	static ComponentAsset* _def;
 public:
 	NativeComponent() = default;
@@ -119,12 +118,10 @@ public:
 	}
 	static ComponentAsset* def()
 	{
-		std::call_once(_flag, constructDef);
 		return _def;
 	}
 };
-template <class T> ComponentAsset* NativeComponent<T>::_def;
-template <class T> std::once_flag NativeComponent<T>::_flag;
+template <class T> ComponentAsset* NativeComponent<T>::_def = NativeComponent<T>::constructDef();
 
 class VirtualComponentVector
 {

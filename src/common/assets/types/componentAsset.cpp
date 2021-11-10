@@ -1,5 +1,12 @@
 #include "componentAsset.h"
 
+#ifdef _64BIT
+#define WORD_SIZE 8
+#endif
+#ifdef _32BIT
+#define WORD_SIZE 4
+#endif
+
 ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types, AssetID id)
 {
 	_size = 0;
@@ -12,26 +19,38 @@ ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types,
 		{
 			_types[i] = std::move(types[i]);
 		}
-		
-		if (_types[0]->offset() != 0 || _types.size() > 1 && _types[1]->offset() != 0)
-			return; // This means that they have already been set
 		for (size_t i = 0; i < _types.size(); i++)
 		{
+			size_t woffset = _size % WORD_SIZE;
+			if (woffset != 0 && WORD_SIZE - woffset < _types[i]->size())
+			{
+				_size += WORD_SIZE - woffset;
+			}
 			_types[i]->setOffset(_size);
 			_size += _types[i]->size();
+
 		}
 	}
 
 
 }
 
-ComponentAsset::~ComponentAsset()
-{
-}
-
-void ComponentAsset::setSize(size_t size)
+ComponentAsset::ComponentAsset(std::vector<VirtualType*>& types, AssetID id, size_t size)
 {
 	_size = size;
+	_id = id;
+	if (types.size() != 0)
+	{
+		_types.resize(types.size());
+		for (size_t i = 0; i < _types.size(); i++)
+		{
+			_types[i] = std::unique_ptr<VirtualType>(types[i]);
+		}
+	}
+}
+
+ComponentAsset::~ComponentAsset()
+{
 }
 
 size_t ComponentAsset::size() const

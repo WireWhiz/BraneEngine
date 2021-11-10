@@ -34,12 +34,16 @@ public:
 		clear();
 		_archetype = archetype;
 
-		_componentIndices = std::vector<size_t>(_archetype->components().size());
-		for (size_t i = 0; i < _archetype->components().size(); i++)
+		if (archetype)
 		{
-			if (i != 0)
-				_componentIndices[i] = _componentIndices[i - 1] + _archetype->components()[i - 1]->size() * maxCapacity();
+			_componentIndices = std::vector<size_t>(_archetype->components().size());
+			for (size_t i = 0; i < _archetype->components().size(); i++)
+			{
+				if (i != 0)
+					_componentIndices[i] = _componentIndices[i - 1] + _archetype->components()[i - 1]->size() * maxCapacity();
+			}
 		}
+		
 	}
 
 	byte* getComponentData(const ComponentAsset* component, size_t entity)
@@ -147,13 +151,13 @@ public:
 	void clear()
 	{
 		_lock.lock();
-		if (_archetype)
+		if (_archetype && _size > 0)
 		{
-			for (size_t c = 0; c < _archetype->components().size(); c++)
+			for (auto c : _archetype->components())
 			{
 				for (size_t i = 0; i < _size; i++)
 				{
-					//_archetype->components()[c]->deconstruct(getComponent(c, i));
+					c->deconstruct(getComponentData(c, i));
 				}
 			}
 		}
@@ -223,5 +227,5 @@ public:
 public:
 	~ChunkPool();
 	friend void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest);
-	friend void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& dest);
+	friend void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& src);
 };

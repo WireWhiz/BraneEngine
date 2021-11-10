@@ -15,18 +15,6 @@ Archetype* EntityManager::getArchetype(const ComponentSet& components)
 	return _archetypes.getArchetype(components);
 }
 
-void EntityManager::lockArchetype(ComponentSet components)
-{
-	components.add(EntityIDComponent::def());
-	_archetypes.lockArchetype(components);
-}
-
-void EntityManager::unlockArchetype(ComponentSet components)
-{
-	components.add(EntityIDComponent::def());
-	_archetypes.unlockArchetype(components);
-}
-
 EntityID EntityManager::createEntity()
 {
 	ComponentSet components;
@@ -35,11 +23,11 @@ EntityID EntityManager::createEntity()
 
 EntityID EntityManager::createEntity(ComponentSet components)
 {
+	ASSERT_MAIN_THREAD();
 	components.add(EntityIDComponent::def());
 	Archetype* arch = getArchetype(components);
 	EntityIDComponent id;
 
-	_entityLock.lock();
 	if (_unusedEntities.size() > 0)
 	{
 		id.id = _unusedEntities.front();
@@ -56,15 +44,14 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	eIndex.index = arch->createEntity();
 	eIndex.alive = true;
 	arch->setComponent(eIndex.index, id.toVirtual());
-	_entityLock.unlock();
 	return id.id;
 }
 
 void EntityManager::createEntities(const ComponentSet& components, size_t count)
 {
+	ASSERT_MAIN_THREAD();
 	Archetype* arch = getArchetype(components);
 
-	_entityLock.lock();
 	for (size_t i = 0; i < count; i++)
 	{
 		EntityIDComponent id;
@@ -81,12 +68,11 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 		_entities[id.id].archetype = arch;
 		_entities[id.id].index = arch->createEntity();
 	}
-	_entityLock.unlock();
 }
 
 void EntityManager::destroyEntity(EntityID entity)
 {
-	_entityLock.lock();
+	ASSERT_MAIN_THREAD();
 
 	assert(0 <= entity && entity < _entities.size());
 	_entities[entity].alive = false;
@@ -94,7 +80,6 @@ void EntityManager::destroyEntity(EntityID entity)
 	Archetype* archetype = getEntityArchetype(entity);
 	archetype->remove(_entities[entity].index);
 
-	_entityLock.unlock();
 }
 
 EnityForEachID EntityManager::getForEachID(const ComponentSet& components)
@@ -104,43 +89,44 @@ EnityForEachID EntityManager::getForEachID(const ComponentSet& components)
 
 size_t EntityManager::forEachCount(EnityForEachID id)
 {
+	ASSERT_MAIN_THREAD();
 	return _archetypes.forEachCount(id);
 }
 
 void EntityManager::forEach(EnityForEachID id, const std::function<void(byte* [])>& f)
 {
+	ASSERT_MAIN_THREAD();
 	_archetypes.forEach(id, f);
 }
 
 void EntityManager::constForEach(EnityForEachID id, const std::function<void(const byte* [])>& f)
 {
+	ASSERT_MAIN_THREAD();
 	_archetypes.constForEach(id, f);
 }
 
 std::shared_ptr<JobHandle> EntityManager::forEachParellel(EnityForEachID id, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
 {
+	ASSERT_MAIN_THREAD();
 	return _archetypes.forEachParellel(id, f, entitiesPerThread);
 }
 
 std::shared_ptr<JobHandle> EntityManager::constForEachParellel(EnityForEachID id, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
 {
+	ASSERT_MAIN_THREAD();
 	return _archetypes.constForEachParellel(id, f, entitiesPerThread);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
 {
-	_entityLock.lock_shared();
 	assert(entity < _entities.size());
 	Archetype* o = _entities[entity].archetype;
-	_entityLock.unlock_shared();
 	return o;
 }
 
 bool EntityManager::hasArchetype(EntityID entity) const
 {
-	_entityLock.lock_shared();
 	bool o = _entities[entity].archetype != nullptr;
-	_entityLock.unlock_shared();
 	return o;
 }
 
@@ -148,31 +134,26 @@ bool EntityManager::hasArchetype(EntityID entity) const
 VirtualComponent EntityManager::getEntityComponent(EntityID entity, const ComponentAsset* component) const
 {
 	assert(component != nullptr);
-	_entityLock.lock_shared();
 	assert(getEntityArchetype(entity)->hasComponent(component));
 	VirtualComponent o = getEntityArchetype(entity)->getComponent(_entities[entity].index, component);
-	_entityLock.unlock_shared();
 	return o;
 }
 
 void EntityManager::setEntityComponent(EntityID entity, const VirtualComponent& component)
 {
-	_entityLock.lock_shared();
 	assert(getEntityArchetype(entity)->hasComponent(component.def()));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
-	_entityLock.unlock_shared();
 }
 
 void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentPtr& component)
 {
-	_entityLock.lock_shared();
 	assert(getEntityArchetype(entity)->hasComponent(component.def()));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
-	_entityLock.unlock_shared();
 }
 
 void EntityManager::addComponent(EntityID entity, const ComponentAsset* component)
 {
+	ASSERT_MAIN_THREAD();
 	assert(component != nullptr);
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
@@ -202,7 +183,6 @@ void EntityManager::addComponent(EntityID entity, const ComponentAsset* componen
 		compDefs.add(component);
 		destArchetype = _archetypes.getArchetype(compDefs);
 	}
-	_entityLock.lock();
 	size_t oldIndex = _entities[entity].index;
 	size_t newIndex = 0;
 	
@@ -219,12 +199,11 @@ void EntityManager::addComponent(EntityID entity, const ComponentAsset* componen
 	}
 	_entities[entity].index = newIndex;
 	_entities[entity].archetype = destArchetype;
-	_entityLock.unlock();
 }
 
 void EntityManager::removeComponent(EntityID entity, const ComponentAsset* component)
 {
-	_entityLock.lock();
+	ASSERT_MAIN_THREAD();
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
 	assert(hasArchetype(entity)); // Can't remove anything from an entity without any components
@@ -261,7 +240,13 @@ void EntityManager::removeComponent(EntityID entity, const ComponentAsset* compo
 
 	_entities[entity].index = newIndex;
 	_entities[entity].archetype = destArchetype;
-	_entityLock.unlock();
+}
+
+void EntityManager::run(const std::function<void()>& task)
+{
+	_runLock.lock();
+	_runQueue.push(task);
+	_runLock.unlock();
 }
 
 bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>&& system)
@@ -291,14 +276,19 @@ VirtualSystem* EntityManager::getSystem(SystemID id)
 
 void EntityManager::runSystems()
 {
+	while (!_runQueue.empty())
+	{
+		_runQueue.front()();
+		_runQueue.pop();
+	}
 	_systems.runSystems(this);
 }
-
+/*
 void EntityIDComponent::getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
 {
 	types.push_back(std::make_unique<VirtualVariable<EntityID>>(offsetof(EntityIDComponent, id)));
 }
-
+*/
 NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)
 {
 	ComponentSet componentSet;

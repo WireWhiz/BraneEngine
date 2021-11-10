@@ -128,23 +128,15 @@ namespace net
 	typedef uint32_t ConnectionID;
 	struct IMessageComponent : public NativeComponent<IMessageComponent>
 	{
+		REGESTER_MEMBERS_2(owner, message);
 		ConnectionID owner;
 		IMessage message;
-		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-		{
-			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(IMessageComponent, owner)));
-			types.push_back(std::make_unique<VirtualVariable<IMessage>>(offsetof(IMessageComponent, message)));
-		}
 	};
 
 	struct OMessageComponent : public NativeComponent<OMessageComponent>
 	{
+		REGESTER_MEMBERS_2(owner, message);
 		ConnectionID owner;
 		OMessage message;
-		void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-		{
-			types.push_back(std::make_unique<VirtualVariable<ConnectionID>>(offsetof(OMessageComponent, owner)));
-			types.push_back(std::make_unique<VirtualVariable<IMessage>>(offsetof(OMessageComponent, message)));
-		}
 	};
 }

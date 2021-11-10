@@ -193,111 +193,44 @@ byte* VirtualComponentPtr::data() const
 void ComponentSet::add(const ComponentAsset* component)
 {
 	assert(component != nullptr);
-	size_t insertionIndex = 0;
-	for (size_t i = 0; i < _components.size(); i++)
-	{
-		assert(component != _components[i]); // Can't add the same item twice
-		if ((size_t)component > (size_t)_components[i])
-		{
-			insertionIndex += 1;
-		}
-		else
-			break;
-	}
-	_components.insert(_components.begin() + insertionIndex, component);
+	_components.insert(component);
 }
 
 void ComponentSet::remove(const ComponentAsset* component)
 {
 	assert(component != nullptr);
-	for (size_t i = 0; i < _components.size(); i++)
-	{
-		if (_components[i] == component)
-		{
-			_components.erase(_components.begin() + i);
-			break;
-		}
-	}
-}
-
-const std::vector<const ComponentAsset*>& ComponentSet::components() const
-{
-	return _components;
+	_components.erase(component);
 }
 
 bool ComponentSet::contains(const ComponentAsset* component) const
 {
-	size_t start = 0;
-	size_t end = _components.size() - 1;
-	while(true)
-	{
-		size_t middle = (start + end) / 2;
-		if (_components[middle] == component)
-			return true;
-
-		if ((size_t)_components[middle] < (size_t)component)
-			start = middle + 1;
-		else if ((size_t)_components[middle] > (size_t)component)
-			end = middle - 1;
-
-		if (end < start || end > _components.size())
-			return false;
-		
-	}
-	return false;
+	return _components.count(component);
 }
 
 bool ComponentSet::contains(const ComponentSet& subset) const
 {
 	size_t count = 0;
-	for (size_t i = 0; i < _components.size(); i++)
+	for (auto& component : subset)
 	{
-		if ((size_t)_components[i] > (size_t)subset._components[count])
+		if (!_components.count(component))
 			return false;
-		if (_components[i] == subset._components[count])
-		{
-			if (++count == subset._components.size())
-				return true;
-		}
-			
 	}
-	return false;
+	return true;
 }
 
 size_t ComponentSet::index(const ComponentAsset* component) const
 {
-	size_t start = 0;
-	size_t end = _components.size() - 1;
-	while (true)
-	{
-		size_t middle = (start + end) / 2;
-		if (_components[middle] == component)
-			return middle;
-
-		if ((size_t)_components[middle] < (size_t)component)
-			start = middle + 1;
-		else if ((size_t)_components[middle] > (size_t)component)
-			end = middle - 1;
-
-		if (end < start || end > _components.size())
-			return nullindex;
-	}
+	assert(_components.count(component));
+	return std::distance(_components.begin(), _components.find(component));
 }
 
 void ComponentSet::indicies(const ComponentSet& subset, size_t* indices) const
 {
-	size_t count = 0;
-	for (size_t i = 0; i < _components.size(); i++)
+	size_t i = 0;
+	for (auto c : subset)
 	{
-		if ((size_t)_components[i] > (size_t)subset._components[count])
-			assert(false && "values not found");
-		if (_components[i] == subset._components[count])
-		{
-			indices[count] = i;
-			if (++count == subset._components.size())
-				return;
-		}
-
+		assert(contains(c));
+		indices[i++] = index(c);
 	}
 }
 
@@ -308,15 +241,17 @@ size_t ComponentSet::size() const
 
 const ComponentAsset* ComponentSet::operator[](size_t index) const
 {
-	return _components[index];
+	auto itter = _components.begin();
+	std::advance(itter, index);
+	return *itter;
 }
 
-typename std::vector<const ComponentAsset*>::const_iterator ComponentSet::begin() const
+typename std::set<const ComponentAsset*>::const_iterator ComponentSet::begin() const
 {
 	return _components.begin();
 }
 
-typename  std::vector<const ComponentAsset*>::const_iterator ComponentSet::end() const
+typename  std::set<const ComponentAsset*>::const_iterator ComponentSet::end() const
 {
 	return _components.end();
 }
