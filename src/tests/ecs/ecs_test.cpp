@@ -343,8 +343,6 @@ public:
 
 TEST(ECS, ForEachCachingTest)
 {
-	EntityManager em;
-
 	std::vector<std::unique_ptr<VirtualType>> comps1;
 	comps1.push_back(std::make_unique<VirtualBool>());
 
@@ -367,6 +365,7 @@ TEST(ECS, ForEachCachingTest)
 	AssetID aID4("localhost/testRunner/component/testComponent4");
 	ComponentAsset ca4(comps4, aID4);
 
+	EntityManager em;
 
 	// Create entity
 	EntityID entity = em.createEntity();
@@ -508,7 +507,6 @@ TEST(ECS, ForEachTest)
 
 TEST(ECS, ForEachParellelTest)
 {
-	EntityManager em;
 	//Create two for each ID one for entities with one component, another for those with two
 	
 	std::vector<std::unique_ptr<VirtualType>> variables;
@@ -519,6 +517,7 @@ TEST(ECS, ForEachParellelTest)
 
 	ComponentAsset counterComponent(variables, AssetID("localhost/tests/component/counterComponent"));
 	
+	EntityManager em;
 	ComponentSet comps;
 	comps.add(&counterComponent);
 	EnityForEachID forEachID = em.getForEachID(comps);
