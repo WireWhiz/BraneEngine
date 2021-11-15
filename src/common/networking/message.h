@@ -3,7 +3,8 @@
 #include <vector>
 #include <sstream>
 #include <byte.h>
-#include <ecs/ecs.h>
+#include <ecs/core/component.h>
+#include <assets/assetID.h>
 
 namespace net
 {
@@ -54,6 +55,27 @@ namespace net
 			return msg;
 		}
 
+		friend IMessage& operator >> (IMessage& msg, std::string& data)
+		{
+			uint64_t size;
+			msg >> size;
+			data.resize(size, ' ');
+			std::memcpy(data.data(), &msg.data.data()[msg._ittr], data.size());
+
+			msg._ittr += size;
+
+			return msg;
+		}
+
+		friend IMessage& operator >> (IMessage& msg, AssetID& id)
+		{
+			std::string idString;
+			msg >> idString;
+			id.parseString(idString);
+
+			return msg;
+		}
+
 		void read(void* dest, size_t size)
 		{
 			assert(_ittr + size <= data.size());
@@ -97,11 +119,19 @@ namespace net
 
 		friend OMessage& operator << (OMessage& msg, const std::string& data)
 		{
+			msg << static_cast<uint64_t>(data.size());
 			size_t index = msg.data.size();
 			msg.data.resize(index + data.size());
 			std::memcpy(&msg.data.data()[index], data.data(), data.size());
 
 			msg.header.size = msg.size();
+
+			return msg;
+		}
+
+		friend OMessage& operator << (OMessage& msg, const AssetID& id)
+		{
+			msg << id.string();
 
 			return msg;
 		}

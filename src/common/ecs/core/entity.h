@@ -62,7 +62,7 @@ public:
 	void removeComponent(EntityID entity, const ComponentAsset* component);
 
 	//for each stuff
-	EnityForEachID getForEachID(const ComponentSet& components);
+	EnityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
 	size_t forEachCount(EnityForEachID id);
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
 	void constForEach(EnityForEachID id, const std::function <void(const byte* [])>& f);
@@ -85,6 +85,7 @@ class NativeForEach
 public:
 	NativeForEach() = default;
 	NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em);
+	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em);
 	size_t getComponentIndex(size_t index) const;
 	EnityForEachID id() const;
 };

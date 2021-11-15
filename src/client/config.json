@@ -1,7 +1,7 @@
 {
   "network": {
     "runtime server": {
-      "tcp port": 80,
+      "tcp port": 2001,
       "ssl port": 81
     }
     

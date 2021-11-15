@@ -18,7 +18,7 @@ namespace graphics
 		VkPipeline _pipeline = VK_NULL_HANDLE;
 
 		//Descriptors
-		ComponentID _id = ULONG_MAX;
+		AssetID _id;
 		EnityForEachID _forEachID = ULONG_MAX;
 		std::vector<Texture*> _textures;
 
@@ -30,8 +30,8 @@ namespace graphics
 	public:
 		~Material();
 		
-		createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment);
-		ComponentID componentID();
+		createUniformComponent(AssetID id, const std::vector<VirtualType> vars, size_t alignment);
+		AssetID componentID();
 		void addTextureDescriptor(Texture* texture);
 		void setGeometry(Shader* shader);
 		void setVertex(Shader* shader);

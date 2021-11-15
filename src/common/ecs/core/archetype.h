@@ -10,6 +10,7 @@
 #include <utility/threadPool.h>
 #include <unordered_set>
 #include <list>
+#include "componentSet.h"
 
 typedef uint64_t ArchetypeID;
 class Archetype;
@@ -34,7 +35,6 @@ public:
 	size_t _entitySize;
 
 	//Eventually move these to seperate node class
-	mutable shared_recursive_mutex _edgeMutex;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 	//
@@ -85,22 +85,22 @@ public:
 
 	struct ForEachData
 	{
-		bool cached;
 		ComponentSet components;
-		std::vector<Archetype*> archetypeRoots;
-		ForEachData(ComponentSet components);
+		ComponentSet exclude;
+		std::vector<Archetype*> archetypes;
+		ForEachData(ComponentSet components, ComponentSet exclude);
 
 	};
 
 	std::vector<ForEachData> _forEachData;
 
-	std::unordered_map<const ComponentAsset*, std::vector<Archetype*>> _rootArchetypes;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 
 	void findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const;
-	void updateForeachCache(const ComponentSet& components);
+	void cacheArchetype(Archetype* arch);
+	void decacheArchetype(Archetype* arch);
 	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
 
 	/*
@@ -147,7 +147,7 @@ public:
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& cdefs);
 
-	EnityForEachID getForEachID(const ComponentSet& components);
+	EnityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
 	size_t forEachCount(EnityForEachID id);
 
 	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);

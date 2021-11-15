@@ -3,4 +3,4 @@ add_library(asset_type STATIC
  "materialAsset.cpp"
  "meshAsset.cpp"
  "componentAsset.cpp"
-)
+ "asset.h" "asset.cpp")

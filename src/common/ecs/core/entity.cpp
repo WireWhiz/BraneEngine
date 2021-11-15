@@ -82,9 +82,9 @@ void EntityManager::destroyEntity(EntityID entity)
 
 }
 
-EnityForEachID EntityManager::getForEachID(const ComponentSet& components)
+EnityForEachID EntityManager::getForEachID(const ComponentSet& components, const ComponentSet& exclude)
 {
-	return _archetypes.getForEachID(components);
+	return _archetypes.getForEachID(components, exclude);
 }
 
 size_t EntityManager::forEachCount(EnityForEachID id)
@@ -126,6 +126,7 @@ Archetype* EntityManager::getEntityArchetype(EntityID entity) const
 
 bool EntityManager::hasArchetype(EntityID entity) const
 {
+	assert(entity < _entities.size());
 	bool o = _entities[entity].archetype != nullptr;
 	return o;
 }
@@ -154,6 +155,7 @@ void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentPt
 void EntityManager::addComponent(EntityID entity, const ComponentAsset* component)
 {
 	ASSERT_MAIN_THREAD();
+	assert(entity < _entities.size());
 	assert(component != nullptr);
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
@@ -289,20 +291,31 @@ void EntityIDComponent::getComponentData(std::vector<std::unique_ptr<VirtualType
 	types.push_back(std::make_unique<VirtualVariable<EntityID>>(offsetof(EntityIDComponent, id)));
 }
 */
-NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)
+NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em) : NativeForEach(components, ComponentSet(), em)
+{
+	
+}
+
+NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em)
 {
 	ComponentSet componentSet;
 	for (size_t i = 0; i < components.size(); i++)
 	{
 		componentSet.add(components[i]);
 	}
+
 	_componentOrder.resize(components.size());
-	componentSet.indicies(componentSet, _componentOrder.data());
-	_feid = em->getForEachID(componentSet);
+	for (size_t i = 0; i < components.size(); i++)
+	{
+		_componentOrder[i] = componentSet.index(components[i]);
+	}
+
+	_feid = em->getForEachID(componentSet, exclude);
 }
 
 size_t NativeForEach::getComponentIndex(size_t index) const
 {
+	assert(index < _componentOrder.size());
 	return _componentOrder[index];
 }
 

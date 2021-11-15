@@ -64,10 +64,6 @@ size_t ComponentAsset::getByteIndex(size_t index) const
 	return _types[index]->offset();
 }
 
-const AssetID& ComponentAsset::id() const
-{
-	return _id;
-}
 
 const std::vector<std::unique_ptr<VirtualType>>& ComponentAsset::types() const
 {

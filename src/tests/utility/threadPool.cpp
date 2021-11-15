@@ -5,10 +5,10 @@ TEST(Threading, ThreadPoolTest)
 {
 	ThreadPool::init();
 	std::atomic_bool testBool = false;
-	ThreadPool::enqueue([&]() {
+	std::shared_ptr<JobHandle> jh = ThreadPool::enqueue([&]() {
 		testBool = true;
 	});
-
+	jh->finish();
 	ThreadPool::cleanup();
 	EXPECT_TRUE(testBool);
 }

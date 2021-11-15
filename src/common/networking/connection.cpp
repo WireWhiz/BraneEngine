@@ -6,13 +6,16 @@ namespace net
 	{
 		ComponentSet components;
 		components.add(IMessageComponent::def());
-		EntityID entity = _em->createEntity(components);
 
 		IMessageComponent im;
 		im.message = std::move(_tempIn);
 		im.owner = _id;
 
-		_em->setEntityComponent(entity, im.toVirtual());
+		_em->run([this, components, im]() mutable {
+			EntityID entity = _em->createEntity(components);
+			_em->setEntityComponent(entity, im.toVirtual());
+		});
+		
 		
 
 	}

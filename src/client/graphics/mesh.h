@@ -84,10 +84,9 @@ namespace graphics
 	};
 
 	
-	class MeshComponent : public NativeComponent<MeshComponent, 1>
+	class MeshComponent : public NativeComponent<MeshComponent>
 	{
-	public:
-		void getVariableIndicies(const ComponentSet& variables);
+		REGESTER_MEMBERS_1(id);
 		MeshID id;
 	};
 	

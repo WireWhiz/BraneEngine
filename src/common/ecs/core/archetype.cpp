@@ -131,66 +131,58 @@ const ComponentSet& Archetype::components() const
 
 std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* component)
 {
-	_edgeMutex.lock_shared();
+	ASSERT_MAIN_THREAD();
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
 		if (component == _addEdges[i]->component)
 		{
-			_edgeMutex.unlock_shared();
 			return _addEdges[i];
 		}
 	}
-	_edgeMutex.unlock_shared();
 	return nullptr;
 }
 
 std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentAsset* component)
 {
-	_edgeMutex.lock_shared();
+	ASSERT_MAIN_THREAD();
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
 		if (component == _removeEdges[i]->component)
 		{
-			_edgeMutex.unlock_shared();
 			return _removeEdges[i];
 		}
 	}
-	_edgeMutex.unlock_shared();
 	return nullptr;
 }
 
 void Archetype::addAddEdge(const ComponentAsset* component, Archetype* archetype)
 {
-	_edgeMutex.lock();
+	ASSERT_MAIN_THREAD();
 	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
-	_edgeMutex.unlock();
 }
 
 void Archetype::addRemoveEdge(const ComponentAsset* component, Archetype* archetype)
 {
-	_edgeMutex.lock();
+	ASSERT_MAIN_THREAD();
 	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
-	_edgeMutex.unlock();
 }
 
 void Archetype::forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
-	_edgeMutex.lock_shared();
+	ASSERT_MAIN_THREAD();
 	for (size_t i = 0; i < _addEdges.size(); i++)
 	{
 		f(_addEdges[i]);
 	}
-	_edgeMutex.unlock_shared();
 }
 
 void Archetype::forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
-	_edgeMutex.lock_shared();
+	ASSERT_MAIN_THREAD();
 	for (size_t i = 0; i < _removeEdges.size(); i++)
 	{
 		f(_removeEdges[i]);
 	}
-	_edgeMutex.unlock_shared();
 }
 
 size_t Archetype::size()
@@ -397,12 +389,6 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 
 
 	{//Scope for bool array
-		bool* isRootArch = (bool*)STACK_ALLOCATE(sizeof(bool) * cdefs.size());
-		for (size_t i = 0; i < cdefs.size(); i++)
-		{
-			isRootArch[i] = true;
-		}
-
 		// find edges to other archetypes lower then this one
 		if (numComps > 1)
 		{
@@ -415,12 +401,6 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 					Archetype* otherArch = _archetypes[numComps - 2][i].get();
 					otherArch->addAddEdge(connectingComponent, newArch);
 					newArch->addRemoveEdge(connectingComponent, otherArch);
-
-					for (size_t i = 0; i < cdefs.size(); i++)
-					{
-						if (isRootArch[i] && connectingComponent != cdefs[i])
-							isRootArch[i] = false;
-					}
 				}
 			}
 		}
@@ -437,33 +417,11 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 					Archetype* otherArch = _archetypes[numComps][i].get();
 					newArch->addAddEdge(connectingComponent, otherArch);
 					otherArch->addRemoveEdge(connectingComponent, newArch);
-
-					for (const ComponentAsset* component : cdefs)
-					{
-						if (!_rootArchetypes.count(component))
-							continue;
-						std::vector<Archetype*>& componentRoots = _rootArchetypes[component];
-						for (size_t i = 0; i < componentRoots.size(); i++)
-						{
-							if (componentRoots[i] == otherArch)
-							{
-								componentRoots[i] = *(componentRoots.end() - 1);
-								componentRoots.resize(componentRoots.size() - 1);
-
-							}
-						}
-					}
 				}
 			}
 		}
-
-		for (size_t i = 0; i < cdefs.size(); i++)
-		{
-			if (isRootArch[i])
-				_rootArchetypes[cdefs[i]].push_back(newArch);
-		}
 	}
-	updateForeachCache(cdefs);
+	cacheArchetype(newArch);
 	return newArch;
 }
 
@@ -491,15 +449,28 @@ void ArchetypeManager::findArchetypes(const ComponentSet& components, const Comp
 
 }
 
-
-void ArchetypeManager::updateForeachCache(const ComponentSet& components)
+void ArchetypeManager::cacheArchetype(Archetype* arch)
 {
 	ASSERT_MAIN_THREAD();
 	for (ForEachData& data : _forEachData)
 	{
-		if (components.contains(data.components))
-			data.cached = false;
+		if (arch->components().contains(data.components) && !arch->components().contains(data.exclude))
+			data.archetypes.push_back(arch);
 	}
+}
+
+void ArchetypeManager::decacheArchetype(Archetype* arch)
+{
+	ASSERT_MAIN_THREAD();
+	for (ForEachData& data : _forEachData)
+	{
+		if (arch->components().contains(data.components) && !arch->components().contains(data.exclude))
+			for (size_t i = 0; i < data.archetypes.size(); i++)
+			{
+				data.archetypes.erase(data.archetypes.begin() + i);
+			}
+	}
+
 }
 
 
@@ -508,14 +479,7 @@ std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EnityForEachID i
 {
 	ASSERT_MAIN_THREAD();
 	assert(_forEachData.size() > id);
-	// If the list is more then
-	if (!_forEachData[id].cached)
-	{
-		//create new cache
-		findArchetypes(_forEachData[id].components, ComponentSet(), _forEachData[id].archetypeRoots);
-		_forEachData[id].cached = true;
-	}
-	return _forEachData[id].archetypeRoots;
+	return _forEachData[id].archetypes;
 }
 
 
@@ -632,7 +596,7 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 	}
 	return makeArchetype(components);
 }
-EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components)
+EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components, const ComponentSet& exclude)
 {
 	ASSERT_MAIN_THREAD();
 	//std::sort(components.begin(), components.end());
@@ -645,13 +609,16 @@ EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components)
 		}
 		++id;
 	}
+
 	//If we reatch here there is no prexisting cache
-	_forEachData.push_back(ForEachData(components));
+	_forEachData.push_back(ForEachData(components, exclude));
+	assert(id == _forEachData.size() - 1);
+	findArchetypes(_forEachData[id].components, _forEachData[id].exclude, _forEachData[id].archetypes);
 	return id;
 }
 
-ArchetypeManager::ForEachData::ForEachData(ComponentSet components)
+ArchetypeManager::ForEachData::ForEachData(ComponentSet components, ComponentSet exclude)
 {
 	this->components = std::move(components);
-	cached = false;
+	this->exclude = std::move(exclude);
 }

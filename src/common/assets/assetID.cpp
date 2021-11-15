@@ -24,7 +24,7 @@ void AssetID::parseString(const std::string& id)
 	name = strings[3];
 }
 
-std::string AssetID::string()
+std::string AssetID::string() const
 {
 	return serverAddress + '/' + owner + '/' + type.string() + '/' + name;
 }

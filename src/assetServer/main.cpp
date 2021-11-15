@@ -7,7 +7,12 @@
 #include <string>
 #include <ecs/ecs.h>
 #include <assetNetworking/networkAuthenticator.h>
+#include <assets/types/meshAsset.h>
 
+struct SentMesh : public NativeComponent<SentMesh>
+{
+	REGESTER_MEMBERS_0();
+};
 
 int main()
 {
@@ -22,24 +27,46 @@ int main()
 	net::ConnectionAcceptor ca(tcpPort, &em);
 	net::NetworkAuthenticator na(&em);
 	
-	ComponentSet components;
-	//components.add(net::NewConnectionComponent::def());
-	components.add(net::ConnectionComponent::def());
-	EnityForEachID feid = em.getForEachID(components);
+	std::vector<const ComponentAsset*> components;
+	components.push_back(EntityIDComponent::def());
+	components.push_back(net::ConnectionComponent::def());
+	ComponentSet exclude;
+	exclude.add(SentMesh::def());
+	NativeForEach nfe = NativeForEach(components, exclude, &em);
 
+	MeshAsset quad = MeshAsset(AssetID("localhost/this/mesh/quad"), std::vector<uint32_t>({0, 1, 2, 2, 3, 0}),
+													std::vector<Vertex>({
+														{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
+														{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
+														{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
+														{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
+													}));
+	
 	while (true)
 	{
 		em.runSystems();
-		em.forEach(feid, [&](byte** component) {
-			net::ConnectionComponent* cc = net::ConnectionComponent::fromVirtual(component[0]);
+
+		std::vector<EntityID> sent;
+		em.forEach(nfe.id(), [&](byte** component) {
+			EntityIDComponent* id = EntityIDComponent::fromVirtual(component[nfe.getComponentIndex(0)]);
+			net::ConnectionComponent* cc = net::ConnectionComponent::fromVirtual(component[nfe.getComponentIndex(1)]);
 			
 			if (cc->connection && cc->connection->isConnected())
 			{
 				net::OMessage m;
-				m << "Hello there connection " << std::to_string(cc->id) << "!\n\r";
+				m.header.type = net::MessageType::assetData;
+				quad.serialize(m);
+				std::cout << "sending message: " << m;
 				cc->connection->send(m);
 			}
+			sent.push_back(id->id);
 		});
+
+		for (EntityID id : sent)
+		{
+			em.addComponent(id, SentMesh::def());
+		}
+
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
 

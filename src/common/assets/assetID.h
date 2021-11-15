@@ -11,7 +11,7 @@ struct AssetID
 	std::string owner;
 	std::string serverAddress;
 	void parseString(const std::string& id);
-	std::string string();
+	std::string string() const;
 
 	bool operator==(const AssetID& other) const;
 };

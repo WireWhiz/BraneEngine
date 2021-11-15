@@ -1,15 +1,17 @@
 #include "client.h"
+#include "asio/asio.hpp"
+#include "networking/connection.h"
 
 void Client::run()
 {
 	std::cout << "BraneSurfer starting up\n";
 
 	std::string serverAddress = Config::json()["network"]["runtime server"].get("address", "127.0.0.1").asString();
-	uint16_t serverPort = Config::json()["network"]["runtime server"].get("tcp port", 80).asUInt();
-	uint16_t serverSSLPort = Config::json()["network"]["runtime server"].get("ssl port", 81).asUInt();
+	uint16_t serverPort = Config::json()["network"]["runtime server"].get("tcp port", 2001).asUInt();
+	uint16_t serverSSLPort = Config::json()["network"]["runtime server"].get("ssl port", 2002).asUInt();
 
 	EntityManager em;
-	graphics::VulkanRuntime vkr;
+	//graphics::VulkanRuntime vkr;
 
 
 	// Add networking components and systems to entity manager
@@ -38,12 +40,30 @@ void Client::run()
 	EntityID quadEntity2 = em.createEntity({ Transform::def()->id(), graphics::MeshComponent::def()->id(), 2 });
 	*/
 
+	asio::io_context ctx;
+	asio::ip::tcp::resolver tcpresolver(ctx);
+	auto tcpEndpoints = tcpresolver.resolve(serverAddress, std::to_string(serverPort));
 
-	while (!vkr.window()->closed())
+	std::cout << "Attempting to connect to: " << serverAddress << "::" << serverPort << std::endl;
+	net::TCPConnection connection(net::Connection::Owner::client, ctx, net::tcp_socket(ctx), &em);
+	connection.connectToServer(tcpEndpoints);
+
+	ThreadPool::enqueue([&]() {
+		ctx.run();
+	});
+
+	NativeForEach nfe(std::vector<const ComponentAsset*>{net::IMessageComponent::def()}, & em);
+
+	while (true)//!vkr.window()->closed())
 	{
-		vkr.updateWindow();
-		vkr.updateUniformBuffer(em, 0);//Replace that with a systems
-		vkr.draw(em); // Replace with system as well
+		//vkr.updateWindow();
+		em.runSystems();
+		em.forEach(nfe.id(), [&](byte** components) {
+			net::IMessageComponent* m = net::IMessageComponent::fromVirtual(components[0]);
+			std::cout << m->message << std::endl;
+		});
+		//vkr.updateUniformBuffer(em, 0);//Replace that with a systems
+		//vkr.draw(em); // Replace with system as well
 
 	}
 }

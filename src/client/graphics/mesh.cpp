@@ -57,8 +57,4 @@ namespace graphics
 			_locked = false;
 		}
 	}
-	void MeshComponent::getVariableIndicies(std::vector<NativeVarDef>& variables)
-	{
-		variables = { NativeVarDef(offsetof(MeshComponent, id), virtualAddress)};
-	}
 }
