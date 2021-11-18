@@ -3,7 +3,6 @@
 #include <vector>
 #include <sstream>
 #include <byte.h>
-#include <ecs/core/component.h>
 #include <assets/assetID.h>
 #include <cstring>
 
@@ -12,8 +11,8 @@ namespace net
 	enum class MessageType
 	{
 		assetRequest,
-		componentAsset,
-		meshAsset,
+		assetData,
+		assetFragment,
 	};
 
 	struct alignas(8) MessageHeader
@@ -40,7 +39,7 @@ namespace net
 			return os;
 		}
 
-		template <class T>
+		template <typename T>
 		friend IMessage& operator >> (IMessage& msg, T& data)
 		{
 			static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
@@ -53,10 +52,27 @@ namespace net
 			return msg;
 		}
 
+		template <typename T>
+		friend IMessage& operator >> (IMessage& msg, std::vector<T>& data)
+		{
+			static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+			uint64_t size;
+			msg >> size;
+			assert(msg._ittr + size * sizeof(T) <= msg.data.size());
+
+			std::memcpy(&data, msg.data.data() + msg._ittr, size * sizeof(T));
+
+			msg._ittr += size * sizeof(T);
+
+			return msg;
+		}
+
 		friend IMessage& operator >> (IMessage& msg, std::string& data)
 		{
 			uint64_t size;
 			msg >> size;
+			assert(msg._ittr + size <= msg.data.size());
+
 			data.resize(size, ' ');
 			std::memcpy(data.data(), &msg.data.data()[msg._ittr], data.size());
 
@@ -82,6 +98,16 @@ namespace net
 			_ittr += size;
 
 		}
+
+		template<typename T> 
+		T peak()
+		{
+			size_t ittrPos = _ittr;
+			T o;
+			*this >> o;
+			_ittr = ittrPos;
+			return o;
+		}
 	};
 
 	class OMessage
@@ -101,7 +127,7 @@ namespace net
 			return os;
 		}
 
-		template <class T>
+		template <typename T>
 		friend OMessage& operator << (OMessage& msg, const T& data)
 		{
 			static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
@@ -109,6 +135,21 @@ namespace net
 			size_t index = msg.data.size();
 			msg.data.resize(index + sizeof(T));
 			std::memcpy(&msg.data.data()[index], &data, sizeof(T));
+
+			msg.header.size = msg.size();
+
+			return msg;
+		}
+
+		template <typename T>
+		friend OMessage& operator << (OMessage& msg, const std::vector<T>& data)
+		{
+			static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+			msg << static_cast<uint64_t>(data.size());
+
+			size_t index = msg.data.size();
+			msg.data.resize(index + data.size() * sizeof(T));
+			std::memcpy(&msg.data.data()[index], &data, data.size() * sizeof(T));
 
 			msg.header.size = msg.size();
 
@@ -153,18 +194,5 @@ namespace net
 		}
 	};
 
-	typedef uint32_t ConnectionID;
-	struct IMessageComponent : public NativeComponent<IMessageComponent>
-	{
-		REGESTER_MEMBERS_2(owner, message);
-		ConnectionID owner;
-		IMessage message;
-	};
-
-	struct OMessageComponent : public NativeComponent<OMessageComponent>
-	{
-		REGESTER_MEMBERS_2(owner, message);
-		ConnectionID owner;
-		OMessage message;
-	};
+	
 }

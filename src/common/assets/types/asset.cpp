@@ -1,5 +1,4 @@
 #include "asset.h"
-#include <networking/message.h>
 
 const AssetID& Asset::id() const
 {

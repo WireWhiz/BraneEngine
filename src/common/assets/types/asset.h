@@ -1,10 +1,11 @@
 #pragma once
 #include "assets/assetID.h"
-namespace net
-{
-	class OMessage;
-	class IMessage;
-}
+#include <networking/message.h>
+//namespace net
+//{
+//	class OMessage;
+//	class IMessage;
+//}
 
 
 class Asset

@@ -80,7 +80,7 @@ namespace graphics
     }
 
     
-    Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
+    ComponentAsset Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
     {
         assert(_id == ULONG_MAX && "createUniformComponent can only be called once");
         std::vector<NativeVarDef> varDefs(vars.size());

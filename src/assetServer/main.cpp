@@ -7,8 +7,9 @@
 #include <string>
 #include <ecs/ecs.h>
 #include <assetNetworking/networkAuthenticator.h>
-#include <assets/types/meshAsset.h>
 #include <fileManager/fileManager.h>
+#include <assets/types/meshAsset.h>
+#include <assets/types/shaderAsset.h>
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
@@ -22,6 +23,7 @@ int main()
 	uint16_t tcpPort = Config::json()["network"].get("tcp port", 80).asUInt();
 	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
 
+	FileManager fm;
 	EntityManager em;
 
 
@@ -44,7 +46,10 @@ int main()
 														{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 													}));
 
-	FileManager fm;
+	AssetID vertexShaderID = AssetID("localhost/this/shader/vertex");
+	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, fm.readFile<uint32_t>(vertexShaderID, ".spirv"));
+	
+
 	fm.writeAsset(&quad);
 	
 	while (true)
@@ -59,7 +64,7 @@ int main()
 			if (cc->connection && cc->connection->isConnected())
 			{
 				net::OMessage m;
-				m.header.type = net::MessageType::meshAsset;
+				m.header.type = net::MessageType::assetData;
 				quad.serialize(m);
 				std::cout << "sending message: " << m;
 				cc->connection->send(m);

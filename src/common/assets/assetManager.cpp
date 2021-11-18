@@ -1,6 +1,7 @@
 #include "assetManager.h"
 #include "ecs/ecs.h"
 #include "networking/message.h"
+#include "networking/networkingComponents.h"
 
 void AssetManager::downloadAcceptorSystem(EntityManager* em, void* thisPtr)
 {
@@ -9,16 +10,24 @@ void AssetManager::downloadAcceptorSystem(EntityManager* em, void* thisPtr)
 	em->forEach(am->_downloadAcceptorFE.id(), [&](byte** components) {
 		net::IMessageComponent* message = net::IMessageComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(1)]);
 
-		switch (message->message.header.type)
+		if (message->message.header.type == net::MessageType::assetData)
 		{
-			case net::MessageType::meshAsset:
-				am->addMesh(new MeshAsset(net::IMessageComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(1)])->message));
-				std::cout << "Receved mesh asset" << std::endl;
-				messages.push_back(EntityIDComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(0)])->id);
-				break;
-			default:
-				break;
+			messages.push_back(EntityIDComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(0)])->id);
+			AssetID id = message->message.peak<AssetID>();
+
+			switch (id.type.type())
+			{
+				case AssetType::mesh:
+					am->addMesh(new MeshAsset(net::IMessageComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(1)])->message));
+					std::cout << "Receved mesh asset" << std::endl;
+					break;
+				default:
+					std::cout << "Receved unimplemented data type: " << id.type.string() << std::endl;
+					assert(false && "Receved unimplemented data type");
+					break;
+			}
 		}
+		
 	});
 	for (EntityID e : messages)
 	{

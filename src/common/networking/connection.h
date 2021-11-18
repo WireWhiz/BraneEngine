@@ -10,6 +10,7 @@
 #include "config/config.h"
 #include "networkQueue.h"
 #include "message.h"
+#include "networkingComponents.h"
 #include <ecs/ecs.h>
 
 namespace net

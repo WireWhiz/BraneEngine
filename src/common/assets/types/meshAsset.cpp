@@ -25,36 +25,14 @@ MeshAsset::MeshAsset(net::IMessage& source)
 void MeshAsset::serialize(net::OMessage& message)
 {
 	Asset::serialize(message);
-	message << static_cast<uint64_t>(indices.size());
-	for (size_t i = 0; i < indices.size(); i++)
-	{
-		message << indices[i];
-	}
-
-	message << static_cast<uint64_t>(vertices.size());
-	for (size_t i = 0; i < vertices.size(); i++)
-	{
-		message << vertices[i];
-	}
+	message << indices;
+	message << vertices;
 	
 }
 
 void MeshAsset::deserialize(net::IMessage& message)
 {
 	Asset::deserialize(message);
-	uint64_t numIndicies;
-	message >> numIndicies;
-	indices.resize(numIndicies);
-	for (size_t i = 0; i < numIndicies; i++)
-	{
-		message >> indices[i];
-	}
-
-	uint64_t numVerticies;
-	message >> numVerticies;
-	vertices.resize(numVerticies);
-	for (size_t i = 0; i < numVerticies; i++)
-	{
-		message >> vertices[i];
-	}
+	message >> indices;
+	message >> vertices;
 }
