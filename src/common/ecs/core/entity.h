@@ -85,7 +85,7 @@ class NativeForEach
 public:
 	NativeForEach() = default;
 	NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em);
-	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em);
+	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet exclude, EntityManager* em);
 	size_t getComponentIndex(size_t index) const;
 	EnityForEachID id() const;
 };

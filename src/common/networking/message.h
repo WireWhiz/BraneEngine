@@ -5,17 +5,15 @@
 #include <byte.h>
 #include <ecs/core/component.h>
 #include <assets/assetID.h>
+#include <cstring>
 
 namespace net
 {
 	enum class MessageType
 	{
-		assetRequest, 
-		assetData,
-		one, 
-		two, 
-		three, 
-		four
+		assetRequest,
+		componentAsset,
+		meshAsset,
 	};
 
 	struct alignas(8) MessageHeader

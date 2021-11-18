@@ -36,7 +36,7 @@ class ThreadPool
 	static std::mutex _queueMutex;
 	static std::queue<Job> _jobs;
 	static std::atomic_bool _running;
-	static void threadRuntime();
+	static int threadRuntime();
 
 public:
 	static std::thread::id main_thread_id;

@@ -8,6 +8,7 @@
 #include <ecs/ecs.h>
 #include <assetNetworking/networkAuthenticator.h>
 #include <assets/types/meshAsset.h>
+#include <fileManager/fileManager.h>
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
@@ -34,6 +35,7 @@ int main()
 	exclude.add(SentMesh::def());
 	NativeForEach nfe = NativeForEach(components, exclude, &em);
 
+	
 	MeshAsset quad = MeshAsset(AssetID("localhost/this/mesh/quad"), std::vector<uint32_t>({0, 1, 2, 2, 3, 0}),
 													std::vector<Vertex>({
 														{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
@@ -41,6 +43,9 @@ int main()
 														{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 														{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 													}));
+
+	FileManager fm;
+	fm.writeAsset(&quad);
 	
 	while (true)
 	{
@@ -54,7 +59,7 @@ int main()
 			if (cc->connection && cc->connection->isConnected())
 			{
 				net::OMessage m;
-				m.header.type = net::MessageType::assetData;
+				m.header.type = net::MessageType::meshAsset;
 				quad.serialize(m);
 				std::cout << "sending message: " << m;
 				cc->connection->send(m);

@@ -1,4 +1,36 @@
 #include "assetManager.h"
+#include "ecs/ecs.h"
+#include "networking/message.h"
+
+void AssetManager::downloadAcceptorSystem(EntityManager* em, void* thisPtr)
+{
+	AssetManager* am = (AssetManager*)thisPtr;
+	std::vector<EntityID> messages;
+	em->forEach(am->_downloadAcceptorFE.id(), [&](byte** components) {
+		net::IMessageComponent* message = net::IMessageComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(1)]);
+
+		switch (message->message.header.type)
+		{
+			case net::MessageType::meshAsset:
+				am->addMesh(new MeshAsset(net::IMessageComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(1)])->message));
+				std::cout << "Receved mesh asset" << std::endl;
+				messages.push_back(EntityIDComponent::fromVirtual(components[am->_downloadAcceptorFE.getComponentIndex(0)])->id);
+				break;
+			default:
+				break;
+		}
+	});
+	for (EntityID e : messages)
+	{
+		em->destroyEntity(e);
+	}
+}
+
+void AssetManager::startDownloadAcceptorSystem(EntityManager* em)
+{
+	_downloadAcceptorFE = NativeForEach(std::vector<const ComponentAsset*>{EntityIDComponent::def(), net::IMessageComponent::def()}, em);
+	em->addSystem(std::make_unique<FunctionPointerSystem>(AssetID("localhost/this/system/downloadAcceptor"), downloadAcceptorSystem, this));
+}
 
 void AssetManager::addComponent(ComponentAsset* component)
 {

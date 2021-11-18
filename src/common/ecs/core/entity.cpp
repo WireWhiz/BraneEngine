@@ -285,18 +285,12 @@ void EntityManager::runSystems()
 	}
 	_systems.runSystems(this);
 }
-/*
-void EntityIDComponent::getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-{
-	types.push_back(std::make_unique<VirtualVariable<EntityID>>(offsetof(EntityIDComponent, id)));
-}
-*/
 NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em) : NativeForEach(components, ComponentSet(), em)
 {
 	
 }
 
-NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em)
+NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet exclude, EntityManager* em)
 {
 	ComponentSet componentSet;
 	for (size_t i = 0; i < components.size(); i++)

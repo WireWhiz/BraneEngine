@@ -1,6 +1,7 @@
 #include "client.h"
 #include "asio/asio.hpp"
 #include "networking/connection.h"
+#include "assets/assetManager.h"
 
 void Client::run()
 {
@@ -10,7 +11,10 @@ void Client::run()
 	uint16_t serverPort = Config::json()["network"]["runtime server"].get("tcp port", 2001).asUInt();
 	uint16_t serverSSLPort = Config::json()["network"]["runtime server"].get("ssl port", 2002).asUInt();
 
+	AssetManager am;
+
 	EntityManager em;
+	am.startDownloadAcceptorSystem(&em);
 	//graphics::VulkanRuntime vkr;
 
 
@@ -58,7 +62,7 @@ void Client::run()
 	{
 		//vkr.updateWindow();
 		em.runSystems();
-		em.forEach(nfe.id(), [&](byte** components) {
+ 		em.forEach(nfe.id(), [&](byte** components) {
 			net::IMessageComponent* m = net::IMessageComponent::fromVirtual(components[0]);
 			std::cout << m->message << std::endl;
 		});

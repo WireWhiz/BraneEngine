@@ -8,7 +8,7 @@ std::atomic<bool> ThreadPool::_running = true;
 std::queue<ThreadPool::Job> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
 
-void ThreadPool::threadRuntime()
+int ThreadPool::threadRuntime()
 {
 	while (_running)
 	{
@@ -42,6 +42,7 @@ void ThreadPool::threadRuntime()
 		
 		std::this_thread::yield();
 	}
+	return 0;
 }
 
 void ThreadPool::init()

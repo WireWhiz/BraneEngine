@@ -7,7 +7,7 @@ add_executable(BraneAssetServer main.cpp "assetNetworking/networkAuthenticator.h
 target_include_directories(BraneAssetServer PRIVATE 
 	${INCS}
 	${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(BraneAssetServer PRIVATE config networking ecs utility)
+target_link_libraries(BraneAssetServer PRIVATE config networking ecs utility fileManager)
 target_compile_definitions(BraneAssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS})
 
 add_custom_command(TARGET BraneAssetServer POST_BUILD
