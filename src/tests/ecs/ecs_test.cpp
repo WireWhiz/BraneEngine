@@ -543,12 +543,12 @@ TEST(ECS, ForEachParellelTest)
 TEST(ECS, NativeForEachTest)
 {
 	ComponentSet components;
-	components.add((const ComponentAsset*)0);
 	components.add((const ComponentAsset*)1);
 	components.add((const ComponentAsset*)2);
+	components.add((const ComponentAsset*)3);
 	
 	EntityManager em;
-	NativeForEach nfe(std::vector<const ComponentAsset*>{ (const ComponentAsset*)1 ,(const ComponentAsset*)2 ,(const ComponentAsset*)0 }, &em);
+	NativeForEach nfe(std::vector<const ComponentAsset*>{ (const ComponentAsset*)2 ,(const ComponentAsset*)3 ,(const ComponentAsset*)1 }, &em);
 
 	EXPECT_EQ(nfe.getComponentIndex(0), 1);
 	EXPECT_EQ(nfe.getComponentIndex(1), 2);

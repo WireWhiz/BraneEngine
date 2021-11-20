@@ -1,11 +1,8 @@
 #include <iostream>
-#include "runtimeServer.h"
-
-using namespace std;
+#include <cassert>
 
 int main()
 {
-    RuntimeServer rs;
-    rs.run();
+    assert(false);
     return 0;
 }

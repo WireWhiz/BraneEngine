@@ -9,16 +9,16 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-add_executable(gtests 
+add_executable(tests
  "ecs/ecs_test.cpp"
  "ecs/systems_test.cpp"
  "ecs/virtualType_test.cpp"
  "jit/jit_test.cpp"
    "assets/assets_test.cpp" "utility/threadPool.cpp")
-include_directories(gtests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(gtests gtest_main ecs_test jit assets)
-target_compile_definitions(gtests PUBLIC TEST_BUILD)
+target_link_libraries(tests gtest_main ecs_test jit assets)
+target_compile_definitions(tests PUBLIC TEST_BUILD)
 
 include(GoogleTest)
-gtest_discover_tests(gtests)
+gtest_discover_tests(tests)
