@@ -151,7 +151,7 @@ namespace graphics
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        static EnityForEachID forEachID = em.getForEachID({0});
+        static EntityForEachID forEachID = em.getForEachID({0});
         size_t index = 0;
         em.forEach(forEachID, [&time, &index](byte** components) {
             Transform::fromVirtual(components[0])->value = glm::rotate(glm::translate(glm::mat4x4(1), {0,0,-0.5 * index++}), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, -1.0f));
@@ -225,7 +225,7 @@ namespace graphics
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        // get required extentions
+        // get required extensions
         std::vector<const char*> extensions = requiredExtensions();
 
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());

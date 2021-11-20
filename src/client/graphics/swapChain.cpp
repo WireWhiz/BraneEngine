@@ -223,9 +223,9 @@ namespace graphics
         }
     }
 
-    void SwapChain::createFramebuffers()
+    void SwapChain::createFrameBuffers()
     {
-        _framebuffers.resize(_imageViews.size());
+        _frameBuffers.resize(_imageViews.size());
 
         for (size_t i = 0; i < _imageViews.size(); i++)
         {
@@ -243,7 +243,7 @@ namespace graphics
             framebufferInfo.height = _extent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_framebuffers[i]) != VK_SUCCESS)
+            if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_frameBuffers[i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to create framebuffer!");
             }
@@ -315,7 +315,7 @@ namespace graphics
                 return format;
             }
         }
-        throw std::runtime_error("failed to find compatable image format!");
+        throw std::runtime_error("failed to find compatible image format!");
     }
 
     VkFormat SwapChain::findDepthFormat()
@@ -334,7 +334,7 @@ namespace graphics
         createImageViews();
         createDepthResources();
         createRenderPass();
-        createFramebuffers();
+	    createFrameBuffers();
     }
     SwapChain::~SwapChain()
     {
@@ -344,7 +344,7 @@ namespace graphics
         vkDestroyImage(device->get(), _depthImage, nullptr);
         vkFreeMemory(device->get(), _depthImageMemory, nullptr);
         
-        for (auto framebuffer : _framebuffers)
+        for (auto framebuffer : _frameBuffers)
         {
             vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
         }
@@ -369,7 +369,7 @@ namespace graphics
 
     VkFramebuffer SwapChain::framebuffer(size_t index)
     {
-        return _framebuffers[index];
+        return _frameBuffers[index];
     }
 
     size_t SwapChain::size()

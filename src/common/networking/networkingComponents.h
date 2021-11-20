@@ -7,14 +7,14 @@ namespace net
 	typedef uint32_t ConnectionID;
 	struct IMessageComponent : public NativeComponent<IMessageComponent>
 	{
-		REGESTER_MEMBERS_2(owner, message);
+		REGISTER_MEMBERS_2(owner, message);
 		ConnectionID owner;
 		IMessage message;
 	};
 
 	struct OMessageComponent : public NativeComponent<OMessageComponent>
 	{
-		REGESTER_MEMBERS_2(owner, message);
+		REGISTER_MEMBERS_2(owner, message);
 		ConnectionID owner;
 		OMessage message;
 	};

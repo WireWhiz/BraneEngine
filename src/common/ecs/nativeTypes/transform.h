@@ -4,7 +4,7 @@
 
 class Transform : public NativeComponent<Transform>
 {
-	REGESTER_MEMBERS_1(value);
+	REGISTER_MEMBERS_1(value);
 public:
 	glm::mat4x4 value;
 };

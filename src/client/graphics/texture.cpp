@@ -2,7 +2,7 @@
 
 namespace graphics
 {
-    const std::array<const char*, 1> textureFileExtentions = { ".png" };
+    const std::array<const char*, 1> textureFileExtensions = {".png" };
 
     void Texture::createTextureImageView()
     {

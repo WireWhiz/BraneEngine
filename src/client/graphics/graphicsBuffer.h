@@ -14,7 +14,7 @@ namespace graphics
         VkCommandPool _pool;
         bool _submitted;
     public:
-        SingleUseCommandBuffer( VkCommandPool pool)
+        SingleUseCommandBuffer(VkCommandPool pool)
         {
             _pool = pool;
             _submitted = false;
@@ -65,7 +65,7 @@ namespace graphics
 	    VkDeviceMemory _memory;
         size_t _size;
     public:
-	    GraphicsBuffer(VkDeviceSize size, VkBufferUsageFlags useage, VkMemoryPropertyFlags memFlags)
+	    GraphicsBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags)
 	    {
             assert(size > 0);
             _size = size;
@@ -73,7 +73,7 @@ namespace graphics
             VkBufferCreateInfo bufferInfo{};
             bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
             bufferInfo.size = size;
-            bufferInfo.usage = useage;
+            bufferInfo.usage = usage;
             bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
             if (vkCreateBuffer(device->get(), &bufferInfo, nullptr, &_buffer) != VK_SUCCESS)
@@ -102,11 +102,11 @@ namespace graphics
             vkDestroyBuffer(device->get(), _buffer, nullptr);
             vkFreeMemory(device->get(), _memory, nullptr);
 	    }
-        VkBuffer get()
+        VkBuffer get() const
         {
             return _buffer;
         }
-        size_t size()
+        size_t size() const
         {
             return _size;
         }

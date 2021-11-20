@@ -13,7 +13,7 @@
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
-	REGESTER_MEMBERS_0();
+	REGISTER_MEMBERS_0();
 };
 
 int main()

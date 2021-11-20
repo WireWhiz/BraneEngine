@@ -19,7 +19,7 @@ namespace graphics
 
 		//Descriptors
 		AssetID _id;
-		EnityForEachID _forEachID = ULONG_MAX;
+		EntityForEachID _forEachID = ULONG_MAX;
 		std::vector<Texture*> _textures;
 
 		VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
@@ -31,6 +31,7 @@ namespace graphics
 		~Material();
 		
 		ComponentAsset createUniformComponent(AssetID id, const std::vector<VirtualType> vars, size_t alignment);
+		const ComponentAsset* component() const;
 		AssetID componentID();
 		void addTextureDescriptor(Texture* texture);
 		void setGeometry(Shader* shader);

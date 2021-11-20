@@ -4,7 +4,7 @@
 
 TEST(ECS, VirtualComponentTest)
 {
-	//Create a definiton for our virtual struct/component
+	//Create a definition for our virtual struct/component
 
 	std::vector<std::unique_ptr<VirtualType>> variables;
 	variables.push_back(std::make_unique<VirtualBool>());
@@ -29,7 +29,7 @@ TEST(ECS, VirtualComponentTest)
 
 TEST(ECS, VirtualComponentComplexTypesTest)
 {
-	//Create a definiton for our virtual struct/component
+	//Create a definition for our virtual struct/component
 
 	std::vector<std::unique_ptr<VirtualType>> variables;
 	variables.push_back(std::make_unique<VirtualVariable<std::string>>());
@@ -170,7 +170,7 @@ TEST(ECS, VirtualComponentVectorTest)
 // Native component for testing 
 class TestNativeComponent : public NativeComponent<TestNativeComponent>
 {
-	REGESTER_MEMBERS_3(var1, var2, var3)
+	REGISTER_MEMBERS_3(var1, var2, var3)
 public:
 	bool var1;
 	int64_t var2;
@@ -328,7 +328,7 @@ TEST(ECS, EntityManagerTest)
 //Classes for native system test
 class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 {
-	REGESTER_MEMBERS_1(var1)
+	REGISTER_MEMBERS_1(var1)
 public:
 	bool var1;
 	/*
@@ -372,7 +372,7 @@ TEST(ECS, ForEachCachingTest)
 
 	ComponentSet components;
 	components.add(&ca1);
-	EnityForEachID fe1 = em.getForEachID(components);
+	EntityForEachID fe1 = em.getForEachID(components);
 	EXPECT_EQ(em._archetypes._forEachData.size(), 1);
 
 	em.addComponent(entity, &ca1); // archetype: ca1
@@ -422,9 +422,9 @@ TEST(ECS, ForEachTest)
 	//Create two for each ID one for entities with one component, another for those with two
 	ComponentSet comps;
 	comps.add(TestNativeComponent::def());
-	EnityForEachID forEachID = em.getForEachID(comps);
+	EntityForEachID forEachID = em.getForEachID(comps);
 	comps.add(TestNativeComponent2::def());
-	EnityForEachID forEachID2 = em.getForEachID(comps);
+	EntityForEachID forEachID2 = em.getForEachID(comps);
 
 	//Create 50 entities with one component, and 50 with two
 	for (size_t i = 0; i < 100; i++)
@@ -520,16 +520,16 @@ TEST(ECS, ForEachParellelTest)
 	EntityManager em;
 	ComponentSet comps;
 	comps.add(&counterComponent);
-	EnityForEachID forEachID = em.getForEachID(comps, ComponentSet());
+	EntityForEachID forEachID = em.getForEachID(comps, ComponentSet());
 
 	em.createEntities(comps, 2000000);
 	em._archetypes.getForEachArchetypes(forEachID); //Pre cache archetypes so that we get the most impressive looking numbers
 
 	Stopwatch sw;
-	em.forEachParellel(forEachID, [&](byte* components[]) {
-		VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
-		counter.setVar(0, 420);
-	}, 2000000 / 22)->finish();
+    em.forEachParallel(forEachID, [&](byte *components[]) {
+        VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
+        counter.setVar(0, 420);
+    }, 2000000 / 22)->finish();
 	long long time = sw.time();
 	std::cout << "For Each Parellel took: " << time << std::endl;
 

@@ -12,7 +12,6 @@
 #include <list>
 #include "componentSet.h"
 
-typedef uint64_t ArchetypeID;
 class Archetype;
 
 struct ArchetypeEdge
@@ -34,7 +33,7 @@ public:
 	size_t _size = 0;
 	size_t _entitySize;
 
-	//Eventually move these to seperate node class
+	//Eventually move these to separate node class
 	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 	//
@@ -56,7 +55,6 @@ public:
 	void setComponent(size_t entity, const VirtualComponent& component);
 	void setComponent(size_t entity, const VirtualComponentPtr& component);
 	bool isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const;
-	bool isRootForComponent(const ComponentAsset* component) const;
 	const ComponentSet& components() const;
 	std::shared_ptr<ArchetypeEdge> getAddEdge(const ComponentAsset* component);
 	std::shared_ptr<ArchetypeEdge> getRemoveEdge(const ComponentAsset* component);
@@ -64,10 +62,10 @@ public:
 	void addRemoveEdge(const ComponentAsset* component, Archetype* archetype);
 	void forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
 	void forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
-	size_t size();
+	size_t size() const;
 	size_t createEntity();
 	size_t copyEntity(Archetype* source, size_t index);
-	const size_t entitySize();
+	size_t entitySize() const;
 	void remove(size_t index);
 
 	void forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f, size_t start, size_t end);
@@ -75,7 +73,7 @@ public:
 }; 
 
 
-typedef uint64_t EnityForEachID;
+typedef uint64_t EntityForEachID;
 
 class ArchetypeManager
 {
@@ -100,8 +98,8 @@ public:
 
 	void findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const;
 	void cacheArchetype(Archetype* arch);
-	void decacheArchetype(Archetype* arch);
-	std::vector<Archetype*>& getForEachArchetypes(EnityForEachID id);
+	void removeCachedArchetype(Archetype* arch); //TODO create archetype cleanup system
+	std::vector<Archetype*>& getForEachArchetypes(EntityForEachID id);
 
 	/*
 	template<typename T>
@@ -119,16 +117,16 @@ public:
 	}
 
 	template<typename T>
-	void forEachRecursiveParellel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitesPerThread, std::shared_ptr<JobHandle> handle)
+	void forEachRecursiveParallel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitiesPerThread, std::shared_ptr<JobHandle> handle)
 	{
 		if (executed.count(archetype))
 			return;
-		size_t threads = archetype->size() / entitesPerThread + 1;
+		size_t threads = archetype->size() / entitiesPerThread + 1;
 
 		for (size_t t = 0; t < threads; t++)
 		{
-			size_t start = t * entitesPerThread;
-			size_t end = std::min(t * entitesPerThread + entitesPerThread, archetype->size());
+			size_t start = t * entitiesPerThread;
+			size_t end = std::min(t * entitiesPerThread + entitiesPerThread, archetype->size());
 			ThreadPool::enqueue([archetype, &f, &components, start, end]() {
 				archetype->forEach(components, f, start, end);
 			}, handle);
@@ -136,8 +134,8 @@ public:
 
 		executed.insert(archetype);
 
-		archetype->forAddEdge([this, &components, &f, &executed, &entitesPerThread, &handle](std::shared_ptr<const ArchetypeEdge> edge) {
-			forEachRecursiveParellel(edge->archetype, components, f, executed, entitesPerThread, handle);
+		archetype->forAddEdge([this, &components, &f, &executed, &entitiesPerThread, &handle](std::shared_ptr<const ArchetypeEdge> edge) {
+			forEachRecursiveParallel(edge->archetype, components, f, executed, entitiesPerThread, handle);
 		});
 	}
 	*/
@@ -145,14 +143,14 @@ public:
 public:
 	ArchetypeManager();
 	Archetype* getArchetype(const ComponentSet& components);
-	Archetype* makeArchetype(const ComponentSet& cdefs);
+	Archetype* makeArchetype(const ComponentSet& components);
 
-	EnityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
-	size_t forEachCount(EnityForEachID id);
+	EntityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
+	size_t forEachCount(EntityForEachID id);
 
-	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
-	void constForEach(EnityForEachID id, const std::function <void(const byte* [])>& f);
-	std::shared_ptr<JobHandle> forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
-	std::shared_ptr<JobHandle> constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
+	void forEach(EntityForEachID id, const std::function <void(byte* [])>& f);
+	void constForEach(EntityForEachID id, const std::function <void(const byte* [])>& f);
+	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
 };

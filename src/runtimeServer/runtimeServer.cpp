@@ -17,9 +17,8 @@ void RuntimeServer::createSystems()
 
 void RuntimeServer::run()
 {
-	VirtualSystemGlobals vsg;
 	while (_running)
 	{
-		em.runSystems(&vsg);
+		em.runSystems();
 	}
 }

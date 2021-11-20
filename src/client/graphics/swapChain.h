@@ -14,7 +14,7 @@ namespace graphics
 		VkSwapchainKHR _swapChain;
 		VkRenderPass _renderPass;
 
-		std::vector<VkFramebuffer> _framebuffers;
+		std::vector<VkFramebuffer> _frameBuffers;
 		std::vector<VkImage> _images;
 		std::vector<VkImageView> _imageViews;
 
@@ -31,7 +31,7 @@ namespace graphics
 		void createImageViews();
 		void createDepthResources();
 		void createRenderPass();
-		void createFramebuffers();
+		void createFrameBuffers();
 
 
 		VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);

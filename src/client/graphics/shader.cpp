@@ -238,7 +238,7 @@ namespace graphics
 			return _shaders[id].get();
 
 		// Check for cached spirv
-		for (auto& ext : _shaderExtentions)
+		for (auto& ext : _shaderExtensions)
 		{
 			std::ifstream file("shaders/spirv/" + std::to_string(id) + "." + (std::string)ext.first + "b", std::ios::binary);
 			if (!file.is_open())
@@ -256,7 +256,7 @@ namespace graphics
 		}
 
 		// We didn't find a cache so try to find a source and compile
-		for (auto& ext : _shaderExtentions)
+		for (auto& ext : _shaderExtensions)
 		{
 			std::ifstream file("shaders/src/" + std::to_string(id) + "." + (std::string)ext.first, std::ios::ate | std::ios::binary);
 			if (!file.is_open())

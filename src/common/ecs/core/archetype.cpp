@@ -12,9 +12,9 @@ Archetype::Archetype(const ComponentSet& components, std::shared_ptr<ChunkPool>&
 {
 	_chunkAllocator = chunkAllocator;
 	_entitySize = 0;
-	for (size_t i = 0; i < components.size(); i++)
+	for (auto component : components)
 	{
-		_entitySize += components[i]->size();
+		_entitySize += component->size();
 	}
 
 }
@@ -84,7 +84,7 @@ void Archetype::setComponent(size_t entity, const VirtualComponentPtr& component
 bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const
 {
 	_mutex.lock_shared();
-	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparason
+	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparison
 	byte missCount = 0;
 	for (size_t i = 0; i - missCount < _components.size(); i++)
 	{
@@ -106,24 +106,6 @@ bool Archetype::isChildOf(const Archetype* parent, const ComponentAsset*& connec
 	return true;
 }
 
-bool Archetype::isRootForComponent(const ComponentAsset* component) const
-{
-	_mutex.lock_shared();
-	if (_components.size() == 1)
-		return true;
-	for (size_t i = 0; i < _removeEdges.size(); i++)
-	{
-		if (_removeEdges[i]->component == component)
-		{
-			_mutex.unlock_shared();
-			return true;
-		}
-	}
-	_mutex.unlock_shared();
-	return false;
-}
-
-
 const ComponentSet& Archetype::components() const
 {
 	return _components;
@@ -132,11 +114,11 @@ const ComponentSet& Archetype::components() const
 std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* component)
 {
 	ASSERT_MAIN_THREAD();
-	for (size_t i = 0; i < _addEdges.size(); i++)
+	for (auto & _addEdge : _addEdges)
 	{
-		if (component == _addEdges[i]->component)
+		if (component == _addEdge->component)
 		{
-			return _addEdges[i];
+			return _addEdge;
 		}
 	}
 	return nullptr;
@@ -145,11 +127,11 @@ std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(const ComponentAsset* compo
 std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(const ComponentAsset* component)
 {
 	ASSERT_MAIN_THREAD();
-	for (size_t i = 0; i < _removeEdges.size(); i++)
+	for (auto & _removeEdge : _removeEdges)
 	{
-		if (component == _removeEdges[i]->component)
+		if (component == _removeEdge->component)
 		{
-			return _removeEdges[i];
+			return _removeEdge;
 		}
 	}
 	return nullptr;
@@ -170,22 +152,22 @@ void Archetype::addRemoveEdge(const ComponentAsset* component, Archetype* archet
 void Archetype::forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
 	ASSERT_MAIN_THREAD();
-	for (size_t i = 0; i < _addEdges.size(); i++)
+	for (const auto & _addEdge : _addEdges)
 	{
-		f(_addEdges[i]);
+		f(_addEdge);
 	}
 }
 
 void Archetype::forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const
 {
 	ASSERT_MAIN_THREAD();
-	for (size_t i = 0; i < _removeEdges.size(); i++)
+	for (const auto & _removeEdge : _removeEdges)
 	{
-		f(_removeEdges[i]);
+		f(_removeEdge);
 	}
 }
 
-size_t Archetype::size()
+size_t Archetype::size() const
 {
 	_mutex.lock_shared();
 	size_t o = _size;
@@ -228,12 +210,12 @@ size_t Archetype::copyEntity(Archetype* source, size_t index)
 	size_t srcEntityIndex = index - srcChunkIndex * src->maxCapacity();
 	size_t destEntityIndex = newIndex - srcChunkIndex * dest->maxCapacity();
 
-	for (size_t i = 0; i < _components.size(); i++)
+	for (auto _component : _components)
 	{
-		if (_components[i]->size() == 0)
+		if (_component->size() == 0)
 			continue;
-		if (source->_components.contains(_components[i]))
-			dest->copyComponenet(src, srcEntityIndex, destEntityIndex, _components[i]);
+		if (source->_components.contains(_component))
+			dest->copyComponenet(src, srcEntityIndex, destEntityIndex, _component);
 	}
 	_mutex.unlock();
 	source->_mutex.unlock();
@@ -245,7 +227,7 @@ Chunk* Archetype::getChunk(size_t entity) const
 	return _chunks[chunkIndex(entity)].get();
 }
 
-const size_t Archetype::entitySize()
+size_t Archetype::entitySize() const
 {
 	return _entitySize;
 }
@@ -285,12 +267,12 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
 		const byte** data = (const byte**)STACK_ALLOCATE(sizeof(const byte*) * components.size());
-		size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
+		size_t* componentIndices = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
 		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
 
 		for (size_t i = 0; i < components.size(); i++)
 		{
-			componentIndicies[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
+            componentIndices[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
 			componentSizes[i] = components[i]->size();
 		}
 
@@ -306,7 +288,7 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 			{
 				for (size_t c = 0; c < components.size(); c++)
 				{
-					data[c] = _chunks[chunk]->data() + componentIndicies[c] + componentSizes[c] * i;
+					data[c] = _chunks[chunk]->data() + componentIndices[c] + componentSizes[c] * i;
 				}
 				f(data);
 			}
@@ -329,12 +311,12 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 	// Small stack vector allocations are ok in some circumstances, for instance if this were a regular ecs system this function would probably be a template and use the same amount of stack memory
 	{
 		byte** data = (byte**)STACK_ALLOCATE(sizeof(byte*) * components.size());
-		size_t* componentIndicies = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
+		size_t* componentIndices = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
 		size_t* componentSizes = (size_t*)STACK_ALLOCATE(sizeof(size_t) * components.size());
 
 		for (size_t i = 0; i < components.size(); i++)
 		{
-			componentIndicies[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
+            componentIndices[i] = _chunks[0]->componentIndices()[_components.index(components[i])];
 			componentSizes[i] = components[i]->size();
 		}
 
@@ -349,7 +331,7 @@ void Archetype::forEach(const ComponentSet& components, const std::function<void
 			{
 				for (size_t c = 0; c < components.size(); c++)
 				{
-					data[c] = _chunks[chunk]->data() + componentIndicies[c] + componentSizes[c] * i;
+					data[c] = _chunks[chunk]->data() + componentIndices[c] + componentSizes[c] * i;
 				}
 				f(data);
 			}
@@ -368,11 +350,11 @@ ArchetypeEdge::ArchetypeEdge(const ComponentAsset* component, Archetype* archety
 
 
 
-Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
+Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 {
 	ASSERT_MAIN_THREAD();
-	assert(cdefs.size() > 0);
-	size_t numComps = cdefs.size();
+	assert(components.size() > 0);
+	size_t numComps = components.size();
 
 	// We want to keep archetypes of the same size in groups
 	// This means we keep each size in a different vector
@@ -382,14 +364,14 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 		_archetypes.resize(numComps);
 
 	size_t newIndex = _archetypes[numComps - 1].size();
-	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(cdefs, _chunkAllocator));
+	_archetypes[numComps - 1].push_back(std::make_unique<Archetype>(components, _chunkAllocator));
 
 	Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
 
 
 
 	{//Scope for bool array
-		// find edges to other archetypes lower then this one
+		// find edges to other archetypes lower than this one
 		if (numComps > 1)
 		{
 			const ComponentAsset* connectingComponent = nullptr;
@@ -405,7 +387,7 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& cdefs)
 			}
 		}
 
-		// find edges to other archetypes higher then this one
+		// find edges to other archetypes higher than this one
 		if (_archetypes.size() > numComps)
 		{
 			for (size_t i = 0; i < _archetypes[numComps].size(); i++)
@@ -429,7 +411,7 @@ void ArchetypeManager::findArchetypes(const ComponentSet& components, const Comp
 {
 	ASSERT_MAIN_THREAD();
 	archetypes.clear();
-	// Serch through any archetypes of the exact size that we want to see if there's one that fits
+	// Search through any archetypes of the exact size that we want to see if there's one that fits
 	if (_archetypes.size() >= components.size())
 	{
 		// Searches through all archetypes with the same number of components as the for each
@@ -459,7 +441,7 @@ void ArchetypeManager::cacheArchetype(Archetype* arch)
 	}
 }
 
-void ArchetypeManager::decacheArchetype(Archetype* arch)
+void ArchetypeManager::removeCachedArchetype(Archetype* arch)
 {
 	ASSERT_MAIN_THREAD();
 	for (ForEachData& data : _forEachData)
@@ -475,7 +457,7 @@ void ArchetypeManager::decacheArchetype(Archetype* arch)
 
 
 
-std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EnityForEachID id)
+std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EntityForEachID id)
 {
 	ASSERT_MAIN_THREAD();
 	assert(_forEachData.size() > id);
@@ -483,7 +465,7 @@ std::vector<Archetype*>& ArchetypeManager::getForEachArchetypes(EnityForEachID i
 }
 
 
-size_t ArchetypeManager::forEachCount(EnityForEachID id)
+size_t ArchetypeManager::forEachCount(EntityForEachID id)
 {
 	ASSERT_MAIN_THREAD();
 	size_t count = 0;
@@ -494,7 +476,7 @@ size_t ArchetypeManager::forEachCount(EnityForEachID id)
 	return count;
 }
 
-void ArchetypeManager::forEach(EnityForEachID id, const std::function<void(byte* [])>& f)
+void ArchetypeManager::forEach(EntityForEachID id, const std::function<void(byte* [])>& f)
 {
 	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
@@ -507,7 +489,7 @@ void ArchetypeManager::forEach(EnityForEachID id, const std::function<void(byte*
 
 }
 
-void ArchetypeManager::constForEach(EnityForEachID id, const std::function<void(const byte* [])>& f)
+void ArchetypeManager::constForEach(EntityForEachID id, const std::function<void(const byte* [])>& f)
 {
 	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
@@ -520,7 +502,7 @@ void ArchetypeManager::constForEach(EnityForEachID id, const std::function<void(
 
 }
 
-std::shared_ptr<JobHandle> ArchetypeManager::constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> ArchetypeManager::constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread)
 {
 	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
@@ -545,7 +527,7 @@ std::shared_ptr<JobHandle> ArchetypeManager::constForEachParellel(EnityForEachID
 	return handle;
 }
 
-std::shared_ptr<JobHandle> ArchetypeManager::forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
+std::shared_ptr<JobHandle> ArchetypeManager::forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread)
 {
 	ASSERT_MAIN_THREAD();
 	std::unordered_set<Archetype*> executed;
@@ -596,11 +578,11 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 	}
 	return makeArchetype(components);
 }
-EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components, const ComponentSet& exclude)
+EntityForEachID ArchetypeManager::getForEachID(const ComponentSet& components, const ComponentSet& exclude)
 {
 	ASSERT_MAIN_THREAD();
 	//std::sort(components.begin(), components.end());
-	EnityForEachID id = 0;
+	EntityForEachID id = 0;
 	for (ForEachData& d : _forEachData)
 	{
 		if (d.components.size() == components.size() && d.components.contains(components))
@@ -610,8 +592,8 @@ EnityForEachID ArchetypeManager::getForEachID(const ComponentSet& components, co
 		++id;
 	}
 
-	//If we reatch here there is no prexisting cache
-	_forEachData.push_back(ForEachData(components, exclude));
+	//If we reattach here there is no preexisting cache
+	_forEachData.emplace_back(components, exclude);
 	assert(id == _forEachData.size() - 1);
 	findArchetypes(_forEachData[id].components, _forEachData[id].exclude, _forEachData[id].archetypes);
 	return id;

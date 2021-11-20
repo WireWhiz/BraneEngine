@@ -86,7 +86,8 @@ namespace graphics
 	
 	class MeshComponent : public NativeComponent<MeshComponent>
 	{
-		REGESTER_MEMBERS_1(id);
+		REGISTER_MEMBERS_1(id);
+	public:
 		MeshID id;
 	};
 	

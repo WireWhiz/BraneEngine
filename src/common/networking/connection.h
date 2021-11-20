@@ -111,12 +111,12 @@ namespace net
 
 	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
 	{
-		REGESTER_MEMBERS_0();
+		REGISTER_MEMBERS_0();
 	};
 
 	struct ConnectionComponent : public NativeComponent<ConnectionComponent>
 	{
-		REGESTER_MEMBERS_2(id, connection);
+		REGISTER_MEMBERS_2(id, connection);
 		ConnectionID id;
 		std::shared_ptr<Connection> connection;
 		

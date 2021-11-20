@@ -44,14 +44,14 @@ namespace graphics
         
     }
 
-    void Pipeline::createGraphicsPipline()
+    void Pipeline::createGraphicsPipeline()
     {
         
     }
 
     void Pipeline::createTextureImage()
     {
-        _texture = new Texture("textures/cropped-circut.png");
+        _texture = new Texture("textures/cropped-circuit.png");
     }
 
 

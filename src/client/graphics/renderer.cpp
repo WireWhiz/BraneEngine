@@ -5,7 +5,7 @@ namespace graphics
 	Renderer::Renderer(EntityManager& em, Material* material)
 	{
         _material = material;
-        _forEachID = em.getForEachID({ Transform::def()->id(), MeshComponent::def()->id(), material->componentID() });
+		_forEach = NativeForEach(std::vector<const ComponentAsset*>{Transform::def(), MeshComponent::def(), material->component() }, em);
 
         _drawBuffers.resize(SwapChain::size());
         createDescriptorSets(SwapChain::size());
@@ -57,15 +57,15 @@ namespace graphics
 	}
     void Renderer::createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::unordered_map<MeshID,std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
     {
-        size_t count = em.forEachCount(_forEachID);
+        size_t count = em.forEachCount(_forEach.id());
         if(count == 0)
             return;
         std::vector<glm::mat4x4> transforms(count);
-        std::vector<MeshID> meshIndicies(count);
+        std::vector<MeshID> meshIndices(count);
 
         size_t index = 0;
-        em.forEach(_forEachID, [&index, &transforms, &meshIndicies](byte** components){
-            meshIndicies[index] = MeshComponent::fromVirtual(components[1])->id;
+        em.forEach(_forEach.id(), [&index, &transforms, &meshIndices](byte** components){
+	        meshIndices[index] = MeshComponent::fromVirtual(components[1])->id;
             transforms[index] = Transform::fromVirtual(components[0])->value;
             index++;
         });
@@ -93,7 +93,7 @@ namespace graphics
         {
             vkResetCommandBuffer(_drawBuffers[frame][i], 0); // No flags so that the buffer will hold onto memory
 
-            Mesh* mesh = meshes[meshIndicies[i]].get();
+            Mesh* mesh = meshes[meshIndices[i]].get();
 
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -134,9 +134,5 @@ namespace graphics
     std::vector<VkCommandBuffer>* Renderer::getBuffers(size_t frame)
     {
         return &_drawBuffers[frame];
-    }
-    void RendererData::getVariableIndicies(std::vector<NativeVarDef>& variables)
-    {
-        variables.push_back(NativeVarDef(offsetof(RendererData, disabled), virtualBool));
     }
 }

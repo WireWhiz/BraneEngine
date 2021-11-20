@@ -75,7 +75,7 @@ namespace graphics
 
 		// Behold, the only function we care about:
 		void draw(EntityManager& em);
-		// Bask in it's glory!
+		// Bask in its glory!
 		
 		Texture* loadTexture(TextureID id);
 		Shader* loadShader(ShaderID id);

@@ -225,7 +225,6 @@ public:
 	std::vector<std::unique_ptr<Chunk>> _unused;
 
 public:
-	~ChunkPool();
 	friend void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest);
 	friend void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& src);
 };

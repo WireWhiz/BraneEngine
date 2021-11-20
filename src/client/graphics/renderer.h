@@ -1,6 +1,7 @@
 #pragma once
-#include "ecs/core/Entity.h"
-#include "ecs/nativeTypes/transform.h"
+#include <ecs/core/component.h>
+#include <ecs/core/structMembers.h>
+#include <ecs/nativeTypes/transform.h>
 #include "mesh.h"
 #include "material.h"
 
@@ -15,7 +16,7 @@ namespace graphics
 		std::vector<VkDescriptorSet> _descriptorSets;
 		std::vector<std::vector<VkCommandBuffer>> _drawBuffers;
 
-		EnityForEachID _forEachID;
+		NativeForEach _forEach;
 	public:
 		Renderer(EntityManager& em, Material* material);
 		//~Renderer();
@@ -24,10 +25,10 @@ namespace graphics
 		std::vector<VkCommandBuffer>* getBuffers(size_t frame);
 	};
 
-	class RendererData : public NativeComponent<RendererData, 1>
+	class RendererData : public NativeComponent<RendererData>
 	{
+		REGISTER_MEMBERS_1(disabled);
 	public:
-		void getVariableIndicies(std::vector<NativeVarDef>& variables);
 		bool disabled;
 
 	};

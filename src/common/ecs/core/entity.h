@@ -19,7 +19,7 @@ typedef uint64_t EntityID;
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
-	REGESTER_MEMBERS_1(id)
+	REGISTER_MEMBERS_1(id)
 public:
 	EntityID id;
 };
@@ -62,12 +62,12 @@ public:
 	void removeComponent(EntityID entity, const ComponentAsset* component);
 
 	//for each stuff
-	EnityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
-	size_t forEachCount(EnityForEachID id);
-	void forEach(EnityForEachID id, const std::function <void(byte* [])>& f);
-	void constForEach(EnityForEachID id, const std::function <void(const byte* [])>& f);
-	std::shared_ptr<JobHandle> forEachParellel(EnityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
-	std::shared_ptr<JobHandle> constForEachParellel(EnityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
+	EntityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
+	size_t forEachCount(EntityForEachID id);
+	void forEach(EntityForEachID id, const std::function <void(byte* [])>& f);
+	void constForEach(EntityForEachID id, const std::function <void(const byte* [])>& f);
+	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 	//system stuff
 	void run(const std::function<void()>& task);
 	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
@@ -80,12 +80,15 @@ public:
 
 class NativeForEach
 {
-	std::vector<size_t> _componentOrder;
-	EnityForEachID _feid;
+    std::vector<size_t> _componentOrder;
+	EntityForEachID _forEachId;
 public:
 	NativeForEach() = default;
+	NativeForEach(std::vector<const ComponentAsset*>&& components, EntityManager* em);
 	NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em);
-	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet exclude, EntityManager* em);
-	size_t getComponentIndex(size_t index) const;
-	EnityForEachID id() const;
+	NativeForEach(std::vector<const ComponentAsset*>&& components, ComponentSet&& exclude, EntityManager* em);
+	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em);
+	[[nodiscard]] size_t getComponentIndex(size_t index) const;
+
+	[[nodiscard]] EntityForEachID id() const;
 };

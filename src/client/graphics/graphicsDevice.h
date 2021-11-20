@@ -58,7 +58,7 @@ namespace graphics
 		void createLogicalDevice();
 		void createCommandPools();
 
-		bool deviceHasExtentionSupport(VkPhysicalDevice device);
+		bool deviceHasExtensionSupport(VkPhysicalDevice device);
 		int deviceValue(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 		QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);

@@ -15,6 +15,8 @@ public:
 		system,
 		mesh,
 		texture,
+		shader,
+		material,
 		script,
 		player,
 	};

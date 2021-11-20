@@ -3,7 +3,7 @@
 
 class CounterComponent : public NativeComponent<CounterComponent>
 {
-	REGESTER_MEMBERS_1(counter)
+	REGISTER_MEMBERS_1(counter)
 public:
 	/*
 	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
@@ -20,9 +20,9 @@ public:
 class AddSystem : public VirtualSystem
 {
 public:
-	EnityForEachID _feid;
+	EntityForEachID _feid;
 	int value;
-	AddSystem(SystemID id, EnityForEachID feid, int value) : VirtualSystem(id)
+	AddSystem(SystemID id, EntityForEachID feid, int value) : VirtualSystem(id)
 	{
 		_feid = feid;
 		this->value = value;
@@ -40,9 +40,9 @@ public:
 class MulSystem : public VirtualSystem
 {
 public:
-	EnityForEachID _feid;
+	EntityForEachID _feid;
 	int value;
-	MulSystem(SystemID id, EnityForEachID feid, int value) : VirtualSystem(id)
+	MulSystem(SystemID id, EntityForEachID feid, int value) : VirtualSystem(id)
 	{
 		_feid = feid;
 		this->value = value;
@@ -97,7 +97,7 @@ TEST(Systems, BeforeConstraint)
 	//Create test systems
 	ComponentSet components;
 	components.add(cc.def());
-	EnityForEachID feid = em.getForEachID(components);
+	EntityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(AssetID("localhost/this/system/mulSystem"), feid, 2);
 	EXPECT_TRUE(em.addSystem(std::move(mul)));
 
@@ -131,7 +131,7 @@ TEST(Systems, AfterConstraint)
 	//Create test systems
 	ComponentSet components;
 	components.add(cc.def());
-	EnityForEachID feid = em.getForEachID(components);
+	EntityForEachID feid = em.getForEachID(components);
 	std::unique_ptr<VirtualSystem> mul = std::make_unique<MulSystem>(AssetID("localhost/this/system/mulSystem"), feid, 2);
 	EXPECT_TRUE(em.addSystem(std::move(mul)));
 

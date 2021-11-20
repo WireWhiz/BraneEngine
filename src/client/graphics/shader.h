@@ -45,7 +45,7 @@ namespace graphics
 
 	class ShaderManager
 	{
-		std::array<std::pair<std::string_view, VkShaderStageFlagBits>, 2> _shaderExtentions = {std::make_pair("vert", VK_SHADER_STAGE_VERTEX_BIT), std::make_pair("frag" , VK_SHADER_STAGE_FRAGMENT_BIT)};
+		std::array<std::pair<std::string_view, VkShaderStageFlagBits>, 2> _shaderExtensions = {std::make_pair("vert", VK_SHADER_STAGE_VERTEX_BIT), std::make_pair("frag" , VK_SHADER_STAGE_FRAGMENT_BIT)};
 		std::unordered_map<ShaderID, std::unique_ptr<Shader>> _shaders;
 	public:
 		ShaderManager();

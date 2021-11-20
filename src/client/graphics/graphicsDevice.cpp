@@ -83,7 +83,7 @@ namespace graphics
         vkGetDeviceQueue(_device, indices.transferFamily.value(), 0, &_transferQueue);
     }
 
-    bool GraphicsDevice::deviceHasExtentionSupport(VkPhysicalDevice device)
+    bool GraphicsDevice::deviceHasExtensionSupport(VkPhysicalDevice device)
     {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
@@ -107,7 +107,7 @@ namespace graphics
         if (!findQueueFamilies(device, surface).isComplete())
             return 0;
 
-        if (!deviceHasExtentionSupport(device))
+        if (!deviceHasExtensionSupport(device))
             return 0;
 
         SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device, surface);

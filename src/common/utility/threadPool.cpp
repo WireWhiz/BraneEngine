@@ -15,10 +15,10 @@ int ThreadPool::threadRuntime()
 		
 		Job job;
 
-		// Lock queue and retreve job
+		// Lock queue and retrieve job
 		_queueMutex.lock();
-		bool jobAvalible = !_jobs.empty();
-		if (jobAvalible)
+		bool jobAvailable = !_jobs.empty();
+		if (jobAvailable)
 		{
 			job = _jobs.front();
 			_jobs.pop();
@@ -26,7 +26,7 @@ int ThreadPool::threadRuntime()
 		_queueMutex.unlock();
 
 		// if we got a job, run it outside of the lock
-		if (jobAvalible)
+		if (jobAvailable)
 		{
 			try
 			{

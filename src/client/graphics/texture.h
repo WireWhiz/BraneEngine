@@ -11,7 +11,7 @@
 namespace graphics
 {
 	typedef uint64_t TextureID;
-	extern const std::array<const char*, 1> textureFileExtentions;
+	extern const std::array<const char*, 1> textureFileExtensions;
 	class Texture
 	{
 
