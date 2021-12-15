@@ -109,9 +109,24 @@ TEST(ECS, ArchetypeTest)
 	EXPECT_EQ(arch.entitySize(), sizeof(std::string) * 6);
 }
 
+class OperationTester
+{
+public:
+	bool constructorCalled;
+	bool moveConstructorCalled;
+	bool copyConstructorCalled;
+};
+
 TEST(ECS, ChunkTest)
 {
-	//I should test this, but I would have to create multiple components and an achetype or two and that's just not really somthing I have energy for
+	// Create chunk
+	std::unique_ptr<Chunk> c;
+	ChunkPool cp;
+	cp >> c;
+
+	//Create archetype
+	Archetype arch();
+
 }
 
 TEST(ECS, VirtualComponentVectorTest)
@@ -331,14 +346,6 @@ class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 	REGISTER_MEMBERS_1(var1)
 public:
 	bool var1;
-	/*
-	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
-	{
-		id.parseString("localhost/native/component/testNativeComponent2");
-		types.emplace_back(std::make_unique<VirtualVariable<bool>>(offsetof(TestNativeComponent2, var1)));
-	}
-	*/
-
 };
 
 TEST(ECS, ForEachCachingTest)
@@ -377,41 +384,22 @@ TEST(ECS, ForEachCachingTest)
 
 	em.addComponent(entity, &ca1); // archetype: ca1
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
 
 	em.addComponent(entity, &ca2); // archetype: ca1, ca2
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 2);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
 
 	em.addComponent(entity, &ca3); // archetype: ca1, ca2, ca3
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 3);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
 
 	em.addComponent(entity, &ca4); // archetype: ca1, ca2, ca3, ca4
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 4);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca2); // archetype: ca1, ca3, ca4
-	//EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 5);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 2);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 	em.removeComponent(entity, &ca3); // archetype: ca1, ca4
 	EXPECT_EQ(em._archetypes._archetypes[0][0]->_addEdges.size(), 1);
 
 	EXPECT_EQ(em._archetypes.getForEachArchetypes(fe1).size(), 6);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca1].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca2].size(), 1);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca3].size(), 2);
-	//EXPECT_EQ(em._archetypes._rootArchetypes[&ca4].size(), 1);
 
 
 }
@@ -521,19 +509,20 @@ TEST(ECS, ForEachParellelTest)
 	ComponentSet comps;
 	comps.add(&counterComponent);
 	EntityForEachID forEachID = em.getForEachID(comps, ComponentSet());
+	size_t instances = 200000;
 
-	em.createEntities(comps, 2000000);
+	em.createEntities(comps, instances);
 	em._archetypes.getForEachArchetypes(forEachID); //Pre cache archetypes so that we get the most impressive looking numbers
 
 	Stopwatch sw;
     em.forEachParallel(forEachID, [&](byte *components[]) {
         VirtualComponentPtr counter = VirtualComponentPtr(&counterComponent, components[0]);
         counter.setVar(0, 420);
-    }, 2000000 / 22)->finish();
+    }, instances / 22)->finish();
 	long long time = sw.time();
 	std::cout << "For Each Parellel took: " << time << std::endl;
 
-	for (size_t i = 0; i < 2000000; i++)
+	for (size_t i = 0; i < instances; i++)
 	{
 		VirtualComponent c = em.getEntityComponent(i, &counterComponent);
 		EXPECT_EQ(*c.getVar<size_t>(0), 420) << "entitiy: " << i << std::endl;

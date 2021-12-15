@@ -14,6 +14,7 @@ class ChunkBase
 public:
 #endif
 	size_t _size;
+	size_t _maxCapacity;
 	std::array<byte, N> _data;
 	Archetype* _archetype;
 	std::vector<size_t> _componentIndices;
