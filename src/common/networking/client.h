@@ -2,6 +2,7 @@
 #include "connection.h"
 #include <thread>
 #include <cstdint>
+/*
 
 namespace net
 {
@@ -28,4 +29,4 @@ namespace net
 
 		//NetQueue<OwnedIMessage>& incoming();
 	};
-}
+}*/

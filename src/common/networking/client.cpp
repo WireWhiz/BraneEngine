@@ -1,5 +1,6 @@
 #include "client.h"
 
+/*
 namespace net
 {
 	ClientConnection::ClientConnection() : _ssl_ctx(asio::ssl::context::tls)
@@ -80,9 +81,12 @@ namespace net
 		_connection->send(msg);
 	}
 
-	/*NetQueue<OwnedIMessage>& ClientConnection::incoming()
+	*/
+/*NetQueue<OwnedIMessage>& ClientConnection::incoming()
 	{
 		return _imessages;
-	}*/
+	}*//*
+
 }
 
+*/

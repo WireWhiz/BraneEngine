@@ -15,99 +15,169 @@
 
 namespace net
 {
-
-	enum class ConnectionType
-	{
-		reliable = 0,
-		secure = 1,
-		fast = 2
-	};
-
 	typedef uint32_t ConnectionID;
+
+	typedef asio::ip::tcp::socket tcp_socket;
+	typedef asio::ssl::stream<tcp_socket> ssl_socket;
 
 	class Connection
 	{
 	public:
-		enum class Owner
-		{ 
-			client,
-			server
-		};
 
 	protected:
-		asio::io_context& _ctx;
 		EntityManager* _em;
-		NetQueue<OMessage> _obuffer;
-		ConnectionID _id;
-		Owner _owner;
-
-		IMessage _tempIn;
-
-		virtual void async_readHeader() = 0;
-		virtual void async_readBody() = 0;
-		virtual void async_writeHeader() = 0;
-		virtual void async_writeBody() = 0;
-
-		void addToIMessageQueue();
+		NetQueue<std::shared_ptr<OMessage>> _obuffer;
+		NetQueue<std::shared_ptr<IMessage>> _ibuffer;
+		std::shared_ptr<IMessage> _tempIn;
 
 	public:
-		Connection(asio::io_context& ctx, EntityManager* em);
-
-		//Each Connection derived class has it's own unique connect call due to the need to pass a socket
-		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) = 0;
-		virtual void connectToClient(ConnectionID id) = 0;
 		virtual void disconnect() = 0;
-		virtual bool isConnected() = 0;
-		ConnectionID id();
+		virtual bool connected() = 0;
 
-		virtual void send(const OMessage& msg) = 0;
-		virtual ConnectionType type() = 0;
+		virtual void send(std::shared_ptr<OMessage> msg) = 0;
+		virtual bool popIMessage(std::shared_ptr<IMessage>& iMessage);
 
 	};
 
-	typedef asio::ip::tcp::socket tcp_socket;
-	typedef asio::ssl::stream<tcp_socket> ssl_socket;
-	class TCPConnection : public Connection
+	template<class socket_t>
+	class ConnectionBase : public Connection
 	{
-		tcp_socket* _tcpSocket;
-		ssl_socket* _sslSocket;
-		bool _secure;
-		bool _handshakeDone;
-		
-		void async_handshake();
-
 	protected:
-		void async_readHeader() override;
-		void async_readBody() override;
-		void async_writeHeader() override;
-		void async_writeBody() override;
+		socket_t _socket;
+		void async_readHeader()
+		{
+			_tempIn = std::make_shared<IMessage>();
+			asio::async_read(_socket, asio::buffer(&_tempIn->header, sizeof(MessageHeader)),[this](std::error_code ec, std::size_t length) {
+				if (!ec)
+				{
+					if (_tempIn->header.size > 0)
+					{
+						_tempIn->data.resize(_tempIn->header.size);
+						async_readBody();
+					}
+					else
+					{
+						_ibuffer.push_back(_tempIn);
+						_tempIn = nullptr;
+						async_readHeader();
+					}
 
+				}
+				else
+				{
+					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Header Parse Fail: " << ec.message() << std::endl;
+					disconnect();
+				}
+
+			});
+		}
+		void async_readBody()
+		{
+			asio::async_read(_socket, asio::buffer(_tempIn->data.data(), _tempIn->data.size()),  [this](std::error_code ec, std::size_t length) {
+				if (!ec)
+				{
+					_ibuffer.push_back(_tempIn);
+					_tempIn = nullptr;
+					async_readHeader();
+				}
+				else
+				{
+					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Read message body fail: " << ec.message() << std::endl;
+					disconnect();
+				}
+			});
+		}
+		void async_writeHeader()
+		{
+			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
+				if (!ec)
+				{
+					if (_obuffer.front()->data.size() > 0)
+						async_writeBody();
+					else
+					{
+						_obuffer.pop_front();
+
+						if (!_obuffer.empty())
+							async_writeHeader();
+					}
+
+				}
+				else
+				{
+					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Write header fail: " << ec.message() << std::endl;
+					disconnect();
+				}
+			});
+		}
+		void async_writeBody()
+		{
+			asio::async_write(_socket, asio::buffer(_obuffer.front()->data.data(), _obuffer.front()->data.size()), [this](std::error_code ec, std::size_t length) {
+				if (!ec)
+				{
+					_obuffer.pop_front();
+					if (!_obuffer.empty())
+						async_writeHeader();
+				}
+				else
+				{
+					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Write body fail: " << ec.message() << std::endl;
+					disconnect();
+				}
+			});
+		}
 	public:
-		TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket socket, EntityManager* em);
-		TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket socket, EntityManager* em);
-		~TCPConnection();
-		virtual bool connectToServer(const asio::ip::tcp::resolver::results_type& endpoints) override;
-		virtual void connectToClient(ConnectionID id) override;
-		void disconnect() override;
-		bool isConnected() override;
+		ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
+		{
 
-		void send(const OMessage& msg) override;
-		ConnectionType type() override;
+		}
+		void send(std::shared_ptr<OMessage> msg) override
+		{
+			asio::post(_socket.get_executor(), [this, msg]() {
+				bool sending = !_obuffer.empty();
+				_obuffer.push_back(msg);
+				if (!sending)
+					async_writeHeader();
+			});
+		}
+		void disconnect() override
+		{
+			_socket.lowest_layer().close();
+		}
+		bool connected() override
+		{
+			return _socket.lowest_layer().is_open();
+		}
 
-		
 	};
-	
-	typedef asio::ip::udp::socket udp_socket;
-	class FastConnection : public Connection
+
+	template<class socket_t>
+	class ServerConnection : public ConnectionBase<socket_t>
 	{
-		udp_socket _socket;
-	public:
-		void disconnect();
-		bool isConnected();
 
-		void send(const OMessage& msg);
-		ConnectionType type() override;
+
+	public:
+		ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
+		{
+			connectToClient();
+		}
+		void connectToClient();
 	};
+
+
+
+	template<class socket_t>
+	class ClientConnection : public ConnectionBase<socket_t>
+	{
+
+	public:
+		ClientConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
+		{
+		}
+		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints);
+	};
+
+
 
 	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
 	{

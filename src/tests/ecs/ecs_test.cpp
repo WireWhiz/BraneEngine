@@ -109,23 +109,67 @@ TEST(ECS, ArchetypeTest)
 	EXPECT_EQ(arch.entitySize(), sizeof(std::string) * 6);
 }
 
-class OperationTester
+// Native component for testing
+class TestNativeComponent : public NativeComponent<TestNativeComponent>
 {
+	REGISTER_MEMBERS_3(var1, var2, var3)
 public:
-	bool constructorCalled;
-	bool moveConstructorCalled;
-	bool copyConstructorCalled;
+	bool var1;
+	int64_t var2;
+	float var3;
 };
+
+//Classes for native system test
+class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
+{
+	REGISTER_MEMBERS_1(var1)
+public:
+	bool var1;
+};
+
+
+TEST(ECS, NativeComponentTest)
+{
+	TestNativeComponent nc;
+
+	nc.var1 = true;
+	nc.var2 = 69;
+	nc.var3 = 420;
+
+	VirtualComponentPtr vc = nc.toVirtual();
+	EXPECT_EQ(true, vc.readVar<bool>(0));
+	EXPECT_EQ(69, vc.readVar<int>(1));
+	EXPECT_EQ(420, vc.readVar<float>(2));
+
+	vc.setVar(0, false);
+	vc.setVar(1, 42);
+	vc.setVar<float>(2, 42 * 2);
+
+	EXPECT_EQ(false, vc.readVar<bool>(0));
+	EXPECT_EQ(42, vc.readVar<int>(1));
+	EXPECT_EQ(42 * 2, vc.readVar<float>(2));
+
+	EXPECT_EQ(false, nc.var1);
+	EXPECT_EQ(42, nc.var2);
+	EXPECT_EQ(42 * 2, nc.var3);
+}
 
 TEST(ECS, ChunkTest)
 {
 	// Create chunk
 	std::unique_ptr<Chunk> c;
-	ChunkPool cp;
-	cp >> c;
+	std::shared_ptr<ChunkPool> cp = std::make_shared<ChunkPool>();
+	*cp >> c;
 
 	//Create archetype
-	Archetype arch();
+	ComponentSet components;
+	components.add(TestNativeComponent::def());
+	components.add(TestNativeComponent2::def());
+	Archetype arch(components, cp);
+
+	c->setArchetype(&arch);
+	EXPECT_EQ(c->maxCapacity(), c->_data.size() / arch._entitySize);
+	EXPECT_EQ(c->_componentIndices[TestNativeComponent::def() < TestNativeComponent2::def() ? 1 : 0], TestNativeComponent::def()->size() * c->maxCapacity());
 
 }
 
@@ -181,17 +225,6 @@ TEST(ECS, VirtualComponentVectorTest)
 	EXPECT_EQ(42, vcvc.readComponentVar<int>(0, 1));
 }
 
-
-// Native component for testing 
-class TestNativeComponent : public NativeComponent<TestNativeComponent>
-{
-	REGISTER_MEMBERS_3(var1, var2, var3)
-public:
-	bool var1;
-	int64_t var2;
-	float var3;
-};
-
 TEST(ECS, StructMembersTest)
 {
 	std::vector<VirtualType*> members = STRUCT_MEMBERS_3(TestNativeComponent, var1, var2, var3);
@@ -210,31 +243,6 @@ TEST(ECS, StructMembersTest)
 	EXPECT_TRUE(dynamic_cast<VirtualFloat*>(members[2]) != nullptr);
 }
 
-TEST(ECS, NativeComponentTest)
-{
-	TestNativeComponent nc;
-
-	nc.var1 = true;
-	nc.var2 = 69;
-	nc.var3 = 420;
-
-	VirtualComponentPtr vc = nc.toVirtual();
-	EXPECT_EQ(true, vc.readVar<bool>(0));
-	EXPECT_EQ(69, vc.readVar<int>(1));
-	EXPECT_EQ(420, vc.readVar<float>(2));
-
-	vc.setVar(0, false);
-	vc.setVar(1, 42);
-	vc.setVar<float>(2, 42 * 2);
-
-	EXPECT_EQ(false, vc.readVar<bool>(0));
-	EXPECT_EQ(42, vc.readVar<int>(1));
-	EXPECT_EQ(42 * 2, vc.readVar<float>(2));
-
-	EXPECT_EQ(false, nc.var1);
-	EXPECT_EQ(42, nc.var2);
-	EXPECT_EQ(42 * 2, nc.var3);
-}
 
 TEST(ECS, NativeComponentVectorTest)
 {
@@ -340,13 +348,7 @@ TEST(ECS, EntityManagerTest)
 	EXPECT_EQ(em._archetypes._archetypes[3].size(), 1);
 }
 
-//Classes for native system test
-class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
-{
-	REGISTER_MEMBERS_1(var1)
-public:
-	bool var1;
-};
+
 
 TEST(ECS, ForEachCachingTest)
 {

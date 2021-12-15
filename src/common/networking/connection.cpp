@@ -2,6 +2,7 @@
 
 namespace net
 {
+	/* //For reference when adding messages to ecs
 	void Connection::addToIMessageQueue()
 	{
 		ComponentSet components;
@@ -15,16 +16,86 @@ namespace net
 			EntityID entity = _em->createEntity(components);
 			_em->setEntityComponent(entity, im.toVirtual());
 		});
-		
-		
+	}
+	 */
+
+
+
+	bool Connection::popIMessage(std::shared_ptr<IMessage>& iMessage)
+	{
+		if(!_ibuffer.empty())
+		{
+			iMessage = _ibuffer.pop_front();
+			return true;
+		}
+		return false;
+	}
+
+	template<>
+	void ServerConnection<tcp_socket>::connectToClient()
+	{
+		if(connected())
+			async_readHeader();
+	}
+
+	template<>
+	void ServerConnection<ssl_socket>::connectToClient()
+	{
+		if(!connected())
+			return;
+		_socket.async_handshake(asio::ssl::stream_base::server, [this](std::error_code ec) {
+			if (!ec)
+			{
+				async_readHeader();
+			}
+			else
+			{
+				std::cout << "SSL handshake failed: " << ec.message() << std::endl;
+			}
+		});
 
 	}
-	Connection::Connection(asio::io_context& ctx, EntityManager* em) : _ctx(ctx)
+
+	template<>
+	void ClientConnection<tcp_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
 	{
-		_em = em;
-		_id = 0;
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+			if (!ec)
+			{
+
+				async_readHeader();
+			}
+			else
+			{
+				std::cerr << "Failed to connect to server.";
+			}
+		});
 	}
-	void TCPConnection::async_handshake()
+
+	template<>
+	void ClientConnection<ssl_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints)
+	{
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+			if (!ec)
+			{
+				_socket.async_handshake(asio::ssl::stream_base::client, [this](std::error_code ec) {
+					if (!ec)
+					{
+						async_readHeader();
+					}
+					else
+					{
+						std::cout << "SSL handshake failed: " << ec.message() << std::endl;
+					}
+				});
+			}
+			else
+			{
+				std::cerr << "Failed to connect to server.";
+			}
+		});
+	}
+	/*void TCPConnection::async_handshake()
 	{
 		assert(_secure);
 		assert(_sslSocket);
@@ -46,106 +117,6 @@ namespace net
 			}
 		});
 	}
-	void TCPConnection::async_readHeader()
-	{
-		auto callback = [this](std::error_code ec, std::size_t length) {
-			if (!ec)
-			{
-				if (_tempIn.header.size > 0)
-				{
-					_tempIn.data.resize(_tempIn.header.size);
-					async_readBody();
-				}
-				else
-				{
-					addToIMessageQueue();
-					async_readHeader();
-				}
-
-			}
-			else
-			{
-				std::cout << "[" << _id << "] Header Parse Fail: " << ec.message() << std::endl;
-				disconnect();
-			}
-
-		};
-
-		if(_secure)
-			asio::async_read(*_sslSocket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)), callback);
-		else
-			asio::async_read(*_tcpSocket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)), callback);
-
-	}
-	void TCPConnection::async_readBody()
-	{
-		auto callback = [this](std::error_code ec, std::size_t length) {
-			if (!ec)
-			{
-				addToIMessageQueue();
-				async_readHeader();
-			}
-			else
-			{
-				std::cout << "[" << _id << "] Read message body fail: " << ec.message() << std::endl;
-				disconnect();
-			}
-		};
-		if(_secure)
-			asio::async_read(*_sslSocket, asio::buffer(_tempIn.data.data(), _tempIn.data.size()), callback);
-		else
-			asio::async_read(*_tcpSocket, asio::buffer(_tempIn.data.data(), _tempIn.data.size()), callback);
-
-	}
-	void TCPConnection::async_writeHeader()
-	{
-		auto callback = [this](std::error_code ec, std::size_t length) {
-			if (!ec)
-			{
-				if (_obuffer.front().data.size() > 0)
-					async_writeBody();
-				else
-				{
-					_obuffer.pop_front();
-
-					if (!_obuffer.empty())
-						async_writeHeader();
-				}
-
-			}
-			else
-			{
-				std::cout << "[" << _id << "] Write header fail: " << ec.message() << std::endl;
-				disconnect();
-			}
-		};
-		if (_secure)
-			asio::async_write(*_sslSocket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), callback);
-		else
-			asio::async_write(*_tcpSocket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), callback);
-
-	}
-	void TCPConnection::async_writeBody()
-	{
-		auto callback = [this](std::error_code ec, std::size_t length) {
-			if (!ec)
-			{
-				_obuffer.pop_front();
-				if (!_obuffer.empty())
-					async_writeHeader();
-			}
-			else
-			{
-				std::cout << "[" << _id << "] Write body fail: " << ec.message() << std::endl;
-				disconnect();
-			}
-		};
-		if (_secure)
-			asio::async_write(*_sslSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
-		else
-			asio::async_write(*_tcpSocket, asio::buffer(_obuffer.front().data.data(), _obuffer.front().data.size()), callback);
-
-	}
 	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, tcp_socket socket, EntityManager* em) : Connection(ctx, em)
 	{
 		_tcpSocket = new tcp_socket(std::move(socket));
@@ -154,14 +125,7 @@ namespace net
 		_secure = false;
 		_handshakeDone = true;
 	}
-	TCPConnection::TCPConnection(Owner owner, asio::io_context& ctx, ssl_socket socket, EntityManager* em) : Connection(ctx, em)
-	{
-		_sslSocket = new ssl_socket(std::move(socket));
-		_tcpSocket = nullptr;
-		_owner = owner;
-		_secure = true;
-		_handshakeDone = false;
-	}
+
 	TCPConnection::~TCPConnection()
 	{
 		if (_tcpSocket)
@@ -219,7 +183,7 @@ namespace net
 		else
 			return _tcpSocket->is_open();
 	}
-	void TCPConnection::send(const OMessage& msg)
+	void TCPConnection::send(const OMessage&& msg)
 	{
 		//We can't send messages until handshake is complete, so just requeue this function until it is.
 		if (!_handshakeDone)
@@ -236,22 +200,7 @@ namespace net
 			if (!sending)
 				async_writeHeader();
 		});
-	}
-	ConnectionType TCPConnection::type()
-	{
-		if(_secure)
-			return ConnectionType::secure;
-		else
-			return ConnectionType::reliable;
-	}
-	ConnectionType FastConnection::type()
-	{
-		return ConnectionType::fast;
-	}
-	
-	ConnectionID Connection::id()
-	{
-		return _id;
-	}
+	}*/
+
 
 }
