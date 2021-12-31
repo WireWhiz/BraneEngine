@@ -52,6 +52,7 @@ add_subdirectory(include)
 add_subdirectory(bin)
 add_subdirectory(lib)
 add_subdirectory(src)
+add_subdirectory(external)
 
 
 # Copy needed files to build folders

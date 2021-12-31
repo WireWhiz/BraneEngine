@@ -3,7 +3,7 @@
 Json::Value Config::root;
 const char* Config::configFileName = "config.json";
 
-Json::Value Config::json()
+Json::Value& Config::json()
 {
 	return root;
 }

@@ -10,11 +10,34 @@
 #include <fileManager/fileManager.h>
 #include <assets/types/meshAsset.h>
 #include <assets/types/shaderAsset.h>
+#include <http/HTTPServer.h>
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
 	REGISTER_MEMBERS_0();
 };
+
+/*void handleChallenge(const std::string& domain, const std::string& url, const std::string& keyAuthorization)
+{
+    std::cout << "A challenge approches! \n domain: " << domain << "\n url: " << url << "\n keyAuth: " << keyAuthorization << std::endl;
+    serverThread = std::thread([domain, url, keyAuthorization](){
+        try{
+            httplib::Server svr;
+
+            size_t domLength = domain.size() + 7; //Length of "http://domain.com"
+            svr.Get( url.substr(domLength, url.size() - domLength), [keyAuthorization](const httplib::Request &, httplib::Response &res) {
+                res.set_content(keyAuthorization, "text/plain");
+            });
+
+            svr.listen("0.0.0.0", 80);
+        }
+        catch(const std::exception& e){
+            std::cerr<< "Problem starting server: " << e.what() << std::endl;
+        }
+
+    });
+
+}*/
 
 int main()
 {
@@ -22,6 +45,9 @@ int main()
 
 	uint16_t tcpPort = Config::json()["network"].get("tcp port", 80).asUInt();
 	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
+    HTTPServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool());
+    hs.scanFiles();
+
 
 	FileManager fm;
 	EntityManager em;
@@ -51,8 +77,9 @@ int main()
 	
 
 	fm.writeAsset(&quad);
-	
-	while (true)
+
+    bool run = true;
+	while (run)
 	{
 		em.runSystems();
 
@@ -61,13 +88,13 @@ int main()
 			EntityIDComponent* id = EntityIDComponent::fromVirtual(component[nfe.getComponentIndex(0)]);
 			net::ConnectionComponent* cc = net::ConnectionComponent::fromVirtual(component[nfe.getComponentIndex(1)]);
 			
-			if (cc->connection && cc->connection->isConnected())
+			if (cc->connection && cc->connection->connected())
 			{
 				net::OMessage m;
 				m.header.type = net::MessageType::assetData;
 				quad.serialize(m);
 				std::cout << "sending message: " << m;
-				cc->connection->send(m);
+				cc->connection->send(std::make_shared<net::OMessage>(std::move(m)));
 			}
 			sent.push_back(id->id);
 		});

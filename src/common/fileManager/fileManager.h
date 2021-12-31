@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <assets/assetManager.h>
+#include <fstream>
 
 class FileManager
 {

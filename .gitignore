@@ -37,7 +37,11 @@ bld/
 [Oo]ut/
 [Ll]og/
 [Ll]ogs/
-cmake-build-debug/
+/external/repos/
+/cmake-build-debug/
+/cmake-build-release/
+/cmake-build-release-x86/
+/src/assetServer/keys/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

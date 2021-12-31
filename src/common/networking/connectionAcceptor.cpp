@@ -27,7 +27,7 @@ namespace net
 
 
 				ConnectionComponent cc;
-				cc.connection = std::make_shared<TCPConnection>(Connection::Owner::server, _ctx, std::move(socket), _em);
+				cc.connection = std::make_shared<ClientConnection<tcp_socket>>(std::move(socket));
 				std::shared_ptr<Connection> handle = cc.connection;
 				ComponentSet components;
 				components.add(ConnectionComponent::def());

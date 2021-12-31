@@ -1,6 +1,7 @@
 #pragma once
 #include <set>
 #include <cassert>
+#include <cstddef>
 
 class ComponentAsset;
 

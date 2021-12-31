@@ -1,7 +1,11 @@
-// Configuration file for brane asset server
-
 {
   "network": {
+    "use_ssl" : true,
+    "domain" : "branevr.com",
+    "ssl_cert" : "keys/branevr_privkey.pem",
+    "private_key" : "keys/branevr_cert.pem",
+    "auto_renew_key" : true,
+    "account_key" : "keys/account.key",
     "tcp port": 2001,
     "ssl port": 2002
   },
