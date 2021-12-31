@@ -8,11 +8,5 @@
     "account_key" : "keys/account.key",
     "tcp port": 2001,
     "ssl port": 2002
-  },
-  "database" : {
-    "ip": "localhost",
-    "port": 33060,
-    "user": "assetServer",
-    "password": "assetServerPass"
   }
 }
