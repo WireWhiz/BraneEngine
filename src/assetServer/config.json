@@ -1,7 +1,7 @@
 {
   "network": {
-    "use_ssl" : true,
-    "domain" : "branevr.com",
+    "use_ssl" : false,
+    "domain" : "localhost",
     "ssl_cert" : "keys/branevr_privkey.pem",
     "private_key" : "keys/branevr_cert.pem",
     "auto_renew_key" : true,

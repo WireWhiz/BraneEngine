@@ -11,15 +11,13 @@ target_link_libraries(BraneAssetServer PRIVATE config networking ecs utility fil
 target_compile_definitions(BraneAssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS})
 
 add_custom_command(TARGET BraneAssetServer POST_BUILD
-                   COMMAND ${CMAKE_COMMAND} -E copy_directory
-                       ${CMAKE_SOURCE_DIR}/bin/win64/mysql ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-
-file(REMOVE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/keys)
-add_custom_command(TARGET BraneAssetServer POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_CURRENT_SOURCE_DIR}/keys ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/keys)
 
-file(REMOVE ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pages)
+file(GLOB_RECURSE WEB_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/pages/*")
+foreach(webFile ${WEB_FILES})
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${webFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${webFile} COPYONLY)
+endforeach()
 add_custom_command(TARGET BraneAssetServer POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_CURRENT_SOURCE_DIR}/pages ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pages)
