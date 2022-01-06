@@ -3,7 +3,6 @@
 //
 
 #include "HTTPServer.h"
-#include "../../../external/libs/include/acme-lw.h"
 #include <time.h>
 
 HTTPServer::HTTPServer(const std::string& domain, bool useHttps) : _template("pages/template.html")
@@ -121,14 +120,14 @@ void HTTPServer::scanFiles()
 
             std::string httpPath;
             if(file.path().extension() != ".html")
-                httpPath = file.path().filename();
-            else if(file.path().stem() != "index")
+                httpPath = file.path().filename().string();
+            else if(file.path().stem().string() != "index")
             {
-                httpPath = file.path().stem();
+                httpPath = file.path().stem().string();
 
             }
             std::cout << "added path: " + httpPath << std::endl;
-            _files.insert({"/" + httpPath ,serverFile{file.path(), file.path().parent_path().stem()}});
+            _files.insert({"/" + httpPath ,serverFile{file.path(), file.path().parent_path().stem().string()}});
 
         }
 
@@ -196,7 +195,7 @@ void HTTPServer::serveFile(const httplib::Request &req, httplib::Response &res, 
     f.seekg(0);
     f.read(content.data(), content.size());
 
-    std::string fileType = getFileType(file.path.extension());
+    std::string fileType = getFileType(file.path.extension().string());
     SessionContext sc{};
     if(fileType == "text/html")
         content = _template.format(content, sc);

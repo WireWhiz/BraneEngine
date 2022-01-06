@@ -1,6 +1,7 @@
 #src/assetServer
 
 add_subdirectory(database)
+add_subdirectory(bin)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/assetServer)
 add_executable(BraneAssetServer main.cpp "assetNetworking/networkAuthenticator.h" "assetNetworking/networkAuthenticator.cpp")
@@ -15,11 +16,14 @@ add_custom_command(TARGET BraneAssetServer POST_BUILD
 		${CMAKE_CURRENT_SOURCE_DIR}/keys ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/keys)
 
 file(GLOB_RECURSE WEB_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/pages/*")
+message("Found web files: ")
 foreach(webFile ${WEB_FILES})
-	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${webFile} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${webFile} COPYONLY)
+	message(${webFile})
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${webFile} ${CMAKE_CURRENT_BINARY_DIR}/${webFile} COPYONLY)
 endforeach()
 add_custom_command(TARGET BraneAssetServer POST_BUILD
 		COMMAND ${CMAKE_COMMAND} -E copy_directory
 		${CMAKE_CURRENT_SOURCE_DIR}/pages ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pages)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
+

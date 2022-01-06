@@ -22,7 +22,7 @@
 #elif defined(ASIO_WINDOWS) || defined(__CYGWIN__)
 # include "asio/detail/socket_types.hpp"
 #else
-# include <unistd.h>
+# include "unistd.h"
 # if defined(__hpux)
 #  include <sys/time.h>
 # endif
