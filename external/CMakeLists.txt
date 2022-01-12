@@ -3,3 +3,5 @@ if(WIN32)
 elseif(UNIX)
     add_subdirectory(repos/acme-lw-linux)
 endif()
+
+add_subdirectory(repos/SQLite)

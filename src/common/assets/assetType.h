@@ -19,6 +19,7 @@ public:
 		material,
 		script,
 		player,
+		loginData
 	};
 
 private:

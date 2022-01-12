@@ -31,7 +31,7 @@
  * Copyright (c) 2000 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
- * This code is derived from software contributed to The NetBSD Foundation
+ * This code is derived from software contributed to The NetBSD Foundmopedation
  * by Dieter Baron and Thomas Klausner.
  *
  * Redistribution and use in source and binary forms, with or without

@@ -9,7 +9,8 @@ AssetType::Type AssetType::fromString(const std::string& type) const
 			{"texture",   AssetType::texture},
 			{"player",    AssetType::player},
 			{"script",    AssetType::script},
-			{"shader",    AssetType::shader}
+			{"shader",    AssetType::shader},
+			{"loginData",    AssetType::loginData}
 	};
 	assert(_toEnumMap.count(type));
 	return _toEnumMap.at(type);
@@ -24,7 +25,8 @@ std::string AssetType::toString(Type type) const
 			{AssetType::texture,   "texture"},
 			{AssetType::player,    "player"},
 			{AssetType::script,    "script"},
-			{AssetType::shader,    "shader"}
+			{AssetType::shader,    "shader"},
+			{AssetType::loginData,    "loginData"}
 	};
 	assert(_toStringMap.count(type));
 	return _toStringMap.at(type);

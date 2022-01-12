@@ -12,6 +12,7 @@ struct AssetID
 	std::string serverAddress;
 	void parseString(const std::string& id);
 	std::string string() const;
+	std::string path() const;
 
 	bool operator==(const AssetID& other) const;
 };

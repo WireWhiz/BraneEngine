@@ -1,7 +1,6 @@
 #include "fileManager.h"
 #include <fstream>
 #include <networking/message.h>
-#include <filesystem>
 
 void FileManager::writeAsset(Asset* asset)
 {
@@ -10,20 +9,52 @@ void FileManager::writeAsset(Asset* asset)
 	net::OMessage oMessage;
 	asset->serialize(oMessage);
 
-	writeFile(asset->id(), "asset", oMessage.data);
+	writeFile(asset->id().path(), oMessage.data);
 }
 
-void FileManager::writeFile(AssetID& id, const std::string& fileType, const std::vector<byte>& data)
+
+
+bool FileManager::readFile(const std::string& filename, std::string& data)
 {
-	std::filesystem::create_directory("assets");
-	std::filesystem::create_directory("assets/" + id.owner);
-	std::filesystem::create_directory("assets/" + id.owner + "/" + id.type.string());
+	std::ifstream f(filename, std::ios::binary | std::ios::ate);
+	if (!f.is_open())
+		return false;
 
-	std::string path = "assets/" + id.owner + "/" + id.type.string() + "/" + id.name + "." + fileType;
+	data.resize(f.tellg());
+	f.seekg(0);
+	f.read((char*)data.data(), data.size());
+	f.close();
 
-	
+	return true;
+}
+
+bool FileManager::readFile(const std::string& filename, Json::Value& data)
+{
+	std::ifstream f(filename, std::ios::binary);
+	if (!f.is_open())
+		return false;
+
+	f >> data;
+	f.close();
+	return true;
+}
+
+void FileManager::writeFile(const std::string& filename, std::string& data)
+{
+	std::filesystem::path path{filename};
+	std::filesystem::create_directories(path.parent_path());
 
 	std::ofstream f(path, std::ios::out | std::ofstream::binary);
 	f.write((char*)data.data(), data.size());
+	f.close();
+}
+
+void FileManager::writeFile(const std::string& filename, Json::Value& data)
+{
+	std::filesystem::path path{filename};
+	std::filesystem::create_directories(path.parent_path());
+
+	std::ofstream f(path, std::ios::out | std::ofstream::binary);
+	f << data;
 	f.close();
 }

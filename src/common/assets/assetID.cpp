@@ -40,6 +40,11 @@ bool AssetID::operator==(const AssetID& other) const
 	return serverAddress == other.serverAddress;
 }
 
+std::string AssetID::path() const
+{
+	return "assets/" + owner + "/" + type.string() + "/" + name + ".asset";
+}
+
 std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
 {
 	using std::size_t;

@@ -3,11 +3,16 @@
 //
 
 #include "HTTPServer.h"
-#include <time.h>
+#include <openssl/rand.h>
+#include <openssl/crypto.h>
+#include <ctime>
+#include <assets/types/loginDataAsset.h>
+#include <sqlite/sqlite3.h>
 
-HTTPServer::HTTPServer(const std::string& domain, bool useHttps) : _template("pages/template.html")
+HTTPServer::HTTPServer(const std::string& domain, FileManager& fm, Database& db,  bool useHttps) : _template("pages/template.html"), _fm(fm), _db(db)
 {
     _domain = domain;
+	_useHttps = useHttps;
 
     if(useHttps)
     {
@@ -72,13 +77,34 @@ HTTPServer::HTTPServer(const std::string& domain, bool useHttps) : _template("pa
         });
 
     }
+
+	_server->Get("/app/(.*)", [this](const httplib::Request &req, httplib::Response &res){
+		if(_sessions.count(getCookie("session_id", req)))
+		{
+			res.set_content("Access: granted", "text/html");
+		}
+		else
+		{
+			res.set_content("Must be logged in to see this page.", "text/html");
+			res.status = 403;
+		}
+	});
     _server->Get("/(.*)", [this](const httplib::Request &req, httplib::Response &res){
         std::cout << "Request: " << req.path <<std::endl;
-        if(_files.count(req.path) > 0)
+        if(_files.count(req.path))
         {
-            serveFile(req, res, _files[req.path]);
-            setCookie("session_id", "69420", res);
-            setCookie("second_test_cookie", "nice", res);
+			serverFile& file = _files[req.path];
+			std::string sessionID = getCookie("session_id", req);
+			if(_sessions.count(sessionID) && _sessions[sessionID].userAuthorized(file))
+				serveFile(req, res, _files[req.path]);
+			else if(file.authLevel == "public")
+				serveFile(req, res, _files[req.path]);
+			else
+			{
+				res.set_content("Must be authorized to see this page.", "text/html");
+				res.status = 403;
+			}
+
         }
         else
         {
@@ -86,6 +112,145 @@ HTTPServer::HTTPServer(const std::string& domain, bool useHttps) : _template("pa
             res.status = 404;
         }
     });
+	_server->Post("/login-submit",[this](const httplib::Request &req, httplib::Response &res){
+
+		try{
+			std::string username = req.get_header_value("username");
+
+			if(!_db.stringSafe(username))
+			{
+				res.set_content("Invalid Characters", "text/plain");
+				return;
+			}
+
+			for (int i = 0; i < username.size(); ++i)
+				username[i] = std::tolower(username[i]);
+
+
+			bool foundUser = false;
+			std::string passHash;
+			std::string salt;
+			std::string userID;
+			_db.sqlCall("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)='" + username + "';", [&](const std::vector<Database::sqlColumn>& columns){
+				foundUser = true;
+				passHash = columns[0].value;
+				salt = columns[1].value;
+				userID = columns[2].value;
+				return 0;
+			});
+
+
+			if(foundUser)
+			{
+				std::string hashedPassword = hashPassword(req.get_header_value("password"), salt);
+
+				if(passHash == hashedPassword)
+				{
+					//Login stuff happen here
+					std::string sessionID;
+					while(sessionID.empty() || _sessions.count(sessionID))
+					{
+						sessionID = randHex(32);
+					}
+					SessionContext sc;
+					sc.updateTimer();
+					sc.userID = userID;
+					_sessions.insert({sessionID, sc});
+
+					setCookie("session_id", sessionID, res);
+					res.set_content("Login successful", "text/plain");
+					return;
+				}
+			}
+
+
+			//Not login stuff happen here
+			res.set_content("Login fail", "text/plain");
+		}
+		catch(const std::exception& e){
+			std::cerr << "login submission error: " << e.what();
+		}
+	});
+	_server->Post("/create-account-submit",[this](const httplib::Request &req, httplib::Response &res){
+		try{
+			std::string username = req.get_header_value("username");
+			std::string email = req.get_header_value("email");
+
+			if(username == "")
+			{
+				res.set_content("Must enter a username", "text/plain");
+				return;
+			}
+
+			if(req.get_header_value("password").size() < 8)
+			{
+				res.set_content("Password must be at least 8 characters long", "text/plain");
+				return;
+			}
+
+			if(!_db.stringSafe(username) || !_db.stringSafe(email))
+			{
+				res.set_content("Invalid Characters", "text/plain");
+				return;
+			}
+
+			std::regex emailRegex("^([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$");
+			if(!std::regex_match(email, emailRegex))
+			{
+				res.set_content("Invalid email", "text/plain");
+				return;
+			}
+
+			for (int i = 0; i < username.size(); ++i)
+			{
+				username[i] = std::tolower(username[i]);
+			}
+
+
+			bool usernameTaken = false;
+			_db.sqlCall("SELECT * FROM Users WHERE lower(Username)='" + username + "';", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
+				usernameTaken = true;
+				return 0;
+			});
+
+			if(usernameTaken)
+			{
+				res.set_content("Username Taken", "text/plain");
+				return;
+			}
+
+			_db.sqlCall("INSERT INTO Users (Username, Email) VALUES ('" +
+						req.get_header_value("username") + "', '" +
+						req.get_header_value("email") +
+						"');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
+				return 0;
+			});
+
+			std::string salt = randHex(64);
+			std::string password = hashPassword(req.get_header_value("password"), salt);
+
+			std::string userID;
+			_db.sqlCall("SELECT UserID FROM Users WHERE lower(Username)='" + username + "';", [&userID](const std::vector<Database::sqlColumn>& columns){
+				userID = columns[0].value;
+				return 0;
+			});
+
+			_db.sqlCall("INSERT INTO Logins (UserID, Password, Salt) VALUES ('" +
+			            userID + "', '" +
+			            password + "', '" +
+			            salt +
+			            "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
+				return 0;
+			});
+
+
+			//Login stuff happen here
+			res.set_content("Created account", "text/plain");
+		}
+		catch(const std::exception& e){
+			std::cerr << "user creation error: " << e.what();
+		}
+	});
 }
 
 HTTPServer::~HTTPServer()
@@ -104,19 +269,17 @@ HTTPServer::~HTTPServer()
 void HTTPServer::scanFiles()
 {
     std::cout << "Refreshing webpages\n";
-    std::filesystem::path pagesDir{"pages"};
+    std::filesystem::path pagesDir{Config::json()["network"]["web_file_dir"].asString()};
     _files.clear();
     for(auto const& path: std::filesystem::directory_iterator{pagesDir}) //Iterate over every path in the pages directory
     {
         if(!path.is_directory()) // We only want to step into folders
             continue;
-        std::cout << "Found folder: " << path << std::endl;
+        std::cout << "Found folder with pages: " << path << std::endl;
         for(auto const& file: std::filesystem::directory_iterator{path}) //Iterate over every path in the pages directory
         {
-            std::cout << "searching dir: " << file.path() << std::endl;
             if(!file.is_regular_file()) // Only serve files for now
                 continue;
-            std::cout << "found file: " << file.path().stem() << " ext: " << file.path().extension()<< " In parent folder: " << file.path().parent_path().stem() << std::endl;
 
             std::string httpPath;
             if(file.path().extension() != ".html")
@@ -197,7 +360,7 @@ void HTTPServer::serveFile(const httplib::Request &req, httplib::Response &res, 
 
     std::string fileType = getFileType(file.path.extension().string());
     SessionContext sc{};
-    if(fileType == "text/html")
+    if(fileType == "text/html" && file.path.string().find("public") != std::string::npos)
         content = _template.format(content, sc);
 
     res.set_content(content, fileType.c_str());
@@ -283,6 +446,40 @@ std::string HTTPServer::getCookie(const std::string &key, const httplib::Request
     return cookies.substr(cookieIndex, cookieEnd - cookieIndex);
 }
 
+std::string HTTPServer::hashPassword(const std::string& password, const std::string& salt)
+{
+	size_t hashIterations = Config::json()["security"].get("hash_iterations", 10000).asLargestInt();
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	std::string output = password;
+	for (int i = 0; i < hashIterations; ++i)
+	{
+		output += salt;
+		SHA256_CTX sha256;
+		SHA256_Init(&sha256);
+		SHA256_Update(&sha256, output.c_str(), output.size());
+		SHA256_Final(hash, &sha256);
+		std::stringstream ss;
+		for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+		{
+			ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+		}
+		output = ss.str();
+	}
+	return output;
+}
+
+std::string HTTPServer::randHex(size_t length)
+{
+	uint8_t* buffer = new uint8_t[length];
+	RAND_bytes(buffer, length);
+	std::stringstream output;
+	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+	{
+		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
+	}
+	return output.str();
+}
+
 std::string HTTPServer::PageTemplate::format(const std::string &content, const HTTPServer::SessionContext &ctx)
 {
     std::string output;
@@ -318,4 +515,14 @@ HTTPServer::PageTemplate::PageTemplate(std::filesystem::path templateFile)
     sections.resize(2);
     sections[0] = temp.substr(0, contentIndex);
     sections[1] = temp.substr(contentIndex + 9, temp.size() - (contentIndex + 9));
+}
+
+void HTTPServer::SessionContext::updateTimer()
+{
+	lastAction = std::chrono::system_clock::now();
+}
+
+bool HTTPServer::SessionContext::userAuthorized(serverFile& file)
+{
+	return file.authLevel == "public" || file.authLevel == "app" || permissions.count(file.authLevel);
 }

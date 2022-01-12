@@ -11,6 +11,7 @@
 #include <assets/types/meshAsset.h>
 #include <assets/types/shaderAsset.h>
 #include <http/HTTPServer.h>
+#include <database/Database.h>
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
@@ -45,11 +46,12 @@ int main()
 
 	uint16_t tcpPort = Config::json()["network"].get("tcp port", 80).asUInt();
 	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
-    HTTPServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool());
+	FileManager fm;
+	Database db;
+    HTTPServer hs(Config::json()["network"]["domain"].asString(), fm, db, Config::json()["network"]["use_ssl"].asBool());
     hs.scanFiles();
 
 
-	FileManager fm;
 	EntityManager em;
 
 
@@ -73,7 +75,10 @@ int main()
 													}));
 
 	AssetID vertexShaderID = AssetID("localhost/this/shader/vertex");
-	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, fm.readFile<uint32_t>(vertexShaderID, ".spirv"));
+	std::vector<uint32_t> verticies;
+	fm.readFile("localhost/this/shader/vertex.spirv", verticies);
+
+	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, verticies);
 	
 
 	fm.writeAsset(&quad);

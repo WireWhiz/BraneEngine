@@ -6,7 +6,15 @@
     "private_key" : "keys/branevr_cert.pem",
     "auto_renew_key" : true,
     "account_key" : "keys/account.key",
+    "web_file_dir" : "../../src/assetServer/pages",
     "tcp port": 2001,
     "ssl port": 2002
+  },
+  "security" :
+  {
+    "hash_iterations" : 10001
+  },
+  "database" : {
+    "path" : "database/data.db"
   }
 }
