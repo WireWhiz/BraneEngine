@@ -34,8 +34,25 @@ function createAccount(){
         return;
     }
 
+    let login_request = new Request("/create-account-submit", {
+        method: "POST",
+        mode: "same-origin",
+        cache: "no-cache",
+        body: JSON.stringify({
+            username : username,
+            password : password,
+            email : email
+        })
+    })
+    fetch(login_request).then(function(res){
+        return res.json();
+    }).then(function(json){
+        document.getElementById("login-result").innerHTML = json.text;
+        if(json.created)
+            window.location.href = "/login"
+    });
 
-    var loginRequest = new XMLHttpRequest();
+    /*var loginRequest = new XMLHttpRequest();
     loginRequest.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             // Typical action to be performed when the document is ready:
@@ -46,5 +63,5 @@ function createAccount(){
     loginRequest.setRequestHeader("username", username);
     loginRequest.setRequestHeader("password", password);
     loginRequest.setRequestHeader("email", email);
-    loginRequest.send();
+    loginRequest.send();*/
 }

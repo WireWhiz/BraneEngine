@@ -10,35 +10,13 @@
 #include <fileManager/fileManager.h>
 #include <assets/types/meshAsset.h>
 #include <assets/types/shaderAsset.h>
-#include <http/HTTPServer.h>
+#include "httpServer/assetHttpServer.h"
 #include <database/Database.h>
 
 struct SentMesh : public NativeComponent<SentMesh>
 {
 	REGISTER_MEMBERS_0();
 };
-
-/*void handleChallenge(const std::string& domain, const std::string& url, const std::string& keyAuthorization)
-{
-    std::cout << "A challenge approches! \n domain: " << domain << "\n url: " << url << "\n keyAuth: " << keyAuthorization << std::endl;
-    serverThread = std::thread([domain, url, keyAuthorization](){
-        try{
-            httplib::Server svr;
-
-            size_t domLength = domain.size() + 7; //Length of "http://domain.com"
-            svr.Get( url.substr(domLength, url.size() - domLength), [keyAuthorization](const httplib::Request &, httplib::Response &res) {
-                res.set_content(keyAuthorization, "text/plain");
-            });
-
-            svr.listen("0.0.0.0", 80);
-        }
-        catch(const std::exception& e){
-            std::cerr<< "Problem starting server: " << e.what() << std::endl;
-        }
-
-    });
-
-}*/
 
 int main()
 {
@@ -48,7 +26,7 @@ int main()
 	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
 	FileManager fm;
 	Database db;
-    HTTPServer hs(Config::json()["network"]["domain"].asString(), fm, db, Config::json()["network"]["use_ssl"].asBool());
+    AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db);
     hs.scanFiles();
 
 

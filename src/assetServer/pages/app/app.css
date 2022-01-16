@@ -1,0 +1,35 @@
+html{
+    height: 100%;
+}
+body{
+    padding:0;
+    margin:0;
+    height: 100%;
+}
+#root{
+    height:100%;
+}
+
+.app{
+    display:flex;
+    width: 100%;
+    height: 100%;
+    flex-direction: row;
+}
+
+.sidebar{
+    padding: 5px;
+    background-color: forestgreen;
+    box-shadow: 2px 0px 2px 1px rgba(0, 0, 0, 0.78);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-button{
+    margin-bottom: 5px;
+}
+
+.content{
+    padding-left: 7px;
+    flex-grow: 1;
+}

@@ -4,7 +4,6 @@
 
 #ifndef BRANEENGINE_HTTPSERVER_H
 #define BRANEENGINE_HTTPSERVER_H
-
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #define WIN32_LEAN_AND_MEAN
 #include <httpLib/httpLib.h>
@@ -14,15 +13,13 @@
 #include <config/config.h>
 #include <filesystem>
 #include <fileManager/fileManager.h>
-#include <database/Database.h>
+#include <assetServer/database/Database.h>
 #include <regex>
 #include <chrono>
 
 class HTTPServer
 {
-private:
-	FileManager& _fm;
-	Database& _db;
+protected:
     bool _useHttps;
     std::unique_ptr<httplib::Server> _redirectServer;
     std::unique_ptr<httplib::Server> _server;
@@ -52,15 +49,7 @@ private:
     void setCookie(const std::string& key, const std::string& value, httplib::Response& res) const;
     std::string getCookie(const std::string& key, const httplib::Request& req) const;
 
-    struct SessionContext
-    {
-		std::chrono::time_point<std::chrono::system_clock> lastAction;
-		std::string userID;
-		std::unordered_set<std::string> permissions;
-		void updateTimer();
-		bool userAuthorized(serverFile& file);
-    };
-	std::unordered_map<std::string, SessionContext> _sessions;
+
 
     class PageTemplate
     {
@@ -68,18 +57,18 @@ private:
         std::vector<std::string> sections;
     public:
         PageTemplate(std::filesystem::path templateFile);
-        std::string format(const std::string& content, const SessionContext& ctx);
+        std::string format(const std::string& content);
     };
 
     PageTemplate _template;
-
-	std::string randHex(size_t length);
-	std::string hashPassword(const std::string& password, const std::string& salt);
 public:
-    HTTPServer(const std::string& domain, FileManager& fm, Database& db, bool useHttps);
+    HTTPServer(const std::string& domain, bool useHttps);
     ~HTTPServer();
 
-    void addResponse(const std::string& url, const std::function<void(const httplib::Request &, httplib::Response &res)>& callback); //For use with things like ACME challenge requests
+	void serveOnce(const std::string& url, const std::function<void(const httplib::Request &, httplib::Response &res)>& callback); //For use with things like ACME challenge requests
+    void addGetResponse(const std::string& url, const std::function<void(const httplib::Request &, httplib::Response &res)>& callback);
+	void addPostResponse(const std::string& url, const std::function<void(const httplib::Request &, httplib::Response &res)>& callback);
+	void addPutResponse(const std::string& url, const std::function<void(const httplib::Request &, httplib::Response &res)>& callback);
     void scanFiles();
 };
 
