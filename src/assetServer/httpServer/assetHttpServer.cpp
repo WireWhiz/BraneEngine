@@ -76,12 +76,15 @@ void AssetHttpServer::setUpListeners()
 			std::string passHash;
 			std::string salt;
 			std::string userID;
-			_db.sqlCall("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)='" + username + "';", [&](const std::vector<Database::sqlColumn>& columns){
-				foundUser = true;
-				passHash = columns[0].value;
-				salt = columns[1].value;
-				userID = columns[2].value;
-			});
+			_db.rawSQLCall(
+					"SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)='" +
+					username + "';", [&](const std::vector<Database::sqlColumn>& columns)
+					{
+						foundUser = true;
+						passHash = columns[0].value;
+						salt = columns[1].value;
+						userID = columns[2].value;
+					});
 
 
 			if(foundUser)
@@ -169,10 +172,12 @@ void AssetHttpServer::setUpListeners()
 
 
 			bool usernameTaken = false;
-			_db.sqlCall("SELECT * FROM Users WHERE lower(Username)=lower('" + username + "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
-				usernameTaken = true;
-				return 0;
-			});
+			_db.rawSQLCall("SELECT * FROM Users WHERE lower(Username)=lower('" + username + "');",
+			               [&usernameTaken](const std::vector<Database::sqlColumn>& columns)
+			               {
+				               usernameTaken = true;
+				               return 0;
+			               });
 
 			if(usernameTaken)
 			{
@@ -180,29 +185,33 @@ void AssetHttpServer::setUpListeners()
 				return;
 			}
 
-			_db.sqlCall("INSERT INTO Users (Username, Email) VALUES ('" +
-			            username + "', '" +
-			            email +
-			            "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
-				return 0;
-			});
+			_db.rawSQLCall("INSERT INTO Users (Username, Email) VALUES ('" +
+			               username + "', '" +
+			               email +
+			               "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns)
+			               {
+				               return 0;
+			               });
 
 			std::string salt = randHex(64);
 			password = hashPassword(password, salt);
 
 			std::string userID;
-			_db.sqlCall("SELECT UserID FROM Users WHERE lower(Username)=lower('" + username + "');", [&userID](const std::vector<Database::sqlColumn>& columns){
-				userID = columns[0].value;
-				return 0;
-			});
+			_db.rawSQLCall("SELECT UserID FROM Users WHERE lower(Username)=lower('" + username + "');",
+			               [&userID](const std::vector<Database::sqlColumn>& columns)
+			               {
+				               userID = columns[0].value;
+				               return 0;
+			               });
 
-			_db.sqlCall("INSERT INTO Logins (UserID, Password, Salt) VALUES ('" +
-			            userID + "', '" +
-			            password + "', '" +
-			            salt +
-			            "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns){
-				return 0;
-			});
+			_db.rawSQLCall("INSERT INTO Logins (UserID, Password, Salt) VALUES ('" +
+			               userID + "', '" +
+			               password + "', '" +
+			               salt +
+			               "');", [&usernameTaken](const std::vector<Database::sqlColumn>& columns)
+			               {
+				               return 0;
+			               });
 
 
 			res.set_content("{\"text\":\"Created account\",\"created\":true}", "application/json");

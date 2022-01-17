@@ -32,7 +32,8 @@ Database::Database()
 	});
 	 */
 
-	sqlCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns){
+	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
+	{
 		_permissions.insert({std::stoi(columns[0].value), columns[1].value});
 	});
 }
@@ -54,7 +55,7 @@ int Database::sqliteCallback(void *callback, int argc, char **argv, char **azCol
 	return 0;
 }
 
-void Database::sqlCall(const std::string& cmd, const sqlCallbackFunction& f)
+void Database::rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f)
 {
 	char *zErrMsg = 0;
 	int rc;
@@ -78,17 +79,21 @@ bool Database::stringSafe(const std::string& str)
 std::string Database::getUserID(const std::string& username)
 {
 	std::string userID;
-	sqlCall("SELECT UserID FROM Users WHERE lower(Username)=lower('" + username + "');", [&userID](const std::vector<Database::sqlColumn>& columns){
-		userID = columns[0].value;
-	});
+	rawSQLCall("SELECT UserID FROM Users WHERE lower(Username)=lower('" + username + "');",
+	           [&userID](const std::vector<Database::sqlColumn>& columns)
+	           {
+		           userID = columns[0].value;
+	           });
 	return userID;
 }
 
 std::unordered_set<std::string> Database::userPermissions(const std::string& userID)
 {
 	std::unordered_set<std::string> pems;
-	sqlCall("SELECT PermissionID FROM UsersToPermissions WHERE UserID=" + userID + ";", [&pems, this](const std::vector<Database::sqlColumn>& columns){
-		pems.insert(_permissions[std::stoi(columns[0].value)]);
-	});
+	rawSQLCall("SELECT PermissionID FROM UsersToPermissions WHERE UserID=" + userID + ";",
+	           [&pems, this](const std::vector<Database::sqlColumn>& columns)
+	           {
+		           pems.insert(_permissions[std::stoi(columns[0].value)]);
+	           });
 	return pems;
 }

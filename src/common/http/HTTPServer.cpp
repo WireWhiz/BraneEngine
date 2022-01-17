@@ -5,7 +5,6 @@
 #include "HTTPServer.h"
 
 #include <ctime>
-#include <sqlite/sqlite3.h>
 
 HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template("pages/template.html")
 {

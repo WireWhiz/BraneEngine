@@ -15,6 +15,6 @@
     "hash_iterations" : 10001
   },
   "database" : {
-    "path" : "database/data.db"
+    "path" : "../../src/assetServer/database/data.db"
   }
 }

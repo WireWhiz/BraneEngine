@@ -26,7 +26,7 @@ public:
 	typedef std::function<void(const std::vector<sqlColumn>& columns)> sqlCallbackFunction;
 	Database();
 	~Database();
-	void sqlCall(const std::string& cmd, const sqlCallbackFunction& f);
+	void rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f);
 	bool stringSafe(const std::string& str);
 
 	std::string getUserID(const std::string& username);
