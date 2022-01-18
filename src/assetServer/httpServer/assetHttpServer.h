@@ -17,6 +17,7 @@ class AssetHttpServer : public HTTPServer{
 	std::string hashPassword(const std::string& password, const std::string& salt);
 
 	void setUpListeners();
+    void setUpAPICalls();
 	void processAsset(const std::string filename, const std::string data);
 public:
 	AssetHttpServer(const std::string& domain, bool useHttps, Database& db);

@@ -9,7 +9,7 @@ class UploadAsset extends React.Component{
 
         formData.append("asset", assetFile);
 
-        let uploadAssetRequest = new Request("/upload-asset", {
+        let uploadAssetRequest = new Request("/api/upload-asset", {
             method: "POST",
             mode: "same-origin",
             cache: "no-cache",

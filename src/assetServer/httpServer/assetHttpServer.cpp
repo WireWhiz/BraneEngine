@@ -222,38 +222,43 @@ void AssetHttpServer::setUpListeners()
 			res.status = 500;
 		}
 	});
-	_server->Post("/upload-asset",[this](const httplib::Request &req, httplib::Response &res)
-	{
-		try{
-			std::string sessionID = getCookie("session_id", req);
-			if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("upload assets"))
-			{
-				std::cout << "Asset uploaded" << std::endl;
-				bool ret = req.has_file("asset");
-				const auto& file = req.get_file_value("asset");
-				std::cout << "Filetype: " << file.content_type << std::endl;
-				std::cout << "Filename: " << file.filename << std::endl;
-				std::string fileData = file.content;
-				std::string filename = file.filename;
-				ThreadPool::enqueue([fileData, filename, this](){
-					processAsset(filename, fileData);
-				});
+
+}
+
+void AssetHttpServer::setUpAPICalls()
+{
+    _server->Post("/api/upload-asset",[this](const httplib::Request &req, httplib::Response &res)
+    {
+        try{
+            std::string sessionID = getCookie("session_id", req);
+            if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("upload assets"))
+            {
+                std::cout << "Asset uploaded" << std::endl;
+                bool ret = req.has_file("asset");
+                const auto& file = req.get_file_value("asset");
+                std::cout << "Filetype: " << file.content_type << std::endl;
+                std::cout << "Filename: " << file.filename << std::endl;
+                std::string fileData = file.content;
+                std::string filename = file.filename;
+                ThreadPool::enqueue([fileData, filename, this](){
+                    processAsset(filename, fileData);
+                });
 
 
 
-			}
-			else
-			{
-				res.status = 403;
-				res.set_content("Not authorized for that action", "text/plain");
-			}
-		}
-		catch(const std::exception& e){
-			std::cerr << "asset upload error: " << e.what();
-			res.status = 500;
-		}
+            }
+            else
+            {
+                res.status = 403;
+                res.set_content("Not authorized for that action", "text/plain");
+            }
+        }
+        catch(const std::exception& e){
+            std::cerr << "asset upload error: " << e.what();
+            res.status = 500;
+        }
 
-	});
+    });
 }
 
 void AssetHttpServer::SessionContext::updateTimer()
@@ -308,3 +313,5 @@ std::string AssetHttpServer::randHex(size_t length)
 	}
 	return output.str();
 }
+
+
