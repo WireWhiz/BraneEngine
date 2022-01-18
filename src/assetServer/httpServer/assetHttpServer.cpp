@@ -3,6 +3,7 @@
 AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db): HTTPServer(domain, useHttps), _db(db)
 {
 	setUpListeners();
+    setUpAPICalls();
 }
 
 void AssetHttpServer::setUpListeners()
@@ -227,7 +228,23 @@ void AssetHttpServer::setUpListeners()
 
 void AssetHttpServer::setUpAPICalls()
 {
-    _server->Post("/api/upload-asset",[this](const httplib::Request &req, httplib::Response &res)
+    // Api body is multipart form with one field with the file to be set as the source, and one field for assetID.
+    _server->Post("/api/set-asset-source",[this](const httplib::Request &req, httplib::Response &res)
+    {
+        try{
+            const auto& json = req.get_file_value("json");
+            std::cout << "json file: " << json.content << std::endl;
+            const auto& file = req.get_file_value("file");
+            std::cout << "souce file name: " << file.filename << std::endl;
+        }
+        catch(const std::exception& e){
+            std::cerr << "asset upload error: " << e.what();
+            res.status = 500;
+        }
+
+    });
+    // Api call body is json file with
+    _server->Post("/api/create-asset",[this](const httplib::Request &req, httplib::Response &res)
     {
         try{
             std::string sessionID = getCookie("session_id", req);
@@ -259,6 +276,7 @@ void AssetHttpServer::setUpAPICalls()
         }
 
     });
+
 }
 
 void AssetHttpServer::SessionContext::updateTimer()
@@ -312,6 +330,11 @@ std::string AssetHttpServer::randHex(size_t length)
 		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
 	}
 	return output.str();
+}
+
+void AssetHttpServer::processAsset(const std::string filename, const std::string data)
+{
+
 }
 
 
