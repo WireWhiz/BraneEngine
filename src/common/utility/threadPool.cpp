@@ -3,6 +3,8 @@
 std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
+size_t ThreadPool::_staticThreads;
+size_t ThreadPool::_minThreads;
 
 std::atomic<bool> ThreadPool::_running = true;
 std::queue<ThreadPool::Job> ThreadPool::_jobs;
@@ -45,14 +47,15 @@ int ThreadPool::threadRuntime()
 	return 0;
 }
 
-void ThreadPool::init()
+void ThreadPool::init(size_t minThreads)
 {
+	_minThreads = minThreads;
 	main_thread_id = std::this_thread::get_id();
 	_instances++;
 	if (_instances == 1)
 	{
 		_running = true;
-		int threadCount = std::thread::hardware_concurrency();
+		size_t threadCount = std::max<size_t>(std::thread::hardware_concurrency(), minThreads);
 		_threads.reserve(threadCount);
 		for (size_t i = 0; i < threadCount; i++)
 		{
@@ -101,6 +104,16 @@ void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHand
 	_queueMutex.lock();
 	_jobs.push(Job(function, handle));
 	_queueMutex.unlock();
+}
+
+void ThreadPool::addStaticThread(std::function<void()> function)
+{
+	_staticThreads++;
+	if(_threads.size() - _staticThreads < _minThreads)
+		_threads.emplace_back(function);
+	else
+		enqueue(function);
+
 }
 
 bool JobHandle::finished()

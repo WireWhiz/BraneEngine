@@ -2,12 +2,12 @@
 
 EntityManager::EntityManager()
 {
-	ThreadPool::init();
+
 }
 
 EntityManager::~EntityManager()
 {
-	ThreadPool::cleanup();
+
 }
 
 Archetype* EntityManager::getArchetype(const ComponentSet& components)

@@ -16,6 +16,7 @@
 #include <assetServer/database/Database.h>
 #include <regex>
 #include <chrono>
+#include <utility/threadPool.h>
 
 class HTTPServer
 {
@@ -23,8 +24,6 @@ protected:
     bool _useHttps;
     std::unique_ptr<httplib::Server> _redirectServer;
     std::unique_ptr<httplib::Server> _server;
-    std::thread _redirectCtx;
-    std::thread _mainCtx;
 
     std::string _domain;
 

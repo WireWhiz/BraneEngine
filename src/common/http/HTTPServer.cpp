@@ -33,12 +33,11 @@ HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template("p
             if(difftime(certificate.getExpiry(), currentTime) / 86400 < 28)
             {
                 _server = std::make_unique<httplib::Server>();
-                _mainCtx = std::thread([this](){
+                ThreadPool::enqueue([this](){
                     _server->listen(_domain.c_str(), 80);
                 });
                 renewCert();
                 _server->stop();
-                _mainCtx.join();
             }
 
         }
@@ -55,12 +54,13 @@ HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template("p
                             "  </body>\n"
                             "</html>", "text/html");
         });
-        _redirectCtx = std::thread([this](){
+		_redirectServer->new_task_queue = [] { return new httplib::ThreadPool(1); }; //Redirect server doesn't need many resources;
+        ThreadPool::addStaticThread([this](){
             _redirectServer->listen(_domain.c_str(), 80);
         });
 
         _server = std::make_unique<httplib::SSLServer>(Config::json()["network"]["ssl_cert"].asCString(), Config::json()["network"]["private_key"].asCString());
-        _mainCtx = std::thread([this](){
+	    ThreadPool::addStaticThread([this](){
             _server->listen(_domain.c_str(), 443);
         });
 
@@ -69,7 +69,7 @@ HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template("p
     else
     {
         _server = std::make_unique<httplib::Server>();
-        _mainCtx = std::thread([this](){
+	    ThreadPool::addStaticThread([this](){
             _server->listen(_domain.c_str(), 80);
         });
 
@@ -82,13 +82,9 @@ HTTPServer::~HTTPServer()
 {
     if(_redirectServer)
         _redirectServer->stop();
-    if(_redirectCtx.joinable())
-        _redirectCtx.join();
 
     if(_server)
         _server->stop();
-    if(_mainCtx.joinable())
-        _mainCtx.join();
 }
 
 void HTTPServer::scanFiles()

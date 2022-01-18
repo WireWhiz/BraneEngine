@@ -21,9 +21,10 @@ struct SentMesh : public NativeComponent<SentMesh>
 int main()
 {
 	Config::loadConfig();
+	ThreadPool::init(4);
 
-	uint16_t tcpPort = Config::json()["network"].get("tcp port", 80).asUInt();
-	uint16_t sslPort = Config::json()["network"].get("ssl port", 81).asUInt();
+	uint16_t tcpPort = Config::json()["network"].get("tcp port", 800).asUInt();
+	uint16_t sslPort = Config::json()["network"].get("ssl port", 801).asUInt();
 	FileManager fm;
 	Database db;
     AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db);
@@ -89,6 +90,6 @@ int main()
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 	}
-
+	ThreadPool::cleanup();
 	return 0;
 }

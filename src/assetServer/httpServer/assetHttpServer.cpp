@@ -233,18 +233,14 @@ void AssetHttpServer::setUpListeners()
 				const auto& file = req.get_file_value("asset");
 				std::cout << "Filetype: " << file.content_type << std::endl;
 				std::cout << "Filename: " << file.filename << std::endl;
-				std::cout << "File data: ";
-				if(file.content_type != "text/plain"){
+				std::string fileData = file.content;
+				std::string filename = file.filename;
+				ThreadPool::enqueue([fileData, filename, this](){
+					processAsset(filename, fileD ata);
+				});
 
-					for(auto c : file.content){
-						std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)c;
-					}
-					std::cout << std::endl;
 
-				}
 
-				else
-					std::cout << file.content << std::endl;
 			}
 			else
 			{
