@@ -53,12 +53,3 @@ add_subdirectory(bin)
 add_subdirectory(lib)
 add_subdirectory(src)
 add_subdirectory(external)
-
-
-# Copy needed files to build folders
-file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/client/shaders)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/client)
-
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/textures
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/client)
