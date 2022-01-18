@@ -236,7 +236,7 @@ void AssetHttpServer::setUpListeners()
 				std::string fileData = file.content;
 				std::string filename = file.filename;
 				ThreadPool::enqueue([fileData, filename, this](){
-					processAsset(filename, fileD ata);
+					processAsset(filename, fileData);
 				});
 
 
