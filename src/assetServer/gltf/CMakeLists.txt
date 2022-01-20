@@ -1,6 +1,5 @@
-
 add_executable(gltfLoader
-main.cpp
+        main.cpp
         )
 
 target_link_libraries(gltfLoader PUBLIC gltf)

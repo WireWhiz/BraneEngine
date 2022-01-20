@@ -271,6 +271,9 @@ UpgradeLog*.htm
 ServiceFabricBackup/
 *.rptproj.bak
 
+#Blender cache files
+*.blend1
+
 # SQL Server files
 *.mdf
 *.ldf
@@ -371,3 +374,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/src/assetServer/gltf/adamHead/
