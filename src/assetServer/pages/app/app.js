@@ -1,10 +1,12 @@
 const pageChanged = new Event('pageChanged');
-function currentPage(){
-    return window.location.pathname.substr(5);
+
+function currentPath(){
+    return window.location.pathname.substr(5).split("/");
 }
-function changePage(page){
-    if(page != currentPage()){
-        window.history.pushState({}, null, "/app/" + page);
+function changePath(path){
+
+    if(path != window.location.pathname.substr(5)){
+        window.history.pushState({}, null, "/app/" + path);
         document.dispatchEvent(pageChanged);
     }
 
@@ -17,7 +19,7 @@ class SidebarButton extends  React.Component{
 
     render() {
         return (
-            <button class={"sidebar-button"} onClick={()=>{changePage(this.props.page)}}>
+            <button class={"sidebar-button"} onClick={()=>{changePath(this.props.page)}}>
                 {this.props.text}
             </button>
         );
@@ -43,18 +45,18 @@ class Content extends React.Component{
     constructor(props) {
         super(props);
         this.state = {
-            page: currentPage()
+            page: currentPath()[0]
         };
 
         document.addEventListener('pageChanged', (e)=> {
             this.setState({
-                page: currentPage()
+                page: currentPath()[0]
             });
         });
 
         window.onpopstate = (e)=>{
             this.setState({
-                page:currentPage()
+                page: currentPath()[0]
             });
         }
     }
@@ -65,7 +67,7 @@ class Content extends React.Component{
             case "assets":
                 return <Assets/>
             default:
-                changePage("profile")
+                changePath("profile")
         }
     };
 

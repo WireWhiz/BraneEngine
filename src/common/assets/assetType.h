@@ -24,12 +24,13 @@ public:
 
 private:
 	Type _type;
-	Type fromString(const std::string& type) const;
-	std::string toString(Type type) const;
+
 
 
 public:
 	AssetType();
+	static Type fromString(const std::string& type);
+	static std::string toString(Type type);
 	
 	void set(Type type);
 	void set(const std::string& type);

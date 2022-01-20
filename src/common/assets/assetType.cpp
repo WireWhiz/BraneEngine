@@ -1,6 +1,6 @@
 #include "assetType.h"
 
-AssetType::Type AssetType::fromString(const std::string& type) const
+AssetType::Type AssetType::fromString(const std::string& type)
 {
 	static const std::unordered_map<std::string, AssetType::Type> _toEnumMap = {
 			{"component", AssetType::component},
@@ -16,7 +16,7 @@ AssetType::Type AssetType::fromString(const std::string& type) const
 	return _toEnumMap.at(type);
 }
 
-std::string AssetType::toString(Type type) const
+std::string AssetType::toString(Type type)
 {
 	static const std::unordered_map<AssetType::Type, const std::string> _toStringMap = {
 			{AssetType::component, "component"},

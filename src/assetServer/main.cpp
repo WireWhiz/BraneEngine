@@ -27,7 +27,7 @@ int main()
 	uint16_t sslPort = Config::json()["network"].get("ssl port", 801).asUInt();
 	FileManager fm;
 	Database db;
-    AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db);
+    AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db, fm);
     hs.scanFiles();
 
 

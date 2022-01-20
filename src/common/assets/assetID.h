@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <iostream>
 #include "assetType.h"
 
 struct AssetID
@@ -15,7 +16,9 @@ struct AssetID
 	std::string path() const;
 
 	bool operator==(const AssetID& other) const;
+	friend std::ostream& operator <<(std::ostream& os, const AssetID& id);
 };
+
 
 
 template <>

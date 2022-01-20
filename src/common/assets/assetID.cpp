@@ -40,6 +40,12 @@ bool AssetID::operator==(const AssetID& other) const
 	return serverAddress == other.serverAddress;
 }
 
+std::ostream& operator<<(std::ostream& os, const AssetID& id)
+{
+	os << id.string();
+	return os;
+}
+
 std::string AssetID::path() const
 {
 	return "assets/" + owner + "/" + type.string() + "/" + name + ".asset";

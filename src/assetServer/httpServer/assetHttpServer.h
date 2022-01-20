@@ -2,9 +2,11 @@
 
 class AssetHttpServer : public HTTPServer{
 	Database& _db;
+	FileManager _fm;
 	struct SessionContext
 	{
 		std::chrono::time_point<std::chrono::system_clock> lastAction;
+		std::string username;
 		std::string userID;
 		std::unordered_set<std::string> permissions;
 		void updateTimer();
@@ -20,6 +22,6 @@ class AssetHttpServer : public HTTPServer{
     void setUpAPICalls();
 	void processAsset(const std::string filename, const std::string data);
 public:
-	AssetHttpServer(const std::string& domain, bool useHttps, Database& db);
+	AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm);
 
 };

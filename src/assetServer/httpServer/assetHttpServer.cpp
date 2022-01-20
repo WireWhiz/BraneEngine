@@ -1,6 +1,6 @@
 #include "assetHttpServer.h"
 
-AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db): HTTPServer(domain, useHttps), _db(db)
+AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm): HTTPServer(domain, useHttps), _db(db), _fm(fm)
 {
 	setUpListeners();
     setUpAPICalls();
@@ -69,17 +69,14 @@ void AssetHttpServer::setUpListeners()
 				return;
 			}
 
-			for (int i = 0; i < username.size(); ++i)
-				username[i] = std::tolower(username[i]);
-
 
 			bool foundUser = false;
 			std::string passHash;
 			std::string salt;
 			std::string userID;
 			_db.rawSQLCall(
-					"SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)='" +
-					username + "';", [&](const std::vector<Database::sqlColumn>& columns)
+					"SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower('" +
+					username + "');", [&](const std::vector<Database::sqlColumn>& columns)
 					{
 						foundUser = true;
 						passHash = columns[0].value;
@@ -106,6 +103,7 @@ void AssetHttpServer::setUpListeners()
 					SessionContext sc;
 					sc.updateTimer();
 					sc.userID = userID;
+					sc.username = username;
 					sc.permissions = _db.userPermissions(userID);
 					_sessions.insert({sessionID, sc});
 
@@ -228,41 +226,82 @@ void AssetHttpServer::setUpListeners()
 
 void AssetHttpServer::setUpAPICalls()
 {
-    // Api body is multipart form with one field with the file to be set as the source, and one field for assetID.
-    _server->Post("/api/set-asset-source",[this](const httplib::Request &req, httplib::Response &res)
-    {
-        try{
-            const auto& json = req.get_file_value("json");
-            std::cout << "json file: " << json.content << std::endl;
-            const auto& file = req.get_file_value("file");
-            std::cout << "souce file name: " << file.filename << std::endl;
-        }
-        catch(const std::exception& e){
-            std::cerr << "asset upload error: " << e.what();
-            res.status = 500;
-        }
-
-    });
-    // Api call body is json file with
     _server->Post("/api/create-asset",[this](const httplib::Request &req, httplib::Response &res)
     {
         try{
             std::string sessionID = getCookie("session_id", req);
-            if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("upload assets"))
+            if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("create assets"))
             {
-                std::cout << "Asset uploaded" << std::endl;
-                bool ret = req.has_file("asset");
-                const auto& file = req.get_file_value("asset");
-                std::cout << "Filetype: " << file.content_type << std::endl;
-                std::cout << "Filename: " << file.filename << std::endl;
-                std::string fileData = file.content;
-                std::string filename = file.filename;
-                ThreadPool::enqueue([fileData, filename, this](){
-                    processAsset(filename, fileData);
-                });
+                std::cout << "Creating Asset" << std::endl;
+                const auto& assetDataField = req.get_file_value("assetData");
+                std::cout << "AssetData: " << assetDataField.content << std::endl;
+				// Convert to json
+				Json::Value assetData;
+	            Json::Reader reader;
+	            if(!reader.parse( assetDataField.content, assetData))
+	            {
+		            std::cerr << "Problem parsing assetData: " << req.body << std::endl;
+		            res.status = 400;
+		            res.set_content("{\"text\":\"Request format incorrect\",\"logged_in\":false}", "application/json");
+		            return;
+	            }
+
+				AssetID id;
+	            id.serverAddress = _domain;
+	            id.owner = _sessions[sessionID].userID;
+				id.type.set(assetData["type"].asString());
+				id.name = assetData["name"].asString();
+
+				switch(id.type.type()){
+					case AssetType::Type::mesh:
+					{
+						std::cout << "Creating new mesh asset: " << id << std::endl;
+
+						const auto& file = req.get_file_value("file");
+						std::cout << "Mesh size: " << file.content.size() << " bytes" << std::endl;
+
+						tinygltf::Model model;
+						tinygltf::TinyGLTF loader;
+						std::string warn;
+						std::string err;
+
+						loader.LoadBinaryFromMemory(&model, &err, &warn, (unsigned char*)file.content.data(), file.content.size());
+						if (!warn.empty()) {
+							std::cout << "gltf warning: " << warn << std::endl;
+						}
+
+						if (!err.empty()) {
+							std::cerr << "gltf error: " << err << std::endl;
+						}
 
 
+						for(auto& mesh : model.meshes){
 
+							std::cout << "Uploaded mesh: " << mesh.name << std::endl;
+							for(auto& primitive  : mesh.primitives){
+								const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["POSITION"]];
+								const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+
+								const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+								const float* positions = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
+								for (size_t i = 0; i < accessor.count; ++i) {
+									// Positions are Vec3 components, so for each vec3 stride, offset for x, y, and z.
+									std::cout << "(" << positions[i * 3 + 0] << ", "// x
+									          << positions[i * 3 + 1] << ", " // y
+									          << positions[i * 3 + 2] << ")" // z
+									          << "\n";
+								}
+							}
+						}
+
+
+						break;
+					}
+
+
+					default:
+						throw std::runtime_error("Unimplemented asset type: " + id.type.string());
+				}
             }
             else
             {
@@ -276,7 +315,6 @@ void AssetHttpServer::setUpAPICalls()
         }
 
     });
-
 }
 
 void AssetHttpServer::SessionContext::updateTimer()
