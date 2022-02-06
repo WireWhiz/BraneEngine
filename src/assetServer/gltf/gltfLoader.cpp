@@ -153,3 +153,78 @@ void gltfLoader::printPositions(int meshIndex, int primitiveIndex)
 	std::cout << "vertices: " << positionAccessor["count"].asInt() << std::endl;
 }
 
+std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
+{
+	Json::Value& accessor = _json["accessors"][accessorIndex];
+	if(accessor["componentType"].asUInt() != 5123 ||
+	   accessor["type"].asString() != "SCALAR")
+		throw std::runtime_error("Mismatched accessor values for reading Scalar");
+
+	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+	uint32_t count = accessor["count"].asUInt();
+	uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt();
+
+	std::vector<uint16_t> buffer(count);
+	for (int i = 0; i < count; ++i)
+	{
+		buffer[i] = *(uint16_t*)&_bin[offset + stride * i];
+	}
+
+
+	return buffer;
+}
+
+std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
+{
+	Json::Value& accessor = _json["accessors"][accessorIndex];
+	if(accessor["componentType"].asUInt() != 5126 ||
+			accessor["type"].asString() != "VEC3")
+		throw std::runtime_error("Mismatched accessor values for reading Vec3");
+
+	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+	uint32_t count = accessor["count"].asUInt();
+	uint32_t stride = bufferView.get("byteStride", sizeof(float)*3).asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt();
+
+	std::vector<glm::vec3> buffer(count);
+	for (int i = 0; i < count; ++i)
+	{
+		float* ittr = (float*)&_bin[offset + stride * i];
+		buffer[i].x = ittr[0];
+		buffer[i].y = ittr[1];
+		buffer[i].z = ittr[2];
+	}
+
+
+	return buffer;
+}
+
+std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
+{
+	std::vector<MeshAsset*> meshAssets;
+	for(auto& meshData : _json["meshes"])
+	{
+		AssetID id;
+		MeshAsset* mesh = new MeshAsset(id);
+		mesh->name = meshData["name"].asString();
+		for(auto& primitive : meshData["primitives"])
+		{
+			std::vector<uint16_t> indices = readScalarBuffer(primitive["indices"].asUInt());
+
+			size_t index = mesh->indices.size();
+			mesh->indices.resize(index + indices.size());
+			std::memcpy(&mesh->indices[index], indices.data(), indices.size() * sizeof(uint16_t));
+
+			std::vector<glm::vec3> positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
+			index = mesh->positions.size();
+			mesh->positions.resize(index + positions.size());
+			std::memcpy(&mesh->positions[index], positions.data(), positions.size() * sizeof(glm::vec3));
+		}
+		meshAssets.push_back(mesh);
+	}
+	return meshAssets;
+}
+
+
+

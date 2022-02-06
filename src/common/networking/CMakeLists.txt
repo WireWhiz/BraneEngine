@@ -5,7 +5,7 @@ add_library(networking STATIC
 	"connection.cpp"
    "networkError.cpp"
    "connectionAcceptor.cpp"
-    "serverAddress.h" "serverAddress.cpp" "connectionAcceptor.h" "networkingComponents.h")
+    "serverAddress.h" "serverAddress.cpp" "connectionAcceptor.h" "message.h")
  target_link_libraries(networking PUBLIC ssl)
  target_compile_definitions(networking PUBLIC ASIO_STANDALONE)
 

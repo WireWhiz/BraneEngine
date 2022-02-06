@@ -26,7 +26,7 @@ public:
 	template<typename T>
 	T* readAsset(AssetID& id)
 	{
-		net::IMessage iMessage;
+		net::ISerializedData iMessage;
 		if(!readFile(id.path(), iMessage.data))
 			return nullptr;
 

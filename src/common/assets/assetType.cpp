@@ -16,7 +16,7 @@ AssetType::Type AssetType::fromString(const std::string& type)
 	return _toEnumMap.at(type);
 }
 
-std::string AssetType::toString(Type type)
+const std::string& AssetType::toString(Type type)
 {
 	static const std::unordered_map<AssetType::Type, const std::string> _toStringMap = {
 			{AssetType::component, "component"},
@@ -52,7 +52,7 @@ AssetType::Type AssetType::type() const
 	return _type;
 }
 
-std::string AssetType::string() const
+const std::string& AssetType::string() const
 {
 	return toString(_type);
 }

@@ -1,15 +1,15 @@
 #include "fileManager.h"
 #include <fstream>
-#include <networking/message.h>
+#include <networking/serializedData.h>
 
 void FileManager::writeAsset(Asset* asset)
 {
 	AssetID& id = asset->id();
 	
-	net::OMessage oMessage;
-	asset->serialize(oMessage);
+	OSerializedData data;
+	asset->serialize(data);
 
-	writeFile(asset->id().path(), oMessage.data);
+	writeFile(asset->id().path(), data.data);
 }
 
 

@@ -42,6 +42,7 @@ public:
 	VirtualType(size_t offset);
 	void setOffset(size_t offset);
 	size_t offset();
+	virtual bool serializable() = 0;
 	virtual const size_t size() const = 0;
 	virtual void construct(byte*) = 0;
 	void construct(VirtualComponentPtr& vcp);
@@ -57,10 +58,14 @@ class VirtualVariable : public VirtualType
 public:
 	VirtualVariable() : VirtualType(0)
 	{
-	};
+	}
 	VirtualVariable(size_t offset) : VirtualType(offset)
 	{
-	};
+	}
+	bool serializable() override
+	{
+		return std::is_standard_layout<T>::value;
+	}
 	void construct(byte* var) override
 	{
 		new(var) T();

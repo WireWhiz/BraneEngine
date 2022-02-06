@@ -14,10 +14,10 @@ add_executable(tests
  "ecs/systems_test.cpp"
  "ecs/virtualType_test.cpp"
  "jit/jit_test.cpp"
-   "assets/assets_test.cpp" "utility/threadPool.cpp")
+   "assets/assets_test.cpp" "utility/threadPool.cpp" networking/networking.cpp utility/hex.cpp)
 include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(tests gtest_main ecs_test jit assets)
+target_link_libraries(tests gtest_main ecs_test jit assets networking)
 target_compile_definitions(tests PUBLIC TEST_BUILD)
 
 include(GoogleTest)

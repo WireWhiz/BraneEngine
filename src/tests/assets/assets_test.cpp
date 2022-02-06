@@ -1,17 +1,42 @@
 #include "testing.h"
+#include <assets/asset.h>
 #include "assets/assetManager.h"
 
 TEST(assets, AssetIDTest)
 {
 	AssetID aa;
-	aa.parseString("server.ip.goes.here/owner/mesh/test asset");
+	aa.parseString("server.ip.goes.here/1234A");
 	EXPECT_EQ(aa.serverAddress, "server.ip.goes.here");
-	EXPECT_EQ(aa.owner, "owner");
-	EXPECT_EQ(aa.type.string(), "mesh");
-	EXPECT_EQ(aa.name, "test asset");
-	EXPECT_EQ(aa.string(), "server.ip.goes.here/owner/mesh/test asset");
-} 
+	EXPECT_EQ(aa.id, 0x1234A);
+	EXPECT_EQ(aa.string(), "server.ip.goes.here/000000000001234A");
+	EXPECT_TRUE(aa == aa);
+}
 
+TEST(assets, AssetHeaderTest)
+{
+	AssetHeader ah;
+	ah.id = AssetID("test/0");
+	ah.dependencies.push_back({AssetID("test/2"), AssetDependencyLevel::requireFull});
+	ah.dependencies.push_back({AssetID("test/2"), AssetDependencyLevel::loadProcedural});
+
+	OSerializedData serialized;
+	ah.serialize(serialized);
+	std::cout << "Serialized asset header: " << serialized;
+
+	ISerializedData deserializationStream = serialized.toIMessage();
+	AssetHeader deserialized(deserializationStream);
+	EXPECT_EQ(deserialized.id, ah.id);
+	size_t ittr = 0;
+	for(auto& dep1 : ah.dependencies)
+	{
+		auto& dep2 = deserialized.dependencies[ittr++];
+		EXPECT_EQ(dep1.id, dep2.id);
+		EXPECT_EQ(dep1.level, dep2.level);
+	}
+
+}
+
+/*
 TEST(assets, AssetManagerTest)
 {
 	AssetID aID;
@@ -24,4 +49,4 @@ TEST(assets, AssetManagerTest)
 	am.addComponent(ca);
 
 	EXPECT_EQ(am.getComponent(aID)->id(), aID);
-}
+}*/

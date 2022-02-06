@@ -1,4 +1,6 @@
 #include "assetHttpServer.h"
+#include "../assetProcessing/AssetBuilder.h"
+#include "assetServer/gltf/gltfLoader.h"
 
 AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm): HTTPServer(domain, useHttps), _db(db), _fm(fm)
 {
@@ -51,13 +53,13 @@ void AssetHttpServer::setUpListeners()
 			{
 				std::cerr << "Problem parsing login request: " << req.body << std::endl;
 				res.status = 400;
-				res.set_content("{\"text\":\"Request format incorrect\",\"logged_in\":false}", "application/json");
+				res.set_content(R"({"text":"Request format incorrect","logged_in":false})", "application/json");
 				return;
 			}
 			if(!newUser.isMember("username") || !newUser.isMember("password"))
 			{
 				res.status = 400;
-				res.set_content("{\"text\":\"Request format incorrect\",\"logged_in\":false}", "application/json");
+				res.set_content(R"({"text":"Request format incorrect","logged_in":false})", "application/json");
 				return;
 			}
 
@@ -65,7 +67,7 @@ void AssetHttpServer::setUpListeners()
 			std::string username = newUser["username"].asString();
 			if(!_db.stringSafe(username))
 			{
-				res.set_content("{\"text\":\"Invalid Characters\",\"logged_in\":false}", "application/json");
+				res.set_content(R"({"text":"Invalid Characters","logged_in":false})", "application/json");
 				return;
 			}
 
@@ -108,18 +110,18 @@ void AssetHttpServer::setUpListeners()
 					_sessions.insert({sessionID, sc});
 
 					setCookie("session_id", sessionID, res);
-					res.set_content("{\"text\":\"Login successful\",\"logged_in\":true}", "application/json");
+					res.set_content(R"({"text":"Login successful","logged_in":true})", "application/json");
 					return;
 				}
 			}
 
 
 			//Not login stuff happen here
-			res.set_content("{\"text\":\"Login fail\",\"logged_in\":false}", "application/json");
+			res.set_content(R"({"text":"Login fail","logged_in":false})", "application/json");
 		}
 		catch(const std::exception& e){
 			std::cerr << "login submission error: " << e.what();
-			res.set_content("{\"text\":\"Internal error\",\"logged_in\":false}", "application/json");
+			res.set_content(R"({"text":"Internal error","logged_in":false})", "application/json");
 			res.status = 500;
 		}
 	});
@@ -131,13 +133,13 @@ void AssetHttpServer::setUpListeners()
 			{
 				std::cerr << "Problem parsing login request: " << req.body << std::endl;
 				res.status = 400;
-				res.set_content("{\"text\":\"Request format incorrect\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Request format incorrect","created":false})", "application/json");
 				return;
 			}
 			if(!newUser.isMember("username") || !newUser.isMember("password") || !newUser.isMember("email"))
 			{
 				res.status = 400;
-				res.set_content("{\"text\":\"Request format incorrect\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Request format incorrect","created":false})", "application/json");
 				return;
 			}
 			std::string username = newUser["username"].asString();
@@ -146,26 +148,26 @@ void AssetHttpServer::setUpListeners()
 
 			if(username == "")
 			{
-				res.set_content("{\"text\":\"Must enter a username\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Must enter a username","created":false})", "application/json");
 				return;
 			}
 
 			if(password.size() < 8)
 			{
-				res.set_content("{\"text\":\"Password must be at least 8 characters long\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Password must be at least 8 characters long","created":false})", "application/json");
 				return;
 			}
 
 			if(!_db.stringSafe(username))
 			{
-				res.set_content("{\"text\":\"Invalid characters in username\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Invalid characters in username","created":false})", "application/json");
 				return;
 			}
 
-			std::regex emailRegex("^([a-zA-Z0-9_\\-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([a-zA-Z0-9\\-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$");
+			std::regex emailRegex(R"(^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\]?)$)");
 			if(!std::regex_match(email, emailRegex))
 			{
-				res.set_content("{\"text\":\"Invalid email\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Invalid email","created":false})", "application/json");
 				return;
 			}
 
@@ -180,7 +182,7 @@ void AssetHttpServer::setUpListeners()
 
 			if(usernameTaken)
 			{
-				res.set_content("{\"text\":\"Username Taken\",\"created\":false}", "application/json");
+				res.set_content(R"({"text":"Username Taken","created":false})", "application/json");
 				return;
 			}
 
@@ -213,11 +215,11 @@ void AssetHttpServer::setUpListeners()
 			               });
 
 
-			res.set_content("{\"text\":\"Created account\",\"created\":true}", "application/json");
+			res.set_content(R"({"text":"Created account","created":true})", "application/json");
 		}
 		catch(const std::exception& e){
 			std::cerr << "user creation error: " << e.what();
-			res.set_content("{\"text\":\"Internal error\",\"created\":false}", "application/json");
+			res.set_content(R"({"text":"Internal error","created":false})", "application/json");
 			res.status = 500;
 		}
 	});
@@ -226,14 +228,14 @@ void AssetHttpServer::setUpListeners()
 
 void AssetHttpServer::setUpAPICalls()
 {
-    _server->Post("/api/create-asset",[this](const httplib::Request &req, httplib::Response &res)
+    _server->Post("/api/create-asset/gltf",[this](const httplib::Request &req, httplib::Response &res)
     {
         try{
             std::string sessionID = getCookie("session_id", req);
             if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("create assets"))
             {
-                std::cout << "Creating Asset" << std::endl;
-                const auto& assetDataField = req.get_file_value("assetData");
+                std::cout << "Extracting Data From GLTF" << std::endl;
+                const httplib::MultipartFormData& assetDataField = req.get_file_value("assetData");
                 std::cout << "AssetData: " << assetDataField.content << std::endl;
 				// Convert to json
 				Json::Value assetData;
@@ -242,71 +244,40 @@ void AssetHttpServer::setUpAPICalls()
 	            {
 		            std::cerr << "Problem parsing assetData: " << req.body << std::endl;
 		            res.status = 400;
-		            res.set_content("{\"text\":\"Request format incorrect\",\"logged_in\":false}", "application/json");
+		            res.set_content(R"({"text":"Request format incorrect"})", "application/json");
 		            return;
 	            }
 
-				AssetID id;
-	            id.serverAddress = _domain;
-	            id.owner = _sessions[sessionID].userID;
-				id.type.set(assetData["type"].asString());
-				id.name = assetData["name"].asString();
+				const auto& file = req.get_file_value("file");
 
-				switch(id.type.type()){
-					case AssetType::Type::mesh:
-					{
-						std::cout << "Creating new mesh asset: " << id << std::endl;
+				gltfLoader loader;
+				loader.loadGlbFromString(file.content);
 
-						const auto& file = req.get_file_value("file");
-						std::cout << "Mesh size: " << file.content.size() << " bytes" << std::endl;
+				std::vector<MeshAsset*> meshes = AssetBuilder::extractMeshesFromGltf(loader);
 
-						tinygltf::Model model;
-						tinygltf::TinyGLTF loader;
-						std::string warn;
-						std::string err;
+				for(auto mesh : meshes)
+				{
+					std::cout << "Extracted mesh: " << mesh->name << "\n";
 
-						loader.LoadBinaryFromMemory(&model, &err, &warn, (unsigned char*)file.content.data(), file.content.size());
-						if (!warn.empty()) {
-							std::cout << "gltf warning: " << warn << std::endl;
-						}
+					AssetData ad(_db);
+					ad.name = mesh->name;
+					ad.id.serverAddress = _domain;
 
-						if (!err.empty()) {
-							std::cerr << "gltf error: " << err << std::endl;
-						}
-
-
-						for(auto& mesh : model.meshes){
-
-							std::cout << "Uploaded mesh: " << mesh.name << std::endl;
-							for(auto& primitive  : mesh.primitives){
-								const tinygltf::Accessor& accessor = model.accessors[primitive.attributes["POSITION"]];
-								const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-
-								const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-								const float* positions = reinterpret_cast<const float*>(&buffer.data[bufferView.byteOffset + accessor.byteOffset]);
-								for (size_t i = 0; i < accessor.count; ++i) {
-									// Positions are Vec3 components, so for each vec3 stride, offset for x, y, and z.
-									std::cout << "(" << positions[i * 3 + 0] << ", "// x
-									          << positions[i * 3 + 1] << ", " // y
-									          << positions[i * 3 + 2] << ")" // z
-									          << "\n";
-								}
-							}
-						}
-
-
-						break;
-					}
-
-
-					default:
-						throw std::runtime_error("Unimplemented asset type: " + id.type.string());
+					ad.save(); // Saving will generate an Asset ID
+					mesh->id() = ad.id;
+					_fm.writeAsset(mesh);
+					std::cout << "Created new asset with id: " << ad.id.string() << std::endl;
+					AssetPermission p = _db.assetPermission(mesh->id().id, std::stoi(_sessions[sessionID].userID));
+					p.setLevel(AssetPermission::Level::owner);
 				}
+
+				for(auto mesh : meshes)
+					delete mesh; // We don't immediately need to use the mesh data after this, so store it in the file system and then free the memory;
             }
             else
             {
                 res.status = 403;
-                res.set_content("Not authorized for that action", "text/plain");
+                res.set_content(R"({"text":"Not authorized for that action","created":false})", "application/json");
             }
         }
         catch(const std::exception& e){

@@ -4,13 +4,14 @@
 #include <asio/ts/internet.hpp>
 #include <asio/ssl.hpp>
 
+
+#include "message.h"
 #include <cstdint>
 #include <memory>
 #include "networkError.h"
 #include "config/config.h"
 #include "networkQueue.h"
-#include "message.h"
-#include "networkingComponents.h"
+#include "serializedData.h"
 #include <ecs/ecs.h>
 
 namespace net
@@ -19,6 +20,8 @@ namespace net
 
 	typedef asio::ip::tcp::socket tcp_socket;
 	typedef asio::ssl::stream<tcp_socket> ssl_socket;
+
+
 
 	class Connection
 	{
@@ -35,7 +38,7 @@ namespace net
 		virtual bool connected() = 0;
 
 		virtual void send(std::shared_ptr<OMessage> msg) = 0;
-		virtual bool popIMessage(std::shared_ptr<IMessage>& iMessage);
+		bool popIMessage(std::shared_ptr<IMessage>& iMessage);
 
 	};
 
@@ -44,23 +47,15 @@ namespace net
 	{
 	protected:
 		socket_t _socket;
+		asio::streambuf buffer;
 		void async_readHeader()
 		{
 			_tempIn = std::make_shared<IMessage>();
 			asio::async_read(_socket, asio::buffer(&_tempIn->header, sizeof(MessageHeader)),[this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-					if (_tempIn->header.size > 0)
-					{
-						_tempIn->data.resize(_tempIn->header.size);
-						async_readBody();
-					}
-					else
-					{
-						_ibuffer.push_back(_tempIn);
-						_tempIn = nullptr;
-						async_readHeader();
-					}
+
+					async_readBody();
 
 				}
 				else
@@ -73,9 +68,11 @@ namespace net
 		}
 		void async_readBody()
 		{
-			asio::async_read(_socket, asio::buffer(_tempIn->data.data(), _tempIn->data.size()),  [this](std::error_code ec, std::size_t length) {
+			asio::async_read_until(_socket, buffer, "~~EndMessage~~",  [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
+					_tempIn->body.data.resize(length);
+					std::memcpy(_tempIn->body.data.data(),buffer.data().data(), length);
 					_ibuffer.push_back(_tempIn);
 					_tempIn = nullptr;
 					async_readHeader();
@@ -92,7 +89,7 @@ namespace net
 			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-					if (_obuffer.front()->data.size() > 0)
+					if (_obuffer.front()->body.data.size() > 0)
 						async_writeBody();
 					else
 					{
@@ -112,7 +109,7 @@ namespace net
 		}
 		void async_writeBody()
 		{
-			asio::async_write(_socket, asio::buffer(_obuffer.front()->data.data(), _obuffer.front()->data.size()), [this](std::error_code ec, std::size_t length) {
+			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
 					_obuffer.pop_front();

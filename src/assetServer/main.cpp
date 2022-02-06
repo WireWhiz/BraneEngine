@@ -45,22 +45,22 @@ int main()
 	NativeForEach nfe = NativeForEach(components, exclude, &em);
 
 	
-	MeshAsset quad = MeshAsset(AssetID("localhost/this/mesh/quad"), std::vector<uint32_t>({0, 1, 2, 2, 3, 0}),
+	/*MeshAsset quad = MeshAsset(AssetID("localhost/this/mesh/quad"), std::vector<uint32_t>({0, 1, 2, 2, 3, 0}),
 													std::vector<Vertex>({
 														{{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}},
 														{{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f}},
 														{{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}},
 														{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-													}));
+													}));*/
 
-	AssetID vertexShaderID = AssetID("localhost/this/shader/vertex");
+	AssetID vertexShaderID = AssetID("localhost/" + std::to_string(nativeComponentIDIttr));
 	std::vector<uint32_t> verticies;
-	fm.readFile("localhost/this/shader/vertex.spirv", verticies);
+	fm.readFile("localhost/"  + std::to_string(nativeComponentIDIttr), verticies);
 
 	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, verticies);
 	
 
-	fm.writeAsset(&quad);
+	//fm.writeAsset(&quad);
 
     bool run = true;
 	while (run)
@@ -74,11 +74,11 @@ int main()
 			
 			if (cc->connection && cc->connection->connected())
 			{
-				net::OMessage m;
-				m.header.type = net::MessageType::assetData;
-				quad.serialize(m);
-				std::cout << "sending message: " << m;
-				cc->connection->send(std::make_shared<net::OMessage>(std::move(m)));
+				std::shared_ptr<net::OMessage> m = std::make_shared<net::OMessage>();
+				m->header.type = net::MessageType::assetData;
+				//quad.serialize(m->body);
+				std::cout << "sending message: " << m->body;
+				cc->connection->send(m);
 			}
 			sent.push_back(id->id);
 		});

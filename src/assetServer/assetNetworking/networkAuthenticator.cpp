@@ -5,7 +5,7 @@ net::NetworkAuthenticator::NetworkAuthenticator(EntityManager* em) : _em(em)
 	std::vector<const ComponentAsset*> ca{ EntityIDComponent::def(), NewConnectionComponent::def(), ConnectionComponent::def() };
 	_getNewConnections = NativeForEach(ca, em);
 
-	em->addSystem(std::make_unique<FunctionPointerSystem>(AssetID("localhost/this/system/NetworkAuthenticator"), networkAuthenticatorSystem, this));
+	em->addSystem(std::make_unique<FunctionPointerSystem>(AssetID("localhost/" + std::to_string(nativeComponentIDIttr)), networkAuthenticatorSystem, this));
 }
 
 void net::NetworkAuthenticator::networkAuthenticatorSystem(EntityManager* em, void* authenticator)

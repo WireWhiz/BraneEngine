@@ -1,38 +1,38 @@
 #include "meshAsset.h"
 
-#include <networking/message.h>
+#include <networking/serializedData.h>
 
-
-Vertex::Vertex(glm::vec3 pos, glm::vec3 color, glm::vec2 uv)
+MeshAsset::MeshAsset(const AssetID& id)
 {
-	this->pos = pos;
-	this->color = color;
-	this->uv = uv;
+	_header.id = id;
 }
 
-MeshAsset::MeshAsset(const AssetID& id, std::vector<uint32_t> indices, std::vector<Vertex> vertices)
-{
-	_id = id;
-	this->indices = indices;
-	this->vertices = vertices;
-}
-
-MeshAsset::MeshAsset(net::IMessage& source)
+MeshAsset::MeshAsset(ISerializedData& source)
 {
 	deserialize(source);
 }
 
-void MeshAsset::serialize(net::OMessage& message)
+void MeshAsset::serialize(OSerializedData& message)
 {
 	Asset::serialize(message);
-	message << indices;
-	message << vertices;
+	message << indices << positions << normals << tangents;
+	message << (uint32_t)uvs.size();
+	for (size_t i = 0; i < uvs.size(); ++i)
+	{
+		message << uvs[i];
+	}
 	
 }
 
-void MeshAsset::deserialize(net::IMessage& message)
+void MeshAsset::deserialize(ISerializedData& message)
 {
 	Asset::deserialize(message);
-	message >> indices;
-	message >> vertices;
+	message >> indices >> positions >> normals >> tangents;
+	uint32_t size;
+	message.readSafeArraySize(size);
+	uvs.resize(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		message >> uvs[i];
+	}
 }

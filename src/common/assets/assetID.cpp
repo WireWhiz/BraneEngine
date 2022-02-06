@@ -1,4 +1,6 @@
+#include <sstream>
 #include "assetID.h"
+#include <utility/hex.h>
 
 AssetID::AssetID(const std::string& id)
 {
@@ -7,7 +9,7 @@ AssetID::AssetID(const std::string& id)
 
 void AssetID::parseString(const std::string& id)
 {
-	std::string* strings = new std::string[4];
+	std::string* strings = new std::string[2];
 	uint8_t strIndex = 0;
 	for (size_t i = 0; i < id.size(); i++)
 	{
@@ -16,26 +18,24 @@ void AssetID::parseString(const std::string& id)
 		else
 		{
 			strIndex++;
+			assert(strIndex < 2);
 		}
 	}
 	serverAddress = strings[0];
-	owner = strings[1];
-	type.set(strings[2]);
-	name = strings[3];
+	this->id = fromHex<uint64_t>(strings[1]);
 }
 
 std::string AssetID::string() const
 {
-	return serverAddress + '/' + owner + '/' + type.string() + '/' + name;
+	std::stringstream stream;
+	stream << serverAddress << '/' << toHex(id);
+	return stream.str();
 }
 
 bool AssetID::operator==(const AssetID& other) const
 {
-	if (name != other.name)
-		return false;
-	if (type != other.type)
-		return false;
-	if (owner != other.owner)
+
+	if (id != other.id)
 		return false;
 	return serverAddress == other.serverAddress;
 }
@@ -48,7 +48,15 @@ std::ostream& operator<<(std::ostream& os, const AssetID& id)
 
 std::string AssetID::path() const
 {
-	return "assets/" + owner + "/" + type.string() + "/" + name + ".asset";
+	return "assets/" + toHex(id) + ".asset";
+}
+
+uint32_t AssetID::size()
+{
+	uint32_t size = 3; //Separating lines
+	size += serverAddress.size();
+	size += sizeof(id) * 2;
+	return size;
 }
 
 std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
@@ -61,8 +69,6 @@ std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
 	// second and third and combine them using XOR
 	// and bit shifting:
 
-	return ((hash<string>()(k.serverAddress)
-			 ^ (hash<string>()(k.owner) << 1)) >> 1)
-		^ (hash<AssetType::Type>()(k.type.type()) << 1)
-		^ (hash<string>()(k.name) << 1);
+	return (hash<string>()(k.serverAddress)
+		^ (hash<uint64_t>()(k.id) << 1));
 }

@@ -9,6 +9,7 @@
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include "databaseAsset.h"
 
 class Database
 {
@@ -31,6 +32,10 @@ public:
 
 	std::string getUserID(const std::string& username);
 	std::unordered_set<std::string> userPermissions(const std::string& userID);
+
+	AssetData loadAssetData(const AssetID& id);
+	void saveAssetData(AssetData& assetData);
+	AssetPermission assetPermission(const uint32_t & assetID, const uint32_t& userID);
 
 };
 

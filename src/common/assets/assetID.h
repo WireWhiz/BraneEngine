@@ -7,11 +7,10 @@ struct AssetID
 {
 	AssetID() = default;
 	AssetID(const std::string& id);
-	std::string name;
-	AssetType type;
-	std::string owner;
+	uint64_t id;
 	std::string serverAddress;
 	void parseString(const std::string& id);
+	uint32_t size();
 	std::string string() const;
 	std::string path() const;
 

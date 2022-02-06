@@ -9,7 +9,7 @@
 #include <vector>
 #include <memory>
 
-#include "message.h"
+#include "serializedData.h"
 #include "connection.h"
 #include "config/config.h"
 #include "networkError.h"

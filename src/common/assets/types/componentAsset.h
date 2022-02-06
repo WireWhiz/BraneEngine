@@ -2,7 +2,7 @@
 #include <memory>
 #include <ecs/core/virtualType.h>
 #include <vector>
-#include "asset.h"
+#include "../asset.h"
 
 class ComponentAsset : public Asset
 {
@@ -17,6 +17,9 @@ public:
 	size_t size() const;
 	size_t getByteIndex(size_t index) const;
 	const std::vector<std::unique_ptr<VirtualType>>& types() const;
+	bool serializable() const;
+	void serialize(OSerializedData& sdata, byte* component) const;
+	void deserialize(ISerializedData& sdata, byte* component) const;
 
 	void construct(byte* component) const;
 	void deconstruct(byte* component) const;

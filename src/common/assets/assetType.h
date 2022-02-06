@@ -30,13 +30,13 @@ private:
 public:
 	AssetType();
 	static Type fromString(const std::string& type);
-	static std::string toString(Type type);
+	static const std::string& toString(Type type);
 	
 	void set(Type type);
 	void set(const std::string& type);
 	
 	Type type() const;
-	std::string string() const;
+	const std::string& string() const;
 
 	bool operator==(Type t) const;
 	bool operator==(AssetType t) const;

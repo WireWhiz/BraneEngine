@@ -204,7 +204,7 @@ size_t Archetype::copyEntity(Archetype* source, size_t index)
 	size_t destChunkIndex = chunkIndex(newIndex);
 
 	Chunk* src = source->_chunks[srcChunkIndex].get();
-	Chunk* dest = _chunks[destChunkIndex].get();  
+	Chunk* dest = _chunks[destChunkIndex].get();
 
 	//Index within chunk
 	size_t srcEntityIndex = index - srcChunkIndex * src->maxCapacity();

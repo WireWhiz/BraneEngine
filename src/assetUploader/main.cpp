@@ -49,11 +49,11 @@ int main()
 	}
 	std::cout << "Connection accepted, sending message" << std::endl;
 
-	std::shared_ptr<net::OMessage> testOMessage = std::make_shared<net::OMessage>();
+	std::shared_ptr<net::OSerializedData> testOMessage = std::make_shared<net::OSerializedData>();
 	*testOMessage << std::string("This is working");
 	server->send(testOMessage);
 
-	std::shared_ptr<net::IMessage> testMessage;
+	std::shared_ptr<net::ISerializedData> testMessage;
 	while(!client.popIMessage(testMessage))
 	{
 		std::cout << "Waiting for message" << std::endl;

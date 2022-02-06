@@ -1,6 +1,6 @@
 #pragma once
 #include "types/assetTypes.h"
-#include "types/asset.h"
+#include "asset.h"
 #include <unordered_set>
 #include <ecs/ecs.h>
 

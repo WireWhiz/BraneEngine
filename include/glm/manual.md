@@ -1890,7 +1890,7 @@ GLM is mainly designed to be convenient and that's why it is written against the
 Following the Pareto principle where 20% of the code consumes 80% of the execution time, GLM operates perfectly on the 80% of the code that consumes 20% of the performances. Furthermore, thanks to the lowp,
 mediump and highp qualifiers, GLM provides approximations which trade precision for performance. Finally, GLM can automatically produce SIMD optimized code for functions of its implementation.
 
-However, on performance critical code paths, we should expect that dedicated algorithms should be written to reach peak performance.
+However, on performance critical code paths, we should expect that dedicated algorithms should be written to reach peek performance.
 
 ### <a name="section7_9"></a> 7.9. When I build with Visual C++ with /W4 warning level, I have warnings...
 

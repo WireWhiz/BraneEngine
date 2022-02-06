@@ -9,6 +9,7 @@
 #include <json/json.h>
 #include <memory>
 #include <byte.h>
+#include <assets/types/meshAsset.h>
 
 class gltfLoader
 {
@@ -23,7 +24,9 @@ public:
     bool loadGlbFromFile(const std::string& glbFilename);
     void printInfo();
     void printPositions(int mesh, int primitive);
-
+	std::vector<uint16_t> readScalarBuffer(uint32_t accessor);
+	std::vector<glm::vec3> readVec3Buffer(uint32_t accessor);
+	std::vector<MeshAsset*> extractAllMeshes();
 };
 
 

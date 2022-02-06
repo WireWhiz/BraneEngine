@@ -10,7 +10,7 @@
 ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types, AssetID id)
 {
 	_size = 0;
-	_id = id;
+	_header.id = id;
 	if (types.size() != 0)
 	{
 
@@ -38,7 +38,7 @@ ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types,
 ComponentAsset::ComponentAsset(std::vector<VirtualType*>& types, AssetID id, size_t size)
 {
 	_size = size;
-	_id = id;
+	_header.id = id;
 	if (types.size() != 0)
 	{
 		_types.resize(types.size());
@@ -100,5 +100,38 @@ void ComponentAsset::move(byte* dest, byte* source) const
 	for (size_t i = 0; i < _types.size(); i++)
 	{
 		_types[i]->move(dest + _types[i]->offset(), source + _types[i]->offset());
+	}
+}
+
+bool ComponentAsset::serializable() const
+{
+	for (int i = 0; i < _types.size(); ++i)
+	{
+		if(!_types[i]->serializable())
+			return false;
+
+	}
+	return true;
+}
+
+void ComponentAsset::serialize(OSerializedData& sdata, byte* component) const
+{
+	if(!serializable())
+		throw std::runtime_error("Unserializable type in component");
+
+	for (int i = 0; i < _types.size(); ++i)
+	{
+		sdata.write(component + _types[i]->offset(), _types[i]->size());
+	}
+}
+
+void ComponentAsset::deserialize(ISerializedData& sdata, byte* component) const
+{
+	if(!serializable())
+		throw std::runtime_error("Unserializable type in component");
+
+	for (int i = 0; i < _types.size(); ++i)
+	{
+		 sdata.read(component + _types[i]->offset(), _types[i]->size());
 	}
 }
