@@ -103,35 +103,18 @@ void ComponentAsset::move(byte* dest, byte* source) const
 	}
 }
 
-bool ComponentAsset::serializable() const
-{
-	for (int i = 0; i < _types.size(); ++i)
-	{
-		if(!_types[i]->serializable())
-			return false;
-
-	}
-	return true;
-}
-
 void ComponentAsset::serialize(OSerializedData& sdata, byte* component) const
 {
-	if(!serializable())
-		throw std::runtime_error("Unserializable type in component");
-
 	for (int i = 0; i < _types.size(); ++i)
 	{
-		sdata.write(component + _types[i]->offset(), _types[i]->size());
+		_types[i]->serialize(sdata, component + _types[i]->offset());
 	}
 }
 
 void ComponentAsset::deserialize(ISerializedData& sdata, byte* component) const
 {
-	if(!serializable())
-		throw std::runtime_error("Unserializable type in component");
-
 	for (int i = 0; i < _types.size(); ++i)
 	{
-		 sdata.read(component + _types[i]->offset(), _types[i]->size());
+		 _types[i]->deserialize(sdata, component + _types[i]->offset());
 	}
 }

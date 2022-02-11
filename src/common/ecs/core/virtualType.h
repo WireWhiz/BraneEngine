@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <glm/glm.hpp>
 #include <byte.h>
-
+#include <networking/serializedData.h>
 
 template <class T>
 constexpr inline
@@ -42,7 +42,8 @@ public:
 	VirtualType(size_t offset);
 	void setOffset(size_t offset);
 	size_t offset();
-	virtual bool serializable() = 0;
+	virtual void serialize(OSerializedData& data, const byte* source)  = 0;
+	virtual void deserialize(ISerializedData& data, byte* source) = 0;
 	virtual const size_t size() const = 0;
 	virtual void construct(byte*) = 0;
 	void construct(VirtualComponentPtr& vcp);
@@ -62,9 +63,15 @@ public:
 	VirtualVariable(size_t offset) : VirtualType(offset)
 	{
 	}
-	bool serializable() override
+	void serialize(OSerializedData& data, const byte* source) override
 	{
-		return std::is_standard_layout<T>::value;
+
+		data.write(source, sizeof(T));
+	}
+	void deserialize(ISerializedData& data, byte* source) override
+	{
+
+		data.read(source, sizeof(T));
 	}
 	void construct(byte* var) override
 	{
@@ -96,6 +103,57 @@ public:
 		return sizeof(T);
 	}
 };
+
+template<typename T>
+class VirtualVariable<std::vector<T>> : public VirtualType
+{
+public:
+	VirtualVariable() : VirtualType(0)
+	{
+	}
+	VirtualVariable(size_t offset) : VirtualType(offset)
+	{
+	}
+	void serialize(OSerializedData& data, const byte* source) override
+	{
+		data << *(std::vector<T>*)source;
+	}
+	void deserialize(ISerializedData& data, byte* source) override
+	{
+		data >> *(std::vector<T>*)source;
+	}
+	void construct(byte* var) override
+	{
+		new(var) T();
+	}
+	template<class... Params>
+	void construct(byte* var, Params... params)
+	{
+		new(var) T(params...);
+	}
+	virtual void copy(byte* dest, const byte* source)
+	{
+		*((T*)dest) = *((T*)source);
+	}
+	virtual void move(byte* dest, const byte* source)
+	{
+		*((T*)dest) = std::move(*((T*)source));
+	}
+	void deconstruct(byte* var) override
+	{
+		((T*)var)->~T();
+	}
+	T* get(const byte* var)
+	{
+		return (T*)var;
+	}
+	const size_t size() const override
+	{
+		return sizeof(T);
+	}
+};
+
+
 
 #define null_index size_t(-1)
 typedef VirtualVariable<bool>    VirtualBool;

@@ -96,6 +96,22 @@ public:
 		return msg;
 	}
 
+	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<AssetID>& ids)
+	{
+		uint32_t size;
+		msg.readSafeArraySize(size);
+		ids.resize(size);
+		for (uint32_t i = 0; i < size; ++i)
+		{
+			std::string idString;
+			msg >> idString;
+			ids[i].parseString(idString);
+		}
+
+
+		return msg;
+	}
+
 
 
 	void read(void* dest, size_t size)
@@ -196,7 +212,19 @@ public:
 		return msg;
 	}
 
-	void write(void* src, size_t size)
+	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<AssetID>& ids)
+	{
+		msg << (uint32_t)ids.size();
+		for (uint32_t i = 0; i < ids.size(); ++i)
+		{
+			msg << ids[i].string();
+		}
+
+
+		return msg;
+	}
+
+	void write(const void* src, size_t size)
 	{
 		size_t index = data.size();
 		data.resize(index + size);

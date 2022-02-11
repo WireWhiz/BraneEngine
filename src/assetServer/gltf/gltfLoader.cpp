@@ -226,5 +226,10 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 	return meshAssets;
 }
 
+Json::Value& gltfLoader::nodes()
+{
+	return _json["nodes"];
+}
+
 
 

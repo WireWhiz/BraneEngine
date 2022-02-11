@@ -1,28 +1,87 @@
+class AssetThumbnail extends React.Component{
+    constructor(props){
+        super(props);
+    }
+    render() {
+        return (
+            <button className={"asset-thumbnail"} onClick={()=>{changePath("assets/" + this.props.assetID); console.log(this.props.assetID)}}>
+                <p>{this.props.name}</p>
+                <p class={"material-icons-outlined"}>{this.props.icon}</p>
+            </button>
+        );
+    }
+}
+
 class AssetList extends React.Component{
     constructor(props) {
         super(props);
+        this.state = {
+            assetsLoaded : false,
+            assets : null
+        }
     }
 
     getAssets(){
-        //Worry about this later
+        fetch("/api/assets").then((res) =>{
+            return res.json();
+        }).then((json) =>{
+            if(!json["successful"])
+            {
+                this.setState({
+                    assetsLoaded : true,
+                    assets : <p>Error retrieving assets</p>
+                });
+                return;
+            }
+            if(json.assets == null)
+            {
+                this.setState({
+                    assetsLoaded : true,
+                    assets : <p>You have no assets :(</p>
+                });
+                return;
+            }
+
+            var assets = [];
+            json.assets.forEach((asset)=>{
+                assets.push(
+                    <AssetThumbnail name={asset.name} icon={"token"} assetID={asset.id}/>
+                )
+            });
+            this.setState({
+                assetsLoaded : true,
+                assets : assets
+            });
+        });
 
     }
 
     render() {
-        return [
+        if(!this.state.assetsLoaded)
+            this.getAssets();
+        let page = [
             <h1>Assets</h1>,
             <button onClick={()=>changePath("assets/create")}><span className="material-icons-outlined">
                 add_circle_outline
-            </span> Create Asset</button>
+            </span> Create Asset</button>,
+            <div class={"asset-list"}>
+                {(this.state.assetsLoaded) ? this.state.assets : <p>Loading...</p>}
+            </div>
         ];
+
+        this.state.assetsLoaded = false;
+
+        return page;
     }
 }
+
 
 class AssetButton extends React.Component{
     constructor(props) {
         super(props);
-        this.state = {
-        }
+        this.state =
+            {
+            }
     }
 
     render() {
@@ -81,7 +140,11 @@ class Assets extends React.Component{
             case "create":
                 return <CreateAssetMenu/>
             default:
-                changePath("assets")
+                if(path.length > 2){
+                    changePath("assets")
+                    return;
+                }
+                return <AssetView assetID={path[1]}/>
         }
     }
 

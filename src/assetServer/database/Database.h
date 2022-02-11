@@ -37,6 +37,7 @@ public:
 	void saveAssetData(AssetData& assetData);
 	AssetPermission assetPermission(const uint32_t & assetID, const uint32_t& userID);
 
+	std::vector<AssetData> listUserAssets(const uint32_t& userID, const std::vector<std::string>& filters);
 };
 
 

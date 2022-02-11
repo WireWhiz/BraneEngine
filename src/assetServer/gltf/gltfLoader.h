@@ -27,6 +27,7 @@ public:
 	std::vector<uint16_t> readScalarBuffer(uint32_t accessor);
 	std::vector<glm::vec3> readVec3Buffer(uint32_t accessor);
 	std::vector<MeshAsset*> extractAllMeshes();
+	Json::Value& nodes();
 };
 
 

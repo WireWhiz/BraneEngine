@@ -1,11 +1,12 @@
 #include "assetHttpServer.h"
 #include "../assetProcessing/AssetBuilder.h"
 #include "assetServer/gltf/gltfLoader.h"
+#include "utility/hex.h"
 
 AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm): HTTPServer(domain, useHttps), _db(db), _fm(fm)
 {
+	setUpAPICalls();
 	setUpListeners();
-    setUpAPICalls();
 }
 
 void AssetHttpServer::setUpListeners()
@@ -228,11 +229,83 @@ void AssetHttpServer::setUpListeners()
 
 void AssetHttpServer::setUpAPICalls()
 {
-    _server->Post("/api/create-asset/gltf",[this](const httplib::Request &req, httplib::Response &res)
+	_server->Get("/api/assets", [this](const httplib::Request &req, httplib::Response &res)//TODO: Paginate the data from this query, and add filters
+	{
+		try{
+			std::string sessionID = getCookie("session_id", req);
+			if(!authorizeSession(sessionID, {"create assets"}))
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"Not authorized for that action")", "application/json");
+				return;
+			}
+
+			if(req.has_param("filters"))
+			{
+
+			}
+
+			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID), {});
+			std::string resJson = R"({"successful":true, "assets":[)";
+			for(auto& asset : assets)
+			{
+				resJson += R"({"name":")" + asset.name + R"(","id":")" + toHex(asset.id.id) + "\"},";
+			}
+			if(!assets.empty())
+				resJson.resize(resJson.size() - 1); //Jank way to cut off last comma
+			resJson += "]}";
+			res.set_content(resJson, "application/json");
+
+		}
+		catch(const std::exception& e){
+			res.set_content(R"("successful":false)", "application/json");
+			std::cerr << "asset list error: " << e.what();
+			res.status = 500;
+		}
+
+	});
+	_server->Get("/api/assets/([a-fA-F0-9]+)", [this](const httplib::Request &req, httplib::Response &res)
+	{
+		try{
+			std::string sessionID = getCookie("session_id", req);
+			if(!authorizeSession(sessionID, {"create assets"}))
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"Not authorized for that action")", "application/json");
+				return;
+			}
+			std::cout << "User requesting asset: " << req.matches[1].str() << std::endl;
+			AssetID assetID = AssetID("/" +req.matches[1].str());
+
+			AssetPermission pem = _db.assetPermission(assetID.id, std::stoi(_sessions[sessionID].userID));
+			if(pem.level() == AssetPermission::Level::none)
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.")", "application/json");
+				return;
+			}
+
+			AssetData asset = _db.loadAssetData(assetID);
+			std::string resJson = R"({"successful":true, "asset":{)";
+			resJson += R"("name":")" + asset.name + "\",";
+			resJson += R"("permission_level":)" + std::to_string((int)pem.level()) + ",";
+			resJson += R"("type":"not defined")";
+			resJson += "}}";
+			res.set_content(resJson, "application/json");
+
+		}
+		catch(const std::exception& e){
+			res.set_content(R"("successful":false)", "application/json");
+			std::cerr << "asset list error: " << e.what();
+			res.status = 500;
+		}
+
+	});
+    _server->Post("/api/assets/create/gltf",[this](const httplib::Request &req, httplib::Response &res)
     {
         try{
             std::string sessionID = getCookie("session_id", req);
-            if(_sessions.count(sessionID) && _sessions[sessionID].hasPermission("create assets"))
+            if(authorizeSession(sessionID, {"create assets"}))
             {
                 std::cout << "Extracting Data From GLTF" << std::endl;
                 const httplib::MultipartFormData& assetDataField = req.get_file_value("assetData");
@@ -253,8 +326,8 @@ void AssetHttpServer::setUpAPICalls()
 				gltfLoader loader;
 				loader.loadGlbFromString(file.content);
 
-				std::vector<MeshAsset*> meshes = AssetBuilder::extractMeshesFromGltf(loader);
-
+	            Assembly assembly;
+	            std::vector<MeshAsset*> meshes = AssetBuilder::extractMeshesFromGltf(loader);
 				for(auto mesh : meshes)
 				{
 					std::cout << "Extracted mesh: " << mesh->name << "\n";
@@ -266,13 +339,37 @@ void AssetHttpServer::setUpAPICalls()
 					ad.save(); // Saving will generate an Asset ID
 					mesh->id() = ad.id;
 					_fm.writeAsset(mesh);
-					std::cout << "Created new asset with id: " << ad.id.string() << std::endl;
+					std::cout << "Created new asset with id: " << ad.id.string() << "\n";
 					AssetPermission p = _db.assetPermission(mesh->id().id, std::stoi(_sessions[sessionID].userID));
 					p.setLevel(AssetPermission::Level::owner);
+
+					assembly.meshes.push_back(mesh->id());
 				}
+				try{
+
+					assembly.data = AssetBuilder::extractNodes(loader);
+				}catch(const std::exception& e){
+					std::cerr << "asset upload error: " << e.what();
+					res.status = 500;
+				}
+	            AssetData ad(_db);
+				ad.name = assetData["name"].asString();
+				AssetID assemblyID;
+				assemblyID.serverAddress = _domain;
+				ad.id = assemblyID;
+				ad.save();
+				assembly.id() = ad.id;
+
+	            AssetPermission p = _db.assetPermission(ad.id.id, std::stoi(_sessions[sessionID].userID));
+	            p.setLevel(AssetPermission::Level::owner);
+
+				_fm.writeAsset(&assembly);
+				std::cout << "Created assembly with id: " << ad.id.string() << std::endl;
+
 
 				for(auto mesh : meshes)
 					delete mesh; // We don't immediately need to use the mesh data after this, so store it in the file system and then free the memory;
+				res.set_content(R"({"text":"Assembly created successfully","created":true})", "application/json");
             }
             else
             {
@@ -341,9 +438,16 @@ std::string AssetHttpServer::randHex(size_t length)
 	return output.str();
 }
 
-void AssetHttpServer::processAsset(const std::string filename, const std::string data)
+bool AssetHttpServer::authorizeSession(const std::string& sessionID, std::vector<std::string> requiredAuths)
 {
-
+	if(!_sessions.count(sessionID))
+		return false;
+	for (auto& auth : requiredAuths)
+	{
+		if(!_sessions[sessionID].hasPermission(auth))
+			return false;
+	}
+	return true;
 }
 
 

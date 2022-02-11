@@ -20,7 +20,7 @@ class AssetHttpServer : public HTTPServer{
 
 	void setUpListeners();
     void setUpAPICalls();
-	void processAsset(const std::string filename, const std::string data);
+	bool authorizeSession(const std::string& sessionID, std::vector<std::string> requiredAuths);
 public:
 	AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm);
 

@@ -89,3 +89,18 @@ AssetPermission Database::assetPermission(const uint32_t& assetID, const uint32_
 {
 	return AssetPermission(assetID, userID, *this);
 }
+
+std::vector<AssetData> Database::listUserAssets(const uint32_t& userID, const std::vector<std::string>& filters)
+{
+	std::vector<AssetData> assets;
+	rawSQLCall("SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID", [&](const std::vector<Database::sqlColumn>& columns){
+		AssetData ad(*this);
+		AssetID aid;
+		aid.id = std::stoi(columns[0].value);
+		ad.id = aid;
+		ad.name = columns[1].value;
+		ad.sourceFile = columns[2].value;
+		assets.push_back(ad);
+	});
+	return assets;
+}

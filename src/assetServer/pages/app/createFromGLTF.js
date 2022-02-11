@@ -21,13 +21,15 @@ class CreateAssetFromGLTF extends React.Component{
 
         formData.append("assetData", new Blob([ JSON.stringify(assetData)], {type:"application/json"}));
 
-        fetch( "/api/create-asset/gltf", {
+        fetch( "/api/assets/create/gltf", {
             method: "POST",
             mode: "same-origin",
             cache: "no-cache",
             body: formData
         }).then((res)=>{
-            document.getElementById("result").innerText = JSON.parse(res.body).text;
+            return res.json();
+        }).then((json)=>{
+            document.getElementById("result").innerText = json.text;
         })
 
     }

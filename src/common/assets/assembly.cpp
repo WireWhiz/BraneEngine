@@ -34,11 +34,7 @@ void WorldEntity::deserialize(ISerializedData& message)
 void Assembly::serialize(OSerializedData& message)
 {
 	Asset::serialize(message);
-	message << (uint32_t)dependencies.size();
-	for (uint32_t i = 0; i < dependencies.size(); ++i)
-	{
-		message << dependencies[i];
-	}
+	message << scripts << meshes << textures;
 	message << (uint32_t)data.size();
 	for (uint32_t i = 0; i < data.size(); ++i)
 	{
@@ -49,13 +45,8 @@ void Assembly::serialize(OSerializedData& message)
 void Assembly::deserialize(ISerializedData& message)
 {
 	Asset::deserialize(message);
+	message >> scripts >> meshes >> textures;
 	uint32_t size;
-	message.readSafeArraySize(size);
-	dependencies.resize(size);
-	for (uint32_t i = 0; i < size; ++i)
-	{
-		message >> dependencies[i];
-	}
 	message.readSafeArraySize(size);
 	data.resize(size);
 	for (uint32_t i = 0; i < data.size(); ++i)

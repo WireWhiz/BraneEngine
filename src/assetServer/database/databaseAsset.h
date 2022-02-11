@@ -19,8 +19,7 @@ public:
 		none = 0,
 		view = 1,
 		edit = 2,
-		owner = 3,
-		blocked = 4
+		owner = 3
 	};
 
 private:
