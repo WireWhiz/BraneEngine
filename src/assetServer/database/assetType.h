@@ -18,8 +18,7 @@ public:
 		shader,
 		material,
 		script,
-		player,
-		loginData
+		player
 	};
 
 private:
@@ -35,8 +34,8 @@ public:
 	void set(Type type);
 	void set(const std::string& type);
 	
-	Type type() const;
-	const std::string& string() const;
+	[[nodiscard]] Type type() const;
+	[[nodiscard]] const std::string& string() const;
 
 	bool operator==(Type t) const;
 	bool operator==(AssetType t) const;

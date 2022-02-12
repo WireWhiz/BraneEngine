@@ -7,6 +7,7 @@
 
 
 #include <assets/asset.h>
+#include "assetType.h"
 
 class Database;
 
@@ -38,10 +39,13 @@ class AssetData
 {
 	Database& _db;
 	bool _exists;
+
+
+
 public:
 	AssetID     id;
 	std::string name;
-	std::string sourceFile;
+	AssetType type;
 	AssetData(Database& db);
 	AssetData(AssetID id, Database& db);
 	void save();
