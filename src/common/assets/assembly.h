@@ -18,12 +18,12 @@ struct WorldEntity
 class Assembly : public Asset
 {
 public:
-	std::vector<AssetID> scripts;
-	std::vector<AssetID> meshes; // Any systems in dependencies will be automatically loaded
+	std::vector<AssetID> scripts; // Any systems in dependencies will be automatically loaded
+	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
 	std::vector<AssetID> textures;
 	std::vector<WorldEntity> data;
-	virtual void serialize(OSerializedData& message) override;
-	virtual void deserialize(ISerializedData& message) override;
+	void serialize(OSerializedData& message) override;
+	void deserialize(ISerializedData& message) override;
 };
 
 

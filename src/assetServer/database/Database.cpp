@@ -85,22 +85,47 @@ AssetData Database::loadAssetData(const AssetID& id)
 	return AssetData(id, *this);
 }
 
-AssetPermission Database::assetPermission(const uint32_t& assetID, const uint32_t& userID)
+AssetPermission Database::assetPermission(const uint32_t assetID, const uint32_t userID)
 {
 	return AssetPermission(assetID, userID, *this);
 }
 
-std::vector<AssetData> Database::listUserAssets(const uint32_t& userID, const std::vector<std::string>& filters)
+std::vector<AssetDependency> Database::assetDependencies(const uint32_t assetID)
 {
+	std::vector<AssetDependency> deps;
+
+	rawSQLCall("SELECT DependencyID, DependencyDomain, Level, Type FROM AssetDependencies INNER JOIN Assets ON AssetDependencies.DependencyID = Assets.AssetID WHERE AssetDependencies.AssetID =" + std::to_string(assetID) + ";",
+	                                                                        [&deps, this](const std::vector<Database::sqlColumn>& columns)
+    {
+		AssetDependency dep;
+		dep.id.id = std::stoi(columns[0].value);
+		dep.id.serverAddress = columns[1].value;
+		dep.level = (AssetDependency::Level)std::stoi(columns[2].value);
+        dep.type.set(columns[3].value);
+		deps.push_back(dep);
+    });
+
+	return deps;
+}
+
+std::vector<AssetData> Database::listUserAssets(const uint32_t& userID, bool showDeps)
+{
+	std::string sqlCall = "";
+	if(!showDeps)
+		sqlCall ="SELECT Assets.* FROM Assets LEFT JOIN AssetDependencies ON Assets.AssetID = AssetDependencies.DependencyID JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID WHERE AssetDependencies.DependencyID IS NULL";
+	else
+		sqlCall ="SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID";
 	std::vector<AssetData> assets;
-	rawSQLCall("SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID", [&](const std::vector<Database::sqlColumn>& columns){
+	rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
 		AssetData ad(*this);
 		AssetID aid;
 		aid.id = std::stoi(columns[0].value);
 		ad.id = aid;
 		ad.name = columns[1].value;
-		ad.sourceFile = columns[2].value;
+		ad.type.set(columns[2].value);
 		assets.push_back(ad);
 	});
 	return assets;
 }
+
+

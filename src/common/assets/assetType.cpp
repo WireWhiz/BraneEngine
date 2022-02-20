@@ -3,14 +3,15 @@
 AssetType::Type AssetType::fromString(const std::string& type)
 {
 	static const std::unordered_map<std::string, AssetType::Type> _toEnumMap = {
-			{"none", AssetType::none},
+			{"",          AssetType::none     },
+			{"none",      AssetType::none     },
 			{"component", AssetType::component},
-			{"system",    AssetType::system},
-			{"mesh",      AssetType::mesh},
-			{"texture",   AssetType::texture},
-			{"player",    AssetType::player},
-			{"script",    AssetType::script},
-			{"shader",    AssetType::shader}
+			{"system",    AssetType::system   },
+			{"mesh",      AssetType::mesh     },
+			{"texture",   AssetType::texture  },
+			{"player",    AssetType::player   },
+			{"shader",    AssetType::shader   },
+			{"assembly",  AssetType::assembly }
 	};
 	assert(_toEnumMap.count(type));
 	return _toEnumMap.at(type);
@@ -19,14 +20,14 @@ AssetType::Type AssetType::fromString(const std::string& type)
 const std::string& AssetType::toString(Type type)
 {
 	static const std::unordered_map<AssetType::Type, const std::string> _toStringMap = {
-			{AssetType::none, "none"},
+			{AssetType::none,      "none"     },
 			{AssetType::component, "component"},
-			{AssetType::system,    "system"},
-			{AssetType::mesh,      "mesh"},
-			{AssetType::texture,   "texture"},
-			{AssetType::player,    "player"},
-			{AssetType::script,    "script"},
-			{AssetType::shader,    "shader"}
+			{AssetType::system,    "system"   },
+			{AssetType::mesh,      "mesh"     },
+			{AssetType::texture,   "texture"  },
+			{AssetType::player,    "player"   },
+			{AssetType::shader,    "shader"   },
+			{AssetType::assembly, "assembly"  }
 	};
 	assert(_toStringMap.count(type));
 	return _toStringMap.at(type);

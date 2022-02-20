@@ -7,7 +7,7 @@
 
 
 #include <assets/asset.h>
-#include "assetType.h"
+#include "common/assets/assetType.h"
 
 class Database;
 
@@ -33,6 +33,21 @@ public:
 	AssetPermission(uint32_t assetID, uint32_t userID, Database& db);
 	Level level();
 	void setLevel(Level level);
+};
+
+class DatabaseAssetDependency
+{
+private:
+	Database& _db;
+	bool _exists;
+
+public:
+	AssetID id;
+	AssetDependency dependency;
+	DatabaseAssetDependency(Database& db);
+	DatabaseAssetDependency(AssetID id, AssetID dep, Database& db);
+	void save();
+	void del();
 };
 
 class AssetData

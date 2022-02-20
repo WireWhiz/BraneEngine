@@ -4,6 +4,7 @@
 #include <fstream>
 #include <json/json.h>
 #include <filesystem>
+#include <networking/serializedData.h>
 
 class FileManager
 {
@@ -26,7 +27,7 @@ public:
 	template<typename T>
 	T* readAsset(AssetID& id)
 	{
-		net::ISerializedData iMessage;
+		ISerializedData iMessage;
 		if(!readFile(id.path(), iMessage.data))
 			return nullptr;
 

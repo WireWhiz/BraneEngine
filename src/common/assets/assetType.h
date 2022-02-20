@@ -17,7 +17,7 @@ public:
 		texture,
 		shader,
 		material,
-		script,
+		assembly,
 		player
 	};
 

@@ -44,37 +44,23 @@ class Sidebar extends React.Component{
 class Content extends React.Component{
     constructor(props) {
         super(props);
-        this.state = {
-            page: currentPath()[0]
-        };
 
         document.addEventListener('pageChanged', (e)=> {
-            this.setState({
-                page: currentPath()[0]
-            });
+            this.forceUpdate();
         });
 
         window.onpopstate = (e)=>{
-            this.setState({
-                page: currentPath()[0]
-            });
+            this.forceUpdate();
         }
     }
-    renderContent(){
-        switch(this.state.page){
-            case "profile":
-                return <Profile/>
-            case "assets":
-                return <Assets/>
-            default:
-                changePath("profile")
-        }
-    };
 
     render() {
         return (
             <div class={"content"}>
-                {this.renderContent()}
+                <PathBranch pageDepth={0} basePage={<Profile/>} pages={{
+                    "profile" : <Profile/>,
+                    "assets" : <Assets/>
+                }}/>
             </div>
         );
     }

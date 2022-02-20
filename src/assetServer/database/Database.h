@@ -34,10 +34,10 @@ public:
 	std::unordered_set<std::string> userPermissions(const std::string& userID);
 
 	AssetData loadAssetData(const AssetID& id);
-	void saveAssetData(AssetData& assetData);
-	AssetPermission assetPermission(const uint32_t & assetID, const uint32_t& userID);
+	AssetPermission assetPermission(const uint32_t assetID, const uint32_t userID);
+	std::vector<AssetDependency> assetDependencies(const uint32_t assetID);
 
-	std::vector<AssetData> listUserAssets(const uint32_t& userID, const std::vector<std::string>& filters);
+	std::vector<AssetData> listUserAssets(const uint32_t& userID, bool showDeps);
 };
 
 

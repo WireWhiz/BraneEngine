@@ -43,11 +43,11 @@ AssetHeader::AssetHeader(ISerializedData& sData)
 	uint32_t size;
 	sData >> size;
 	dependencies.resize(size);
-	for (int i = 0; i < size; ++i)
+	for (uint32_t i = 0; i < size; ++i)
 	{
 		sData >> dependencies[i].id;
 		uint8_t level;
 		sData >> level;
-		dependencies[i].level = (AssetDependencyLevel)level;
+		dependencies[i].level = (AssetDependency::Level)level;
 	}
 }

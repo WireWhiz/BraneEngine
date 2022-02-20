@@ -27,7 +27,7 @@ int ThreadPool::threadRuntime()
 		}
 		_queueMutex.unlock();
 
-		// if we got a job, run it outside of the lock
+		// if we got a job, run it outside the lock
 		if (jobAvailable)
 		{
 			try
@@ -41,8 +41,9 @@ int ThreadPool::threadRuntime()
 			}
 			job.handle->_instances -= 1;
 		}
-		
-		std::this_thread::yield();
+		else
+			std::this_thread::sleep_for(std::chrono::nanoseconds (500)); //If there aren't any jobs to do, sleep. Otherwise no sleep!
+
 	}
 	return 0;
 }

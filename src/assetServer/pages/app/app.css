@@ -36,16 +36,40 @@ body{
     flex-grow: 1;
 }
 
+.asset-id-list{
+    width: 1px;
+    white-space: nowrap;
+}
+
 .asset-list{
-    max-width:100%;
-    display:inline-grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    column-gap: 10px;
-    row-gap: 10px;
-    margin: 10px;
-    justify-items: stretch;
+    margin-top: 20px;
+    width:100%;
+    border-collapse: collapse;
+    text-align: left;
+    margin-bottom: 80px;
+}
+
+
+
+.asset-list table, .asset-list th, .asset-list td, .asset-list thead{
+    border-bottom: 1px solid;
+    border-bottom-color: black;
+    font-weight: normal;
+    padding: 3px;
+}
+.asset-list tr:nth-child(even){
+    background-color: #e3e3e3;
+}
+.asset-list tr:hover{
+    background-color: darkgrey;
 }
 
 .asset-thumbnail{
     word-wrap: break-word;
+}
+
+.dependencies-list{
+    width:fit-content;
+    border: 1px solid black;
+    border-radius: 4px;
 }

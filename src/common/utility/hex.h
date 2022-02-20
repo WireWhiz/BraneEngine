@@ -6,6 +6,7 @@
 #define BRANEENGINE_HEX_H
 #include <string>
 #include <unordered_map>
+#include <cmath>
 
 
 template<typename T>

@@ -88,7 +88,7 @@ int main()
 			em.addComponent(id, SentMesh::def());
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 	ThreadPool::cleanup();
 	return 0;

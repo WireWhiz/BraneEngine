@@ -1,6 +1,7 @@
 #include <sstream>
 #include "assetID.h"
 #include <utility/hex.h>
+#include <cassert>
 
 AssetID::AssetID(const std::string& id)
 {

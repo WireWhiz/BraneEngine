@@ -6,7 +6,7 @@
 
 #include <ctime>
 
-HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template("pages/template.html")
+HTTPServer::HTTPServer(const std::string& domain,  bool useHttps) : _template(Config::json()["network"]["web_file_dir"].asString() + "/template.html")
 {
     _domain = domain;
 	_useHttps = useHttps;

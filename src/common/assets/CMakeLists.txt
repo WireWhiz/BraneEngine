@@ -4,6 +4,7 @@ add_subdirectory(types)
 add_library(assets STATIC 
   "assetID.cpp"
   "assetManager.cpp"
+   assetType.h assetType.cpp
   
    "types/componentAsset.h" "types/componentAsset.cpp" "types/assetTypes.h" "asset.h" "asset.cpp" chunk.cpp chunk.h assembly.cpp assembly.h)
 

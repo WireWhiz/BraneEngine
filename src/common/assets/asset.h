@@ -2,23 +2,27 @@
 #include "assets/assetID.h"
 #include <networking/serializedData.h>
 #include <byte.h>
+#include <assets/assetType.h>
 //namespace net
 //{
 //	class OMessage;
 //	class IMessage;
 //}
 
-enum class AssetDependencyLevel
-{
-	optional,
-	loadProcedural,
-	requireFull
-};
+
 
 struct AssetDependency
 {
+	enum class Level
+	{
+		optional = 0,
+		loadProcedural = 1,
+		requireFull = 2
+	};
+
 	AssetID id;
-	AssetDependencyLevel level;
+	Level level;
+	AssetType type;
 };
 
 struct AssetHeader

@@ -236,25 +236,28 @@ void AssetHttpServer::setUpAPICalls()
 			if(!authorizeSession(sessionID, {"create assets"}))
 			{
 				res.status = 403;
-				res.set_content(R"({"text":"Not authorized for that action")", "application/json");
+				res.set_content(R"({"text":"Not authorized for that action"})", "application/json");
 				return;
 			}
 
-			if(req.has_param("filters"))
-			{
+			bool showDeps = false;
+			if(req.has_param("showDeps"))
+				showDeps = req.get_param_value("showDeps") == "true";
 
-			}
-
-			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID), {});
-			std::string resJson = R"({"successful":true, "assets":[)";
+			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID), showDeps);
+			Json::Value resJson;
+			resJson["successful"] = true;
 			for(auto& asset : assets)
 			{
-				resJson += R"({"name":")" + asset.name + R"(","id":")" + toHex(asset.id.id) + "\"},";
+				Json::Value assetJson;
+				assetJson["name"] = asset.name;
+				assetJson["id"] = toHex(asset.id.id);
+				assetJson["type"] = asset.type.string();
+				resJson["assets"].append(assetJson);
 			}
-			if(!assets.empty())
-				resJson.resize(resJson.size() - 1); //Jank way to cut off last comma
-			resJson += "]}";
-			res.set_content(resJson, "application/json");
+			Json::StreamWriterBuilder builder;
+			builder["indentation"] = "";
+			res.set_content(Json::writeString(builder, resJson), "application/json");
 
 		}
 		catch(const std::exception& e){
@@ -286,12 +289,72 @@ void AssetHttpServer::setUpAPICalls()
 			}
 
 			AssetData asset = _db.loadAssetData(assetID);
-			std::string resJson = R"({"successful":true, "asset":{)";
+			Json::Value resJson;
+
+			resJson["successful"] = true;
+			resJson["name"] = asset.name;
+			resJson["permission_level"] = (int)pem.level();
+			resJson["type"] = asset.type.string();
+
+			/*std::string resJson = R"({"successful":true, "asset":{)";
 			resJson += R"("name":")" + asset.name + "\",";
 			resJson += R"("permission_level":)" + std::to_string((int)pem.level()) + ",";
 			resJson += R"("type":"not defined")";
-			resJson += "}}";
-			res.set_content(resJson, "application/json");
+			resJson += "}}";*/
+			Json::StreamWriterBuilder builder;
+			builder["indentation"] = "";
+			res.set_content(Json::writeString(builder, resJson), "application/json");
+
+		}
+		catch(const std::exception& e){
+			res.set_content(R"("successful":false)", "application/json");
+			std::cerr << "asset list error: " << e.what();
+			res.status = 500;
+		}
+
+	});
+	_server->Get("/api/assets/([a-fA-F0-9]+)/dependencies", [this](const httplib::Request &req, httplib::Response &res)
+	{
+		try{
+			std::string sessionID = getCookie("session_id", req);
+			if(!authorizeSession(sessionID, {"create assets"}))
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"Not authorized for that action","successful":false)", "application/json");
+				return;
+			}
+			std::cout << "User requesting asset dependencies: " << req.matches[1].str() << std::endl;
+			AssetID assetID = AssetID("/" +req.matches[1].str());
+
+			AssetPermission pem = _db.assetPermission(assetID.id, std::stoi(_sessions[sessionID].userID));
+			if(pem.level() == AssetPermission::Level::none)
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.","successful":false)", "application/json");
+				return;
+			}
+			Json::Value resJson;
+			resJson["successful"] = true;
+			std::vector<AssetDependency> deps = _db.assetDependencies(assetID.id);
+			for(auto& dep : deps)
+			{
+				Json::Value depJson;
+				depJson["id"] = dep.id.string();
+				depJson["level"] = (int)dep.level;
+				depJson["type"] = dep.type.string();
+				resJson["dependencies"].append(depJson);
+			}
+			resJson["dependencies"];
+
+
+			/*std::string resJson = R"({"successful":true, "asset":{)";
+			resJson += R"("name":")" + asset.name + "\",";
+			resJson += R"("permission_level":)" + std::to_string((int)pem.level()) + ",";
+			resJson += R"("type":"not defined")";
+			resJson += "}}";*/
+			Json::StreamWriterBuilder builder;
+			builder["indentation"] = "";
+			res.set_content(Json::writeString(builder, resJson), "application/json");
 
 		}
 		catch(const std::exception& e){
@@ -335,6 +398,7 @@ void AssetHttpServer::setUpAPICalls()
 					AssetData ad(_db);
 					ad.name = mesh->name;
 					ad.id.serverAddress = _domain;
+					ad.type.set(AssetType::Type::mesh);
 
 					ad.save(); // Saving will generate an Asset ID
 					mesh->id() = ad.id;
@@ -357,11 +421,21 @@ void AssetHttpServer::setUpAPICalls()
 				AssetID assemblyID;
 				assemblyID.serverAddress = _domain;
 				ad.id = assemblyID;
+				ad.type.set(AssetType::Type::assembly);
 				ad.save();
 				assembly.id() = ad.id;
 
 	            AssetPermission p = _db.assetPermission(ad.id.id, std::stoi(_sessions[sessionID].userID));
 	            p.setLevel(AssetPermission::Level::owner);
+
+				for(auto mesh : meshes)
+				{
+					DatabaseAssetDependency dep(_db);
+					dep.id = ad.id;
+					dep.dependency.id = mesh->id();
+					dep.dependency.level = AssetDependency::Level::loadProcedural;
+					dep.save();
+				}
 
 				_fm.writeAsset(&assembly);
 				std::cout << "Created assembly with id: " << ad.id.string() << std::endl;
