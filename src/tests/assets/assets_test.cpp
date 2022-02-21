@@ -16,8 +16,8 @@ TEST(assets, AssetHeaderTest)
 {
 	AssetHeader ah;
 	ah.id = AssetID("test/0");
-	ah.dependencies.push_back({AssetID("test/2"), AssetDependencyLevel::requireFull});
-	ah.dependencies.push_back({AssetID("test/2"), AssetDependencyLevel::loadProcedural});
+	ah.dependencies.push_back({AssetID("test/2"), AssetDependency::Level::requireFull});
+	ah.dependencies.push_back({AssetID("test/2"), AssetDependency::Level::loadProcedural});
 
 	OSerializedData serialized;
 	ah.serialize(serialized);

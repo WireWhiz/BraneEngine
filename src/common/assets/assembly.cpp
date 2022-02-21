@@ -10,7 +10,7 @@ void WorldEntity::serialize(OSerializedData& message)
 	for (int i = 0; i < components.size(); ++i)
 	{
 		message << components[i].def()->id();
-		components[i].def()->serialize(message, components[i].data());
+		components[i].def()->serializeComponent(message, components[i].data());
 	}
 }
 
@@ -26,7 +26,7 @@ void WorldEntity::deserialize(ISerializedData& message)
 		assert(false && "Write code here");
 		// Here we retrieve the asset id from somewhere and then use it to read the serialized data
 		//VirtualComponent component(assetDefiniton);
-		//component.def()->deserialize(message, component.data());
+		//component.def()->deserializeComponent(message, component.data());
 		//components.push_back(std::move(component));
 	}
 }

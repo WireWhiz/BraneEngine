@@ -6,10 +6,17 @@
 #include <assets/assetID.h>
 #include <cstring>
 #include <regex>
+#include <typeinfo>
 
 
+class SerializationError : virtual public std::runtime_error
+{
+public:
+	explicit SerializationError(const std::type_info& t) : std::runtime_error(std::string("type: ") + t.name() + " could not be serialized")
+	{
 
-const std::string arrayEndStr = "~~ArrEnd~~";
+	}
+};
 
 class ISerializedData
 {
@@ -17,7 +24,7 @@ class ISerializedData
 public:
 	std::vector<byte> data;
 
-	size_t size() const
+	[[nodiscard]] size_t size() const
 	{
 		return data.size();
 	}
@@ -38,7 +45,8 @@ public:
 	template <typename T>
 	friend ISerializedData& operator >> (ISerializedData& msg, T& data)
 	{
-		static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
 		if (msg._ittr + sizeof(T) > msg.data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
 
@@ -60,7 +68,8 @@ public:
 	template <typename T>
 	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<T>& data)
 	{
-		static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
 		uint32_t size;
 		msg.readSafeArraySize(size);
 
@@ -116,10 +125,10 @@ public:
 
 	void read(void* dest, size_t size)
 	{
-		if(_ittr + size <= data.size())
+		if (_ittr + size <= data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
 
-		std::memcpy(dest, &data.data()[_ittr], size);
+		std::memcpy(dest, &data[_ittr], size);
 		_ittr += size;
 
 	}
@@ -127,6 +136,8 @@ public:
 	template<typename T>
 	T peek()
 	{
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
 		if (_ittr + sizeof(T) > data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
 		size_t ittrPos = _ittr;
@@ -136,7 +147,7 @@ public:
 		return o;
 	}
 
-	bool endOfData()
+	[[nodiscard]] bool endOfData() const
 	{
 		return _ittr >= data.size();
 	}
@@ -147,7 +158,7 @@ class OSerializedData
 public:
 	std::vector<byte> data;
 
-	size_t size() const
+	[[nodiscard]] size_t size() const
 	{
 		return data.size();
 	}
@@ -168,11 +179,12 @@ public:
 	template <typename T>
 	friend OSerializedData& operator << (OSerializedData& msg, const T& data)
 	{
-		static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
 
 		size_t index = msg.data.size();
 		msg.data.resize(index + sizeof(T));
-		std::memcpy(&msg.data.data()[index], &data, sizeof(T));
+		std::memcpy(&msg.data[index], &data, sizeof(T));
 
 		return msg;
 	}
@@ -180,7 +192,8 @@ public:
 	template <typename T>
 	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<T>& data)
 	{
-		static_assert(std::is_standard_layout<T>::value, "Type cannot be used in message");
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
 
 		uint32_t arrLength = data.size() * sizeof(T);
 		msg << arrLength;
@@ -231,7 +244,7 @@ public:
 		std::memcpy(&data[index], src, size);
 	}
 
-	ISerializedData toIMessage() const
+	[[nodiscard]] ISerializedData toIMessage() const
 	{
 		ISerializedData o{};
 		o.data.resize(data.size());
@@ -239,17 +252,3 @@ public:
 		return o;
 	}
 };
-
-template <int>
-OSerializedData& operator << (OSerializedData& msg, const std::vector<int>& data)
-{
-	static_assert(std::is_standard_layout<int>::value, "Type cannot be used in message");
-
-	size_t index = msg.data.size();
-	size_t arrLength = data.size() * sizeof(int);
-	msg.data.resize(index + arrLength + arrayEndStr.size());
-	std::memcpy(&msg.data[index], &data, arrLength);
-	std::memcpy(&msg.data[index + arrLength], arrayEndStr.data(), arrayEndStr.size());
-
-	return msg;
-}

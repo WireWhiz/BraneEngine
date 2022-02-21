@@ -103,7 +103,7 @@ void ComponentAsset::move(byte* dest, byte* source) const
 	}
 }
 
-void ComponentAsset::serialize(OSerializedData& sdata, byte* component) const
+void ComponentAsset::serializeComponent(OSerializedData& sdata, byte* component) const
 {
 	for (int i = 0; i < _types.size(); ++i)
 	{
@@ -111,10 +111,41 @@ void ComponentAsset::serialize(OSerializedData& sdata, byte* component) const
 	}
 }
 
-void ComponentAsset::deserialize(ISerializedData& sdata, byte* component) const
+void ComponentAsset::deserializeComponent(ISerializedData& sdata, byte* component) const
 {
 	for (int i = 0; i < _types.size(); ++i)
 	{
 		 _types[i]->deserialize(sdata, component + _types[i]->offset());
 	}
+}
+
+void ComponentAsset::serialize(OSerializedData& sdata)
+{
+	Asset::serialize(sdata);
+	sdata << (uint32_t)_types.size();
+	for(auto& type : _types)
+	{
+		sdata << (uint16_t)type->getType();
+	}
+}
+
+void ComponentAsset::deserialize(ISerializedData& sdata)
+{
+	Asset::deserialize(sdata);
+	uint32_t size;
+	sdata.readSafeArraySize(size);
+	std::vector<std::unique_ptr<VirtualType>> types;
+	types.reserve(size); // Creating a local vector instead of using the classes one, so it doesn't get overwritten when we call the constructor. ID gets copied, so we don't need to worry about that.
+	for(uint32_t i = 0; i < size; i++)
+	{
+		uint16_t type;
+		sdata >> type;
+		types.push_back(std::unique_ptr<VirtualType>(VirtualType::constructTypeOf((VirtualType::Type)type)));
+	}
+	new(this) ComponentAsset(types, id());
+}
+
+ComponentAsset::ComponentAsset(ISerializedData& sData)
+{
+	deserialize(sData);
 }

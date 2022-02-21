@@ -38,4 +38,10 @@ TEST(networking, SerializedDataTest)
 	EXPECT_THROW(iMessage >> second, std::runtime_error);
 	EXPECT_THROW(iMessage >> third, std::runtime_error);
 
+	std::shared_ptr<int> testPtr = std::make_shared<int>(5);
+	std::vector<std::shared_ptr<int>> testVectorPtr = {testPtr, testPtr, testPtr};
+	EXPECT_THROW(oMessage << testPtr, SerializationError);
+	EXPECT_THROW(iMessage >> testPtr, SerializationError);
+	EXPECT_THROW(oMessage << testVectorPtr, SerializationError);
+	EXPECT_THROW(iMessage >> testVectorPtr, SerializationError);
 }
