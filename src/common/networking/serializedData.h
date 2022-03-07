@@ -151,6 +151,11 @@ public:
 	{
 		return _ittr >= data.size();
 	}
+
+	void restart()
+	{
+		_ittr = 0;
+	}
 };
 
 class OSerializedData

@@ -2,31 +2,26 @@
 
 ShaderAsset::ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spirv)
 {
-	_header.id = id;
-	_type = type;
-	_spirv = std::move(spirv);
-}
-
-ShaderAsset::ShaderAsset(ISerializedData& source)
-{
-	deserialize(source);
-}
-
-ShaderType ShaderAsset::type()
-{
-	return _type;
+	id = id;
+	shaderType = type;
+	spirv = std::move(spirv);
 }
 
 void ShaderAsset::serialize(OSerializedData& message)
 {
 	Asset::serialize(message);
-	message << _type;
-	message << _spirv;
+	message << shaderType;
+	message << spirv;
 }
 
-void ShaderAsset::deserialize(ISerializedData& message)
+void ShaderAsset::deserialize(ISerializedData& message, AssetManager& am)
 {
-	Asset::deserialize(message);
-	message >> _type;
-	message >> _spirv;
+	Asset::deserialize(message, am);
+	message >> shaderType;
+	message >> spirv;
+}
+
+ShaderAsset::ShaderAsset()
+{
+	type.set(AssetType::Type::shader);
 }

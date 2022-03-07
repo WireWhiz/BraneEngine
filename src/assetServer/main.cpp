@@ -6,43 +6,53 @@
 #include <fstream>
 #include <string>
 #include <ecs/ecs.h>
-#include <assetNetworking/networkAuthenticator.h>
 #include <fileManager/fileManager.h>
+#include "assetNetworking/assetServer.h"
 #include <assets/types/meshAsset.h>
 #include <assets/types/shaderAsset.h>
 #include "httpServer/assetHttpServer.h"
 #include <database/Database.h>
 
-struct SentMesh : public NativeComponent<SentMesh>
+/*struct SentMesh : public NativeComponent<SentMesh>
 {
-	REGISTER_MEMBERS_0();
-};
+	REGISTER_MEMBERS_0("Sent Mesh");
+};*/
 
 int main()
 {
 	Config::loadConfig();
 	ThreadPool::init(4);
 
-	uint16_t tcpPort = Config::json()["network"].get("tcp port", 800).asUInt();
-	uint16_t sslPort = Config::json()["network"].get("ssl port", 801).asUInt();
 	FileManager fm;
+	NetworkManager nm;
+	nm.configureServer();
+	AssetManager am(fm, nm);
+	am.isServer = true;
+	AssetServer as(nm, am);
+	nm.start();
 	Database db;
-    AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db, fm);
+    AssetHttpServer hs(Config::json()["network"]["domain"].asString(), Config::json()["network"]["use_ssl"].asBool(), db, am, fm);
     hs.scanFiles();
+
+
 
 
 	EntityManager em;
 
+	while(true)
+	{
+		as.processMessages();
+	}
 
-	net::ConnectionAcceptor ca(tcpPort, &em);
-	net::NetworkAuthenticator na(&em);
+	//net::ConnectionAcceptor ca(tcpPort, &em);
+	//net::NetworkAuthenticator na(&em);
 	
-	std::vector<const ComponentAsset*> components;
+	/*std::vector<const ComponentAsset*> components;
 	components.push_back(EntityIDComponent::def());
 	components.push_back(net::ConnectionComponent::def());
 	ComponentSet exclude;
 	exclude.add(SentMesh::def());
-	NativeForEach nfe = NativeForEach(components, exclude, &em);
+	NativeForEach nfe = NativeForEach(components, exclude, &em);*/
 
 	
 	/*MeshAsset quad = MeshAsset(AssetID("localhost/this/mesh/quad"), std::vector<uint32_t>({0, 1, 2, 2, 3, 0}),
@@ -53,16 +63,16 @@ int main()
 														{{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
 													}));*/
 
-	AssetID vertexShaderID = AssetID("localhost/" + std::to_string(nativeComponentIDIttr));
+	/*AssetID vertexShaderID = AssetID("localhost/" + std::to_string(nativeComponentIDIttr));
 	std::vector<uint32_t> verticies;
 	fm.readFile("localhost/"  + std::to_string(nativeComponentIDIttr), verticies);
 
-	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, verticies);
+	ShaderAsset vertexShader = ShaderAsset(vertexShaderID, ShaderType::vertex, verticies);*/
 	
 
 	//fm.writeAsset(&quad);
 
-    bool run = true;
+    /*bool run = true;
 	while (run)
 	{
 		em.runSystems();
@@ -89,7 +99,7 @@ int main()
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
+	}*/
 	ThreadPool::cleanup();
 	return 0;
 }

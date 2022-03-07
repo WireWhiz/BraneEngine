@@ -175,6 +175,31 @@ std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
 	return buffer;
 }
 
+std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
+{
+	Json::Value& accessor = _json["accessors"][accessorIndex];
+	if(accessor["componentType"].asUInt() != 5126 ||
+	   accessor["type"].asString() != "VEC2")
+		throw std::runtime_error("Mismatched accessor values for reading Vec2");
+
+	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+	uint32_t count = accessor["count"].asUInt();
+	uint32_t stride = bufferView.get("byteStride", sizeof(float)*2).asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt();
+
+	std::vector<glm::vec2> buffer(count);
+	for (int i = 0; i < count; ++i)
+	{
+		float* ittr = (float*)&_bin[offset + stride * i];
+		buffer[i].x = ittr[0];
+		buffer[i].y = ittr[1];
+	}
+
+
+	return buffer;
+}
+
+
 std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
 {
 	Json::Value& accessor = _json["accessors"][accessorIndex];
@@ -205,23 +230,42 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 	std::vector<MeshAsset*> meshAssets;
 	for(auto& meshData : _json["meshes"])
 	{
-		AssetID id;
-		MeshAsset* mesh = new MeshAsset(id);
-		mesh->name = meshData["name"].asString();
+		uint8_t pIndex = 0;
 		for(auto& primitive : meshData["primitives"])
 		{
-			std::vector<uint16_t> indices = readScalarBuffer(primitive["indices"].asUInt());
+			MeshAsset* mesh = new MeshAsset();
+			mesh->name = meshData["name"].asString();
+			if(pIndex > 1)
+				mesh->name += "_" + std::to_string(pIndex);
+			pIndex += 1;
 
-			size_t index = mesh->indices.size();
-			mesh->indices.resize(index + indices.size());
-			std::memcpy(&mesh->indices[index], indices.data(), indices.size() * sizeof(uint16_t));
+			mesh->indices = readScalarBuffer(primitive["indices"].asUInt());
 
-			std::vector<glm::vec3> positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
-			index = mesh->positions.size();
-			mesh->positions.resize(index + positions.size());
-			std::memcpy(&mesh->positions[index], positions.data(), positions.size() * sizeof(glm::vec3));
+			mesh->positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
+
+			if(primitive["attributes"].isMember("NORMAL"))
+			{
+				mesh->normals = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
+			}
+
+			if(primitive["attributes"].isMember("TANGENT"))
+			{
+				mesh->tangents = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+			}
+
+			if(primitive["attributes"].isMember("TEXCOORD_0"))
+			{
+				if(mesh->uvs.size() < 1)
+					mesh->uvs.resize(1);
+				mesh->uvs[0] = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
+			}
+
+			//TODO: Remove vertices unused by indices array, since primitives reuse a lot of buffers
+
+			mesh->loadState = Asset::LoadState::complete;
+			meshAssets.push_back(mesh);
 		}
-		meshAssets.push_back(mesh);
+
 	}
 	return meshAssets;
 }
@@ -230,6 +274,7 @@ Json::Value& gltfLoader::nodes()
 {
 	return _json["nodes"];
 }
+
 
 
 

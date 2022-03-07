@@ -2,6 +2,7 @@
 #include <ecs/core/component.h>
 #include <ecs/core/structMembers.h>
 #include <ecs/nativeTypes/transform.h>
+#include <ecs/nativeTypes/meshRenderer.h>
 #include "mesh.h"
 #include "material.h"
 
@@ -21,15 +22,7 @@ namespace graphics
 		Renderer(EntityManager& em, Material* material);
 		//~Renderer();
 		void createDescriptorSets(size_t count);
-		void createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::unordered_map<MeshID,std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame);
+		void createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::vector<std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame);
 		std::vector<VkCommandBuffer>* getBuffers(size_t frame);
-	};
-
-	class RendererData : public NativeComponent<RendererData>
-	{
-		REGISTER_MEMBERS_1(disabled);
-	public:
-		bool disabled;
-
 	};
 }

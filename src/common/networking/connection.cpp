@@ -34,15 +34,12 @@ namespace net
 	template<>
 	void ServerConnection<tcp_socket>::connectToClient()
 	{
-		if(connected())
-			async_readHeader();
+		async_readHeader();
 	}
 
 	template<>
 	void ServerConnection<ssl_socket>::connectToClient()
 	{
-		if(!connected())
-			return;
 		_socket.async_handshake(asio::ssl::stream_base::server, [this](std::error_code ec) {
 			if (!ec)
 			{
@@ -62,7 +59,7 @@ namespace net
 		asio::async_connect(_socket.lowest_layer(), endpoints, [this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec)
 			{
-
+				_connected = true;
 				async_readHeader();
 			}
 			else
@@ -78,6 +75,7 @@ namespace net
 		asio::async_connect(_socket.lowest_layer(), endpoints, [this](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec)
 			{
+				_connected = true;
 				_socket.async_handshake(asio::ssl::stream_base::client, [this](std::error_code ec) {
 					if (!ec)
 					{

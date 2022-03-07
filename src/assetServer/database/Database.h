@@ -35,9 +35,9 @@ public:
 
 	AssetData loadAssetData(const AssetID& id);
 	AssetPermission assetPermission(const uint32_t assetID, const uint32_t userID);
-	std::vector<AssetDependency> assetDependencies(const uint32_t assetID);
+	std::string assetName(AssetID& id);
 
-	std::vector<AssetData> listUserAssets(const uint32_t& userID, bool showDeps);
+	std::vector<AssetData> listUserAssets(const uint32_t& userID);
 };
 
 

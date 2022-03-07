@@ -3,7 +3,7 @@
 #include "assetServer/gltf/gltfLoader.h"
 #include "utility/hex.h"
 
-AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm): HTTPServer(domain, useHttps), _db(db), _fm(fm)
+AssetHttpServer::AssetHttpServer(const std::string& domain, bool useHttps, Database& db, AssetManager& am, FileManager& fm): HTTPServer(domain, useHttps), _db(db), _am(am), _fm(fm)
 {
 	setUpAPICalls();
 	setUpListeners();
@@ -240,11 +240,7 @@ void AssetHttpServer::setUpAPICalls()
 				return;
 			}
 
-			bool showDeps = false;
-			if(req.has_param("showDeps"))
-				showDeps = req.get_param_value("showDeps") == "true";
-
-			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID), showDeps);
+			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID));
 			Json::Value resJson;
 			resJson["successful"] = true;
 			for(auto& asset : assets)
@@ -261,8 +257,8 @@ void AssetHttpServer::setUpAPICalls()
 
 		}
 		catch(const std::exception& e){
-			res.set_content(R"("successful":false)", "application/json");
-			std::cerr << "asset list error: " << e.what();
+			res.set_content(R"({"successful":false})", "application/json");
+			std::cerr << "asset list error: " << e.what() << std::endl;
 			res.status = 500;
 		}
 
@@ -274,7 +270,7 @@ void AssetHttpServer::setUpAPICalls()
 			if(!authorizeSession(sessionID, {"create assets"}))
 			{
 				res.status = 403;
-				res.set_content(R"({"text":"Not authorized for that action")", "application/json");
+				res.set_content(R"({"text":"Not authorized for that action","successful":false})", "application/json");
 				return;
 			}
 			std::cout << "User requesting asset: " << req.matches[1].str() << std::endl;
@@ -284,7 +280,7 @@ void AssetHttpServer::setUpAPICalls()
 			if(pem.level() == AssetPermission::Level::none)
 			{
 				res.status = 403;
-				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.")", "application/json");
+				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.","successful":false})", "application/json");
 				return;
 			}
 
@@ -296,11 +292,48 @@ void AssetHttpServer::setUpAPICalls()
 			resJson["permission_level"] = (int)pem.level();
 			resJson["type"] = asset.type.string();
 
-			/*std::string resJson = R"({"successful":true, "asset":{)";
-			resJson += R"("name":")" + asset.name + "\",";
-			resJson += R"("permission_level":)" + std::to_string((int)pem.level()) + ",";
-			resJson += R"("type":"not defined")";
-			resJson += "}}";*/
+			Json::StreamWriterBuilder builder;
+			builder["indentation"] = "";
+			res.set_content(Json::writeString(builder, resJson), "application/json");
+
+		}
+		catch(const std::exception& e){
+			res.set_content(R"({"successful":false})", "application/json");
+			std::cerr << "asset list error: " << e.what();
+			res.status = 500;
+		}
+
+	});
+	_server->Get("/api/assets/get_name", [this](const httplib::Request &req, httplib::Response &res)
+	{
+		try{
+			std::string sessionID = getCookie("session_id", req);
+			if(!authorizeSession(sessionID, {"create assets"}))
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"Not authorized for that action","successful":false})", "application/json");
+				return;
+			}
+
+			AssetID assetID = AssetID(req.get_header_value("name"));
+			std::cout << "User requesting asset name: " << assetID.string() << std::endl;
+			if(assetID.serverAddress != "native")
+			{
+				AssetPermission pem = _db.assetPermission(assetID.id, std::stoi(_sessions[sessionID].userID));
+				if(pem.level() == AssetPermission::Level::none)
+				{
+					res.status = 403;
+					res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.","successful":false})", "application/json");
+					return;
+				}
+			}
+
+			Json::Value resJson;
+			resJson["successful"] = true;
+			resJson["name"] = assetID.string();
+			if(assetID.serverAddress == "localhost" || assetID.serverAddress == "native")
+				resJson["name"] = _am.getAssetName(assetID);
+
 			Json::StreamWriterBuilder builder;
 			builder["indentation"] = "";
 			res.set_content(Json::writeString(builder, resJson), "application/json");
@@ -313,56 +346,46 @@ void AssetHttpServer::setUpAPICalls()
 		}
 
 	});
-	_server->Get("/api/assets/([a-fA-F0-9]+)/dependencies", [this](const httplib::Request &req, httplib::Response &res)
+	_server->Get("/api/assets/([a-fA-F0-9]+)/data", [this](const httplib::Request &req, httplib::Response &res)
 	{
 		try{
 			std::string sessionID = getCookie("session_id", req);
 			if(!authorizeSession(sessionID, {"create assets"}))
 			{
 				res.status = 403;
-				res.set_content(R"({"text":"Not authorized for that action","successful":false)", "application/json");
+				res.set_content(R"({"text":"Not authorized for that action","successful":false})", "application/json");
 				return;
 			}
-			std::cout << "User requesting asset dependencies: " << req.matches[1].str() << std::endl;
-			AssetID assetID = AssetID("/" +req.matches[1].str());
+			std::cout << "User requesting asset data: " << req.matches[1].str() << std::endl;
+			AssetID assetID = AssetID("localhost/" +req.matches[1].str());
 
 			AssetPermission pem = _db.assetPermission(assetID.id, std::stoi(_sessions[sessionID].userID));
 			if(pem.level() == AssetPermission::Level::none)
 			{
 				res.status = 403;
-				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.","successful":false)", "application/json");
+				res.set_content(R"({"text":"This asset does not exist, or you are not authorized to view it.","successful":false})", "application/json");
 				return;
 			}
+
+			Asset* asset = _am.getAsset<Asset>(assetID);
+			assert(asset);
 			Json::Value resJson;
+
 			resJson["successful"] = true;
-			std::vector<AssetDependency> deps = _db.assetDependencies(assetID.id);
-			for(auto& dep : deps)
-			{
-				Json::Value depJson;
-				depJson["id"] = dep.id.string();
-				depJson["level"] = (int)dep.level;
-				depJson["type"] = dep.type.string();
-				resJson["dependencies"].append(depJson);
-			}
-			resJson["dependencies"];
+			resJson["type"] = asset->type.string();
+			resJson["data"];
+			if(asset->type.type() == AssetType::Type::assembly)
+				resJson["data"] = Assembly::toJson((Assembly*)asset);
 
-
-			/*std::string resJson = R"({"successful":true, "asset":{)";
-			resJson += R"("name":")" + asset.name + "\",";
-			resJson += R"("permission_level":)" + std::to_string((int)pem.level()) + ",";
-			resJson += R"("type":"not defined")";
-			resJson += "}}";*/
 			Json::StreamWriterBuilder builder;
 			builder["indentation"] = "";
 			res.set_content(Json::writeString(builder, resJson), "application/json");
-
 		}
 		catch(const std::exception& e){
 			res.set_content(R"("successful":false)", "application/json");
-			std::cerr << "asset list error: " << e.what();
+			std::cerr << "asset retrieval error: " << e.what();
 			res.status = 500;
 		}
-
 	});
     _server->Post("/api/assets/create/gltf",[this](const httplib::Request &req, httplib::Response &res)
     {
@@ -401,18 +424,19 @@ void AssetHttpServer::setUpAPICalls()
 					ad.type.set(AssetType::Type::mesh);
 
 					ad.save(); // Saving will generate an Asset ID
-					mesh->id() = ad.id;
+					mesh->id = ad.id;
 					_fm.writeAsset(mesh);
 					std::cout << "Created new asset with id: " << ad.id.string() << "\n";
-					AssetPermission p = _db.assetPermission(mesh->id().id, std::stoi(_sessions[sessionID].userID));
+					AssetPermission p = _db.assetPermission(mesh->id.id, std::stoi(_sessions[sessionID].userID));
 					p.setLevel(AssetPermission::Level::owner);
 
-					assembly.meshes.push_back(mesh->id());
+					assembly.meshes.push_back(mesh->id);
 				}
-				try{
-
+				try
+				{
 					assembly.data = AssetBuilder::extractNodes(loader);
-				}catch(const std::exception& e){
+				}
+				catch(const std::exception& e){
 					std::cerr << "asset upload error: " << e.what();
 					res.status = 500;
 				}
@@ -422,20 +446,14 @@ void AssetHttpServer::setUpAPICalls()
 				assemblyID.serverAddress = _domain;
 				ad.id = assemblyID;
 				ad.type.set(AssetType::Type::assembly);
+				ad.folderID = 0;
 				ad.save();
-				assembly.id() = ad.id;
+				assembly.id = ad.id;
+				assembly.name = ad.name;
+				assembly.loadState = Asset::complete;
 
 	            AssetPermission p = _db.assetPermission(ad.id.id, std::stoi(_sessions[sessionID].userID));
 	            p.setLevel(AssetPermission::Level::owner);
-
-				for(auto mesh : meshes)
-				{
-					DatabaseAssetDependency dep(_db);
-					dep.id = ad.id;
-					dep.dependency.id = mesh->id();
-					dep.dependency.level = AssetDependency::Level::loadProcedural;
-					dep.save();
-				}
 
 				_fm.writeAsset(&assembly);
 				std::cout << "Created assembly with id: " << ad.id.string() << std::endl;

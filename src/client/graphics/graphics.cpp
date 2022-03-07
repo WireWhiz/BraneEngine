@@ -68,7 +68,7 @@ namespace graphics
         inheritanceInfo.renderPass = _swapChain->renderPass();
         
         //Draw models:
-        glm::mat4x4 view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4x4  proj = glm::perspective(glm::radians(45.0f), _swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 10.0f);
         proj[1][1] *= -1;
         glm::mat4x4 camera_matrix = proj * view;
@@ -140,21 +140,23 @@ namespace graphics
         _materials[id]->buildGraphicsPipeline(_swapChain);
         _renderers.insert({ id, std::make_unique<Renderer>(em, _materials[id].get()) });
     }
-    void VulkanRuntime::addMesh(std::unique_ptr<Mesh> mesh, MeshID id)
+    uint32_t VulkanRuntime::addMesh(std::unique_ptr<Mesh> mesh)
     {
-        _meshes[id] = std::move(mesh);
+		uint32_t index = _meshes.size();
+        _meshes.push_back(std::move(mesh));
+		return index;
     }
-    void VulkanRuntime::updateUniformBuffer(EntityManager& em, ComponentID component)
+    void VulkanRuntime::updateUniformBuffer(EntityManager& em)
     {
+		static const NativeForEach forEach({comps::TransformComponent::def()}, &em);
         static auto startTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-        static EntityForEachID forEachID = em.getForEachID({0});
-        size_t index = 0;
-        em.forEach(forEachID, [&time, &index](byte** components) {
-            Transform::fromVirtual(components[0])->value = glm::rotate(glm::translate(glm::mat4x4(1), {0,0,-0.5 * index++}), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+
+        em.forEach(forEach.id(), [&time](byte** components) {
+            comps::TransformComponent::fromVirtual(components[0])->value =  glm::rotate(glm::scale(glm::mat4x4(1), {25,25,25}), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         });
     }
 
@@ -452,5 +454,6 @@ namespace graphics
         _window->update();
     }
 
-   
+
+
 }

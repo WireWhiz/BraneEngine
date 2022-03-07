@@ -9,19 +9,6 @@ namespace graphics
         
         //Create layout
         std::vector<VkDescriptorSetLayoutBinding> bindings;
-        if (_id != ULONG_MAX)
-        {
-            /*
-            VkDescriptorSetLayoutBinding uboLayoutBinding{};
-            uboLayoutBinding.binding = 0;
-            uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            uboLayoutBinding.descriptorCount = 1;
-
-            uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-            uboLayoutBinding.pImmutableSamplers = nullptr;
-            bindings.push_back(uboLayoutBinding);
-            */
-        }
         
         if (_textures.size() > 0)
         {
@@ -80,7 +67,7 @@ namespace graphics
     }
 
     
-    ComponentAsset Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
+    /*ComponentAsset Material::createUniformComponent(ComponentID id, const std::vector<VirtualType> vars, size_t alignment)
     {
         assert(_id == ULONG_MAX && "createUniformComponent can only be called once");
         std::vector<NativeVarDef> varDefs(vars.size());
@@ -103,7 +90,7 @@ namespace graphics
     ComponentID Material::componentID()
     {
         return _id;
-    }
+    }*/
     void Material::addTextureDescriptor(Texture* texture)
     {
         assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
@@ -119,14 +106,12 @@ namespace graphics
 	void Material::setVertex(Shader* shader)
 	{
         assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        assert(_descriptorSetLayout == VK_NULL_HANDLE);
         assert(shader->type() == VK_SHADER_STAGE_VERTEX_BIT);
 		_vertexShader = shader;
 	}
 	void Material::setFragment(Shader* shader)
 	{
         assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        assert(_descriptorSetLayout == VK_NULL_HANDLE);
         assert(shader->type() == VK_SHADER_STAGE_FRAGMENT_BIT);
 		_fragmentShader = shader;
 	}
@@ -140,13 +125,10 @@ namespace graphics
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-        auto bindingDescription = Vertex::getVkBindingDescription();
-        auto attributeDescriptions = Vertex::getVkAttributeDescriptions();
-
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+        vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)_bindings.size();
+		vertexInputInfo.pVertexBindingDescriptions = _bindings.data();
+		vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)_attributes.size();
+        vertexInputInfo.pVertexAttributeDescriptions = _attributes.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -338,4 +320,23 @@ namespace graphics
         assert(_descriptorPool != VK_NULL_HANDLE);
         return _descriptorPool;
     }
+
+	void Material::addBinding(uint32_t index, uint32_t stride)
+	{
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = index;
+		bindingDescription.stride = stride;
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		_bindings.push_back(bindingDescription);
+	}
+
+	void Material::addAttribute(uint32_t binding, VkFormat format, uint32_t offset)
+	{
+		VkVertexInputAttributeDescription attributeDescription;
+		attributeDescription.binding = binding;
+		attributeDescription.location = _attributes.size();
+		attributeDescription.format = format;
+		attributeDescription.offset = offset;
+		_attributes.push_back(attributeDescription);
+	}
 }

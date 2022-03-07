@@ -6,7 +6,7 @@ add_subdirectory(httpServer)
 add_subdirectory(gltf)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/assetServer)
-add_executable(AssetServer main.cpp "assetNetworking/networkAuthenticator.h" "assetNetworking/networkAuthenticator.cpp" assetProcessing/AssetBuilder.cpp assetProcessing/AssetBuilder.h)
+add_executable(AssetServer main.cpp assetProcessing/AssetBuilder.cpp assetProcessing/AssetBuilder.h assetNetworking/assetServer.cpp assetNetworking/assetServer.h)
 target_include_directories(AssetServer PRIVATE
 	${INCS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

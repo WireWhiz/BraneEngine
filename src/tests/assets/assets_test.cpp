@@ -12,29 +12,7 @@ TEST(assets, AssetIDTest)
 	EXPECT_TRUE(aa == aa);
 }
 
-TEST(assets, AssetHeaderTest)
-{
-	AssetHeader ah;
-	ah.id = AssetID("test/0");
-	ah.dependencies.push_back({AssetID("test/2"), AssetDependency::Level::requireFull});
-	ah.dependencies.push_back({AssetID("test/2"), AssetDependency::Level::loadProcedural});
 
-	OSerializedData serialized;
-	ah.serialize(serialized);
-	std::cout << "Serialized asset header: " << serialized;
-
-	ISerializedData deserializationStream = serialized.toIMessage();
-	AssetHeader deserialized(deserializationStream);
-	EXPECT_EQ(deserialized.id, ah.id);
-	size_t ittr = 0;
-	for(auto& dep1 : ah.dependencies)
-	{
-		auto& dep2 = deserialized.dependencies[ittr++];
-		EXPECT_EQ(dep1.id, dep2.id);
-		EXPECT_EQ(dep1.level, dep2.level);
-	}
-
-}
 
 /*
 TEST(assets, AssetManagerTest)

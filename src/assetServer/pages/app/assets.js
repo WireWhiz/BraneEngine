@@ -7,14 +7,8 @@ class AssetList extends React.Component{
     }
     assetsURL()
     {
-        var showDeps = "false"
 
-        let depsToggle = document.getElementById("showDeps");
-        if(depsToggle && depsToggle.checked)
-        {
-            showDeps = "true";
-        }
-        return "/api/assets?showDeps=" + showDeps;
+        return "/api/assets";
     }
 
     generateList(json)

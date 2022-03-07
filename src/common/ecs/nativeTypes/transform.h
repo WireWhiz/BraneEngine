@@ -7,14 +7,14 @@ namespace comps
 {
 	class TransformComponent : public NativeComponent<TransformComponent>
 	{
-		REGISTER_MEMBERS_1(value);
+		REGISTER_MEMBERS_1("Transform Component", value);
 	public:
 		glm::mat4 value;
 	};
 
 	class LocalTransformComponent : public NativeComponent<LocalTransformComponent>
 	{
-		REGISTER_MEMBERS_2(value, parent);
+		REGISTER_MEMBERS_2("Local Transform", value, parent);
 	public:
 		glm::mat4 value;
 		EntityID parent;
@@ -22,7 +22,7 @@ namespace comps
 
 	class ChildrenComponent : public NativeComponent<ChildrenComponent>
 	{
-		REGISTER_MEMBERS_1(children);
+		REGISTER_MEMBERS_1("Children", children);
 	public:
 		std::vector<EntityID> children;
 	};

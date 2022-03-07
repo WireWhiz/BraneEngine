@@ -4,11 +4,12 @@
     "domain" : "localhost",
     "ssl_cert" : "keys/branevr_privkey.pem",
     "private_key" : "keys/branevr_cert.pem",
+    "tmp_dh" : "keys/tmp_dh2048.pem",
     "auto_renew_key" : true,
     "account_key" : "keys/account.key",
     "web_file_dir" : "../../src/assetServer/pages",
-    "tcp port": 2001,
-    "ssl port": 2002
+    "tcp_port": 2001,
+    "ssl_port": 2002
   },
   "security" :
   {

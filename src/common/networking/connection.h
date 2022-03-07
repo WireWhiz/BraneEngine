@@ -22,7 +22,7 @@ namespace net
 	typedef asio::ssl::stream<tcp_socket> ssl_socket;
 
 
-
+	const std::string_view messageEnd = "~~EndMessage~~";
 	class Connection
 	{
 	public:
@@ -45,7 +45,9 @@ namespace net
 	template<class socket_t>
 	class ConnectionBase : public Connection
 	{
+
 	protected:
+		bool _connected;
 		socket_t _socket;
 		asio::streambuf buffer;
 		void async_readHeader()
@@ -68,11 +70,12 @@ namespace net
 		}
 		void async_readBody()
 		{
-			asio::async_read_until(_socket, buffer, "~~EndMessage~~",  [this](std::error_code ec, std::size_t length) {
+			asio::async_read_until(_socket, buffer, messageEnd,  [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
 					_tempIn->body.data.resize(length);
 					std::memcpy(_tempIn->body.data.data(),buffer.data().data(), length);
+					buffer.consume(length);
 					_ibuffer.push_back(_tempIn);
 					_tempIn = nullptr;
 					async_readHeader();
@@ -112,6 +115,7 @@ namespace net
 			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
+					asio::write(_socket, asio::buffer(messageEnd.data(), messageEnd.size()));
 					_obuffer.pop_front();
 					if (!_obuffer.empty())
 						async_writeHeader();
@@ -126,10 +130,11 @@ namespace net
 	public:
 		ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
 		{
-
+			_connected = false;
 		}
 		void send(std::shared_ptr<OMessage> msg) override
 		{
+			assert(connected());
 			asio::post(_socket.get_executor(), [this, msg]() {
 				bool sending = !_obuffer.empty();
 				_obuffer.push_back(msg);
@@ -143,7 +148,7 @@ namespace net
 		}
 		bool connected() override
 		{
-			return _socket.lowest_layer().is_open();
+			return _socket.lowest_layer().is_open() && _connected;
 		}
 
 	};
@@ -156,6 +161,7 @@ namespace net
 	public:
 		ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
 		{
+			_connected = true;
 			connectToClient();
 		}
 		void connectToClient();
@@ -178,12 +184,12 @@ namespace net
 
 	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
 	{
-		REGISTER_MEMBERS_0();
+		REGISTER_MEMBERS_0("New Connection");
 	};
 
 	struct ConnectionComponent : public NativeComponent<ConnectionComponent>
 	{
-		REGISTER_MEMBERS_2(id, connection);
+		REGISTER_MEMBERS_2("Connection", id, connection);
 		ConnectionID id;
 		std::shared_ptr<Connection> connection;
 		

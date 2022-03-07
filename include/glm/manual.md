@@ -1592,19 +1592,19 @@ Various rounding operations and common special cases thereof.
 
 `<glm/gtc/round.hpp>` need to be included to use the features of this extension.
 
-### <a name="section4_16"></a> 4.16. GLM\_GTC\_type\_aligned
+### <a name="section4_16"></a> 4.16. GLM\_GTC\_shaderType\_aligned
 
 Aligned vector types.
 
 `<glm/gtc/type_aligned.hpp>` need to be included to use the features of this extension.
 
-### <a name="section4_17"></a> 4.17. GLM\_GTC\_type\_precision
+### <a name="section4_17"></a> 4.17. GLM\_GTC\_shaderType\_precision
 
 Vector and matrix types with defined precisions, e.g. `i8vec4`, which is a 4D vector of signed 8-bit integers.
 
 `<glm/gtc/type\_precision.hpp>` need to be included to use the features of this extension.
 
-### <a name="section4_18"></a> 4.18. GLM\_GTC\_type\_ptr
+### <a name="section4_18"></a> 4.18. GLM\_GTC\_shaderType\_ptr
 
 Facilitate interactions between pointers to basic types (e.g. `float*`) and GLM types (e.g. `mat4`).
 

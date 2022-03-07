@@ -35,21 +35,6 @@ public:
 	void setLevel(Level level);
 };
 
-class DatabaseAssetDependency
-{
-private:
-	Database& _db;
-	bool _exists;
-
-public:
-	AssetID id;
-	AssetDependency dependency;
-	DatabaseAssetDependency(Database& db);
-	DatabaseAssetDependency(AssetID id, AssetID dep, Database& db);
-	void save();
-	void del();
-};
-
 class AssetData
 {
 	Database& _db;
@@ -58,7 +43,8 @@ class AssetData
 
 
 public:
-	AssetID     id;
+	AssetID id;
+	uint32_t folderID;
 	std::string name;
 	AssetType type;
 	AssetData(Database& db);

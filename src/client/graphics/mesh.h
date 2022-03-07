@@ -7,6 +7,7 @@
 
 #include "graphicsBuffer.h"
 #include <common/ecs/core/Component.h>
+#include <assets/types/meshAsset.h>
 
 namespace graphics
 {
@@ -68,27 +69,23 @@ namespace graphics
 		GraphicsBuffer* _stagingBuffer;
 		GraphicsBuffer* _dataBuffer;
 		uint32_t _size;
-	public:
-		std::vector<uint32_t> indices;
-		std::vector<Vertex> vertices; 
+		MeshAsset* _meshAsset;
 
-		Mesh(std::vector<uint32_t> indices, std::vector<Vertex> vertices);
+	public:
+
+
+		Mesh(MeshAsset* meshAsset);
 		~Mesh();
 
-		VkBuffer data() const;
-		size_t vertexBufferOffset() const;
+		VkBuffer indexBuffer() const;
+		std::vector<VkBuffer> vertexBuffers() const;
+		std::vector<VkDeviceSize> vertexBufferOffsets() const;
+
 		uint32_t size() const;
+		uint32_t vertexCount() const;
+
 		void lock();
 		void unlock();
 
 	};
-
-	
-	class MeshComponent : public NativeComponent<MeshComponent>
-	{
-		REGISTER_MEMBERS_1(id);
-	public:
-		MeshID id;
-	};
-	
 }

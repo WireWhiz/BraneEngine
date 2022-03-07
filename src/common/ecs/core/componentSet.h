@@ -2,6 +2,7 @@
 #include <set>
 #include <cassert>
 #include <cstddef>
+#include <vector>
 
 class ComponentAsset;
 
@@ -11,6 +12,8 @@ class ComponentSet
 private:
 	std::set<const ComponentAsset*> _components;
 public:
+	ComponentSet() = default;
+	ComponentSet(std::vector<const ComponentAsset*> components);
 	void add(const ComponentAsset* component);
 	void remove(const  ComponentAsset* component);
 

@@ -4,12 +4,10 @@
 
 void FileManager::writeAsset(Asset* asset)
 {
-	AssetID& id = asset->id();
-	
 	OSerializedData data;
 	asset->serialize(data);
 
-	writeFile(asset->id().path(), data.data);
+	writeFile(asset->id.path(), data.data);
 }
 
 

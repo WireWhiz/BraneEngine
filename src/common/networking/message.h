@@ -7,7 +7,7 @@ namespace net
 {
 	enum class MessageType
 	{
-		assetRequest,
+		assetRequest = 0,
 		assetData,
 		assetFragment,
 	};
@@ -32,14 +32,14 @@ namespace net
 	typedef uint32_t ConnectionID;
 	struct IMessageComponent : public NativeComponent<IMessageComponent>
 	{
-		REGISTER_MEMBERS_2(owner, message);
+		REGISTER_MEMBERS_2("Input Message", owner, message);
 		ConnectionID owner;
 		IMessage message;
 	};
 
 	struct OMessageComponent : public NativeComponent<OMessageComponent>
 	{
-		REGISTER_MEMBERS_2(owner, message);
+		REGISTER_MEMBERS_2("Output Message", owner, message);
 		ConnectionID owner;
 		OMessage message;
 	};

@@ -12,13 +12,12 @@ enum class ShaderType
 
 class ShaderAsset : public Asset
 {
-	ShaderType _type;
-	std::vector<uint32_t> _spirv;
 public:
+	ShaderType shaderType;
+	std::vector<uint32_t> spirv;
 	ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spirv);
-	ShaderAsset(ISerializedData& source);
-	ShaderType type();
+	ShaderAsset();
 
 	virtual void serialize(OSerializedData& message) override;
-	virtual void deserialize(ISerializedData& message) override;
+	virtual void deserialize(ISerializedData& message, AssetManager& am) override;
 };

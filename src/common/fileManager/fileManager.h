@@ -1,10 +1,10 @@
 #pragma once
 #include <stdio.h>
-#include <assets/assetManager.h>
 #include <fstream>
 #include <json/json.h>
 #include <filesystem>
 #include <networking/serializedData.h>
+#include <assets/asset.h>
 
 class FileManager
 {
@@ -25,15 +25,24 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(AssetID& id)
+	T* readAsset(AssetID& id, AssetManager& am)
+	{
+		ISerializedData iMessage;
+		if(!readFile(id.path(), iMessage.data))
+			return nullptr;
+		T* asset = new T();
+		asset->deserialize(iMessage, am);
+		return asset;
+	}
+
+	Asset* readUnknownAsset(AssetID& id, AssetManager& am)
 	{
 		ISerializedData iMessage;
 		if(!readFile(id.path(), iMessage.data))
 			return nullptr;
 
-		return new T(iMessage);
+		return Asset::deserializeUnknown(iMessage, am);
 	}
-	
 
 
 	bool readFile(const std::string& filename, std::string& data);

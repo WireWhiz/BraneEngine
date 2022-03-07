@@ -21,6 +21,8 @@ namespace graphics
 		AssetID _id;
 		EntityForEachID _forEachID = ULONG_MAX;
 		std::vector<Texture*> _textures;
+		std::vector<VkVertexInputBindingDescription> _bindings;
+		std::vector<VkVertexInputAttributeDescription> _attributes;
 
 		VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
 		VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
@@ -29,14 +31,13 @@ namespace graphics
 
 	public:
 		~Material();
-		
-		ComponentAsset createUniformComponent(AssetID id, const std::vector<VirtualType> vars, size_t alignment);
-		const ComponentAsset* component() const;
-		AssetID componentID();
+
 		void addTextureDescriptor(Texture* texture);
 		void setGeometry(Shader* shader);
 		void setVertex(Shader* shader);
 		void setFragment(Shader* shader);
+		void addBinding(uint32_t binding, uint32_t stride);
+		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildGraphicsPipeline(SwapChain* swapChain);
 		void getImageDescriptors(std::vector<VkWriteDescriptorSet>& descriptors, std::vector<VkDescriptorImageInfo>& imageInfo, VkDescriptorSet& descriptorSet);
 		VkPipeline pipeline();

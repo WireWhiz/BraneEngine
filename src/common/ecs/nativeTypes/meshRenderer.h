@@ -9,9 +9,10 @@ namespace comps
 {
 	class MeshRendererComponent : public NativeComponent<MeshRendererComponent>
 	{
-		REGISTER_MEMBERS_1(mesh);
+		REGISTER_MEMBERS_2("Mesh Renderer", mesh, renderer);
 	public:
 		uint32_t mesh;
+		uint32_t renderer;
 	};
 
 }

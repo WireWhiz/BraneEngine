@@ -1,8 +1,13 @@
 #pragma once
+#define  GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cstdlib>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <byte.h>
 #include <networking/serializedData.h>
+#include <json/json.h>
 
 template <class T>
 constexpr inline
@@ -41,9 +46,14 @@ public:
 		virtualUnknown = 0,
 		virtualBool,
 		virtualInt,
+		virtualInt64,
 		virtualUInt,
+		virtualUInt64,
 		virtualFloat,
-		virtualString
+		virtualString,
+		virtualVec3,
+		virtualVec4,
+		virtualMat4
 	};
 protected:
 	size_t _offset;
@@ -53,6 +63,8 @@ public:
 	size_t offset();
 	virtual Type getType() = 0;
 	static VirtualType* constructTypeOf(Type type);
+	static std::string typeToString(Type type);
+	static Type stringToType(const std::string& type);
 	virtual void serialize(OSerializedData& data, const byte* source)  = 0;
 	virtual void deserialize(ISerializedData& data, byte* source) = 0;
 	virtual const size_t size() const = 0;
@@ -79,14 +91,25 @@ public:
 	{
 		if constexpr(std::is_same<T, bool>().value)
 			return Type::virtualBool;
-		if constexpr(std::is_same<T, int>().value)
+		if constexpr(std::is_same<T, int32_t>().value)
 			return Type::virtualInt;
 		if constexpr(std::is_same<T, uint32_t>().value)
 			return Type::virtualUInt;
+		if constexpr(std::is_same<T, int64_t>().value)
+			return Type::virtualInt64;
+		if constexpr(std::is_same<T, uint64_t>().value)
+			return Type::virtualUInt64;
 		if constexpr(std::is_same<T, float>().value)
 			return Type::virtualFloat;
 		if constexpr(std::is_same<T, std::string>().value)
 			return Type::virtualString;
+		if constexpr(std::is_same<T, glm::vec3>().value)
+			return Type::virtualVec3;
+		if constexpr(std::is_same<T, glm::vec4>().value)
+			return Type::virtualVec4;
+		if constexpr(std::is_same<T, glm::mat4>().value)
+			return Type::virtualMat4;
+		std::cerr << "Tried to serialize type of: " << typeid(T).name() << std::endl;
 		return Type::virtualUnknown;
 	}
 
@@ -132,3 +155,4 @@ public:
 typedef VirtualVariable<bool>    VirtualBool;
 typedef VirtualVariable<int64_t> VirtualInt;
 typedef VirtualVariable<float>   VirtualFloat;
+

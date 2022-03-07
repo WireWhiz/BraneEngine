@@ -67,3 +67,9 @@ typename  std::set<const ComponentAsset*>::const_iterator ComponentSet::end() co
 {
 	return _components.end();
 }
+
+ComponentSet::ComponentSet(std::vector<const ComponentAsset*> components)
+{
+	for(auto& c : components)
+		add(c);
+}

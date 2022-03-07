@@ -9,54 +9,33 @@
 //	class IMessage;
 //}
 
+class AssetManager;
 
 
-struct AssetDependency
-{
-	enum class Level
-	{
-		optional = 0,
-		loadProcedural = 1,
-		requireFull = 2
-	};
-
-	AssetID id;
-	Level level;
-	AssetType type;
-};
-
-struct AssetHeader
-{
-	AssetID id;
-	std::vector<AssetDependency> dependencies;
-	void serialize(OSerializedData& sData);
-	AssetHeader() = default;
-	AssetHeader(ISerializedData& serializedHeader);
-};
-
-class SerializedAssetBody
-{
- 
-};
-
-class SerializedAssetBodyChunk
-{
-
-};
 
 class Asset
 {
-protected:
-	AssetHeader _header;
-
 public:
-	std::string name;
-	const AssetID& id() const;
-	AssetID& id();
+	enum LoadState{
+		null = 0,
+		partial = 1,
+		complete = 2
+	};
+private:
+public:
 
-	AssetHeader* header();
+	std::string name;
+	AssetID id;
+	AssetType type;
+	LoadState loadState;
+	static Asset* deserializeUnknown(ISerializedData& message, AssetManager& am);
 	virtual void serialize(OSerializedData& message);
-	virtual void deserialize(ISerializedData& message);
+	virtual void deserialize(ISerializedData& message, AssetManager& am);
+};
+
+class IncrementalAsset : public Asset
+{
+
 };
 
 template <>

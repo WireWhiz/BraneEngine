@@ -1,66 +1,61 @@
+//
+// Created by eli on 3/3/2022.
+//
+
 #include "assetServer.h"
 
-namespace net
+AssetServer::AssetServer(NetworkManager& nm, AssetManager& am) : _nm(nm), _am(am)
 {
-	AssetServerInterface::AssetServerInterface(uint16_t port, uint16_t ssl_port) : ServerInterface(port, ssl_port)
+	if(!Config::json()["network"]["use_ssl"].asBool())
 	{
-		_ssl_ctx.set_options(
-			asio::ssl::context::default_workarounds
-			| asio::ssl::context::no_sslv2
-			| asio::ssl::context::single_dh_use
-
-		);
-		try
-		{
-			_ssl_ctx.use_certificate_chain_file("keys\\user.crt");
-			_ssl_ctx.use_tmp_dh_file("keys\\dh2048.pem");
-			_ssl_ctx.use_private_key_file("keys\\user.key", asio::ssl::context::file_format::pem);
-			/*
-			std::ifstream tmp_dh_file("keys/dh2048.pem", std::ios::binary | std::ios::ate);
-			if (!tmp_dh_file.is_open())
-				throw;
-			size_t size = tmp_dh_file.tellg();
-			tmp_dh_file.seekg(0);
-
-			std::vector<char> tmp_dh(size);
-			tmp_dh_file.read(tmp_dh.data(), tmp_dh.size());
-
-			_ssl_ctx.use_tmp_dh(asio::const_buffer(tmp_dh.data(), tmp_dh.size()));
-			*/
-		}
-		catch (const std::exception& e)
-		{
-			std::cerr << "Couldn't read file: " << e.what() << std::endl;
-		}
+		std::cout << "Started listening for asset requests on port: " << Config::json()["network"]["tcp_port"].asUInt() << std::endl;
+		_nm.openAcceptor<net::tcp_socket>(Config::json()["network"]["tcp_port"].asUInt(), [this](std::unique_ptr<net::Connection>&& connection){
+			std::cout << "User connected to tcp" << std::endl;
+			std::scoped_lock lock(_cLock);
+			_connections.push_back(std::move(connection));
+		});
 	}
-	bool AssetServerInterface::onClientConnect(std::shared_ptr<Connection> client)
+	else
 	{
-		std::cout << "Client connected\n";
-		return true;
+		std::cout << "Started listening for asset requests on port: " << Config::json()["network"]["ssl_port"].asUInt() << std::endl;
+		_nm.openAcceptor<net::ssl_socket>(Config::json()["network"]["ssl_port"].asUInt(), [this](std::unique_ptr<net::Connection>&& connection){
+			std::cout << "User connected to ssl" << std::endl;
+			std::scoped_lock lock(_cLock);
+			_connections.push_back(std::move(connection));
+		});
 	}
 
-	void AssetServerInterface::onClientDissconnect(std::shared_ptr<Connection> client)
-	{
-		std::cout << "Client disconnected\n";
-	}
+}
 
-	void AssetServerInterface::onMessage(std::shared_ptr<Connection> client, IMessage& msg)
+void AssetServer::processMessages()
+{
+	std::scoped_lock lock(_cLock);
+	for(size_t i = 0; i < _connections.size(); i++)
 	{
-		std::cout << "Receved message: " << msg << std::endl;
-		std::string text;
-		text.resize(msg.header.size());
-		msg.read(text.data(), msg.header.size());
-		std::cout << "receved: " << text;
-
-		OMessage response;
-		switch (msg.header.type)
+		auto& connection = _connections[i];
+		if(connection->connected())
 		{
-			case MessageType::one:
-				text = "General Kenobi!";
-				response.write(text.data(), text.size());
-				messageClient(client, response);
-				
-				break;
+			std::shared_ptr<net::IMessage> message;
+			while(connection->popIMessage(message))
+			{
+				std::cout << "received message: " << message;
+				if(message->header.type == net::MessageType::assetRequest)
+				{
+					std::string requestedAssetString;
+					message->body >> requestedAssetString;
+					AssetID requestedAsset(requestedAssetString);
+					std::cout << "request for: " << requestedAssetString << std::endl;
+					std::shared_ptr<net::OMessage> res = std::make_shared<net::OMessage>();
+					Asset* asset = _am.getAsset<Asset>(requestedAsset);
+					if(asset)
+					{
+						asset->serialize(res->body);
+						res->header.type = net::MessageType::assetData;
+						connection->send(res);
+					}
+
+				}
+			}
 		}
 	}
 }

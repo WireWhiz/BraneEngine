@@ -11,6 +11,9 @@
 #include <iterator>
 #include <set>
 
+
+extern std::vector<ComponentAsset*> nativeComponentDefinitions;
+
 class VirtualComponent
 {
 protected:
@@ -70,13 +73,19 @@ public:
 template <class T>
 class NativeComponent
 {
-private:  
+public:
 	static ComponentAsset* constructDef()
 	{
+		assert(_def == nullptr);
 		AssetID id;
 		std::vector<VirtualType*> vars = T::getMembers(id);
-		ComponentAsset* ca = new ComponentAsset(vars, id, sizeof(T));
-		return ca;
+		_def = new ComponentAsset(vars, id, sizeof(T));
+		std::string name = typeid(T).name();
+		size_t nameStart = name.find_last_of("::") + 1;
+		if(nameStart == std::string::npos)
+			nameStart = 0;
+		_def->name =  name.substr(nameStart, name.size() - nameStart);
+		return _def;
 	}
 protected:
 	typedef T ComponentType;
@@ -100,7 +109,7 @@ public:
 		return _def;
 	}
 };
-template <class T> ComponentAsset* NativeComponent<T>::_def = NativeComponent<T>::constructDef();
+template <class T> ComponentAsset* NativeComponent<T>::_def = nullptr;
 
 class VirtualComponentVector
 {

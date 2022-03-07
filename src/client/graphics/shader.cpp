@@ -163,8 +163,8 @@ namespace graphics
 
 		if (!shader.parse(&Resources, 100, false, messages))
 		{
-			puts(shader.getInfoLog());
-			puts(shader.getInfoDebugLog());
+			std::cerr << shader.getInfoLog() << std::endl;
+			std::cerr << shader.getInfoDebugLog() << std::endl;
 			return false;  // something didn't work
 		}
 

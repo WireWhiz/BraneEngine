@@ -28,7 +28,7 @@ namespace graphics
 		std::unordered_map<MaterialID, std::unique_ptr<Material>> _materials;
 		std::unordered_map<MaterialID, std::unique_ptr<Renderer>> _renderers;
 		std::unordered_map<TextureID, std::unique_ptr<Texture>> _textures;
-		std::unordered_map<MeshID, std::unique_ptr<Mesh>> _meshes;
+		std::vector<std::unique_ptr<Mesh>> _meshes;
 
 		VkInstance _instance;
 
@@ -81,8 +81,8 @@ namespace graphics
 		Shader* loadShader(ShaderID id);
 		Material* createMaterial(MaterialID id);
 		void initMaterial(EntityManager& em, MaterialID id);
-		void addMesh(std::unique_ptr<Mesh> mesh, MeshID id);
-		void updateUniformBuffer(EntityManager& em, ComponentID component);
+		uint32_t addMesh(std::unique_ptr<Mesh> mesh);
+		void updateUniformBuffer(EntityManager& em);
 		
 	};
 

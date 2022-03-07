@@ -90,42 +90,38 @@ AssetPermission Database::assetPermission(const uint32_t assetID, const uint32_t
 	return AssetPermission(assetID, userID, *this);
 }
 
-std::vector<AssetDependency> Database::assetDependencies(const uint32_t assetID)
+std::vector<AssetData> Database::listUserAssets(const uint32_t& userID)
 {
-	std::vector<AssetDependency> deps;
-
-	rawSQLCall("SELECT DependencyID, DependencyDomain, Level, Type FROM AssetDependencies INNER JOIN Assets ON AssetDependencies.DependencyID = Assets.AssetID WHERE AssetDependencies.AssetID =" + std::to_string(assetID) + ";",
-	                                                                        [&deps, this](const std::vector<Database::sqlColumn>& columns)
-    {
-		AssetDependency dep;
-		dep.id.id = std::stoi(columns[0].value);
-		dep.id.serverAddress = columns[1].value;
-		dep.level = (AssetDependency::Level)std::stoi(columns[2].value);
-        dep.type.set(columns[3].value);
-		deps.push_back(dep);
-    });
-
-	return deps;
-}
-
-std::vector<AssetData> Database::listUserAssets(const uint32_t& userID, bool showDeps)
-{
-	std::string sqlCall = "";
-	if(!showDeps)
-		sqlCall ="SELECT Assets.* FROM Assets LEFT JOIN AssetDependencies ON Assets.AssetID = AssetDependencies.DependencyID JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID WHERE AssetDependencies.DependencyID IS NULL";
-	else
-		sqlCall ="SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID";
+	std::string sqlCall ="SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID WHERE AssetPermissions.UserID = " + std::to_string(userID);
 	std::vector<AssetData> assets;
 	rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
 		AssetData ad(*this);
 		AssetID aid;
 		aid.id = std::stoi(columns[0].value);
 		ad.id = aid;
-		ad.name = columns[1].value;
-		ad.type.set(columns[2].value);
+		ad.folderID = std::stoi(columns[1].value);
+		ad.name = columns[2].value;
+		ad.type.set(columns[3].value);
 		assets.push_back(ad);
 	});
 	return assets;
+}
+
+std::string Database::assetName(AssetID& id)
+{
+	std::string name = "name not found";
+	if(id.serverAddress != "native")
+	{
+		std::string sqlCall ="SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id);
+		rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
+			name = columns[0].value;
+		});
+	}
+	else
+	{
+
+	}
+	return name;
 }
 
 

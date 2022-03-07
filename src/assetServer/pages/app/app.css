@@ -73,3 +73,51 @@ body{
     border: 1px solid black;
     border-radius: 4px;
 }
+
+.editable-table{
+    margin-top: 20px;
+    width:100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.editable-table table, .editable-table th, .editable-table td{
+    border-bottom: 1px solid;
+    border-bottom-color: black;
+    font-weight: normal;
+    padding: 3px;
+}
+.editable-table tr:nth-child(even){
+    background-color: #e3e3e3;
+}
+.editable-table-item input{
+    width:100%;
+    min-width: 20px;
+}
+
+.entity-editor{
+}
+
+
+.scroll-table{
+    width: fit-content;
+    max-height: 600px;
+    overflow-y:scroll;
+    overflow-x: hidden;
+}
+
+
+.entity-editor .scroll-table{
+    width:100%;
+    overflow-wrap: normal;
+}
+
+.component-view{
+    border: 1px solid grey;
+    border-radius: 5px;
+    padding: 2px;
+}
+
+.entity-list tr:nth-child(even) {
+    background-color: #e3e3e3;
+}

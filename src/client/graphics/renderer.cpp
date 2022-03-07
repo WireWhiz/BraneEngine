@@ -5,7 +5,7 @@ namespace graphics
 	Renderer::Renderer(EntityManager& em, Material* material)
 	{
         _material = material;
-		_forEach = NativeForEach(std::vector<const ComponentAsset*>{Transform::def(), MeshComponent::def(), material->component() }, em);
+		_forEach = NativeForEach(std::vector<const ComponentAsset*>{comps::TransformComponent::def(), comps::MeshRendererComponent::def()}, &em);
 
         _drawBuffers.resize(SwapChain::size());
         createDescriptorSets(SwapChain::size());
@@ -55,18 +55,18 @@ namespace graphics
             vkUpdateDescriptorSets(device->get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 	}
-    void Renderer::createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::unordered_map<MeshID,std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
+    void Renderer::createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::vector<std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
     {
         size_t count = em.forEachCount(_forEach.id());
         if(count == 0)
             return;
         std::vector<glm::mat4x4> transforms(count);
-        std::vector<MeshID> meshIndices(count);
+        std::vector<uint32_t> meshIndices(count);
 
         size_t index = 0;
-        em.forEach(_forEach.id(), [&index, &transforms, &meshIndices](byte** components){
-	        meshIndices[index] = MeshComponent::fromVirtual(components[1])->id;
-            transforms[index] = Transform::fromVirtual(components[0])->value;
+        em.forEach(_forEach.id(), [&index, &transforms, &meshIndices, this](byte** components){
+	        meshIndices[index] = comps::MeshRendererComponent::fromVirtual( components[_forEach.getComponentIndex(1)])->mesh;
+            transforms[index] = comps::TransformComponent::fromVirtual(components[_forEach.getComponentIndex(0)])->value;
             index++;
         });
 
@@ -107,11 +107,11 @@ namespace graphics
 
             vkCmdBindPipeline(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipeline());
 
-            vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh->data(), 0, VK_INDEX_TYPE_UINT32);
+            auto vertexBuffers = mesh->vertexBuffers();
+			auto vertexBufferOffsets = mesh->vertexBufferOffsets();
+            vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
 
-            VkBuffer vertexBuffers[] = { mesh->data() };
-            VkDeviceSize offsets[] = { static_cast<uint32_t>(mesh->indices.size() * sizeof(uint32_t)) };
-            vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, 1, vertexBuffers, offsets);
+	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh->indexBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
             vkCmdBindDescriptorSets(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipelineLayout(), 0, 1, &_descriptorSets[frame], 0, nullptr);
 
@@ -120,7 +120,7 @@ namespace graphics
 
             vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants), &constants);
 
-            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh->vertexCount()), 1, 0, 0, 0);
 
             if (vkEndCommandBuffer(_drawBuffers[frame][i]) != VK_SUCCESS)
             {

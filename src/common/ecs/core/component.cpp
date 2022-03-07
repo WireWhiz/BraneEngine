@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cstring>
 
+std::vector<ComponentAsset*> nativeComponentDefinitions;
+
 VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {
 	_def = source._def;

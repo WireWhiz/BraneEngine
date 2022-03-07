@@ -19,7 +19,7 @@ typedef uint64_t EntityID;
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
-	REGISTER_MEMBERS_1(id)
+	REGISTER_MEMBERS_1("EntityIDComponent", id)
 public:
 	EntityID id;
 };

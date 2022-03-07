@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include "../asset.h"
 
-class MeshAsset : public Asset
+class MeshAsset : public IncrementalAsset
 {
 public:
 	std::vector<uint16_t> indices;
@@ -12,9 +12,10 @@ public:
 	std::vector<glm::vec3> tangents;
 	std::vector<std::vector<glm::vec2>> uvs;
 
-	MeshAsset(const AssetID& id);
-	MeshAsset(ISerializedData& source);
+	MeshAsset();
 
-	virtual void serialize(OSerializedData& message) override;
-	virtual void deserialize(ISerializedData& message) override;
+	void serialize(OSerializedData& message) override;
+	void deserialize(ISerializedData& message, AssetManager& am) override;
+	size_t meshSize() const;
+	std::vector<byte> packedData() const;
 };

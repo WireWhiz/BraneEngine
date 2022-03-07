@@ -1,8 +1,10 @@
 #include <http/HTTPServer.h>
+#include <assets/assetManager.h>
 
 class AssetHttpServer : public HTTPServer{
 	Database& _db;
-	FileManager _fm;
+	AssetManager& _am;
+	FileManager& _fm;
 	struct SessionContext
 	{
 		std::chrono::time_point<std::chrono::system_clock> lastAction;
@@ -22,6 +24,6 @@ class AssetHttpServer : public HTTPServer{
     void setUpAPICalls();
 	bool authorizeSession(const std::string& sessionID, std::vector<std::string> requiredAuths);
 public:
-	AssetHttpServer(const std::string& domain, bool useHttps, Database& db, FileManager& fm);
+	AssetHttpServer(const std::string& domain, bool useHttps, Database& db, AssetManager& am, FileManager& fm);
 
 };

@@ -1,17 +1,22 @@
-#pragma once
-#include <networking/server.h>
-#include <fstream>
+//
+// Created by eli on 3/3/2022.
+//
 
+#ifndef BRANEENGINE_ASSETSERVER_H
+#define BRANEENGINE_ASSETSERVER_H
+#include <networking/networking.h>
+#include <assets/assetManager.h>
 
-namespace net
+class AssetServer
 {
-	class AssetServerInterface : public ServerInterface
-	{
-	public:
-		AssetServerInterface(uint16_t port, uint16_t ssl_port);
-	protected:
-		bool onClientConnect(std::shared_ptr<Connection> client) override;
-		void onClientDissconnect(std::shared_ptr<Connection> client) override;
-		void onMessage(std::shared_ptr<Connection> client, IMessage& msg) override;
-	};
-}
+	NetworkManager& _nm;
+	AssetManager& _am;
+	std::mutex _cLock;
+	std::vector<std::unique_ptr<net::Connection>> _connections;
+public:
+	AssetServer(NetworkManager& nm, AssetManager& am);
+	void processMessages();
+};
+
+
+#endif //BRANEENGINE_ASSETSERVER_H

@@ -1,53 +1,69 @@
 #include "asset.h"
 
-const AssetID& Asset::id() const
-{
-	return _header.id;
-}
-
-AssetID& Asset::id()
-{
-	return _header.id;
-}
 
 void Asset::serialize(OSerializedData& message)
 {
-	_header.serialize(message);
+	assert(loadState == LoadState::complete);
+	message << id  << name << type.string();
 }
 
-void Asset::deserialize(ISerializedData& message)
+void Asset::deserialize(ISerializedData& message, AssetManager& am)
 {
-	_header = AssetHeader(message);
+	std::string typeStr;
+	message >> id >> name >> typeStr;
+	type.set(typeStr);
+	loadState = LoadState::complete;
+}
 
+#include "types/componentAsset.h"
+#include "types/meshAsset.h"
+#include "assembly.h"
+Asset* Asset::deserializeUnknown(ISerializedData& message, AssetManager& am)
+{
+	std::string typeStr;
+	AssetID id;
+	std::string name;
+	message >> id >> name >> typeStr;
+	AssetType type;
+	type.set(typeStr);
+	Asset* asset;
+	switch(type.type())
+	{
+		case AssetType::none:
+			assert("Can't deserialize none");
+			break;
+		case AssetType::component:
+			asset = new ComponentAsset();
+			break;
+		case AssetType::system:
+			assert("Not implemented");
+			break;
+		case AssetType::mesh:
+			asset = new MeshAsset();
+			break;
+		case AssetType::texture:
+			assert("Not implemented");
+			break;
+		case AssetType::shader:
+			assert("Not implemented");
+			break;
+		case AssetType::material:
+			assert("Not implemented");
+			break;
+		case AssetType::assembly:
+			asset = new Assembly();
+			break;
+		case AssetType::player:
+			assert("Not implemented");
+			break;
+	}
+	message.restart();
+	asset->deserialize(message, am);
+	return asset;
 }
 
 size_t std::hash<Asset>::operator()(const Asset& k) const
 {
-	return std::hash<AssetID>()(k.id());
+	return std::hash<AssetID>()(k.id);
 }
 
-void AssetHeader::serialize(OSerializedData& sData)
-{
-	sData << id;
-	sData << (uint32_t)dependencies.size();
-	for (AssetDependency& dep : dependencies)
-	{
-		sData << dep.id;
-		sData << (uint8_t)dep.level;
-	}
-}
-
-AssetHeader::AssetHeader(ISerializedData& sData)
-{
-	sData >> id;
-	uint32_t size;
-	sData >> size;
-	dependencies.resize(size);
-	for (uint32_t i = 0; i < size; ++i)
-	{
-		sData >> dependencies[i].id;
-		uint8_t level;
-		sData >> level;
-		dependencies[i].level = (AssetDependency::Level)level;
-	}
-}
