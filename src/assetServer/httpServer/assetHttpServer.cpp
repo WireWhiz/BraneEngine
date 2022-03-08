@@ -411,56 +411,30 @@ void AssetHttpServer::setUpAPICalls()
 
 				gltfLoader loader;
 				loader.loadGlbFromString(file.content);
+				std::vector<std::unique_ptr<Asset>> assets = AssetBuilder::buildAssembly(assetData["name"].asString(), loader);
 
-	            Assembly assembly;
-	            std::vector<MeshAsset*> meshes = AssetBuilder::extractMeshesFromGltf(loader);
-				for(auto mesh : meshes)
-				{
-					std::cout << "Extracted mesh: " << mesh->name << "\n";
+				std::vector<AssetID> meshes;
+	            for(auto& asset : assets)
+	            {
+		            AssetData ad(_db);
+		            ad.name = asset->name;
+		            ad.id.serverAddress = _domain;
+		            ad.save(); // Saving will generate an Asset ID
+		            asset->id = ad.id;
 
-					AssetData ad(_db);
-					ad.name = mesh->name;
-					ad.id.serverAddress = _domain;
-					ad.type.set(AssetType::Type::mesh);
-
-					ad.save(); // Saving will generate an Asset ID
-					mesh->id = ad.id;
-					_fm.writeAsset(mesh);
-					std::cout << "Created new asset with id: " << ad.id.string() << "\n";
-					AssetPermission p = _db.assetPermission(mesh->id.id, std::stoi(_sessions[sessionID].userID));
-					p.setLevel(AssetPermission::Level::owner);
-
-					assembly.meshes.push_back(mesh->id);
-				}
-				try
-				{
-					assembly.data = AssetBuilder::extractNodes(loader);
-				}
-				catch(const std::exception& e){
-					std::cerr << "asset upload error: " << e.what();
-					res.status = 500;
-				}
-	            AssetData ad(_db);
-				ad.name = assetData["name"].asString();
-				AssetID assemblyID;
-				assemblyID.serverAddress = _domain;
-				ad.id = assemblyID;
-				ad.type.set(AssetType::Type::assembly);
-				ad.folderID = 0;
-				ad.save();
-				assembly.id = ad.id;
-				assembly.name = ad.name;
-				assembly.loadState = Asset::complete;
-
-	            AssetPermission p = _db.assetPermission(ad.id.id, std::stoi(_sessions[sessionID].userID));
-	            p.setLevel(AssetPermission::Level::owner);
-
-				_fm.writeAsset(&assembly);
-				std::cout << "Created assembly with id: " << ad.id.string() << std::endl;
+					if(asset->type.type() == AssetType::Type::assembly)
+						((Assembly*)asset.get())->meshes = meshes;
+					else if(asset->type.type() == AssetType::Type::mesh)
+						meshes.push_back(ad.id);
 
 
-				for(auto mesh : meshes)
-					delete mesh; // We don't immediately need to use the mesh data after this, so store it in the file system and then free the memory;
+		            _fm.writeAsset(asset.get());
+		            std::cout << "Created new asset with id: " << ad.id.string() << "\n";
+		            AssetPermission p = _db.assetPermission(asset->id.id, std::stoi(_sessions[sessionID].userID));
+		            p.setLevel(AssetPermission::Level::owner);
+	            }
+
+
 				res.set_content(R"({"text":"Assembly created successfully","created":true})", "application/json");
             }
             else

@@ -2,11 +2,9 @@
 
 namespace graphics
 {
-	Renderer::Renderer(EntityManager& em, Material* material)
+	Renderer::Renderer(Material* material)
 	{
         _material = material;
-		_forEach = NativeForEach(std::vector<const ComponentAsset*>{comps::TransformComponent::def(), comps::MeshRendererComponent::def()}, &em);
-
         _drawBuffers.resize(SwapChain::size());
         createDescriptorSets(SwapChain::size());
 	}
@@ -55,45 +53,31 @@ namespace graphics
             vkUpdateDescriptorSets(device->get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
         }
 	}
-    void Renderer::createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::vector<std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
+	std::vector<VkCommandBuffer> Renderer::createRenderBuffers(SwapChain* swapChain, std::vector<RenderObject>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
     {
-        size_t count = em.forEachCount(_forEach.id());
-        if(count == 0)
-            return;
-        std::vector<glm::mat4x4> transforms(count);
-        std::vector<uint32_t> meshIndices(count);
-
-        size_t index = 0;
-        em.forEach(_forEach.id(), [&index, &transforms, &meshIndices, this](byte** components){
-	        meshIndices[index] = comps::MeshRendererComponent::fromVirtual( components[_forEach.getComponentIndex(1)])->mesh;
-            transforms[index] = comps::TransformComponent::fromVirtual(components[_forEach.getComponentIndex(0)])->value;
-            index++;
-        });
-
-        
-
-        if (_drawBuffers[frame].size() < count)
+        if (_drawBuffers[frame].size() < meshes.size())
         {
             size_t start = _drawBuffers[frame].size();
-            _drawBuffers[frame].resize(count);
+            _drawBuffers[frame].resize(meshes.size());
             VkCommandBufferAllocateInfo allocInfo{};
             allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
             allocInfo.commandPool = device->graphicsPool();
             allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-            allocInfo.commandBufferCount = (uint32_t)(count - start);
+            allocInfo.commandBufferCount = (uint32_t)(meshes.size() - start);
 
             if (vkAllocateCommandBuffers(device->get(), &allocInfo, &_drawBuffers[frame][start]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to allocate command buffers!");
             }
         }
-        
 
-        for (size_t i = 0; i < _drawBuffers[frame].size(); i++)
+	    std::vector<VkCommandBuffer> retBuffers;
+		retBuffers.reserve(meshes.size());
+        for (size_t i = 0; i < meshes.size(); i++)
         {
             vkResetCommandBuffer(_drawBuffers[frame][i], 0); // No flags so that the buffer will hold onto memory
 
-            Mesh* mesh = meshes[meshIndices[i]].get();
+            RenderObject& mesh = meshes[i];
 
             VkCommandBufferBeginInfo beginInfo{};
             beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -107,32 +91,29 @@ namespace graphics
 
             vkCmdBindPipeline(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipeline());
 
-            auto vertexBuffers = mesh->vertexBuffers();
-			auto vertexBufferOffsets = mesh->vertexBufferOffsets();
+            auto vertexBuffers = mesh.mesh->vertexBuffers(mesh.primitive);
+			auto vertexBufferOffsets = mesh.mesh->vertexBufferOffsets(mesh.primitive);
             vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
 
-	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh->indexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh.mesh->indexBuffer(mesh.primitive), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);
 
             vkCmdBindDescriptorSets(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipelineLayout(), 0, 1, &_descriptorSets[frame], 0, nullptr);
 
             MeshPushConstants constants{};
-            constants.render_matrix = cameraMatrix * transforms[i];
+            constants.render_matrix = cameraMatrix * mesh.transform;
 
             vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants), &constants);
 
-            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh->vertexCount()), 1, 0, 0, 0);
+            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh.mesh->vertexCount(mesh.primitive)), 1, 0, 0, 0);
 
             if (vkEndCommandBuffer(_drawBuffers[frame][i]) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to record command buffer!");
             }
-
+			retBuffers.push_back(_drawBuffers[frame][i]);
 
         }
+		return retBuffers;
 
-    }
-    std::vector<VkCommandBuffer>* Renderer::getBuffers(size_t frame)
-    {
-        return &_drawBuffers[frame];
     }
 }

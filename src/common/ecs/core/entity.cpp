@@ -27,17 +27,7 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	components.add(EntityIDComponent::def());
 	Archetype* arch = getArchetype(components);
 	EntityIDComponent id;
-
-	if (_unusedEntities.size() > 0)
-	{
-		id.id = _unusedEntities.front();
-		_unusedEntities.pop();
-	}
-	else
-	{
-		id.id = _entities.size();
-		_entities.push_back(EntityIndex());
-	}
+	id.id = (EntityID)_entities.push(EntityIndex());
 
 	EntityIndex& eIndex = _entities[id.id];
 	eIndex.archetype = arch;
@@ -55,16 +45,7 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 	for (size_t i = 0; i < count; i++)
 	{
 		EntityIDComponent id;
-		if (_unusedEntities.size() > 0)
-		{
-			id.id = _unusedEntities.front();
-			_unusedEntities.pop();
-		}
-		else
-		{
-			id.id = _entities.size();
-			_entities.push_back(EntityIndex());
-		}
+		id.id = (EntityID)_entities.push(EntityIndex());
 		_entities[id.id].archetype = arch;
 		_entities[id.id].index = arch->createEntity();
 	}
@@ -75,8 +56,7 @@ void EntityManager::destroyEntity(EntityID entity)
 	ASSERT_MAIN_THREAD();
 
 	assert(0 <= entity && entity < _entities.size());
-	_entities[entity].alive = false;
-	_unusedEntities.push(entity);
+	_entities.remove(entity);
 	Archetype* archetype = getEntityArchetype(entity);
 	archetype->remove(_entities[entity].index);
 

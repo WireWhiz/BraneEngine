@@ -33,7 +33,7 @@ void Client::run()
 	std::unique_ptr<graphics::Mesh> quad = std::make_unique<graphics::Mesh>(&quadMeshAsset);
 	uint32_t quadHandle = vkr.addMesh(std::move(quad));*/
 
-	AssetID testHeadAssembly("localhost/000000000000090B");
+	AssetID testHeadAssembly("localhost/00000000000009A5");
 	Assembly* testAsset = am.getAsset<Assembly>(testHeadAssembly);
 	vkr.addMesh(std::make_unique<graphics::Mesh>(am.getAsset<MeshAsset>(*(testAsset->meshes.end() - 3))));
 	//vkr.addMesh(std::make_unique<graphics::Mesh>(am.getAsset<MeshAsset>(*(testAsset->meshes.end() - 8))));
@@ -48,17 +48,18 @@ void Client::run()
 	comps::MeshRendererComponent meshRenderer{};
 	transform.value = glm::mat4(1);
 	meshRenderer.mesh = 0;
+	meshRenderer.materials = {0,1};
 
 	em.setEntityComponent(quadEntity, transform.toVirtual());
 	em.setEntityComponent(quadEntity, meshRenderer.toVirtual());
 
-	meshRenderer.mesh = 1;
+	//meshRenderer.mesh = 1;
 
 	//em.setEntityComponent(quadEntity2, transform.toVirtual());
 	//em.setEntityComponent(quadEntity2, meshRenderer.toVirtual());
 
 
-	graphics::Material* mat = vkr.createMaterial(0);
+	graphics::Material* mat = new graphics::Material();
 	mat->setVertex(vkr.loadShader(0));
 	mat->setFragment(vkr.loadShader(1));
 	//mat->addTextureDescriptor(vkr.loadTexture(0));
@@ -66,11 +67,17 @@ void Client::run()
 	mat->addBinding(1, sizeof(glm::vec3));
 	mat->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	mat->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	vkr.initMaterial(em, 0);
+	vkr.initRenderer(vkr.addMaterial(mat));
 
-
-
-
+	graphics::Material* mat2 = new graphics::Material();
+	mat2->setVertex(vkr.loadShader(0));
+	mat2->setFragment(vkr.loadShader(2));
+	//mat->addTextureDescriptor(vkr.loadTexture(0));
+	mat2->addBinding(0,sizeof(glm::vec3));
+	mat2->addBinding(1, sizeof(glm::vec3));
+	mat2->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+	mat2->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+	vkr.initRenderer(vkr.addMaterial(mat2));
 
 	while (!vkr.window()->closed())
 	{

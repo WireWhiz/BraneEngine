@@ -76,7 +76,8 @@ class NativeComponent
 public:
 	static ComponentAsset* constructDef()
 	{
-		assert(_def == nullptr);
+		if(_def != nullptr)
+			return _def;
 		AssetID id;
 		std::vector<VirtualType*> vars = T::getMembers(id);
 		_def = new ComponentAsset(vars, id, sizeof(T));

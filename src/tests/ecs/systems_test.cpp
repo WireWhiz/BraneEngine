@@ -3,7 +3,7 @@
 
 class CounterComponent : public NativeComponent<CounterComponent>
 {
-	REGISTER_MEMBERS_1(counter)
+	REGISTER_MEMBERS_1("CounterComponent", counter)
 public:
 	/*
 	void getComponentData(std::vector<std::unique_ptr<VirtualType>>& types, AssetID& id)
@@ -63,6 +63,7 @@ TEST(Systems, NativeTest)
 
 	//Create entity and add test component
 	CounterComponent cc;
+	cc.constructDef();
 
 	em.createEntity();
 	em.addComponent(0, CounterComponent::def());
@@ -90,6 +91,7 @@ TEST(Systems, BeforeConstraint)
 
 	//Create entity and add test component
 	CounterComponent cc;
+	cc.constructDef();
 
 	em.createEntity();
 	em.addComponent(0, CounterComponent::def());
@@ -124,6 +126,7 @@ TEST(Systems, AfterConstraint)
 
 	//Create entity and add test component
 	CounterComponent cc;
+	cc.constructDef();
 
 	em.createEntity();
 	em.addComponent(0, CounterComponent::def());

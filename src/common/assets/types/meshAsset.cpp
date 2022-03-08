@@ -2,21 +2,18 @@
 
 #include <networking/serializedData.h>
 
-void MeshAsset::serialize(OSerializedData& message)
+void MeshPrimitive::serialize(OSerializedData& message)
 {
-	Asset::serialize(message);
 	message << indices << positions << normals << tangents;
 	message << (uint32_t)uvs.size();
 	for (size_t i = 0; i < uvs.size(); ++i)
 	{
 		message << uvs[i];
 	}
-	
 }
 
-void MeshAsset::deserialize(ISerializedData& message, AssetManager& am)
+void MeshPrimitive::deserialize(ISerializedData& message)
 {
-	Asset::deserialize(message, am);
 	message >> indices >> positions >> normals >> tangents;
 	uint32_t size;
 	message.readSafeArraySize(size);
@@ -27,12 +24,7 @@ void MeshAsset::deserialize(ISerializedData& message, AssetManager& am)
 	}
 }
 
-MeshAsset::MeshAsset()
-{
-	type.set(AssetType::Type::mesh);
-}
-
-size_t MeshAsset::meshSize() const
+size_t MeshPrimitive::meshSize() const
 {
 	size_t size = indices.size() * sizeof(uint16_t);
 	size += positions.size() * sizeof(glm::vec3);
@@ -45,7 +37,7 @@ size_t MeshAsset::meshSize() const
 	return size;
 }
 
-std::vector<byte> MeshAsset::packedData() const
+std::vector<byte> MeshPrimitive::packedData() const
 {
 	std::vector<byte> pData(meshSize());
 	size_t i = 0;
@@ -74,3 +66,45 @@ std::vector<byte> MeshAsset::packedData() const
 
 	return pData;
 }
+
+void MeshAsset::serialize(OSerializedData& message)
+{
+	Asset::serialize(message);
+	message << (uint16_t)primitives.size();
+	for(auto& primitive : primitives)
+	{
+		primitive.serialize(message);
+	}
+}
+
+void MeshAsset::deserialize(ISerializedData& message, AssetManager& am)
+{
+	Asset::deserialize(message, am);
+	uint16_t primitiveCount;
+	message.readSafeArraySize(primitiveCount);
+	primitives.reserve(primitiveCount);
+	for (uint16_t i = 0; i < primitiveCount; ++i)
+	{
+		MeshPrimitive p;
+		p.deserialize(message);
+		primitives.push_back(p);
+	}
+
+}
+
+MeshAsset::MeshAsset()
+{
+	type.set(AssetType::Type::mesh);
+}
+
+size_t MeshAsset::meshSize() const
+{
+	size_t size = 0;
+	for(auto& m : primitives)
+	{
+		size += m.meshSize();
+	}
+	return size;
+}
+
+

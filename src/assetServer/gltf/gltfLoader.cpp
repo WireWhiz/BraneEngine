@@ -230,41 +230,43 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 	std::vector<MeshAsset*> meshAssets;
 	for(auto& meshData : _json["meshes"])
 	{
+		MeshAsset* mesh = new MeshAsset();
+		mesh->name = meshData["name"].asString();
+		mesh->loadState = Asset::LoadState::complete;
+
 		uint8_t pIndex = 0;
+		mesh->primitives.resize(meshData["primitives"].size());
 		for(auto& primitive : meshData["primitives"])
 		{
-			MeshAsset* mesh = new MeshAsset();
-			mesh->name = meshData["name"].asString();
-			if(pIndex > 1)
-				mesh->name += "_" + std::to_string(pIndex);
-			pIndex += 1;
 
-			mesh->indices = readScalarBuffer(primitive["indices"].asUInt());
 
-			mesh->positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
+			mesh->primitives[pIndex].indices = readScalarBuffer(primitive["indices"].asUInt());
+
+			mesh->primitives[pIndex].positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
 
 			if(primitive["attributes"].isMember("NORMAL"))
 			{
-				mesh->normals = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
+				mesh->primitives[pIndex].normals = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
 			}
 
 			if(primitive["attributes"].isMember("TANGENT"))
 			{
-				mesh->tangents = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+				mesh->primitives[pIndex].tangents = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
 			}
 
 			if(primitive["attributes"].isMember("TEXCOORD_0"))
 			{
-				if(mesh->uvs.size() < 1)
-					mesh->uvs.resize(1);
-				mesh->uvs[0] = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
+				if(mesh->primitives[pIndex].uvs.size() < 1)
+					mesh->primitives[pIndex].uvs.resize(1);
+				mesh->primitives[pIndex].uvs[0] = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
 			}
 
 			//TODO: Remove vertices unused by indices array, since primitives reuse a lot of buffers
 
-			mesh->loadState = Asset::LoadState::complete;
-			meshAssets.push_back(mesh);
+			pIndex += 1;
 		}
+
+		meshAssets.push_back(mesh);
 
 	}
 	return meshAssets;
@@ -273,6 +275,11 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 Json::Value& gltfLoader::nodes()
 {
 	return _json["nodes"];
+}
+
+Json::Value& gltfLoader::json()
+{
+	return _json;
 }
 
 

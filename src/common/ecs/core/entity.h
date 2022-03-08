@@ -5,6 +5,7 @@
 #include "utility/shared_recursive_mutex.h"
 #include "chunk.h"
 
+#include <utility/staticIndexVector.h>
 #include <stdexcept>
 #include <cstdint>
 #include <vector>
@@ -36,8 +37,7 @@ class EntityManager
 #ifdef TEST_BUILD
 public:
 #endif
-	std::vector<EntityIndex> _entities;
-	std::queue<EntityID> _unusedEntities;
+	staticIndexVector<EntityIndex> _entities;
 
 	ArchetypeManager _archetypes;
 	

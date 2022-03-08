@@ -37,6 +37,7 @@ public:
 	std::vector<glm::vec2> readVec2Buffer(uint32_t accessor);
 	std::vector<glm::vec3> readVec3Buffer(uint32_t accessor);
 	std::vector<MeshAsset*> extractAllMeshes();
+	Json::Value& json();
 	Json::Value& nodes();
 };
 

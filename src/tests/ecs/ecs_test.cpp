@@ -112,7 +112,7 @@ TEST(ECS, ArchetypeTest)
 // Native component for testing
 class TestNativeComponent : public NativeComponent<TestNativeComponent>
 {
-	REGISTER_MEMBERS_3(var1, var2, var3)
+	REGISTER_MEMBERS_3("TestNativeComponent", var1, var2, var3)
 public:
 	bool var1;
 	int64_t var2;
@@ -122,7 +122,7 @@ public:
 //Classes for native system test
 class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 {
-	REGISTER_MEMBERS_1(var1)
+	REGISTER_MEMBERS_1("TestNativeComponent2", var1)
 public:
 	bool var1;
 };
@@ -131,6 +131,7 @@ public:
 TEST(ECS, NativeComponentTest)
 {
 	TestNativeComponent nc;
+	nc.constructDef();
 
 	nc.var1 = true;
 	nc.var2 = 69;
@@ -160,6 +161,9 @@ TEST(ECS, ChunkTest)
 	std::unique_ptr<Chunk> c;
 	std::shared_ptr<ChunkPool> cp = std::make_shared<ChunkPool>();
 	*cp >> c;
+
+	TestNativeComponent::constructDef();
+	TestNativeComponent2::constructDef();
 
 	//Create archetype
 	ComponentSet components;
@@ -251,6 +255,8 @@ TEST(ECS, NativeComponentVectorTest)
 	nc.var2 = 69;
 	nc.var3 = 420;
 
+	TestNativeComponent::constructDef();
+
 	VirtualComponentVector vcv(nc.def());
 	vcv.pushEmpty();
 	vcv.pushEmpty(); 
@@ -281,6 +287,7 @@ TEST(ECS, NativeComponentVectorTest)
 
 TEST(ECS, EntityManagerTest)
 {
+	EntityIDComponent::constructDef();
 	std::vector<std::unique_ptr<VirtualType>> comps1;
 	comps1.push_back(std::make_unique<VirtualBool>());
 
@@ -353,6 +360,8 @@ TEST(ECS, EntityManagerTest)
 
 TEST(ECS, ForEachCachingTest)
 {
+	EntityIDComponent::constructDef();
+
 	std::vector<std::unique_ptr<VirtualType>> comps1;
 	comps1.push_back(std::make_unique<VirtualBool>());
 
@@ -410,14 +419,20 @@ TEST(ECS, ForEachCachingTest)
 
 TEST(ECS, ForEachTest)
 {
+	EntityIDComponent::constructDef();
+
 	ThreadPool::init(4);
 	EntityManager em;
 	//Create two for each ID one for entities with one component, another for those with two
 	ComponentSet comps;
+	TestNativeComponent::constructDef();
+	TestNativeComponent2::constructDef();
+
 	comps.add(TestNativeComponent::def());
 	EntityForEachID forEachID = em.getForEachID(comps);
 	comps.add(TestNativeComponent2::def());
 	EntityForEachID forEachID2 = em.getForEachID(comps);
+
 
 	//Create 50 entities with one component, and 50 with two
 	for (size_t i = 0; i < 100; i++)
@@ -500,6 +515,8 @@ TEST(ECS, ForEachTest)
 
 TEST(ECS, ForEachParellelTest)
 {
+	EntityIDComponent::constructDef();
+
 	//Create two for each ID one for entities with one component, another for those with two
 	
 	std::vector<std::unique_ptr<VirtualType>> variables;
@@ -537,6 +554,8 @@ TEST(ECS, ForEachParellelTest)
 
 TEST(ECS, NativeForEachTest)
 {
+	EntityIDComponent::constructDef();
+
 	ComponentSet components;
 	components.add((const ComponentAsset*)1);
 	components.add((const ComponentAsset*)2);

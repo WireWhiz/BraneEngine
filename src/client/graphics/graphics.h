@@ -11,6 +11,7 @@
 #include <chrono>
 #include "ecs/core/Entity.h"
 #include "ecs/nativeTypes/transform.h"
+#include <utility/staticIndexVector.h>
 
 
 
@@ -25,10 +26,10 @@ namespace graphics
 		ShaderManager* _shaderManager;
 		std::vector<VkCommandBuffer> _drawBuffers;
 
-		std::unordered_map<MaterialID, std::unique_ptr<Material>> _materials;
-		std::unordered_map<MaterialID, std::unique_ptr<Renderer>> _renderers;
-		std::unordered_map<TextureID, std::unique_ptr<Texture>> _textures;
-		std::vector<std::unique_ptr<Mesh>> _meshes;
+		staticIndexVector<std::unique_ptr<Material>> _materials;
+		staticIndexVector<std::unique_ptr<Renderer>> _renderers;
+		staticIndexVector<std::unique_ptr<Texture>> _textures;
+		staticIndexVector<std::unique_ptr<Mesh>> _meshes;
 
 		VkInstance _instance;
 
@@ -77,11 +78,14 @@ namespace graphics
 		void draw(EntityManager& em);
 		// Bask in its glory!
 		
-		Texture* loadTexture(TextureID id);
-		Shader* loadShader(ShaderID id);
-		Material* createMaterial(MaterialID id);
-		void initMaterial(EntityManager& em, MaterialID id);
-		uint32_t addMesh(std::unique_ptr<Mesh> mesh);
+		size_t addTexture(Texture* texture);
+		Shader* loadShader(size_t shaderID);
+		size_t addMaterial(Material* material);
+		size_t initRenderer(size_t id);
+		size_t addMesh(std::unique_ptr<Mesh> mesh);
+
+		Material* getMaterial(size_t id);
+
 		void updateUniformBuffer(EntityManager& em);
 		
 	};

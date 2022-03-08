@@ -12,8 +12,7 @@
 class AssetBuilder
 {
 public:
-	static std::vector<MeshAsset*>  extractMeshesFromGltf(gltfLoader& loader);
-	static std::vector<WorldEntity> extractNodes(gltfLoader& loader);
+	static std::vector<std::unique_ptr<Asset>> buildAssembly(const std::string& name, gltfLoader& loader);
 };
 
 

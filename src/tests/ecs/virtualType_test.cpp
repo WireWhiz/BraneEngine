@@ -59,7 +59,4 @@ TEST(VirtualTypes, SerializationTest)
 	EXPECT_EQ(ott[0], 1);
 	EXPECT_EQ(ott[1], 2);
 	EXPECT_EQ(ott[2], 3);
-
-
-
 }

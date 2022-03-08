@@ -68,8 +68,9 @@ namespace graphics
 		bool _locked;
 		GraphicsBuffer* _stagingBuffer;
 		GraphicsBuffer* _dataBuffer;
-		uint32_t _size;
 		MeshAsset* _meshAsset;
+
+		std::vector<size_t> _primitiveBufferOffsets;
 
 	public:
 
@@ -77,12 +78,14 @@ namespace graphics
 		Mesh(MeshAsset* meshAsset);
 		~Mesh();
 
-		VkBuffer indexBuffer() const;
-		std::vector<VkBuffer> vertexBuffers() const;
-		std::vector<VkDeviceSize> vertexBufferOffsets() const;
+		VkBuffer indexBuffer(uint32_t primitive) const;
+		VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const;
+		std::vector<VkBuffer> vertexBuffers(uint32_t primitive) const;
+		std::vector<VkDeviceSize> vertexBufferOffsets(uint32_t primitive) const;
 
 		uint32_t size() const;
-		uint32_t vertexCount() const;
+		uint32_t vertexCount(uint32_t primitive) const;
+		uint32_t primitiveCount() const;
 
 		void lock();
 		void unlock();

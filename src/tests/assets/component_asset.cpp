@@ -3,6 +3,7 @@
 //
 #include "testing.h"
 #include <assets/types/componentAsset.h>
+#include <assets/assetManager.h>
 
 TEST(assets, ComponentAssetSerializeTest)
 {
@@ -16,7 +17,12 @@ TEST(assets, ComponentAssetSerializeTest)
 	std::cout << "Serialized component asset: " << oData << std::endl;
 
 	ISerializedData iData = oData.toIMessage();
-	ComponentAsset testDefResult(iData);
+	ComponentAsset testDefResult;
+
+	FileManager fm;
+	NetworkManager nm;
+	AssetManager am(fm, nm);
+	testDefResult.deserialize(iData, am);
 
 	for (int i = 0; i < testDef.types().size(); ++i)
 	{

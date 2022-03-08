@@ -10,13 +10,25 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-std::vector<MeshAsset*> AssetBuilder::extractMeshesFromGltf(gltfLoader& loader)
-{
-	return loader.extractAllMeshes();
-}
 
-std::vector<WorldEntity> AssetBuilder::extractNodes(gltfLoader& loader)
+
+std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::string& name, gltfLoader& loader)
 {
+	std::vector<std::unique_ptr<Asset>> assets;
+
+	std::unique_ptr<Assembly> assembly = std::make_unique<Assembly>();
+	assembly->name = name;
+	assembly->loadState = Asset::complete;
+
+	std::vector<MeshAsset*> meshes = loader.extractAllMeshes();
+	for(auto mesh : meshes)
+	{
+		std::cout << "Extracted mesh: " << mesh->name << "\n";
+		assets.push_back(std::unique_ptr<MeshAsset>(mesh));
+	}
+
+
+
 	std::vector<WorldEntity> entities;
 	for (Json::Value& node : loader.nodes())
 	{
@@ -31,14 +43,14 @@ std::vector<WorldEntity> AssetBuilder::extractNodes(gltfLoader& loader)
 			}
 		} else
 		{
-			if (node.isMember("position"))
+			if (node.isMember("scale"))
 			{
 				glm::vec3 value;
-				for (uint8_t i = 0; i < node["position"].size(); ++i)
+				for (uint8_t i = 0; i < 3; ++i)
 				{
-					value[i] = node["position"][i].asFloat();
+					value[i] = node["rotation"][i].asFloat();
 				}
-				transform = glm::translate(transform, value);
+				transform = glm::scale(transform, value);
 			}
 			if (node.isMember("rotation"))
 			{
@@ -49,7 +61,15 @@ std::vector<WorldEntity> AssetBuilder::extractNodes(gltfLoader& loader)
 				}
 				transform *= glm::toMat4(value);
 			}
-
+			if (node.isMember("position"))
+			{
+				glm::vec3 value;
+				for (uint8_t i = 0; i < node["position"].size(); ++i)
+				{
+					value[i] = node["position"][i].asFloat();
+				}
+				transform = glm::translate(transform, value);
+			}
 		}
 		VirtualComponent tc(comps::TransformComponent::def());
 		tc.setVar(0, transform);
@@ -57,12 +77,19 @@ std::vector<WorldEntity> AssetBuilder::extractNodes(gltfLoader& loader)
 
 		if (node.isMember("mesh"))
 		{
+			uint32_t meshIndex = node["mesh"].asUInt();
+
 			VirtualComponent mc(comps::MeshRendererComponent::def());
-			mc.setVar(0, node["mesh"].asUInt());
-			entity.components.push_back(mc);
+			mc.setVar(0, meshIndex);
+			std::vector<uint32_t> materials;
+			for(auto& primitive : loader.json()["meshes"][meshIndex]["primitives"])
+				materials.push_back(primitive["material"].asUInt());
+			mc.setVar(1, materials);
+			entity.components.push_back(std::move(mc));
 		}
 		entities.push_back(entity);
 	}
+
 	uint32_t pIndex = 0;
 	for (Json::Value& node : loader.nodes())
 	{
@@ -71,15 +98,17 @@ std::vector<WorldEntity> AssetBuilder::extractNodes(gltfLoader& loader)
 			for (auto& child: node["children"])
 			{
 				WorldEntity& childEnt = entities[child.asUInt()];
-				glm::mat4  transform = childEnt.components[0].readVar<glm::mat4>(0);
+				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
 				VirtualComponent tc(comps::LocalTransformComponent::def());
-				tc.setVar(0, transform);
+				tc.setVar(0, localTransform);
 				tc.setVar(1, (EntityID)pIndex);
-				childEnt.components[0] = tc;
+				childEnt.components.push_back(tc);
 			}
 		}
 		pIndex++;
 	}
-	return entities;
+	assembly->data = std::move(entities);
+	assets.push_back(std::move(assembly));
+	return assets;
 }

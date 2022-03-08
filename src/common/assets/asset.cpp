@@ -3,7 +3,6 @@
 
 void Asset::serialize(OSerializedData& message)
 {
-	assert(loadState == LoadState::complete);
 	message << id  << name << type.string();
 }
 

@@ -17,11 +17,9 @@ namespace graphics
             vkDeviceWaitIdle(_device->get());
             delete _swapChain;
             _swapChain = new SwapChain(_window);
-            for (auto& m : _materials)
-            {
-                m.second->buildGraphicsPipeline(_swapChain);
-            }
-
+	        _materials.forEach([&](auto& m){
+		        m->buildGraphicsPipeline(_swapChain);
+			});
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -73,12 +71,30 @@ namespace graphics
         proj[1][1] *= -1;
         glm::mat4x4 camera_matrix = proj * view;
 
-        for (auto& r : _renderers)
+		const static NativeForEach forEachMeshRenderer( {comps::MeshRendererComponent::def(), comps::TransformComponent::def()},&em);
+
+		std::vector<std::vector<RenderObject>> _renderCache(_renderers.size());
+
+		em.forEach(forEachMeshRenderer.id(), [&](byte** components){
+			comps::MeshRendererComponent* mr = comps::MeshRendererComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(0)]);
+			Mesh* mesh = _meshes[mr->mesh].get();
+			for (int j = 0; j < mesh->primitiveCount(); ++j)
+			{
+				RenderObject ro;
+				ro.mesh = mesh;
+				ro.primitive = j;
+				ro.transform = comps::TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
+				_renderCache[mr->materials[j]].push_back(ro);
+			}
+		});
+
+		size_t rendererIndex = 0;
+	    _renderers.forEach([&](auto& r)
         {
-            r.second->createRenderBuffers(em, _swapChain, _meshes, camera_matrix, inheritanceInfo, imageIndex);
-            std::vector<VkCommandBuffer>* buffers = r.second->getBuffers(imageIndex);
-            vkCmdExecuteCommands(drawBuffer, buffers->size(), buffers->data());
-        }
+	        std::vector<VkCommandBuffer> buffers = r->createRenderBuffers(_swapChain, _renderCache[rendererIndex++], camera_matrix, inheritanceInfo, imageIndex);
+            if(!buffers.empty())
+				vkCmdExecuteCommands(drawBuffer, buffers.size(), buffers.data());
+        });
 
         vkCmdEndRenderPass(drawBuffer);
         vkEndCommandBuffer(drawBuffer);
@@ -121,29 +137,25 @@ namespace graphics
 
         currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
-    Texture* VulkanRuntime::loadTexture(TextureID id)
+
+	size_t VulkanRuntime::addTexture(Texture* texture)
     {
-        _textures.insert({id, std::make_unique<Texture>(id)});
-        return _textures[id].get();
+
+        return _textures.push(std::unique_ptr<Texture>(texture));
     }
-    Shader* VulkanRuntime::loadShader(ShaderID id)
+	Shader* VulkanRuntime::loadShader(size_t shaderID)
     {
-        return _shaderManager->loadShader(id);
+        return _shaderManager->loadShader(shaderID);
     }
-    Material* VulkanRuntime::createMaterial( MaterialID id)
+	size_t VulkanRuntime::initRenderer(size_t material)
     {
-        _materials.insert({id, std::make_unique<Material>()});
-        return _materials[id].get();
+        _materials[material]->buildGraphicsPipeline(_swapChain);
+        return _renderers.push(std::make_unique<Renderer>(_materials[material].get()));
     }
-    void VulkanRuntime::initMaterial(EntityManager& em, MaterialID id)
-    {
-        _materials[id]->buildGraphicsPipeline(_swapChain);
-        _renderers.insert({ id, std::make_unique<Renderer>(em, _materials[id].get()) });
-    }
-    uint32_t VulkanRuntime::addMesh(std::unique_ptr<Mesh> mesh)
+    size_t VulkanRuntime::addMesh(std::unique_ptr<Mesh> mesh)
     {
 		uint32_t index = _meshes.size();
-        _meshes.push_back(std::move(mesh));
+        _meshes.push(std::move(mesh));
 		return index;
     }
     void VulkanRuntime::updateUniformBuffer(EntityManager& em)
@@ -454,6 +466,15 @@ namespace graphics
         _window->update();
     }
 
+	size_t VulkanRuntime::addMaterial(Material* material)
+	{
+		return _materials.push(std::unique_ptr<Material>(material));
+	}
+
+	Material* VulkanRuntime::getMaterial(size_t id)
+	{
+		return _materials[id].get();
+	}
 
 
 }

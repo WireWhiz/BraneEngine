@@ -10,6 +10,7 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 	_data = new byte[_def->size()];
 	for (auto& type : _def->types())
 	{
+		type->construct(&_data[type->offset()]);
 		type->copy(&_data[type->offset()], &source._data[type->offset()]);
 	}
 }
@@ -37,18 +38,22 @@ VirtualComponent::VirtualComponent(const ComponentAsset* definition, const byte*
 	_data = new byte[_def->size()];
 	for (auto& type : _def->types())
 	{
+		type->construct(&_data[type->offset()]);
 		type->copy(&_data[type->offset()], &data[type->offset()]);
 	}
 }
 
 VirtualComponent::~VirtualComponent()
 {
-	for (auto& type : _def->types())
-	{
-		type->deconstruct(&_data[type->offset()]);
-	}
 	if(_data)
+	{
+		for (auto& type : _def->types())
+		{
+			type->deconstruct(&_data[type->offset()]);
+		}
 		delete[] _data;
+	}
+
 }
 
 VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
@@ -57,6 +62,7 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
 	_data = new byte[_def->size()];
 	for (auto& type : _def->types())
 	{
+		type->construct(&_data[type->offset()]);
 		type->copy(&_data[type->offset()], &source._data[type->offset()]);
 	}
 	return *this;

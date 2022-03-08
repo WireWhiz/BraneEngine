@@ -10,6 +10,14 @@ namespace graphics
 {
 
 	typedef uint32_t RendererID;
+
+	struct RenderObject
+	{
+		Mesh* mesh;
+		size_t primitive;
+		glm::mat4x4 transform;
+	};
+
 	class Renderer
 	{
 		Material* _material;
@@ -19,10 +27,9 @@ namespace graphics
 
 		NativeForEach _forEach;
 	public:
-		Renderer(EntityManager& em, Material* material);
+		Renderer(Material* material);
 		//~Renderer();
 		void createDescriptorSets(size_t count);
-		void createRenderBuffers(EntityManager& em, SwapChain* swapChain, std::vector<std::unique_ptr<Mesh>>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame);
-		std::vector<VkCommandBuffer>* getBuffers(size_t frame);
+		std::vector<VkCommandBuffer> createRenderBuffers(SwapChain* swapChain, std::vector<RenderObject>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame);
 	};
 }
