@@ -9,9 +9,12 @@
 #include "ecs/core/component.h"
 #include <json/json.h>
 
+class EntityManager;
+
 struct WorldEntity
 {
 	std::vector<VirtualComponent> components;
+	std::vector<const ComponentAsset*> componentDefs();
 	void serialize(OSerializedData& message);
 	void deserialize(ISerializedData& message, AssetManager& am);
 };
@@ -28,6 +31,8 @@ public:
 	void deserialize(ISerializedData& message, AssetManager& am) override;
 	static Json::Value toJson(Assembly* assembly);
 	static Assembly* fromJson(Json::Value& json);
+
+	void  inject(EntityManager& em);
 };
 
 

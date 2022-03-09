@@ -75,6 +75,7 @@ namespace graphics
 		retBuffers.reserve(meshes.size());
         for (size_t i = 0; i < meshes.size(); i++)
         {
+
             vkResetCommandBuffer(_drawBuffers[frame][i], 0); // No flags so that the buffer will hold onto memory
 
             RenderObject& mesh = meshes[i];
@@ -93,6 +94,10 @@ namespace graphics
 
             auto vertexBuffers = mesh.mesh->vertexBuffers(mesh.primitive);
 			auto vertexBufferOffsets = mesh.mesh->vertexBufferOffsets(mesh.primitive);
+			for(auto offset : vertexBufferOffsets)
+			{
+				assert(offset < mesh.mesh->size());
+			}
             vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
 
 	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh.mesh->indexBuffer(mesh.primitive), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);

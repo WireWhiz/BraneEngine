@@ -16,7 +16,9 @@
 #include <functional>
 #include <unordered_set>
 
-typedef uint64_t EntityID;
+#ifndef EntityID
+typedef uint32_t EntityID;
+#endif
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
@@ -54,7 +56,8 @@ public:
 	void createEntities(const ComponentSet& components, size_t count);
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
-	bool hasArchetype(EntityID entity) const;  
+	bool hasArchetype(EntityID entity) const;
+	bool entityHasComponent(EntityID entity, const ComponentAsset* component) const;
 	VirtualComponent getEntityComponent(EntityID entity, const ComponentAsset* component) const;
 	void setEntityComponent(EntityID entity, const VirtualComponent& component);
 	void setEntityComponent(EntityID entity, const VirtualComponentPtr& component);
@@ -71,10 +74,10 @@ public:
 	//system stuff
 	void run(const std::function<void()>& task);
 	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
-	void removeSystem(SystemID id);
-	bool addBeforeConstraint(SystemID id, SystemID before);
-	bool addAfterConstraint(SystemID id, SystemID after);
-	VirtualSystem* getSystem(SystemID id);
+	void removeSystem(AssetID id);
+	bool addBeforeConstraint(AssetID id, AssetID before);
+	bool addAfterConstraint(AssetID id, AssetID after);
+	VirtualSystem* getSystem(AssetID id);
 	void runSystems();
 };
 

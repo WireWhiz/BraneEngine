@@ -221,6 +221,30 @@ Json::Value ComponentAsset::toJson(byte* component) const
 			}
 				break;
 
+			case VirtualType::virtualFloatVector:
+			{
+				auto v = componentPtr.readVar<std::vector<float>>(index++);
+				for(auto e : v)
+					value["value"].append(e);
+			}
+				break;
+			case VirtualType::virtualIntVector:
+			{
+				auto v = componentPtr.readVar<std::vector<int>>(index++);
+				for(auto e : v)
+					value["value"].append(e);
+			}
+				break;
+			case VirtualType::virtualUIntVector:
+			{
+				auto v = componentPtr.readVar<std::vector<uint32_t>>(index++);
+				for(auto e : v)
+					value["value"].append(e);
+			}
+				break;
+			case VirtualType::virtualEntityID:
+				value["value"] = componentPtr.readVar<EntityID>(index++);
+				break;
 		}
 		comp["values"].append(value);
 	}

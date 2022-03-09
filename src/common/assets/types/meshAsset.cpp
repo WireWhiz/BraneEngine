@@ -27,6 +27,8 @@ void MeshPrimitive::deserialize(ISerializedData& message)
 size_t MeshPrimitive::meshSize() const
 {
 	size_t size = indices.size() * sizeof(uint16_t);
+	if(size % 4 != 0)
+		size += 2;
 	size += positions.size() * sizeof(glm::vec3);
 	size += normals.size() * sizeof(glm::vec3);
 	size += tangents.size() * sizeof(glm::vec3);
@@ -34,6 +36,7 @@ size_t MeshPrimitive::meshSize() const
 	{
 		size += uv.size() * sizeof(glm::vec2);
 	}
+
 	return size;
 }
 
@@ -45,6 +48,8 @@ std::vector<byte> MeshPrimitive::packedData() const
 	if(!indices.empty())
 		std::memcpy(pData.data(), indices.data(), indices.size() * sizeof(uint16_t));
 	i += indices.size() * sizeof(uint16_t);
+	if(i % 4 != 0)
+		i += 2;
 
 	if(!positions.empty())
 		std::memcpy(pData.data() + i, positions.data(), positions.size() * sizeof(glm::vec3));
@@ -104,6 +109,8 @@ size_t MeshAsset::meshSize() const
 	{
 		size += m.meshSize();
 	}
+
+
 	return size;
 }
 

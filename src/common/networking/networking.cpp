@@ -45,7 +45,7 @@ Asset* NetworkManager::requestAsset(AssetID& id, AssetManager& am)
 	std::shared_ptr<net::IMessage> res;
 	while(!server->popIMessage(res))
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
 
 	assert(res->header.type == net::MessageType::assetData);

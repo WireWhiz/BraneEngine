@@ -52,7 +52,7 @@ namespace graphics
         renderPassInfo.renderArea.extent = _swapChain->extent();
 
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+        clearValues[0].color = { {0.2f, 0.2f, 0.2f, 1.0f} };
         clearValues[1].depthStencil = { 1.0f, 0 };
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -66,8 +66,8 @@ namespace graphics
         inheritanceInfo.renderPass = _swapChain->renderPass();
         
         //Draw models:
-        glm::mat4x4 view = glm::lookAt(glm::vec3(0.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4x4  proj = glm::perspective(glm::radians(45.0f), _swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 10.0f);
+        glm::mat4x4 view = glm::lookAt(glm::vec3(1.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4x4  proj = glm::perspective(glm::radians(45.0f), _swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 500.0f);
         proj[1][1] *= -1;
         glm::mat4x4 camera_matrix = proj * view;
 
@@ -84,7 +84,9 @@ namespace graphics
 				ro.mesh = mesh;
 				ro.primitive = j;
 				ro.transform = comps::TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
-				_renderCache[mr->materials[j]].push_back(ro);
+
+
+				_renderCache[/*mr->materials[j]*/0].push_back(ro);
 			}
 		});
 
@@ -160,16 +162,18 @@ namespace graphics
     }
     void VulkanRuntime::updateUniformBuffer(EntityManager& em)
     {
-		static const NativeForEach forEach({comps::TransformComponent::def()}, &em);
-        static auto startTime = std::chrono::high_resolution_clock::now();
+		/*static const NativeForEach forEach({comps::TransformComponent::def()}, &em);
+        static auto lastTime = std::chrono::high_resolution_clock::now();
 
         auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+        float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
 
 
-        em.forEach(forEach.id(), [&time](byte** components) {
-            comps::TransformComponent::fromVirtual(components[0])->value =  glm::rotate(glm::scale(glm::mat4x4(1), {25,25,25}), time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        em.forEach(forEach.id(), [](byte** components) {
+	        comps::TransformComponent* t = comps::TransformComponent::fromVirtual(components[0]);
+			t->value = glm::rotate(t->value, glm::radians(0.001f), glm::vec3(0.0f, 1.0f, 0.0f));
         });
+	    lastTime = std::chrono::high_resolution_clock::now();*/
     }
 
     void VulkanRuntime::init()

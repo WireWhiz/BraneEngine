@@ -1,6 +1,4 @@
 #pragma once
-#define  GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cstdlib>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -8,6 +6,10 @@
 #include <byte.h>
 #include <networking/serializedData.h>
 #include <json/json.h>
+
+#ifndef EntityID
+typedef uint32_t EntityID;
+#endif
 
 template <class T>
 constexpr inline
@@ -53,7 +55,11 @@ public:
 		virtualString,
 		virtualVec3,
 		virtualVec4,
-		virtualMat4
+		virtualMat4,
+		virtualFloatVector,
+		virtualIntVector,
+		virtualUIntVector,
+		virtualEntityID,
 	};
 protected:
 	size_t _offset;
@@ -109,6 +115,15 @@ public:
 			return Type::virtualVec4;
 		if constexpr(std::is_same<T, glm::mat4>().value)
 			return Type::virtualMat4;
+		if constexpr(std::is_same<T, std::vector<float>>().value)
+			return Type::virtualFloatVector;
+		if constexpr(std::is_same<T, std::vector<int32_t>>().value)
+			return Type::virtualIntVector;
+		if constexpr(std::is_same<T, std::vector<uint32_t>>().value)
+			return Type::virtualUIntVector;
+		if constexpr(std::is_same<T, EntityID>().value)
+			return Type::virtualEntityID;
+
 		std::cerr << "Tried to serialize type of: " << typeid(T).name() << std::endl;
 		return Type::virtualUnknown;
 	}

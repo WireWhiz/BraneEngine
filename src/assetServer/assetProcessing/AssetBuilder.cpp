@@ -43,15 +43,9 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 			}
 		} else
 		{
-			if (node.isMember("scale"))
-			{
-				glm::vec3 value;
-				for (uint8_t i = 0; i < 3; ++i)
-				{
-					value[i] = node["rotation"][i].asFloat();
-				}
-				transform = glm::scale(transform, value);
-			}
+			glm::mat4 translation(1);
+			glm::mat4 rotation(1);
+			glm::mat4 scale(1);
 			if (node.isMember("rotation"))
 			{
 				glm::quat value;
@@ -59,17 +53,27 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 				{
 					value[i] = node["rotation"][i].asFloat();
 				}
-				transform *= glm::toMat4(value);
+				rotation = glm::mat4_cast(value) * transform;
 			}
-			if (node.isMember("position"))
+			if (node.isMember("scale"))
 			{
 				glm::vec3 value;
-				for (uint8_t i = 0; i < node["position"].size(); ++i)
+				for (uint8_t i = 0; i < 3; ++i)
 				{
-					value[i] = node["position"][i].asFloat();
+					value[i] = node["scale"][i].asFloat();
 				}
-				transform = glm::translate(transform, value);
+				scale = glm::scale(glm::mat4(1), value);
 			}
+			if (node.isMember("translation"))
+			{
+				glm::vec3 value;
+				for (uint8_t i = 0; i < node["translation"].size(); ++i)
+				{
+					value[i] = node["translation"][i].asFloat();
+				}
+				translation = glm::translate(glm::mat4(1), value);
+			}
+			transform = translation * rotation * scale;
 		}
 		VirtualComponent tc(comps::TransformComponent::def());
 		tc.setVar(0, transform);

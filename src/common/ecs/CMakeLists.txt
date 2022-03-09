@@ -1,7 +1,7 @@
 # src/common/ecs
 
 file(GLOB_RECURSE ecs_sources *.cpp)
-add_library(ecs STATIC ${ecs_sources} "core/componentSet.h" "core/componentSet.cpp" nativeTypes/meshRenderer.h)
+add_library(ecs STATIC ${ecs_sources} "core/componentSet.h" "core/componentSet.cpp" nativeTypes/meshRenderer.h nativeSystems/nativeSystems.h)
 
 target_link_libraries(ecs PUBLIC asmjit assets utility)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})

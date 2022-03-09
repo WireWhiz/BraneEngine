@@ -2,11 +2,11 @@
 // Created by eli on 2/2/2022.
 //
 
-#define  GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "assembly.h"
 #include "assetManager.h"
 #include <glm/glm.hpp>
+#include <ecs/nativeTypes/transform.h>
+#include <ecs/nativeTypes/meshRenderer.h>
 
 void WorldEntity::serialize(OSerializedData& message)
 {
@@ -34,6 +34,17 @@ void WorldEntity::deserialize(ISerializedData& message, AssetManager& am)
 		def->deserializeComponent(message, component.data());
 		components.push_back(std::move(component));
 	}
+}
+
+std::vector<const ComponentAsset*> WorldEntity::componentDefs()
+{
+	std::vector<const ComponentAsset*> defs;
+	defs.reserve(components.size());
+	for(auto& c : components)
+	{
+		defs.push_back(c.def());
+	}
+	return defs;
 }
 
 void Assembly::serialize(OSerializedData& message)
@@ -75,7 +86,7 @@ Json::Value Assembly::toJson(Assembly* assembly)
 	{
 		Json::Value ent;
 		ent["components"];
-		for(auto component : entity.components)
+		for(auto& component : entity.components)
 		{
 			ent["components"].append(component.def()->toJson(component.data()));
 		}
@@ -94,6 +105,48 @@ Assembly* Assembly::fromJson(Json::Value& json)
 Assembly::Assembly()
 {
 	type.set(AssetType::Type::assembly);
+}
+
+void Assembly::inject(EntityManager& em)
+{
+	std::vector<EntityID> entityMap(data.size());
+
+	for (int i = 0; i < data.size(); ++i)
+	{
+		WorldEntity& entity = data[i];
+		entityMap[i] = em.createEntity(entity.componentDefs());
+	}
+
+	for (int i = 0; i < data.size(); ++i)
+	{
+		WorldEntity& entity = data[i];
+		EntityID id = entityMap[i];
+		for(auto component : entity.components)
+		{
+			if(component.def() == comps::LocalTransformComponent::def())
+			{
+				EntityID parent = component.readVar<EntityID>(1);
+				parent = entityMap[parent];
+				component.setVar(1, parent);
+				glm::mat4 transform = component.readVar<glm::mat4>(0);
+				//component.setVar(0, glm::translate(glm::mat4(1), {0.3f, 0, 0}));
+			}
+			else if(component.def() == comps::MeshRendererComponent::def())
+			{
+				//TODO: translate from local material indexes to ones from the vulkan runtime
+			}
+			else if(component.def() == comps::TransformComponent::def())
+			{
+
+				//component.setVar(0, glm::translate(glm::mat4(1), {0, 0, 0}));
+			}
+
+
+			em.setEntityComponent(id, component);
+		}
+		em.createEntity(entity.componentDefs());
+	}
+
 }
 
 

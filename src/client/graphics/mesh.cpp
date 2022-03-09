@@ -9,14 +9,43 @@ namespace graphics
 		unlock();
 
 
+		VkMemoryRequirements memoryRequirements{};
+		vkGetBufferMemoryRequirements(graphics::device->get(), _stagingBuffer->get(), &memoryRequirements);
+
 		size_t offset = 0;
-		_primitiveBufferOffsets.reserve(meshAsset->primitives.size());
-		for(auto& p : meshAsset->primitives)
+		_primitiveBufferOffsets.resize(meshAsset->primitives.size());
+		for (size_t i = 0; i < meshAsset->primitives.size(); ++i)
 		{
+			auto& p = _meshAsset->primitives[i];
 			std::vector<byte> data = p.packedData();
 			_stagingBuffer->setData(data, offset);
-			_primitiveBufferOffsets.push_back(offset);
-			offset += p.meshSize();
+
+
+			_primitiveBufferOffsets[i].push_back(offset);
+
+			offset += p.indices.size() * sizeof(uint16_t);
+			if(offset % 4 != 0)
+				offset += 2;
+			_primitiveBufferOffsets[i].push_back(offset);
+
+			offset += p.positions.size() * sizeof(glm::vec3);
+			if(!p.positions.empty() && (!p.tangents.empty() || !p.uvs.empty() || !p.normals.empty()))
+				_primitiveBufferOffsets[i].push_back(offset);
+
+			offset += p.normals.size()  * sizeof(glm::vec3);
+			if(!p.normals.empty() && (!p.tangents.empty() || !p.uvs.empty()))
+				_primitiveBufferOffsets[i].push_back(offset);
+
+			offset += p.tangents.size()  * sizeof(glm::vec3);
+			if(!p.tangents.empty() && !p.uvs.empty())
+				_primitiveBufferOffsets[i].push_back(offset);
+
+			for (uint8_t j = 0; j < p.uvs.size(); ++j)
+			{
+				offset += p.uvs[j].size()  * sizeof(glm::vec2);
+				if(j != p.uvs.size() - 1)
+					_primitiveBufferOffsets[i].push_back(offset);
+			}
 		}
 
 
@@ -69,12 +98,12 @@ namespace graphics
 
 	VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const
 	{
-		return _primitiveBufferOffsets[primitive];
+		return _primitiveBufferOffsets[primitive][0];
 	}
 
 	std::vector<VkBuffer> Mesh::vertexBuffers(uint32_t primitive) const
 	{
-		std::vector<VkBuffer> buffers(3 + _meshAsset->primitives[primitive].uvs.size());
+		std::vector<VkBuffer> buffers(_primitiveBufferOffsets[primitive].size() - 1);
 		for (uint16_t i = 0; i < buffers.size(); ++i)
 		{
 			buffers[i] = _dataBuffer->get();
@@ -85,29 +114,21 @@ namespace graphics
 	std::vector<VkDeviceSize> Mesh::vertexBufferOffsets(uint32_t primitive) const
 	{
 		std::vector<VkDeviceSize> offsets;
-		offsets.reserve(3 + _meshAsset->primitives[primitive].uvs.size());
-
-		offsets.push_back(_meshAsset->primitives[primitive].indices.size() * sizeof(uint16_t));
-		offsets.push_back(offsets[0] + _meshAsset->primitives[primitive].positions.size() * sizeof(glm::vec3));
-		offsets.push_back(offsets[1] + _meshAsset->primitives[primitive].normals.size() * sizeof(glm::vec3));
-		if(!_meshAsset->primitives[primitive].uvs.empty())
-			offsets.push_back(offsets[2] + _meshAsset->primitives[primitive].tangents.size() * sizeof(glm::vec3));
-
-		for (uint8_t i = 1; i < _meshAsset->primitives[primitive].uvs.size(); ++i)
+		for (int i = 1; i < _primitiveBufferOffsets[primitive].size(); ++i)
 		{
-			offsets.push_back(offsets[2 + i] + _meshAsset->primitives[primitive].uvs[i-1].size() * sizeof(glm::vec2));
+			offsets.push_back(_primitiveBufferOffsets[primitive][i]);
 		}
 
-
-		for (uint16_t i = 0; i < offsets.size(); ++i)
-		{
-			offsets[i] += _primitiveBufferOffsets[primitive];
-		}
 		return offsets;
 	}
 
 	uint32_t Mesh::primitiveCount() const
 	{
 		return _meshAsset->primitives.size();
+	}
+
+	const MeshAsset* Mesh::meshAsset()
+	{
+		return _meshAsset;
 	}
 }

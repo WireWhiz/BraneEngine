@@ -4,7 +4,7 @@
 SystemList::SystemNode::SystemNode(std::unique_ptr<VirtualSystem>&& system)
 {
 	_system = std::move(system);
-	_id = _system->id();
+	_id = _system->id;
 	_next = nullptr;
 	sorted = false;
 	visited = false;
@@ -20,7 +20,7 @@ SystemList::SystemNode* SystemList::SystemNode::next() const
 	return _next;
 }
 
-void SystemList::SystemNode::run(EntityManager* entities) const
+void SystemList::SystemNode::run(EntityManager& entities) const
 {
 	_system->run(entities);
 }
@@ -30,9 +30,9 @@ VirtualSystem* SystemList::SystemNode::system() const
 	return _system.get();
 }
 
-SystemID SystemList::SystemNode::id() const
+AssetID SystemList::SystemNode::id() const
 {
-	return _system->id();
+	return _system->id;
 }
 
 bool SystemList::sort()
@@ -57,13 +57,13 @@ void SystemList::updateNodeConstraints(SystemNode* node)
 	for (auto& nodeContainer : _nodes)
 	{
 		SystemNode* otherNode = nodeContainer.second.get();
-		for (SystemID beforeConstraint : otherNode->beforeConstraints)
+		for (AssetID beforeConstraint : otherNode->beforeConstraints)
 		{
 			if (beforeConstraint == node->id())
 				node->after.push_back(otherNode);
 		}
 
-		for (SystemID afterConstraint : node->afterConstraints)
+		for (AssetID afterConstraint : node->afterConstraints)
 		{
 			if (afterConstraint == otherNode->id())
 				otherNode->after.push_back(node);
@@ -71,7 +71,7 @@ void SystemList::updateNodeConstraints(SystemNode* node)
 	}
 }
 
-void SystemList::removeNode(SystemID id)
+void SystemList::removeNode(AssetID id)
 {
 	assert(_nodes.count(id));
 	SystemNode* node = _nodes[id].get();
@@ -96,7 +96,7 @@ SystemList::SystemList()
 	_first = nullptr;
 }
 
-VirtualSystem* SystemList::findSystem(SystemID id) const
+VirtualSystem* SystemList::findSystem(AssetID id) const
 {
 	auto systemNode = _nodes.find(id);
 	if (systemNode != _nodes.end())
@@ -123,13 +123,13 @@ bool SystemList::addSystem(std::unique_ptr<VirtualSystem>&& system)
 	return true;
 }
 
-void SystemList::removeSystem(SystemID id)
+void SystemList::removeSystem(AssetID id)
 {
 	assert(_nodes.count(id));
 	removeNode(id);
 }
 
-bool SystemList::addBeforeConstraint(SystemID id, SystemID before)
+bool SystemList::addBeforeConstraint(AssetID id, AssetID before)
 {
 	assert(_nodes.count(id));
 	SystemNode* node = _nodes[id].get();
@@ -151,7 +151,7 @@ bool SystemList::addBeforeConstraint(SystemID id, SystemID before)
 	return true;
 }
 
-bool SystemList::addAfterConstraint(SystemID id, SystemID after)
+bool SystemList::addAfterConstraint(AssetID id, AssetID after)
 {
 	assert(_nodes.count(id));
 	SystemNode* node = _nodes[id].get();
@@ -178,7 +178,7 @@ size_t SystemList::size() const
 	return _nodes.size();
 }
 
-void SystemList::runSystems(EntityManager* em)
+void SystemList::runSystems(EntityManager& em)
 {
 
 	SystemNode* current = _first;

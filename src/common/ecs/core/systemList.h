@@ -14,40 +14,40 @@ class SystemList
 	{
 		std::unique_ptr<VirtualSystem> _system;
 		SystemNode* _next;
-		SystemID _id;
+		AssetID _id;
 	public:
 		bool sorted;
 		bool visited;
 		std::vector<SystemNode*> after;
-		std::vector<SystemID> afterConstraints;
-		std::vector<SystemID> beforeConstraints;
+		std::vector<AssetID> afterConstraints;
+		std::vector<AssetID> beforeConstraints;
 		SystemNode(std::unique_ptr<VirtualSystem>&& system);
 		void setNext(SystemNode* next);
 		SystemNode* next() const;
-		void run(EntityManager* entities) const;
+		void run(EntityManager& entities) const;
 		VirtualSystem* system() const;
-		SystemID id() const;
+		AssetID id() const;
 		bool sort(SystemNode*& last);
 	};
 
 	SystemNode* _first;
 
-	std::unordered_map<SystemID, std::unique_ptr<SystemNode>> _nodes;
+	std::unordered_map<AssetID, std::unique_ptr<SystemNode>> _nodes;
 	bool sort();
 
 	void updateNodeConstraints(SystemNode* node);
-	void removeNode(SystemID id);
+	void removeNode(AssetID id);
 public:
 	SystemList();
-	VirtualSystem* findSystem(SystemID id) const;
+	VirtualSystem* findSystem(AssetID id) const;
 	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
-	void removeSystem(SystemID id);
+	void removeSystem(AssetID id);
 
-	bool addBeforeConstraint(SystemID id, SystemID before);
-	bool addAfterConstraint(SystemID id, SystemID after);
+	bool addBeforeConstraint(AssetID id, AssetID before);
+	bool addAfterConstraint(AssetID id, AssetID after);
 
 	size_t size() const;
-	void runSystems(EntityManager* em);
+	void runSystems(EntityManager& em);
 
 	class insertion_error : public std::runtime_error
 	{

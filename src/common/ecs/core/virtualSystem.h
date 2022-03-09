@@ -2,29 +2,19 @@
 #include "virtualType.h"
 #include "component.h"
 #include "assets/assetID.h"
-#include <vector>
+#include <functional>
 
 class EntityManager;
-typedef AssetID SystemID;
 // argument 1 is reference to the different variables in the struct
 // argument 2 is constant values and native functions
-using SystemFunction = void (*)(EntityManager*, void*);
+using SystemFunction = std::function< void (EntityManager&)>;
 
 class VirtualSystem
 {
 protected:
-	SystemID _id;
-public:
-	VirtualSystem(SystemID id);
-	SystemID id() const;
-	virtual void run(EntityManager* em) = 0;
-};
-
-class FunctionPointerSystem : public VirtualSystem
-{
 	SystemFunction _function;
-	void* _data;
 public:
-	FunctionPointerSystem(SystemID id, SystemFunction function, void* data);
-	void run(EntityManager* em) override;
+	AssetID id;
+	VirtualSystem(AssetID id, SystemFunction function);
+	virtual void run(EntityManager& em);
 };

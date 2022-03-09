@@ -111,6 +111,10 @@ bool EntityManager::hasArchetype(EntityID entity) const
 	return o;
 }
 
+bool EntityManager::entityHasComponent(EntityID entity, const ComponentAsset* component) const
+{
+	return getEntityArchetype(entity)->hasComponent(component);
+}
 
 VirtualComponent EntityManager::getEntityComponent(EntityID entity, const ComponentAsset* component) const
 {
@@ -235,22 +239,22 @@ bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>&& system)
 	return _systems.addSystem(std::move(system));
 }
 
-void EntityManager::removeSystem(SystemID id)
+void EntityManager::removeSystem(AssetID id)
 {
 	_systems.removeSystem(id);
 }
 
-bool EntityManager::addBeforeConstraint(SystemID id, SystemID before)
+bool EntityManager::addBeforeConstraint(AssetID id, AssetID before)
 {
 	return _systems.addBeforeConstraint(id, before);
 }
 
-bool EntityManager::addAfterConstraint(SystemID id, SystemID after)
+bool EntityManager::addAfterConstraint(AssetID id, AssetID after)
 {
 	return _systems.addAfterConstraint(id, after);
 }
 
-VirtualSystem* EntityManager::getSystem(SystemID id)
+VirtualSystem* EntityManager::getSystem(AssetID id)
 {
 	return _systems.findSystem(id);
 }
@@ -262,8 +266,11 @@ void EntityManager::runSystems()
 		_runQueue.front()();
 		_runQueue.pop();
 	}
-	_systems.runSystems(this);
+	_systems.runSystems(*this);
 }
+
+
+
 NativeForEach::NativeForEach(std::vector<const ComponentAsset* >&& vector, EntityManager* em) : NativeForEach::NativeForEach(vector, em) {}
 NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)
 {

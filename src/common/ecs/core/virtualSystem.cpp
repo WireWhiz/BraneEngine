@@ -1,23 +1,12 @@
 #include "virtualSystem.h"
 
-VirtualSystem::VirtualSystem(SystemID id)
+VirtualSystem::VirtualSystem(AssetID id, SystemFunction function)
 {
-	_id = id;
-}
-
-SystemID VirtualSystem::id() const
-{
-	return _id;
-}
-
-FunctionPointerSystem::FunctionPointerSystem(SystemID id, SystemFunction function, void* data) : VirtualSystem(id)
-{
-	_id = id;
+	id = id;
 	_function = function;
-	_data = data;
 }
 
-void FunctionPointerSystem::run(EntityManager* em)
+void VirtualSystem::run(EntityManager& em)
 {
-	_function(em, _data);
+	_function(em);
 }

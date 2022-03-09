@@ -87,6 +87,7 @@ class AssemblyData extends React.Component
     render(){
         if(this.state.asset == null)
             this.state.asset = deepCopy(this.props.asset)
+        console.log(this.state.asset)
         return[
             <h2>Meshes: </h2>,
             <table class={"editable-table"}>
