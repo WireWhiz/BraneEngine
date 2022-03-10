@@ -132,6 +132,9 @@ namespace net
 		{
 			_connected = false;
 		}
+		~ConnectionBase(){
+			disconnect();
+		}
 		void send(std::shared_ptr<OMessage> msg) override
 		{
 			assert(connected());
@@ -144,7 +147,10 @@ namespace net
 		}
 		void disconnect() override
 		{
+			asio::error_code ec;
+			_socket.lowest_layer().shutdown(asio::ip::tcp::socket::shutdown_both, ec);
 			_socket.lowest_layer().close();
+			_connected = false;
 		}
 		bool connected() override
 		{

@@ -106,8 +106,17 @@ namespace graphics
 
             MeshPushConstants constants{};
             constants.render_matrix = cameraMatrix * mesh.transform;
+			constants.objectToWorld = mesh.transform;
 
-            vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(MeshPushConstants), &constants);
+	        static auto start = std::chrono::high_resolution_clock::now();
+	        auto currentTime = std::chrono::high_resolution_clock::now();
+	        float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - start).count();
+
+			glm::mat4 lightPos = glm::translate(glm::rotate(glm::mat4(1), delta * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3{2, 2, -4});;
+			constants.lightPosition = lightPos * glm::vec4{1,1,1,1};
+
+            vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &constants);
+
 
             vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh.mesh->vertexCount(mesh.primitive)), 1, 0, 0, 0);
 

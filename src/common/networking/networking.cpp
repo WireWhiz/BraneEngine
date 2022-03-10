@@ -8,8 +8,12 @@ NetworkManager::NetworkManager() : _ssl_context(asio::ssl::context::tls)
 
 NetworkManager::~NetworkManager()
 {
+	for(auto& c : _assetServers)
+		c.second->disconnect();
 	if(!_context.stopped())
+	{
 		_context.stop();
+	}
 }
 
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)

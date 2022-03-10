@@ -15,6 +15,7 @@ class AssetServer
 	std::vector<std::unique_ptr<net::Connection>> _connections;
 public:
 	AssetServer(NetworkManager& nm, AssetManager& am);
+	~AssetServer();
 	void processMessages();
 };
 

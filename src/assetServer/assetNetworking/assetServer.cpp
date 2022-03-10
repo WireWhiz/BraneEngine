@@ -59,3 +59,9 @@ void AssetServer::processMessages()
 		}
 	}
 }
+
+AssetServer::~AssetServer()
+{
+	for(auto& c : _connections)
+		c->disconnect();
+}

@@ -8,6 +8,8 @@ namespace graphics
 {
     void VulkanRuntime::draw(EntityManager& em)
     {
+		if(_window->size().x == 0 ||  _window->size().y == 0)
+			return;
         vkWaitForFences(_device->get(), 1, &_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 
         uint32_t imageIndex;

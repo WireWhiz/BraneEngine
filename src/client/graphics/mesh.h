@@ -15,6 +15,7 @@ namespace graphics
 	struct MeshPushConstants
 	{
 		glm::mat4x4 render_matrix;
+		glm::mat4x4 objectToWorld;
 		glm::vec4 lightPosition;
 	};
 

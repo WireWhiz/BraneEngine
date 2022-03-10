@@ -69,7 +69,7 @@ void Client::run()
 	mat2->addBinding(1, sizeof(glm::vec3));
 	mat2->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	mat2->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	vkr.initRenderer(vkr.addMaterial(mat2));
+	//vkr.initRenderer(vkr.addMaterial(mat2));
 
 	while (!vkr.window()->closed())
 	{
