@@ -240,7 +240,7 @@ void AssetHttpServer::setUpAPICalls()
 				return;
 			}
 
-			std::vector<AssetData> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID));
+			std::vector<AssetInfo> assets = _db.listUserAssets(std::stoi(_sessions[sessionID].userID));
 			Json::Value resJson;
 			resJson["successful"] = true;
 			for(auto& asset : assets)
@@ -284,7 +284,7 @@ void AssetHttpServer::setUpAPICalls()
 				return;
 			}
 
-			AssetData asset = _db.loadAssetData(assetID);
+			AssetInfo asset = _db.loadAssetData(assetID);
 			Json::Value resJson;
 
 			resJson["successful"] = true;
@@ -304,7 +304,7 @@ void AssetHttpServer::setUpAPICalls()
 		}
 
 	});
-	_server->Get("/api/assets/get_name", [this](const httplib::Request &req, httplib::Response &res)
+	_server->Get("/api/assets/search", [this](const httplib::Request &req, httplib::Response &res)
 	{
 		try{
 			std::string sessionID = getCookie("session_id", req);
@@ -331,8 +331,8 @@ void AssetHttpServer::setUpAPICalls()
 			Json::Value resJson;
 			resJson["successful"] = true;
 			resJson["name"] = assetID.string();
-			if(assetID.serverAddress == "localhost" || assetID.serverAddress == "native")
-				resJson["name"] = _am.getAssetName(assetID);
+			/*if(assetID.serverAddress == "localhost" || assetID.serverAddress == "native")
+				resJson["name"] = _am.getAssetName(assetID);*/
 
 			Json::StreamWriterBuilder builder;
 			builder["indentation"] = "";
@@ -375,7 +375,7 @@ void AssetHttpServer::setUpAPICalls()
 			resJson["type"] = asset->type.string();
 			resJson["data"];
 			if(asset->type.type() == AssetType::Type::assembly)
-				resJson["data"] = Assembly::toJson((Assembly*)asset);
+				resJson["data"] = ((Assembly*)asset)->toJson(_am);
 
 			Json::StreamWriterBuilder builder;
 			builder["indentation"] = "";
@@ -386,6 +386,73 @@ void AssetHttpServer::setUpAPICalls()
 			std::cerr << "asset retrieval error: " << e.what();
 			res.status = 500;
 		}
+	});
+	_server->Post("/api/assets/update",[this](const httplib::Request &req, httplib::Response &res)
+	{
+		try{
+			std::string sessionID = getCookie("session_id", req);
+			if(authorizeSession(sessionID, {"create assets"}))
+			{
+
+				Json::Value assetData;
+				Json::CharReaderBuilder builder;
+				builder["collectComments"] = false;
+				std::string err;
+				std::stringstream content(req.body);
+				if(!Json::parseFromStream(builder, content, &assetData, &err))
+				{
+					std::cerr << "Problem parsing assetData: " << err << std::endl;
+					res.status = 400;
+					res.set_content(R"({"text":"Request format incorrect"})", "application/json");
+					return;
+				}
+
+				AssetID assetID(assetData["id"].asString());
+
+				AssetPermission pem = _db.assetPermission(assetID.id, std::stoi(_sessions[sessionID].userID));
+				if(pem.level() == AssetPermission::Level::view)
+				{
+					res.status = 403;
+					res.set_content(R"({"text":"This asset does not exist, or you are not authorized to edit it.","successful":false})", "application/json");
+					return;
+				}
+
+				AssetInfo databaseAsset(assetID, _db);
+				if(databaseAsset.name != assetData["name"].asString())
+				{
+					databaseAsset.name = assetData["name"].asString();
+					databaseAsset.save();
+				}
+
+				switch(AssetType::fromString(assetData["type"].asString()))
+				{
+					case AssetType::assembly:
+						_am.updateAsset(Assembly::fromJson(assetData, _am));
+						break;
+					default:
+					{
+						Asset* a = _am.getAsset<Asset>(assetID);
+						a->name = assetData["name"].asString();
+					}
+							break;
+				}
+
+				_fm.writeAsset(_am.getAsset<Asset>(assetID));
+
+
+				res.set_content(R"({"text":"Asset updated","successful":true})", "application/json");
+			}
+			else
+			{
+				res.status = 403;
+				res.set_content(R"({"text":"Not authorized for that action","created":false})", "application/json");
+			}
+		}
+		catch(const std::exception& e){
+			std::cerr << "asset update error: " << e.what();
+			res.status = 500;
+		}
+
 	});
     _server->Post("/api/assets/create/gltf",[this](const httplib::Request &req, httplib::Response &res)
     {
@@ -398,10 +465,13 @@ void AssetHttpServer::setUpAPICalls()
                 std::cout << "AssetData: " << assetDataField.content << std::endl;
 				// Convert to json
 				Json::Value assetData;
-	            Json::Reader reader;
-	            if(!reader.parse( assetDataField.content, assetData))
+	            Json::CharReaderBuilder builder;
+				builder["collectComments"] = false;
+				std::string err;
+				std::stringstream content(assetDataField.content);
+	            if(!Json::parseFromStream(builder, content, &assetData, &err))
 	            {
-		            std::cerr << "Problem parsing assetData: " << req.body << std::endl;
+		            std::cerr << "Problem parsing assetData: " << err << std::endl;
 		            res.status = 400;
 		            res.set_content(R"({"text":"Request format incorrect"})", "application/json");
 		            return;
@@ -416,7 +486,7 @@ void AssetHttpServer::setUpAPICalls()
 				std::vector<AssetID> meshes;
 	            for(auto& asset : assets)
 	            {
-		            AssetData ad(_db);
+		            AssetInfo ad(_db);
 		            ad.name = asset->name;
 		            ad.id.serverAddress = _domain;
 		            ad.save(); // Saving will generate an Asset ID

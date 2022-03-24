@@ -15,16 +15,16 @@ namespace systems
 {
 	void updateTransform(EntityID id, std::unordered_set<EntityID>& updated, EntityManager& em)
 	{
-		if(em.entityHasComponent(id, comps::LocalTransformComponent::def()))
+		if(em.entityHasComponent(id, LocalTransformComponent::def()))
 		{
-			VirtualComponent localTransform = em.getEntityComponent(id, comps::LocalTransformComponent::def());
+			VirtualComponent localTransform = em.getEntityComponent(id, LocalTransformComponent::def());
 			EntityID parent = localTransform.readVar<EntityID>(1);
 			if(!updated.count(parent))
 				updateTransform(parent, updated, em);
 
-			VirtualComponent parentTransform = em.getEntityComponent(parent, comps::TransformComponent::def());
+			VirtualComponent parentTransform = em.getEntityComponent(parent, TransformComponent::def());
 
-			comps::TransformComponent transform{};
+			TransformComponent transform{};
 			transform.value =  parentTransform.readVar<glm::mat4>(0) * localTransform.readVar<glm::mat4>(0);
 			em.setEntityComponent(id, transform.toVirtual());
 		}
@@ -34,7 +34,7 @@ namespace systems
 
 	void addTransformSystem(EntityManager& em)
 	{
-		NativeForEach forEveryTransform( {EntityIDComponent::def(), comps::TransformComponent::def()},&em);
+		NativeForEach forEveryTransform( {EntityIDComponent::def(), TransformComponent::def()},&em);
 		em.addSystem(std::make_unique<VirtualSystem>(AssetID("nativeSystem/0"), [forEveryTransform](EntityManager& em){
 			std::unordered_set<EntityID> updated(em.forEachCount(forEveryTransform.id()));
 			em.forEach(forEveryTransform.id(), [&](byte** components){

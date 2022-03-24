@@ -119,5 +119,13 @@ body{
 }
 
 .entity-list tr:nth-child(even) {
-    background-color: #e3e3e3;
+    background-color:  #e3e3e3;
+}
+.invalid-input{
+    background-color: #ff8f8f;
+}
+.invalid-input:focus{
+    outline-color: red;
+    border: none;
+    background-color: white;
 }

@@ -1,0 +1,1 @@
+The web app is what I'm using as a server interface and asset manager untill the engine gets to the point that I can start implementing in-engine editing. The web app will still probably stick around after that but will be less of a focus.

@@ -36,7 +36,7 @@ namespace graphics
 		Mesh(MeshAsset* meshAsset);
 		~Mesh();
 
-		const MeshAsset* meshAsset();
+		MeshAsset* meshAsset();
 		VkBuffer indexBuffer(uint32_t primitive) const;
 		VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const;
 		std::vector<VkBuffer> vertexBuffers(uint32_t primitive) const;
@@ -45,6 +45,8 @@ namespace graphics
 		uint32_t size() const;
 		uint32_t vertexCount(uint32_t primitive) const;
 		uint32_t primitiveCount() const;
+
+		void updateData();
 
 		void lock();
 		void unlock();

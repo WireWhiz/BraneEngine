@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <networking/serializedData.h>
 #include <assets/asset.h>
+#include "utility/threadPool.h"
 
 class FileManager
 {
@@ -25,7 +26,7 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(AssetID& id, AssetManager& am)
+	T* readAsset(const AssetID& id, AssetManager& am)
 	{
 		ISerializedData iMessage;
 		if(!readFile(id.path(), iMessage.data))
@@ -35,7 +36,7 @@ public:
 		return asset;
 	}
 
-	Asset* readUnknownAsset(AssetID& id, AssetManager& am)
+	Asset* readUnknownAsset(const AssetID& id, AssetManager& am)
 	{
 		ISerializedData iMessage;
 		if(!readFile(id.path(), iMessage.data))
@@ -43,6 +44,17 @@ public:
 
 		return Asset::deserializeUnknown(iMessage, am);
 	}
+
+	template<typename T>
+	void async_readAsset(const AssetID& id, AssetManager& am, AsyncData<T*> asset)
+	{
+		ThreadPool::enqueue([this, &id, &am, asset]{
+			asset.setData(readAsset<T>(id, am));
+		});
+	}
+
+	void async_readUnknownAsset(const AssetID& id, AssetManager& am, AsyncData<Asset*> asset);
+
 
 
 	bool readFile(const std::string& filename, std::string& data);

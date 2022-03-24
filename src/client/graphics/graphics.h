@@ -82,12 +82,9 @@ namespace graphics
 		Shader* loadShader(size_t shaderID);
 		size_t addMaterial(Material* material);
 		size_t initRenderer(size_t id);
-		size_t addMesh(std::unique_ptr<Mesh> mesh);
+		size_t addMesh(MeshAsset* mesh);
 
 		Material* getMaterial(size_t id);
-
-		void updateUniformBuffer(EntityManager& em);
-		
 	};
 
 }

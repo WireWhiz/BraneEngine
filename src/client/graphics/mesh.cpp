@@ -8,10 +8,6 @@ namespace graphics
 		_locked = true;
 		unlock();
 
-
-		VkMemoryRequirements memoryRequirements{};
-		vkGetBufferMemoryRequirements(graphics::device->get(), _stagingBuffer->get(), &memoryRequirements);
-
 		size_t offset = 0;
 		_primitiveBufferOffsets.resize(meshAsset->primitives.size());
 		for (size_t i = 0; i < meshAsset->primitives.size(); ++i)
@@ -127,8 +123,27 @@ namespace graphics
 		return _meshAsset->primitives.size();
 	}
 
-	const MeshAsset* Mesh::meshAsset()
+	MeshAsset* Mesh::meshAsset()
 	{
 		return _meshAsset;
+	}
+
+	void Mesh::updateData()
+	{
+		if(!_meshAsset->meshUpdated)
+			return;
+
+		for (size_t i = 0; i < _meshAsset->primitives.size(); ++i)
+		{
+			auto& p = _meshAsset->primitives[i];
+			std::vector<byte> data = p.packedData();
+			_stagingBuffer->setData(data, _primitiveBufferOffsets[i][0]);
+		}
+
+		SingleUseCommandBuffer cmdBuffer(device->transferPool());
+		_dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
+		cmdBuffer.submit(device->transferQueue());
+
+		_meshAsset->meshUpdated = false;
 	}
 }

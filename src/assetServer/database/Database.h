@@ -33,11 +33,11 @@ public:
 	std::string getUserID(const std::string& username);
 	std::unordered_set<std::string> userPermissions(const std::string& userID);
 
-	AssetData loadAssetData(const AssetID& id);
+	AssetInfo loadAssetData(const AssetID& id);
 	AssetPermission assetPermission(const uint32_t assetID, const uint32_t userID);
 	std::string assetName(AssetID& id);
 
-	std::vector<AssetData> listUserAssets(const uint32_t& userID);
+	std::vector<AssetInfo> listUserAssets(const uint32_t& userID);
 };
 
 

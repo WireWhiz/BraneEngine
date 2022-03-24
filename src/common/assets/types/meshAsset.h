@@ -19,12 +19,25 @@ struct MeshPrimitive
 
 class MeshAsset : public IncrementalAsset
 {
+	const size_t _verticiesPerIncrement = 40 * 3;
+	struct IteratorData
+	{
+		size_t primitive;
+		bool indicesSent;
+		size_t pos;
+	};
 public:
 	std::vector<MeshPrimitive> primitives;
+	size_t pipelineID;
+	bool meshUpdated;
 
 	MeshAsset();
 
 	void serialize(OSerializedData& message) override;
 	void deserialize(ISerializedData& message, AssetManager& am) override;
+	void serializeHeader(OSerializedData& sData) override;
+	void deserializeHeader(ISerializedData& sData, AssetManager& am) override;
+	bool serializeIncrement(OSerializedData& sData, void*& iteratorData) override;
+	void deserializeIncrement(ISerializedData& sData) override;
 	size_t meshSize() const;
 };

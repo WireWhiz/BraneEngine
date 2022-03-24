@@ -26,13 +26,14 @@ public:
 	std::vector<AssetID> scripts; // Any systems in dependencies will be automatically loaded
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
 	std::vector<AssetID> textures;
-	std::vector<WorldEntity> data;
+	std::vector<WorldEntity> entities;
 	void serialize(OSerializedData& message) override;
 	void deserialize(ISerializedData& message, AssetManager& am) override;
-	static Json::Value toJson(Assembly* assembly);
-	static Assembly* fromJson(Json::Value& json);
+	Json::Value toJson(AssetManager& am) const;
+	static Assembly* fromJson(Json::Value& json, AssetManager& am);
 
-	void  inject(EntityManager& em);
+
+	void  inject(EntityManager& em, EntityID rootID);
 };
 
 

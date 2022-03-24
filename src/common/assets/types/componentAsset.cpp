@@ -158,6 +158,7 @@ Json::Value ComponentAsset::toJson(byte* component) const
 	VirtualComponentPtr componentPtr = VirtualComponentPtr(this, component);
 	Json::Value comp;
 	comp["id"] = id.string();
+	comp["name"] = name;
 	comp["values"];
 	uint32_t index = 0;
 	for(auto& variable : types())
@@ -190,6 +191,9 @@ Json::Value ComponentAsset::toJson(byte* component) const
 				break;
 			case VirtualType::virtualString:
 				value["value"] = componentPtr.readVar<std::string>(index++);
+				break;
+			case VirtualType::virtualAssetID:
+				value["value"] = componentPtr.readVar<AssetID>(index++).string();
 				break;
 			case VirtualType::virtualVec3:
 			{
@@ -242,9 +246,6 @@ Json::Value ComponentAsset::toJson(byte* component) const
 					value["value"].append(e);
 			}
 				break;
-			case VirtualType::virtualEntityID:
-				value["value"] = componentPtr.readVar<EntityID>(index++);
-				break;
 		}
 		comp["values"].append(value);
 	}
@@ -254,6 +255,7 @@ Json::Value ComponentAsset::toJson(byte* component) const
 void ComponentAsset::fromJson(Json::Value& comp, byte* component) const
 {
 	VirtualComponentPtr componentPtr = VirtualComponentPtr(this, component);
+	assert(comp["id"] == id.string());
 
 	uint32_t index = 0;
 	for(auto& variable : types())
@@ -285,12 +287,15 @@ void ComponentAsset::fromJson(Json::Value& comp, byte* component) const
 			case VirtualType::virtualString:
 				componentPtr.setVar<std::string>(index, value["value"].asString());
 				break;
+			case VirtualType::virtualAssetID:
+				componentPtr.setVar<AssetID>(index, AssetID(value["value"].asString()));
+				break;
 			case VirtualType::virtualVec3:
 			{
 				glm::vec3 v;
 				for (uint8_t i = 0; i < 3; ++i)
 				{
-					v[i] = value[i].asFloat();
+					v[i] = value["value"][i].asFloat();
 				}
 				componentPtr.setVar(index, v);
 			}
@@ -300,7 +305,7 @@ void ComponentAsset::fromJson(Json::Value& comp, byte* component) const
 				glm::vec4 v;
 				for (uint8_t i = 0; i < 4; ++i)
 				{
-					v[i] = value[i].asFloat();
+					v[i] = value["value"][i].asFloat();
 				}
 				componentPtr.setVar(index, v);
 			}
@@ -310,12 +315,39 @@ void ComponentAsset::fromJson(Json::Value& comp, byte* component) const
 				glm::mat4 m;
 				for (uint8_t i = 0; i < 16; ++i)
 				{
-					m[i / 4][i % 4] = value[i].asFloat();
+					m[i / 4][i % 4] = value["value"][i].asFloat();
 				}
 				componentPtr.setVar(index, m);
 			}
 				break;
 
+			case VirtualType::virtualFloatVector:
+			{
+				std::vector<float> v;
+				v.reserve(value["value"].size());
+				for(auto& e : value["value"])
+					v.push_back(e.asFloat());
+				componentPtr.setVar(index, v);
+			}
+				break;
+			case VirtualType::virtualIntVector:
+			{
+				std::vector<int32_t> v;
+				v.reserve(value["value"].size());
+				for(auto& e : value["value"])
+					v.push_back(e.asInt());
+				componentPtr.setVar(index, v);
+			}
+				break;
+			case VirtualType::virtualUIntVector:
+			{
+				std::vector<uint32_t> v;
+				v.reserve(value["value"].size());
+				for(auto& e : value["value"])
+					v.push_back(e.asUInt());
+				componentPtr.setVar(index, v);
+			}
+				break;
 		}
 		index++;
 	}

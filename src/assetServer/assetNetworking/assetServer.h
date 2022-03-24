@@ -6,6 +6,14 @@
 #define BRANEENGINE_ASSETSERVER_H
 #include <networking/networking.h>
 #include <assets/assetManager.h>
+#include <list>
+
+struct IncrementalAssetSender
+{
+	void* iteratorData = nullptr;
+	IncrementalAsset* asset = nullptr;
+	net::Connection* dest = nullptr;
+};
 
 class AssetServer
 {
@@ -13,6 +21,8 @@ class AssetServer
 	AssetManager& _am;
 	std::mutex _cLock;
 	std::vector<std::unique_ptr<net::Connection>> _connections;
+
+	std::list<IncrementalAssetSender> _senders;
 public:
 	AssetServer(NetworkManager& nm, AssetManager& am);
 	~AssetServer();

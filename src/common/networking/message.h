@@ -7,9 +7,11 @@ namespace net
 {
 	enum class MessageType
 	{
-		assetRequest = 0,
-		assetData,
-		assetFragment,
+		acknowledge = 0,
+		assetRequest = 1,
+		assetData = 2,
+		assetIncrementalHeader = 3,
+		assetIncrementalData = 4,
 	};
 
 	struct alignas(4) MessageHeader

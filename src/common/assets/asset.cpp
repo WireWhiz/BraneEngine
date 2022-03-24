@@ -1,15 +1,15 @@
 #include "asset.h"
 
 
-void Asset::serialize(OSerializedData& message)
+void Asset::serialize(OSerializedData& sData)
 {
-	message << id  << name << type.string();
+	sData << id  << name << type.string();
 }
 
-void Asset::deserialize(ISerializedData& message, AssetManager& am)
+void Asset::deserialize(ISerializedData& sData, AssetManager& am)
 {
 	std::string typeStr;
-	message >> id >> name >> typeStr;
+	sData >> id >> name >> typeStr;
 	type.set(typeStr);
 	loadState = LoadState::complete;
 }
@@ -17,19 +17,20 @@ void Asset::deserialize(ISerializedData& message, AssetManager& am)
 #include "types/componentAsset.h"
 #include "types/meshAsset.h"
 #include "assembly.h"
-Asset* Asset::deserializeUnknown(ISerializedData& message, AssetManager& am)
+Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
 {
+
 	std::string typeStr;
 	AssetID id;
 	std::string name;
-	message >> id >> name >> typeStr;
+	sData >> id >> name >> typeStr;
 	AssetType type;
 	type.set(typeStr);
 	Asset* asset;
 	switch(type.type())
 	{
 		case AssetType::none:
-			assert("Can't deserialize none");
+			throw std::runtime_error("Can't deserialize none type");
 			break;
 		case AssetType::component:
 			asset = new ComponentAsset();
@@ -56,13 +57,55 @@ Asset* Asset::deserializeUnknown(ISerializedData& message, AssetManager& am)
 			assert("Not implemented");
 			break;
 	}
-	message.restart();
-	asset->deserialize(message, am);
+	sData.restart();
+	asset->deserialize(sData, am);
 	return asset;
 }
 
-size_t std::hash<Asset>::operator()(const Asset& k) const
+void IncrementalAsset::serializeHeader(OSerializedData& sData)
 {
-	return std::hash<AssetID>()(k.id);
+	Asset::serialize(sData);
+	sData << _incrementCount;
 }
 
+void IncrementalAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
+{
+	Asset::deserialize(sData, am);
+	sData >> _incrementCount;
+}
+
+size_t IncrementalAsset::incrementCount() const
+{
+	return _incrementCount;
+}
+
+IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sData, AssetManager& am)
+{
+	std::string typeStr;
+	AssetID id;
+	std::string name;
+	sData >> id >> name >> typeStr;
+	AssetType type;
+	type.set(typeStr);
+	IncrementalAsset* asset;
+	switch(type.type())
+	{
+		case AssetType::none:
+			throw std::runtime_error("Can't deserialize none type");
+		case AssetType::mesh:
+			asset = new MeshAsset();
+			break;
+		default:
+			throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
+	}
+	sData.restart();
+	asset->deserializeHeader(sData, am);
+	return asset;
+}
+
+bool IncrementalAsset::serializeIncrement(OSerializedData& sData, void*& iteratorData)
+{
+	sData << id; // We don't have id in the deserialize function because it is consumed by the
+				 // networkManager before the call to deserializeIncrement
+	return false; //Return false because there is no more data
+}

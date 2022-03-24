@@ -4,6 +4,7 @@
 
 #include "assembly.h"
 #include "assetManager.h"
+#include "types/scriptAsset.h"
 #include <glm/glm.hpp>
 #include <ecs/nativeTypes/transform.h>
 #include <ecs/nativeTypes/meshRenderer.h>
@@ -51,10 +52,10 @@ void Assembly::serialize(OSerializedData& message)
 {
 	Asset::serialize(message);
 	message << scripts << meshes << textures;
-	message << (uint32_t)data.size();
-	for (uint32_t i = 0; i < data.size(); ++i)
+	message << (uint32_t)entities.size();
+	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
-		data[i].serialize(message);
+		entities[i].serialize(message);
 	}
 }
 
@@ -64,25 +65,56 @@ void Assembly::deserialize(ISerializedData& message, AssetManager& am)
 	message >> scripts >> meshes >> textures;
 	uint32_t size;
 	message.readSafeArraySize(size);
-	data.resize(size);
-	for (uint32_t i = 0; i < data.size(); ++i)
+	entities.resize(size);
+	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
-		data[i].deserialize(message, am);
+		entities[i].deserialize(message, am);
 	}
 }
 
-Json::Value Assembly::toJson(Assembly* assembly)
+Json::Value Assembly::toJson(AssetManager& am) const
 {
 	Json::Value json;
+	json["id"] = id.string();
+	json["name"] = name;
+	json["type"] = "assembly";
 	json["dependencies"];
-	for(auto& script : assembly->scripts)
-		json["dependencies"]["scripts"].append(script.string());
-	for(auto& mesh : assembly->meshes)
-		json["dependencies"]["meshes"].append(mesh.string());
-	for(auto& texture : assembly->textures)
-		json["dependencies"]["textures"].append(texture.string());
+	for(auto& script : scripts)
+	{
+		Json::Value scriptJson;
+		scriptJson["id"] = script.string();
+		ScriptAsset* asset = am.getAsset<ScriptAsset>(script);
+		if(asset)
+			scriptJson["name"] = asset->name;
+		else
+			scriptJson["name"] = "Asset not found";
+		json["dependencies"]["meshes"].append(scriptJson);
+	}
+	for(auto& mesh : meshes)
+	{
+		Json::Value meshJson;
+		meshJson["id"] = mesh.string();
+		MeshAsset* asset = am.getAsset<MeshAsset>(mesh);
+		if(asset)
+			meshJson["name"] = asset->name;
+		else
+			meshJson["name"] = "Asset not found";
+		json["dependencies"]["meshes"].append(meshJson);
+	}
+	for(auto& texture : textures)
+	{
+		assert(false && "texture assets not yet implemented");
+		/*Json::Value textureJson;
+		textureJson["id"] = texture.string();
+		TextureAsset* asset = am.getAsset<TextureAsset>(texture);
+		if(asset)
+			textureJson["name"] = asset->name;
+		else
+			textureJson["name"] = "Asset not found";
+		json["dependencies"]["textures"].append(textureJson);*/
+	}
 	json["entities"];
-	for(auto& entity : assembly->data)
+	for(auto& entity : entities)
 	{
 		Json::Value ent;
 		ent["components"];
@@ -95,11 +127,48 @@ Json::Value Assembly::toJson(Assembly* assembly)
 	return json;
 }
 
-Assembly* Assembly::fromJson(Json::Value& json)
+Assembly* Assembly::fromJson(Json::Value& json, AssetManager& am)
 {
-	Assembly assembly;
+	Assembly* assembly = new Assembly;
+	assembly->name = json["name"].asString();
+	assembly->id = AssetID(json["id"].asString());
 
-	return nullptr;
+	assembly->scripts.reserve(json["dependencies"]["scripts"].size());
+	for(auto& script : json["dependencies"]["scripts"])
+	{
+		//Todo add verification that dependencies actually exist
+		assembly->scripts.emplace_back(script["id"].asString());
+	}
+	assembly->meshes.reserve(json["dependencies"]["meshes"].size());
+	for(auto& mesh : json["dependencies"]["meshes"])
+	{
+		assembly->meshes.emplace_back(mesh["id"].asString());
+	}
+	assembly->textures.reserve(json["dependencies"]["textures"].size());
+	for(auto& texture : json["dependencies"]["textures"])
+	{
+		assembly->textures.emplace_back(texture["id"].asString());
+	}
+	assembly->entities.reserve(json["entities"].size());
+	for(auto& entity : json["entities"])
+	{
+		WorldEntity newEntity;
+		newEntity.components.reserve(entity["components"].size());
+		for(auto& component : entity["components"])
+		{
+			const ComponentAsset* componentDef = am.getAsset<ComponentAsset>(component["id"].asString());
+			if(!componentDef || componentDef->type != AssetType::component)
+				throw std::runtime_error("Asset " + component["id"].asString() + " not found");
+
+			VirtualComponent newComponent(componentDef);
+			componentDef->fromJson(component, newComponent.data());
+
+			newEntity.components.push_back(newComponent);
+		}
+		assembly->entities.push_back(newEntity);
+	}
+
+	return assembly;
 }
 
 Assembly::Assembly()
@@ -107,23 +176,32 @@ Assembly::Assembly()
 	type.set(AssetType::Type::assembly);
 }
 
-void Assembly::inject(EntityManager& em)
+void Assembly::inject(EntityManager& em, EntityID rootID)
 {
-	std::vector<EntityID> entityMap(data.size());
+	std::vector<EntityID> entityMap(entities.size());
 
-	for (int i = 0; i < data.size(); ++i)
+	for (int i = 0; i < entities.size(); ++i)
 	{
-		WorldEntity& entity = data[i];
+		WorldEntity& entity = entities[i];
 		entityMap[i] = em.createEntity(entity.componentDefs());
+		if(!em.entityHasComponent(entityMap[i], LocalTransformComponent::def()))
+		{
+			LocalTransformComponent ltc{};
+			ltc.parent = rootID;
+			ltc.value = glm::mat4(1);
+			entityMap.push_back(rootID);
+			em.addComponent(entityMap[i], LocalTransformComponent::def());
+			em.setEntityComponent(entityMap[i], ltc.toVirtual());
+		}
 	}
 
-	for (int i = 0; i < data.size(); ++i)
+	for (int i = 0; i < entities.size(); ++i)
 	{
-		WorldEntity& entity = data[i];
+		WorldEntity& entity = entities[i];
 		EntityID id = entityMap[i];
 		for(auto component : entity.components)
 		{
-			if(component.def() == comps::LocalTransformComponent::def())
+			if(component.def() == LocalTransformComponent::def())
 			{
 				EntityID parent = component.readVar<EntityID>(1);
 				parent = entityMap[parent];
@@ -131,22 +209,9 @@ void Assembly::inject(EntityManager& em)
 				glm::mat4 transform = component.readVar<glm::mat4>(0);
 				//component.setVar(0, glm::translate(glm::mat4(1), {0.3f, 0, 0}));
 			}
-			else if(component.def() == comps::MeshRendererComponent::def())
-			{
-				//TODO: translate from local material indexes to ones from the vulkan runtime
-			}
-			else if(component.def() == comps::TransformComponent::def())
-			{
-
-				//component.setVar(0, glm::translate(glm::mat4(1), {0, 0, 0}));
-			}
-
-
 			em.setEntityComponent(id, component);
 		}
-		em.createEntity(entity.componentDefs());
 	}
-
 }
 
 

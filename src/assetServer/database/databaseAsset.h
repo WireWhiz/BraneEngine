@@ -35,7 +35,7 @@ public:
 	void setLevel(Level level);
 };
 
-class AssetData
+class AssetInfo
 {
 	Database& _db;
 	bool _exists;
@@ -47,8 +47,8 @@ public:
 	uint32_t folderID;
 	std::string name;
 	AssetType type;
-	AssetData(Database& db);
-	AssetData(AssetID id, Database& db);
+	AssetInfo(Database& db);
+	AssetInfo(AssetID id, Database& db);
 	void save();
 	void del();
 };

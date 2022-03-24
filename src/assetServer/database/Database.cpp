@@ -80,9 +80,9 @@ std::unordered_set<std::string> Database::userPermissions(const std::string& use
 	return pems;
 }
 
-AssetData Database::loadAssetData(const AssetID& id)
+AssetInfo Database::loadAssetData(const AssetID& id)
 {
-	return AssetData(id, *this);
+	return AssetInfo(id, *this);
 }
 
 AssetPermission Database::assetPermission(const uint32_t assetID, const uint32_t userID)
@@ -90,12 +90,12 @@ AssetPermission Database::assetPermission(const uint32_t assetID, const uint32_t
 	return AssetPermission(assetID, userID, *this);
 }
 
-std::vector<AssetData> Database::listUserAssets(const uint32_t& userID)
+std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 {
 	std::string sqlCall ="SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID WHERE AssetPermissions.UserID = " + std::to_string(userID);
-	std::vector<AssetData> assets;
+	std::vector<AssetInfo> assets;
 	rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
-		AssetData ad(*this);
+		AssetInfo ad(*this);
 		AssetID aid;
 		aid.id = std::stoi(columns[0].value);
 		ad.id = aid;

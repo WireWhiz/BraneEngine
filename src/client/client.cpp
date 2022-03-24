@@ -3,9 +3,11 @@
 #include "networking/connection.h"
 #include "assets/assetManager.h"
 #include "graphics/graphics.h"
+#include "graphics/graphicAssetPreprocessors.h"
 #include "assets/assembly.h"
 #include "ecs/nativeTypes/transform.h"
 #include "ecs/nativeTypes/meshRenderer.h"
+#include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/nativeSystems/nativeSystems.h"
 
 void Client::run()
@@ -22,34 +24,23 @@ void Client::run()
 
 	systems::addTransformSystem(em);
 
-	AssetID testHeadAssembly("localhost/0000000000000BC0");
-	Assembly* testAsset = am.getAsset<Assembly>(testHeadAssembly);
-	testAsset->inject(em);
-	for(auto& m : testAsset->meshes)
-		vkr.addMesh(std::make_unique<graphics::Mesh>(am.getAsset<MeshAsset>(m)));
-	//vkr.addMesh(std::make_unique<graphics::Mesh>(am.getAsset<MeshAsset>(*(testAsset->meshes.end() - 8))));
-
-	//ComponentSet quadComponents;
-	//quadComponents.add(comps::TransformComponent::def());
-	//quadComponents.add(comps::MeshRendererComponent::def());
-	//EntityID quadEntity = em.createEntity(quadComponents);
-	//EntityID quadEntity2 = em.createEntity(quadComponents);
-
-	//comps::TransformComponent transform{};
-	//comps::MeshRendererComponent meshRenderer{};
-	//transform.value = glm::mat4(1);
-	//meshRenderer.mesh = 0;
-	//meshRenderer.materials = {0,1};
-
-	//em.setEntityComponent(quadEntity, transform.toVirtual());
-	//em.setEntityComponent(quadEntity, meshRenderer.toVirtual());
-
-	//meshRenderer.mesh = 1;
-
-	//em.setEntityComponent(quadEntity2, transform.toVirtual());
-	//em.setEntityComponent(quadEntity2, meshRenderer.toVirtual());
+	GraphicAssetPreprocessors::addAssetPreprocessors(am, vkr);
+	nm.startAssetAcceptorSystem(em, am);
+	am.startAssetLoaderSystem(em);
 
 
+	ComponentSet headRootComponents;
+	headRootComponents.add(AssemblyRoot::def());
+	headRootComponents.add(TransformComponent::def());
+	EntityID testHead = em.createEntity(headRootComponents);
+
+	AssemblyRoot testHeadRoot{};
+	testHeadRoot.id = AssetID("localhost/0000000000000C0D");
+	em.setEntityComponent(testHead, testHeadRoot.toVirtual());
+
+	TransformComponent tc{};
+	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
+	em.setEntityComponent(testHead, tc.toVirtual());
 
 	graphics::Material* mat = new graphics::Material();
 	mat->setVertex(vkr.loadShader(0));
@@ -75,7 +66,6 @@ void Client::run()
 	{
 		vkr.updateWindow();
 		em.runSystems();
-		vkr.updateUniformBuffer(em); // Replace that with a system
 		vkr.draw(em); // Replace with system as well
 	}
 }

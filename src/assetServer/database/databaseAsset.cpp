@@ -40,13 +40,13 @@ void AssetPermission::setLevel(Level level)
 		});
 }
 
-AssetData::AssetData(Database& db) : _db(db)
+AssetInfo::AssetInfo(Database& db) : _db(db)
 {
 	_exists = false;
 	folderID = 0;
 }
 
-AssetData::AssetData(AssetID id, Database& db) : _db(db)
+AssetInfo::AssetInfo(AssetID id, Database& db) : _db(db)
 {
 	this->id = id;
 	_exists = false;
@@ -58,7 +58,7 @@ AssetData::AssetData(AssetID id, Database& db) : _db(db)
 	});
 }
 
-void AssetData::save()
+void AssetInfo::save()
 {
 	if(_exists)
 		_db.rawSQLCall("UPDATE Assets SET FolderID = '" + std::to_string(folderID) + "' Name = '" + name + "', Type = '" + type.string() + "' WHERE AssetID = " + std::to_string(id.id), [&](std::vector<Database::sqlColumn> columns){});
@@ -68,7 +68,7 @@ void AssetData::save()
 		});
 }
 
-void AssetData::del()
+void AssetInfo::del()
 {
 	if(_exists)
 	{

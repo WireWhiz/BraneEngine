@@ -28,18 +28,22 @@ public:
 	AssetID id;
 	AssetType type;
 	LoadState loadState;
-	static Asset* deserializeUnknown(ISerializedData& message, AssetManager& am);
-	virtual void serialize(OSerializedData& message);
-	virtual void deserialize(ISerializedData& message, AssetManager& am);
+	static Asset* deserializeUnknown(ISerializedData& sData, AssetManager& am);
+	virtual void serialize(OSerializedData& sData);
+	virtual void deserialize(ISerializedData& sData, AssetManager& am);
 };
 
 class IncrementalAsset : public Asset
 {
-
+protected:
+	size_t _incrementCount;
+public:
+	static IncrementalAsset* deserializeUnknownHeader(ISerializedData& sData, AssetManager& am);
+	virtual void serializeHeader(OSerializedData& sData);
+	virtual void deserializeHeader(ISerializedData& sData, AssetManager& am);
+	virtual bool serializeIncrement(OSerializedData& sData, void*& iteratorData);
+	virtual void deserializeIncrement(ISerializedData& sData) = 0;
+	size_t incrementCount() const;
 };
 
-template <>
-struct std::hash<Asset>
-{
-	size_t operator()(const Asset& k) const;
-};
+

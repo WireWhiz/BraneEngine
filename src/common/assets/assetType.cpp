@@ -71,3 +71,8 @@ bool AssetType::operator!=(AssetType t) const
 {
 	return _type != t._type;
 }
+
+bool AssetType::operator!=(AssetType::Type t) const
+{
+	return t != _type;
+}

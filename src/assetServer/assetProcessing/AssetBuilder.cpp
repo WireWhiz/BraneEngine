@@ -75,7 +75,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 			}
 			transform = translation * rotation * scale;
 		}
-		VirtualComponent tc(comps::TransformComponent::def());
+		VirtualComponent tc(TransformComponent::def());
 		tc.setVar(0, transform);
 		entity.components.push_back(tc);
 
@@ -83,7 +83,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 		{
 			uint32_t meshIndex = node["mesh"].asUInt();
 
-			VirtualComponent mc(comps::MeshRendererComponent::def());
+			VirtualComponent mc(MeshRendererComponent::def());
 			mc.setVar(0, meshIndex);
 			std::vector<uint32_t> materials;
 			for(auto& primitive : loader.json()["meshes"][meshIndex]["primitives"])
@@ -104,7 +104,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 				WorldEntity& childEnt = entities[child.asUInt()];
 				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
-				VirtualComponent tc(comps::LocalTransformComponent::def());
+				VirtualComponent tc(LocalTransformComponent::def());
 				tc.setVar(0, localTransform);
 				tc.setVar(1, (EntityID)pIndex);
 				childEnt.components.push_back(tc);
@@ -112,7 +112,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 		}
 		pIndex++;
 	}
-	assembly->data = std::move(entities);
+	assembly->entities = std::move(entities);
 	assets.push_back(std::move(assembly));
 	return assets;
 }

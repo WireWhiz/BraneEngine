@@ -1,14 +1,57 @@
 // type={} value={} index={}
 
-class AssetIDName extends  React.Component{
-
-    render(){
-        return (<JsonAPICall src={"/api/assets/get_name"} headers={{"name" : this.props.assetID}} view1={()=>{return this.props.assetID}} view2={(json)=>{return json.name}}/>)
-    }
-}
-
-//props: value={} onEdit={}
+//props: value={} valueChanged
 class VirtualTypeEditor extends React.Component{
+    constructor(props) {
+        super(props);
+        this.state = {
+
+        };
+        this.inputs = null;
+        this.value = this.props.value.value;
+    }
+    onEdit(evt)
+    {
+        switch(this.props.value.type)
+        {
+            case "mat4":
+            {
+                let mat4 = this.inputs.map((input, index)=>{
+                    try{
+                        input.current.classList.remove('invalid-input');
+                        return JSON.parse(input.current.value); //Using json parse because I can't get "parseFloat" to throw an error or return NaN.
+                    }
+                    catch(e)
+                    {
+                        input.current.classList.add('invalid-input');
+                        return this.value[index];
+                    }
+
+                });
+                this.value = mat4;
+            }
+                break;
+            case "uintVector":
+            {
+                try{
+                    this.inputs.current.classList.remove('invalid-input');
+                    this.value = JSON.parse(this.inputs.current.value);
+                }
+                catch(e)
+                {
+                    console.log(e);
+                    this.inputs.current.classList.add('invalid-input');
+                    this.value = value;
+                }
+            }
+
+            default:
+                console.warn("input of type \"" + this.props.value.type + "\" does not yet support editing.");
+        }
+
+        this.props.onChanged(this.value);
+    }
+
     render(){
         switch(this.props.value.type)
         {
@@ -16,18 +59,30 @@ class VirtualTypeEditor extends React.Component{
                 return "No data"
             case "mat4":
             {
-                let comps = [];
-                for (let i = 0; i < 16; i++)
+                this.inputs = [];
+                let rows = [];
+                for (let r = 0; r < 4; r++)
                 {
-                    comps.push(<input type={"text"} defaultValue={this.props.value.value[i]}/>)
-                    if((i + 1) % 4 === 0 && i !== 0)
-                        comps.push(<br/>);
+                    let columns = [];
+                    for(let c = 0; c < 4; c++)
+                    {
+                        let ref = React.createRef();
+                        columns.push(<input type={"text"} defaultValue={this.props.value.value[r * 4 + c]} ref={ref} onKeyUp={()=>{this.onEdit()}}/>)
+                        this.inputs.push(ref);
+                    }
+                    rows.push(<tr>{columns}</tr>)
                 }
-                return comps;
+                return <table class={"matrix"}>{rows}</table>;
+            }
+            case "uintVector":
+            {
+                this.inputs = React.createRef();
+                return <input type={"text"} defaultValue={JSON.stringify(this.props.value.value)} onKeyUp={()=>{this.onEdit()}} ref={this.inputs}/>
             }
 
             default:
-                return <input type={"text"} defaultValue={this.props.value.value} />;
+                this.inputs = React.createRef();
+                return <input type={"text"} defaultValue={this.props.value.value} onKeyUp={()=>{this.onEdit()}}/>;
         }
     }
 }
@@ -42,36 +97,54 @@ class AssemblyData extends React.Component
         };
     }
 
+    saveAsset(){
+        console.log(this.state.asset);
+        fetch("/api/assets/update", {
+            method: 'post',
+            body: JSON.stringify(this.state.asset),
+            headers:{
+                'Content-Type' : 'application/json',
+                'credentials' : 'same-origin'
+            }
+        }).then((res)=>{
+            return res.json();
+        }).then((json)=>{
+            document.getElementById("response").innerText = json.text;
+        }).catch((e)=>{
+            document.getElementById("response").innerText = "client side error: " + e;
+        });
+    }
+
     removeDependency(key, index)
     {
         let newState = deepCopy(this.state);
-        newState.asset.data.dependencies[key].splice(index, 1);
+        newState.asset.dependencies[key].splice(index, 1);
         this.setState(newState);
     }
 
     addDependency(key)
     {
         let newState = deepCopy(this.state);
-        newState.asset.data.dependencies[key].push("localhost/id");
+        newState.asset.dependencies[key].push("localhost/id");
         this.setState(newState);
     }
 
     addEntity(){
         let newState = deepCopy(this.state);
-        newState.asset.data.entities.push({
+        newState.asset.entities.push({
             components : []
         })
 
     }
     removeEntity(index){
         let newState = deepCopy(this.state);
-        newState.asset.data.entities.splice(index, 1);
+        newState.asset.entities.splice(index, 1);
         this.setState(newState);
     }
 
     addEntityComponent(entityIndex, componentID){
         let newState = deepCopy(this.state);
-        newState.asset.data.entities[entityIndex].push({
+        newState.asset.entities[entityIndex].push({
             id : "localhost/id",
             values : []
         });
@@ -80,7 +153,7 @@ class AssemblyData extends React.Component
     removeEntityComponent(entityIndex, componentIndex)
     {
         let newState = deepCopy(this.state);
-        newState.asset.data.entities[entityIndex].components.splice(componentIndex, 1);
+        newState.asset.entities[entityIndex].components.splice(componentIndex, 1);
         this.setState(newState);
     }
 
@@ -89,11 +162,12 @@ class AssemblyData extends React.Component
             this.state.asset = deepCopy(this.props.asset)
         console.log(this.state.asset)
         return[
+            <h1>Assembly</h1>,
             <h2>Meshes: </h2>,
             <table class={"editable-table"}>
-                <thead><th>AssetID</th></thead>
-                {this.state.asset.data.dependencies.meshes.map((id, index)=>{
-                    return <tr><td><AssetIDName assetID={id}/></td><td><button onClick={()=>this.removeDependency("meshes", index)}>Delete</button></td></tr>
+                <thead><th>ID</th><th>Name</th></thead>
+                {this.state.asset.dependencies.meshes.map((mesh, index)=>{
+                    return <tr><td>{mesh.id}</td><td>{mesh.name}</td><td><button onClick={()=>this.removeDependency("meshes", index)}>Delete</button></td></tr>
                 })}
                 <tfoot><td><button onClick={()=>this.addDependency("meshes")}>Add Mesh Dependency</button></td></tfoot>
             </table>,
@@ -101,15 +175,17 @@ class AssemblyData extends React.Component
             <h2>Entities: </h2>,
             <table class={"entity-list"}>
                 <thead><th>Entity Index</th><th>Components</th></thead>
-                {this.state.asset.data.entities.map((entity, eIndex)=> {
+                {this.state.asset.entities.map((entity, eIndex)=> {
                     let components = entity.components.map((component, cIndex)=>{
                         return (
                             <div class={"component-view"}>
-                                <p><AssetIDName assetID={component.id}/></p>
+                                <p>{component.name}</p>
                                 <hr/>
                                 <table>
-                                    {component.values.map((value)=>{
-                                        return <tr><td>{value.type}: </td><td><VirtualTypeEditor value={value}/></td></tr>;
+                                    {component.values.map((value, vIndex)=>{
+                                        return <tr><td>{value.type}: </td><td><VirtualTypeEditor value={value} onChanged={(newValue)=>{
+                                            this.state.asset.entities[eIndex].components[cIndex].values[vIndex].value = newValue
+                                        }}/></td></tr>;
                                     })}
                                 </table>
                             </div>
@@ -130,7 +206,9 @@ class AssemblyData extends React.Component
                     );
                 })}
                 <tfoot><button onClick={()=>this.addEntity()}>Add Entity</button></tfoot>
-            </table>
+            </table>,
+            <button onClick={()=>{this.saveAsset()}}>Save Asset</button>,
+            <p id={"response"}></p>
         ]
     }
 
@@ -148,7 +226,7 @@ class AssetData extends React.Component{
         switch(json.type) {
             case "assembly":
             {
-                return <AssemblyData asset={json} />
+                return <AssemblyData asset={json.data} />
             }
             default:
                 return <p>No data preview for this type.</p>

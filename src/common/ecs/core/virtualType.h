@@ -53,13 +53,13 @@ public:
 		virtualUInt64,
 		virtualFloat,
 		virtualString,
+		virtualAssetID,
 		virtualVec3,
 		virtualVec4,
 		virtualMat4,
 		virtualFloatVector,
 		virtualIntVector,
-		virtualUIntVector,
-		virtualEntityID,
+		virtualUIntVector
 	};
 protected:
 	size_t _offset;
@@ -109,6 +109,8 @@ public:
 			return Type::virtualFloat;
 		if constexpr(std::is_same<T, std::string>().value)
 			return Type::virtualString;
+		if constexpr(std::is_same<T, AssetID>().value)
+			return Type::virtualAssetID;
 		if constexpr(std::is_same<T, glm::vec3>().value)
 			return Type::virtualVec3;
 		if constexpr(std::is_same<T, glm::vec4>().value)
@@ -121,8 +123,6 @@ public:
 			return Type::virtualIntVector;
 		if constexpr(std::is_same<T, std::vector<uint32_t>>().value)
 			return Type::virtualUIntVector;
-		if constexpr(std::is_same<T, EntityID>().value)
-			return Type::virtualEntityID;
 
 		std::cerr << "Tried to serialize type of: " << typeid(T).name() << std::endl;
 		return Type::virtualUnknown;

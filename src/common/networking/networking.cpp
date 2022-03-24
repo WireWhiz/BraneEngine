@@ -1,5 +1,6 @@
 #include "networking.h"
-
+#include "assets/assetManager.h"
+#include <atomic>
 
 NetworkManager::NetworkManager() : _ssl_context(asio::ssl::context::tls)
 {
@@ -19,66 +20,50 @@ NetworkManager::~NetworkManager()
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 {
 	std::cout << "Connecting to asset server: " << ip << ":" << port << std::endl;
-	std::unique_ptr<net::ClientConnection<net::tcp_socket>> connection = std::make_unique<net::ClientConnection<net::tcp_socket>>(net::tcp_socket(_context));
+	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
 	asio::ip::tcp::resolver tcpresolver(_context);
-	auto tcpEndpoints = tcpresolver.resolve(ip, std::to_string(port)); //TODO make this async
-	connection->connectToServer(tcpEndpoints);
+	auto tcpEndpoints = tcpresolver.resolve(ip, std::to_string(port));
+	connection->connectToServer(tcpEndpoints, [this, ip, connection]() mutable{
+		_assetServerLock.lock();
+		_assetServers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
+		_assetServerLock.unlock();
+	} );
 
-	_assetServers.insert({ip, std::move(connection)});
+
 }
 
-Asset* NetworkManager::requestAsset(AssetID& id, AssetManager& am)
+
+
+void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, std::function<void()> callback)
 {
-	assert(!_context.stopped());
-	if(!_assetServers.count(id.serverAddress))
-		connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt());
+	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
-	net::Connection* server = _assetServers[id.serverAddress].get();
-	std::shared_ptr<net::OMessage> o = std::make_shared<net::OMessage>();
-	o->header.type = net::MessageType::assetRequest;
-	o->body << id.string();
-	while(!server->connected())
-	{
-		std::cout << "waiting to connect to server\n";
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-	std::cout << "requesting: " << id.string() << std::endl;
-	server->send(o);
+	std::shared_ptr<asio::ip::tcp::resolver> tcpresolver = std::make_shared<asio::ip::tcp::resolver>(_context); //Store this as a pointer to keep it around as long as we need it
+	tcpresolver->async_resolve(ip, std::to_string(port), [this, ip, callback, connection, tcpresolver](const asio::error_code ec, auto endpoints){
+		if(!ec)
+		{
+			connection->connectToServer(endpoints, [this, ip, callback, connection](){
+				_assetServerLock.lock();
+				_assetServers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
+				_assetServerLock.unlock();
+				callback();
+			});
+		}
+		else
+			throw std::runtime_error("Could not resolve asset server address: " + ec.message());
 
-	std::shared_ptr<net::IMessage> res;
-	while(!server->popIMessage(res))
-	{
-		//std::this_thread::sleep_for(std::chrono::milliseconds(100));
-	}
-
-	assert(res->header.type == net::MessageType::assetData);
-	Asset* asset = Asset::deserializeUnknown(res->body, am);
-	return asset;
-}
-
-Asset* NetworkManager::requestAssetIncremental(AssetID& id, AssetManager& am)
-{
-	assert(!_context.stopped());
-	if(!_assetServers.count(id.serverAddress))
-		connectToAssetServer(id.serverAddress, Config::json()["networking"]["ssl_port"].asUInt());
+	});
 
 
 
-	return nullptr;
 }
 
 void NetworkManager::start()
 {
 	ThreadPool::addStaticThread([this](){
-        std::function<void()> keepContextRunning;
-		keepContextRunning = [&](){
-	        asio::post(_context, [&](){
-				keepContextRunning();
-	        });
-	    };
-	    keepContextRunning();
-		_context.run();
+        while(true)
+			_context.run_one();
 	});
 }
 
@@ -103,4 +88,163 @@ void NetworkManager::configureServer()
 	}
 }
 
+void NetworkManager::async_requestAsset(const AssetID& id, AssetManager& am, AsyncData<Asset*> asset)
+{
+	assert(asset.callbackSet());
+	auto f = [this, id, asset]{
+		_assetServerLock.lock_shared();
+		net::Connection* server = _assetServers[id.serverAddress].get();
+		_assetServerLock.unlock_shared();
 
+		std::cout << "async requesting: " << id.string() << std::endl;
+
+		// Set up a listener for the asset response
+		_listenersLock.lock();
+		_assetLoadListeners.insert({id, [asset](Asset* data){
+			asset.setData(data);
+		}});
+		_listenersLock.unlock();
+
+		AssetRequest ar{};
+		ar.id = id;
+		ar.incremental = false;
+		server->send(ar.toMessage());
+	};
+
+	if(!_assetServers.count(id.serverAddress))
+		async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), f);
+	else
+		f();
+}
+
+
+void NetworkManager::async_requestAssetIncremental(const AssetID& id, AssetManager& am, AsyncData<IncrementalAsset*> asset)
+{
+	assert(asset.callbackSet());
+	auto f = [this, id, asset]{
+		_assetServerLock.lock_shared();
+		net::Connection* server = _assetServers[id.serverAddress].get();
+		_assetServerLock.unlock_shared();
+
+		std::cout << "async requesting incremental: " << id.string() << std::endl;
+
+		// Set up a listener for the asset response
+		_listenersLock.lock();
+		_assetHeaderListeners.insert({id, [asset](IncrementalAsset* data){
+			asset.setData(data);
+		}});
+		_listenersLock.unlock();
+
+		AssetRequest ar{};
+		ar.id = id;
+		ar.incremental = true;
+		server->send(ar.toMessage());
+	};
+
+	if(!_assetServers.count(id.serverAddress))
+		async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), f);
+	else
+		f();
+
+}
+
+void NetworkManager::startAssetAcceptorSystem(EntityManager& em, AssetManager& am)
+{
+	std::unique_ptr<VirtualSystem> vs = std::make_unique<VirtualSystem>(AssetID("nativeSystem/2"), [this, &am](EntityManager& em){
+		for(auto& s : _assetServers){
+			std::shared_ptr<net::IMessage> message;
+			while(s.second->popIMessage(message))
+			{
+				switch(message->header.type)
+				{
+					case net::MessageType::assetData:
+					{
+						ThreadPool::enqueue([this, message, &am](){
+							Asset* asset = nullptr;
+							try{
+								asset = Asset::deserializeUnknown(message->body, am);
+							}
+							catch(const std::exception& e)
+							{
+								std::cerr << "Problem deserializing asset: " << e.what() << std::endl;
+								return;
+							}
+
+							_listenersLock.lock();
+							auto f = _assetLoadListeners[asset->id]; //We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
+							_assetLoadListeners.erase(asset->id);
+							_listenersLock.unlock();
+
+							f(asset);
+						});
+					}
+						break;
+					case net::MessageType::assetIncrementalHeader:
+					{
+						IncrementalAsset* asset = nullptr;
+						try{
+							asset = IncrementalAsset::deserializeUnknownHeader(message->body, am);
+						}
+						catch(const std::exception& e)
+						{
+							std::cerr << "Problem deserializing asset header: " << e.what() << std::endl;
+							return;
+						}
+
+						_listenersLock.lock();
+						auto f = _assetHeaderListeners[asset->id]; //We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
+						_assetHeaderListeners.erase(asset->id);
+
+
+						_assetIncrementListeners.insert({
+							asset->id,
+							[asset](ISerializedData& sData){
+								asset->deserializeIncrement(sData);
+							}
+						});
+						_listenersLock.unlock();
+
+						f(asset);
+					}
+						break;
+					case net::MessageType::assetIncrementalData:
+					{
+						AssetID id;
+						uint16_t index;
+						message->body >> id;
+						ThreadPool::enqueue([this, id, message](){
+							_listenersLock.lock();
+							auto f = _assetIncrementListeners[id]; //We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
+							//TODO: increment listeners need to erase themselves after asset is fully loaded
+							_listenersLock.unlock();
+
+							f(message->body);
+							//TODO: increment listeners need to erase themselves after asset is fully loaded
+						});
+					}
+						break;
+					default:
+						std::cerr << "Received message of unknown type: " << (int)message->header.type << std::endl;
+						break;
+				}
+			}
+		}
+	});
+	assert(em.addSystem(std::move(vs)));
+}
+
+
+
+std::shared_ptr<net::OMessage> AssetRequest::toMessage()
+{
+	std::shared_ptr<net::OMessage> message = std::make_shared<net::OMessage>();
+	message->header.type = net::MessageType::assetRequest;
+	message->body << id << incremental;
+	return message;
+}
+
+void AssetRequest::fromMessage(std::shared_ptr<net::IMessage> message)
+{
+	assert(message->header.type == net::MessageType::assetRequest);
+	message->body >> id >> incremental;
+}

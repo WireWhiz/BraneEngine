@@ -1,0 +1,115 @@
+{
+  "main": {
+    "id": "a8b6d9abe528cb5c",
+    "type": "split",
+    "children": [
+      {
+        "id": "b802667759cf8d9f",
+        "type": "leaf",
+        "state": {
+          "type": "markdown",
+          "state": {
+            "file": "GLTF Loading.md",
+            "mode": "source",
+            "source": false
+          }
+        }
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2d8a024db9184e56",
+    "type": "split",
+    "children": [
+      {
+        "id": "60969154fd0c0907",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ecfad2d6b31ad808",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {}
+            }
+          },
+          {
+            "id": "96d35b4deb86f667",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "5befe6f182f40d08",
+    "type": "split",
+    "children": [
+      {
+        "id": "3dd5642c9adfa5c4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a236c0d2d777e250",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "GLTF Loading.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "25d85a08810953c8",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "GLTF Loading.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "active": "b802667759cf8d9f",
+  "lastOpenFiles": [
+    "GLTF Loading.md",
+    "Async Asset Loading.md",
+    "In progress.md",
+    "Reloading Assets.md",
+    "Assets.md",
+    "Asset Manager.md",
+    "ECS.md",
+    "Client.md",
+    "Asset Server.md",
+    "Networking.md"
+  ]
+}

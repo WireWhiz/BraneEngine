@@ -44,9 +44,10 @@ bool SystemList::sort()
 		node.second->setNext(nullptr);
 	}
 	_first = nullptr;
+	SystemNode* _last = nullptr;
 	
 	for (auto& node : _nodes)
-		if (!node.second->sort(_first))
+		if (!node.second->sort(_first, _last))
 			return false;
 	return true;
 
@@ -189,7 +190,7 @@ void SystemList::runSystems(EntityManager& em)
 	}
 }
 
-bool SystemList::SystemNode::sort(SystemNode*& last)
+bool SystemList::SystemNode::sort(SystemNode*& first, SystemNode*& last)
 {
 	if (sorted)
 		return true;
@@ -199,15 +200,18 @@ bool SystemList::SystemNode::sort(SystemNode*& last)
 	visited = true;
 	for (size_t i = 0; i < after.size(); i++)
 	{
-		if (!after[i]->sort(last))
+		if (!after[i]->sort(first, last))
 			return false;
 	}
 	visited = false;
+
+	if(!first)
+		first = this;
 	
 	if (last != nullptr)
 		last->setNext(this);
-	else
-		last = this;
+
+	last = this;
 
 	sorted = true;
 	return true;

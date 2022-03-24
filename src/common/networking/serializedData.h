@@ -20,8 +20,11 @@ public:
 
 class ISerializedData
 {
-	size_t _ittr = 0;
+	size_t _ittr;
 public:
+	ISerializedData(){
+		_ittr = 0;
+	}
 	std::vector<byte> data;
 
 	[[nodiscard]] size_t size() const

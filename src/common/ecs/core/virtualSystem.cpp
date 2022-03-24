@@ -2,7 +2,7 @@
 
 VirtualSystem::VirtualSystem(AssetID id, SystemFunction function)
 {
-	id = id;
+	this->id = id;
 	_function = function;
 }
 

@@ -38,6 +38,7 @@ public:
 	[[nodiscard]] const std::string& string() const;
 
 	bool operator==(Type t) const;
+	bool operator!=(Type t) const;
 	bool operator==(AssetType t) const;
 	bool operator!=(AssetType t) const;
 };

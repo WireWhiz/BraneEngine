@@ -14,6 +14,7 @@
 #include "connection.h"
 #include "config/config.h"
 #include "networkError.h"
+#include <shared_mutex>
 
 
 
@@ -64,13 +65,22 @@ public:
 
 class NetworkManager
 {
+
 	asio::io_context _context;
 	asio::ssl::context _ssl_context;
+	std::shared_mutex _assetServerLock;
 	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _assetServers;
+	std::shared_mutex _runtimeServerLock;
 	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _runtimeServers;
 	std::vector<asio::ip::tcp::acceptor> _acceptors;
 
+	std::mutex _listenersLock;
+	std::unordered_map<AssetID, std::function<void(Asset* asset)>> _assetLoadListeners;
+	std::unordered_map<AssetID, std::function<void(IncrementalAsset* asset)>> _assetHeaderListeners;
+	std::unordered_map<AssetID, std::function<void(ISerializedData& sData)>> _assetIncrementListeners;
+
 	void connectToAssetServer(std::string ip, uint16_t port);
+	void async_connectToAssetServer(std::string ip, uint16_t port, std::function<void()> callback);
 	template<typename socket_t>
 	void async_acceptConnections(size_t acceptor, std::function<void (std::unique_ptr<net::Connection>&& connection)> callback)
 	{
@@ -107,7 +117,16 @@ public:
 		async_acceptConnections<socket_t>(_acceptors.size()-1, callback);
 	}
 
-	Asset* requestAsset(AssetID& id, AssetManager& am);
-	Asset* requestAssetIncremental(AssetID& id, AssetManager& am);
+	void startAssetAcceptorSystem(EntityManager& em, AssetManager& am);
 
+	void async_requestAsset(const AssetID& id, AssetManager& am, AsyncData<Asset*> asset);
+	void async_requestAssetIncremental(const AssetID& id, AssetManager& am, AsyncData<IncrementalAsset*> asset);
+};
+
+struct AssetRequest
+{
+	AssetID id;
+	bool incremental = false;
+	std::shared_ptr<net::OMessage> toMessage();
+	void fromMessage(std::shared_ptr<net::IMessage> message);
 };

@@ -11,7 +11,7 @@ add_library(graphics STATIC
 	swapChain.cpp
 	texture.cpp
 	window.cpp
-)
+        GraphicAssetPreprocessors.cpp graphicAssetPreprocessors.h)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
 target_link_libraries(graphics PRIVATE utility glslang)
 if(WIN32)

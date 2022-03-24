@@ -38,26 +38,69 @@ void AssetServer::processMessages()
 			std::shared_ptr<net::IMessage> message;
 			while(connection->popIMessage(message))
 			{
-				std::cout << "received message: " << message;
+				std::cout << "received message: " << message << std::endl;
 				if(message->header.type == net::MessageType::assetRequest)
 				{
-					std::string requestedAssetString;
-					message->body >> requestedAssetString;
-					AssetID requestedAsset(requestedAssetString);
-					std::cout << "request for: " << requestedAssetString << std::endl;
+					AssetRequest ar{};
+					ar.fromMessage(message);
+
+					std::cout << "request for: " << ar.id.string() << std::endl;
+
 					std::shared_ptr<net::OMessage> res = std::make_shared<net::OMessage>();
-					Asset* asset = _am.getAsset<Asset>(requestedAsset);
-					if(asset)
+					Asset* asset = nullptr;
+					try{
+						asset = _am.getAsset<Asset>(ar.id);
+
+					}
+					catch(const std::exception& e)
 					{
-						asset->serialize(res->body);
-						res->header.type = net::MessageType::assetData;
-						connection->send(res);
+						std::cerr << "Failed to read asset: " << e.what();
 					}
 
+					if(asset)
+					{
+						if(!ar.incremental)
+						{
+							asset->serialize(res->body);
+							res->header.type = net::MessageType::assetData;
+							connection->send(res);
+						}
+						else
+						{
+							auto* ia = dynamic_cast<IncrementalAsset*>(asset);
+							if(ia)
+							{
+								std::cout<< "Sending header for: " << ia->id << std::endl;
+								ia->serializeHeader(res->body);
+								res->header.type = net::MessageType::assetIncrementalHeader;
+								connection->send(res);
+
+								IncrementalAssetSender assetSender{};
+								assetSender.asset = ia;
+								assetSender.dest = connection.get();
+								_senders.push_back(assetSender);
+							}
+							else
+								std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
+						}
+
+					}
 				}
 			}
 		}
 	}
+	//Send one increment from every incremental asset that we are sending, to create the illusion of them loading in parallel
+	_senders.remove_if([&](auto& sender)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+
+		std::shared_ptr<net::OMessage> o = std::make_shared<net::OMessage>();
+		o->header.type = net::MessageType::assetIncrementalData;
+		bool moreData = sender.asset->serializeIncrement(o->body, sender.iteratorData);
+		sender.dest->send(o);
+
+		return !moreData;
+	});
 }
 
 AssetServer::~AssetServer()

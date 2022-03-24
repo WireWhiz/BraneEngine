@@ -7,7 +7,7 @@ size_t ThreadPool::_staticThreads;
 size_t ThreadPool::_minThreads;
 
 std::atomic<bool> ThreadPool::_running = true;
-std::queue<ThreadPool::Job> ThreadPool::_jobs;
+std::queue<Job> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
 
 int ThreadPool::threadRuntime()
@@ -33,16 +33,17 @@ int ThreadPool::threadRuntime()
 			try
 			{
 				job.f();
-
 			}
 			catch (const std::exception& e)
 			{
 				std::cerr << "Thread Error: " << e.what() << std::endl;
 			}
 			job.handle->_instances -= 1;
+			if(job.handle->_instances == 0)
+				job.handle->enqueueNext();
 		}
 		else
-			std::this_thread::sleep_for(std::chrono::nanoseconds (500)); //If there aren't any jobs to do, sleep. Otherwise no sleep!
+			std::this_thread::sleep_for(std::chrono::nanoseconds (500)); //If there aren't any jobs to do, sleep. Otherwise, no sleep! Edit: Looking back at this, I realize it describes more than the thread pool
 
 	}
 	return 0;
@@ -94,7 +95,7 @@ std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 	handle->_instances = 1;
 	_queueMutex.lock();
-	_jobs.push(Job( function, handle));
+	_jobs.push(Job( std::move(function), handle));
 	_queueMutex.unlock();
 	return handle;
 }
@@ -103,8 +104,23 @@ void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHand
 {
 	handle->_instances += 1;
 	_queueMutex.lock();
-	_jobs.push(Job(function, handle));
+	_jobs.push(Job( std::move(function), handle));
 	_queueMutex.unlock();
+}
+
+std::shared_ptr<JobHandle>  ThreadPool::enqueueBatch(std::vector<std::function<void()>> functions)
+{
+	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
+
+	_queueMutex.lock();
+	for(auto& function : functions)
+	{
+		handle->_instances += 1;
+		_jobs.push(Job(std::move(function), handle));
+	}
+	_queueMutex.unlock();
+
+	return handle;
 }
 
 void ThreadPool::addStaticThread(std::function<void()> function)
@@ -113,8 +129,21 @@ void ThreadPool::addStaticThread(std::function<void()> function)
 	if(_threads.size() - _staticThreads < _minThreads)
 		_threads.emplace_back(function);
 	else
-		enqueue(function);
+		enqueue(std::move(function));
 
+}
+
+void ThreadPool::addStaticTimedThread(std::function<void()> function, std::chrono::seconds interval)
+{
+	auto* lastExecution = new std::chrono::time_point<std::chrono::system_clock>; // Memory leak alert!
+	*lastExecution = std::chrono::system_clock::now();
+	addStaticThread([function, interval, lastExecution](){
+		function();
+
+		auto nextExecution = *lastExecution + interval;
+		*lastExecution = std::chrono::system_clock::now();
+		std::this_thread::sleep_until(nextExecution);
+	});
 }
 
 bool JobHandle::finished()
@@ -134,13 +163,27 @@ JobHandle::JobHandle()
 	_instances = 0;
 }
 
-void ThreadPool::Job::operator=(const Job& job)
+std::shared_ptr<JobHandle> JobHandle::next(std::function<void()> f)
+{
+	_next = f;
+	if(!_nextHandle)
+		_nextHandle = std::make_shared<JobHandle>();
+	return _nextHandle;
+}
+
+void JobHandle::enqueueNext()
+{
+	if(_next)
+		ThreadPool::enqueue(_next);
+}
+
+void Job::operator=(const Job& job)
 {
 	f = job.f;
 	handle = job.handle;
 }
 
-ThreadPool::Job::Job(std::function<void()> f, std::shared_ptr<JobHandle> handle)
+Job::Job(std::function<void()> f, std::shared_ptr<JobHandle> handle)
 {
 	this->f = f;
 	this->handle = handle;

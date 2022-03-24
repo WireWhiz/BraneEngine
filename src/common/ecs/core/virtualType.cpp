@@ -48,6 +48,8 @@ VirtualType* VirtualType::constructTypeOf(VirtualType::Type type)
 			return new VirtualVariable<float>();
 		case virtualString:
 			return new VirtualVariable<std::string>();
+		case virtualAssetID:
+			return new VirtualVariable<AssetID>();
 		case virtualVec3:
 			return new VirtualVariable<glm::vec3>();
 		case virtualVec4:
@@ -60,8 +62,6 @@ VirtualType* VirtualType::constructTypeOf(VirtualType::Type type)
 			return new VirtualVariable<std::vector<int32_t>>();
 		case virtualUIntVector:
 			return new VirtualVariable<std::vector<uint32_t>>();
-		case virtualEntityID:
-			return new VirtualVariable<EntityID>();
 	}
 }
 
@@ -76,12 +76,12 @@ std::string VirtualType::typeToString(Type type)
 			{virtualUInt64,  "uint64" },
 			{virtualFloat,   "float"  },
 			{virtualString,  "string" },
+			{virtualAssetID,  "assetID" },
 			{virtualVec3,    "vec3"   },
 			{virtualMat4,    "mat4"   },
 			{virtualFloatVector,   "floatVector"  },
 			{virtualIntVector,   "intVector"  },
 			{virtualUIntVector,   "uintVector"  },
-			{virtualEntityID,   "entityID"  },
 	};
 	assert(_toStringMap.count(type));
 	return _toStringMap.at(type);
@@ -98,12 +98,12 @@ VirtualType::Type VirtualType::stringToType(const std::string& type)
 			{"uint64",    virtualUInt64},
 			{"float",      virtualFloat},
 			{"string",    virtualString},
+			{"assetID",    virtualAssetID},
 			{"vec3",        virtualVec3},
 			{"mat4",        virtualMat4},
 			{"floatVector", virtualFloatVector},
 			{"intVector", virtualIntVector},
 			{"uintVector", virtualUIntVector},
-			{"entityID", virtualEntityID},
 
 	};
 	assert(_toStringMap.count(type));

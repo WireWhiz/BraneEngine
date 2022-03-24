@@ -66,26 +66,32 @@ namespace graphics
         inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
         inheritanceInfo.framebuffer = _swapChain->framebuffer(imageIndex);
         inheritanceInfo.renderPass = _swapChain->renderPass();
-        
+
+		//Update incremental asset derived objects:
+		_meshes.forEach([&](auto& mesh)
+		{
+			mesh->updateData();
+		});
+
         //Draw models:
         glm::mat4x4 view = glm::lookAt(glm::vec3(1.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4x4  proj = glm::perspective(glm::radians(45.0f), _swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 500.0f);
         proj[1][1] *= -1;
         glm::mat4x4 camera_matrix = proj * view;
 
-		const static NativeForEach forEachMeshRenderer( {comps::MeshRendererComponent::def(), comps::TransformComponent::def()},&em);
+		const static NativeForEach forEachMeshRenderer( {MeshRendererComponent::def(), TransformComponent::def()},&em);
 
 		std::vector<std::vector<RenderObject>> _renderCache(_renderers.size());
 
 		em.forEach(forEachMeshRenderer.id(), [&](byte** components){
-			comps::MeshRendererComponent* mr = comps::MeshRendererComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(0)]);
+			MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(0)]);
 			Mesh* mesh = _meshes[mr->mesh].get();
 			for (int j = 0; j < mesh->primitiveCount(); ++j)
 			{
 				RenderObject ro;
 				ro.mesh = mesh;
 				ro.primitive = j;
-				ro.transform = comps::TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
+				ro.transform = TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
 
 
 				_renderCache[/*mr->materials[j]*/0].push_back(ro);
@@ -156,26 +162,12 @@ namespace graphics
         _materials[material]->buildGraphicsPipeline(_swapChain);
         return _renderers.push(std::make_unique<Renderer>(_materials[material].get()));
     }
-    size_t VulkanRuntime::addMesh(std::unique_ptr<Mesh> mesh)
+    size_t VulkanRuntime::addMesh(MeshAsset* mesh)
     {
 		uint32_t index = _meshes.size();
-        _meshes.push(std::move(mesh));
+		mesh->pipelineID = index;
+        _meshes.push(std::make_unique<Mesh>(mesh));
 		return index;
-    }
-    void VulkanRuntime::updateUniformBuffer(EntityManager& em)
-    {
-		/*static const NativeForEach forEach({comps::TransformComponent::def()}, &em);
-        static auto lastTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - lastTime).count();
-
-
-        em.forEach(forEach.id(), [](byte** components) {
-	        comps::TransformComponent* t = comps::TransformComponent::fromVirtual(components[0]);
-			t->value = glm::rotate(t->value, glm::radians(0.001f), glm::vec3(0.0f, 1.0f, 0.0f));
-        });
-	    lastTime = std::chrono::high_resolution_clock::now();*/
     }
 
     void VulkanRuntime::init()
@@ -474,7 +466,9 @@ namespace graphics
 
 	size_t VulkanRuntime::addMaterial(Material* material)
 	{
-		return _materials.push(std::unique_ptr<Material>(material));
+		size_t index = _materials.push(std::unique_ptr<Material>(material));
+
+		return index;
 	}
 
 	Material* VulkanRuntime::getMaterial(size_t id)
