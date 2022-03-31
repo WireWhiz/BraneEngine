@@ -132,7 +132,6 @@ namespace graphics
 	{
 		if(!_meshAsset->meshUpdated)
 			return;
-
 		for (size_t i = 0; i < _meshAsset->primitives.size(); ++i)
 		{
 			auto& p = _meshAsset->primitives[i];

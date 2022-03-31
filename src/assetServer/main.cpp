@@ -1,6 +1,5 @@
 // Asset server
 #include <iostream>
-#include <networking/connectionAcceptor.h>
 #include <common/config/config.h>
 #include <json/json.h>
 #include <fstream>

@@ -5,7 +5,7 @@
 
 namespace net
 {
-	enum class MessageType
+	enum class MessageType : uint16_t
 	{
 		acknowledge = 0,
 		assetRequest = 1,
@@ -14,9 +14,10 @@ namespace net
 		assetIncrementalData = 4,
 	};
 
-	struct alignas(4) MessageHeader
+	struct alignas(2) MessageHeader
 	{
-		alignas(4) MessageType type;
+		alignas(2) MessageType type;
+		alignas(2) uint16_t size = 0;
 	};
 
 	struct OMessage

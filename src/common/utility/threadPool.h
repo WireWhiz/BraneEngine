@@ -49,7 +49,7 @@ public:
 	static std::thread::id main_thread_id;
 	static void init(size_t minThreads);
 	static void cleanup();
-	static void addStaticThread(std::function<void()> function);
+	static std::shared_ptr<JobHandle> addStaticThread(std::function<void()> function);
 	static void addStaticTimedThread(std::function<void()> function, std::chrono::seconds interval);
 	static std::shared_ptr<JobHandle> enqueue(std::function<void()> function);
 	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle>);

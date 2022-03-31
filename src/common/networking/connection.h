@@ -16,19 +16,16 @@
 
 namespace net
 {
-	typedef uint32_t ConnectionID;
 
 	typedef asio::ip::tcp::socket tcp_socket;
 	typedef asio::ssl::stream<tcp_socket> ssl_socket;
 
 
-	const std::string_view messageEnd = "~~EndMessage~~";
 	class Connection
 	{
 	public:
 
 	protected:
-		EntityManager* _em;
 		AsyncQueue<std::shared_ptr<OMessage>> _obuffer;
 		AsyncQueue<std::shared_ptr<IMessage>> _ibuffer;
 		std::shared_ptr<IMessage> _tempIn;
@@ -48,26 +45,24 @@ namespace net
 
 	protected:
 		socket_t _socket;
-		asio::streambuf buffer;
-		uint16_t _unacknowledgedSent = 0;
-		uint16_t _unacknowledgedReceived = 0;
-		bool _acknowledgePause = false;
-		size_t acknowledge_rate = 2;
-		size_t acknowledge_pause = 4;
+		std::string _address;
 		void async_readHeader()
 		{
 			_tempIn = std::make_shared<IMessage>();
-			asio::async_read(_socket, buffer, asio::transfer_exactly(sizeof(MessageHeader)) ,[this](std::error_code ec, std::size_t length) {
+			asio::async_read(_socket, asio::buffer(&_tempIn->header, sizeof(MessageHeader)) ,[this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-					asio::buffer_copy(asio::buffer(&_tempIn->header, sizeof(MessageHeader)), buffer.data(), sizeof(MessageHeader));
-					std::cerr << "Message type rec: " << (unsigned int)_tempIn->header.type << std::endl;
-					buffer.consume(length);
-					async_readBody();
+					if(_tempIn->header.size > 0)
+						async_readBody();
+					else
+					{
+						_ibuffer.push_back(_tempIn);
+						async_readHeader();
+					}
 				}
 				else
 				{
-					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Header Parse Fail: " << ec.message() << std::endl;
+					std::cerr << "[" << _address << "] Header Parse Fail: " << ec.message() << std::endl;
 					disconnect();
 				}
 
@@ -75,66 +70,31 @@ namespace net
 		}
 		void async_readBody()
 		{
-			asio::async_read_until(_socket, buffer, messageEnd,  [this](std::error_code ec, std::size_t length) {
+			std::cout << "Message of size: " << _tempIn->header.size << std::endl;
+			_tempIn->body.data.resize(_tempIn->header.size);
+			asio::async_read(_socket, asio::buffer(_tempIn->body.data.data(), _tempIn->body.size()),  [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-
-					_tempIn->body.data.resize(length - messageEnd.size());
-					asio::buffer_copy(asio::buffer(_tempIn->body.data.data(), _tempIn->body.data.size()), buffer.data(), length-messageEnd.size());
-					buffer.consume(length);
 					_ibuffer.push_back(_tempIn);
-					if(_tempIn->header.type != MessageType::acknowledge)
-					{
-						//_unacknowledgedReceived++;
-
-					}
-					/*else
-					{
-						uint16_t acknowledged;
-						_tempIn->body >> acknowledged;
-						_unacknowledgedSent -= acknowledged;
-
-						if(_unacknowledgedSent < acknowledge_pause)
-						{
-							if (!_obuffer.empty() && _acknowledgePause)
-								async_writeHeader();
-							_acknowledgePause = false;
-						}
-					}*/
-
-					_tempIn = nullptr;
-
-					//acknowledge();
 					async_readHeader();
 				}
 				else
 				{
-					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Read message body fail: " << ec.message() << std::endl;
+					std::cerr << "[" << _address << "] Read message body fail: " << ec.message() << std::endl;
 					disconnect();
 				}
 			});
-		}
-		void acknowledge()
-		{
-			if(_unacknowledgedReceived >= acknowledge_rate)
-			{
-				auto m = std::make_shared<OMessage>();
-				m->header.type = MessageType::acknowledge;
-				m->body << _unacknowledgedReceived;
-				send(m);
-			}
 		}
 		void async_writeHeader()
 		{
 			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-					std::cerr << "Message type send: " << (unsigned int)_obuffer.front()->header.type << std::endl;
 					async_writeBody();
 				}
 				else
 				{
-					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Write header fail: " << ec.message() << std::endl;
+					std::cerr << "[" << _address << "] Write header fail: " << ec.message() << std::endl;
 					disconnect();
 				}
 			});
@@ -144,18 +104,13 @@ namespace net
 			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this](std::error_code ec, std::size_t length) {
 				if (!ec)
 				{
-					asio::write(_socket, asio::buffer(messageEnd.data(), messageEnd.size()));
-					if(_obuffer.front()->header.type != MessageType::acknowledge)
-						_unacknowledgedSent++;
 					_obuffer.pop_front();
 					if(!_obuffer.empty())
 						async_writeHeader();
-
-
 				}
 				else
 				{
-					std::cout << "[" << _socket.lowest_layer().remote_endpoint().address().to_string() << "] Write body fail: " << ec.message() << std::endl;
+					std::cerr << "[" << _address << "] Write body fail: " << ec.message() << std::endl;
 					disconnect();
 				}
 			});
@@ -163,13 +118,15 @@ namespace net
 	public:
 		ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
 		{
+
 		}
 		~ConnectionBase(){
-			disconnect();
 		}
 		void send(std::shared_ptr<OMessage> msg) override
 		{
-			assert(connected());
+			assert(msg->body.size() <= 65535); //unsigned int 16 max value
+			msg->header.size = msg->body.size();
+
 			asio::post(_socket.get_executor(), [this, msg]() {
 				bool sending = !_obuffer.empty();
 				_obuffer.push_back(msg);
@@ -179,9 +136,10 @@ namespace net
 		}
 		void disconnect() override
 		{
-			asio::error_code ec;
-			_socket.lowest_layer().shutdown(asio::ip::tcp::socket::shutdown_both, ec);
-			_socket.lowest_layer().close();
+			asio::post(_socket.get_executor(), [this]{
+				if(connected())
+					_socket.lowest_layer().close();
+			});
 		}
 		bool connected() override
 		{

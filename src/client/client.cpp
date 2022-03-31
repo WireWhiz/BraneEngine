@@ -13,7 +13,7 @@
 void Client::run()
 {
 	std::cout << "BraneSurfer starting up\n";
-
+	ThreadPool::init(4);
 	FileManager fm;
 	NetworkManager nm;
 	nm.start();
@@ -68,4 +68,7 @@ void Client::run()
 		em.runSystems();
 		vkr.draw(em); // Replace with system as well
 	}
+
+	nm.stop();
+	ThreadPool::cleanup();
 }

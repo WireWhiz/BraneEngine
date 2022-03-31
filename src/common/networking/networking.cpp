@@ -2,19 +2,17 @@
 #include "assets/assetManager.h"
 #include <atomic>
 
-NetworkManager::NetworkManager() : _ssl_context(asio::ssl::context::tls)
+NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
 {
-
+	_running = true;
 }
 
 NetworkManager::~NetworkManager()
 {
-	for(auto& c : _assetServers)
-		c.second->disconnect();
-	if(!_context.stopped())
-	{
-		_context.stop();
-	}
+
+	std::cout << "Shutting down networking... ";
+	stop();
+	std::cout << "done" << std::endl;
 }
 
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
@@ -22,8 +20,7 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 	std::cout << "Connecting to asset server: " << ip << ":" << port << std::endl;
 	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
-	asio::ip::tcp::resolver tcpresolver(_context);
-	auto tcpEndpoints = tcpresolver.resolve(ip, std::to_string(port));
+	auto tcpEndpoints = _tcpResolver.resolve(ip, std::to_string(port));
 	connection->connectToServer(tcpEndpoints, [this, ip, connection]() mutable{
 		_assetServerLock.lock();
 		_assetServers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
@@ -39,8 +36,8 @@ void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, s
 {
 	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
-	std::shared_ptr<asio::ip::tcp::resolver> tcpresolver = std::make_shared<asio::ip::tcp::resolver>(_context); //Store this as a pointer to keep it around as long as we need it
-	tcpresolver->async_resolve(ip, std::to_string(port), [this, ip, callback, connection, tcpresolver](const asio::error_code ec, auto endpoints){
+
+	_tcpResolver.async_resolve(ip, std::to_string(port), [this, ip, callback, connection](const asio::error_code ec, auto endpoints){
 		if(!ec)
 		{
 			connection->connectToServer(endpoints, [this, ip, callback, connection](){
@@ -61,10 +58,19 @@ void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, s
 
 void NetworkManager::start()
 {
-	ThreadPool::addStaticThread([this](){
-        while(true)
-			_context.run_one();
+	_threadHandle = ThreadPool::addStaticThread([this](){
+		while(_running)
+            _context.run();
+		std::cout << "exiting networking thread\n";
 	});
+}
+
+void NetworkManager::stop()
+{
+
+	_running = false;
+	_context.stop();
+	_threadHandle->finish();
 }
 
 void NetworkManager::configureServer()
@@ -210,7 +216,6 @@ void NetworkManager::startAssetAcceptorSystem(EntityManager& em, AssetManager& a
 					case net::MessageType::assetIncrementalData:
 					{
 						AssetID id;
-						uint16_t index;
 						message->body >> id;
 						ThreadPool::enqueue([this, id, message](){
 							_listenersLock.lock();
@@ -232,6 +237,7 @@ void NetworkManager::startAssetAcceptorSystem(EntityManager& em, AssetManager& a
 	});
 	assert(em.addSystem(std::move(vs)));
 }
+
 
 
 

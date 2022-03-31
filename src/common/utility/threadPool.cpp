@@ -30,14 +30,19 @@ int ThreadPool::threadRuntime()
 		// if we got a job, run it outside the lock
 		if (jobAvailable)
 		{
+#if NDEBUG
 			try
 			{
+#endif
 				job.f();
+#if NDEBUG
+				catch (const std::exception& e)
 			}
-			catch (const std::exception& e)
 			{
 				std::cerr << "Thread Error: " << e.what() << std::endl;
+
 			}
+#endif
 			job.handle->_instances -= 1;
 			if(job.handle->_instances == 0)
 				job.handle->enqueueNext();
@@ -123,13 +128,16 @@ std::shared_ptr<JobHandle>  ThreadPool::enqueueBatch(std::vector<std::function<v
 	return handle;
 }
 
-void ThreadPool::addStaticThread(std::function<void()> function)
+std::shared_ptr<JobHandle> ThreadPool::addStaticThread(std::function<void()> function)
 {
+	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
+
 	_staticThreads++;
 	if(_threads.size() - _staticThreads < _minThreads)
 		_threads.emplace_back(function);
 	else
-		enqueue(std::move(function));
+		enqueue(std::move(function), handle);
+	return handle;
 
 }
 

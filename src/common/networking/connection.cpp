@@ -16,6 +16,7 @@ namespace net
 	template<>
 	void ServerConnection<tcp_socket>::connectToClient()
 	{
+		_address = _socket.remote_endpoint().address().to_string();
 		async_readHeader();
 	}
 
@@ -25,6 +26,7 @@ namespace net
 		_socket.async_handshake(asio::ssl::stream_base::server, [this](std::error_code ec) {
 			if (!ec)
 			{
+				_address = _socket.lowest_layer().remote_endpoint().address().to_string();
 				async_readHeader();
 			}
 			else
@@ -38,9 +40,11 @@ namespace net
 	template<>
 	void ClientConnection<tcp_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect)
 	{
+
 		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec)
 			{
+				_address = _socket.remote_endpoint().address().to_string();
 				async_readHeader();
 				onConnect();
 			}
@@ -57,6 +61,7 @@ namespace net
 		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect = std::move(onConnect)](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec)
 			{
+				_address = _socket.lowest_layer().remote_endpoint().address().to_string();
 				_socket.async_handshake(asio::ssl::stream_base::client, [this, onConnect = std::move(onConnect)](std::error_code ec) {
 					if (!ec)
 					{

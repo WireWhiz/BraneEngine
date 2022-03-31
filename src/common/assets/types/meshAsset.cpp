@@ -170,43 +170,52 @@ bool MeshAsset::serializeIncrement(OSerializedData& sData, void*& iteratorData)
 {
 	IncrementalAsset::serializeIncrement(sData, iteratorData);
 	if(!iteratorData)
+	{
 		iteratorData = new IteratorData{};
+		((IteratorData*)iteratorData)->vertexSent.resize(primitives[0].positions.size(), false);
+	}
+
 	auto* itr = (IteratorData*)iteratorData;
 	auto& primitive = primitives[itr->primitive];
 	sData << (uint16_t)itr->primitive;
-	if(!itr->indicesSent)
+
+	uint32_t start = itr->pos;
+	uint32_t end = std::min(primitive.indices.size(), _trisPerIncrement * 3 + start);
+	sData << start << end;
+
+	for (size_t i = start; i < end; ++i)
 	{
-		sData << true << primitive.materialIndex << primitive.indices;
-		itr->indicesSent = true;
-	}
-	else
-	{
-		size_t start = itr->pos;
-		size_t count = std::min(primitive.positions.size(), _verticiesPerIncrement + start) - start;
-		sData << false << (uint32_t)start << (uint32_t)count;
-		for(size_t i = start; i < start + count; i++)
+		uint16_t index = primitive.indices[i];
+		sData << index;
+		sData << !(bool)itr->vertexSent[index]; //We have to cast these because vector returns a custom wrapper for references that's not "trivially copyable"
+		// If we haven't sent this vertex, send it.
+		if(!itr->vertexSent[index])
 		{
-			sData << primitive.positions[i];
+			sData << (glm::vec3&)primitive.positions[index];
 			if(!primitive.normals.empty())
-				sData << primitive.normals[i];
+				sData << (glm::vec3&)primitive.normals[index];
 			if(!primitive.tangents.empty())
-				sData << primitive.tangents[i];
+				sData << (glm::vec3&)primitive.tangents[index];
 			for(auto& uv : primitive.uvs)
 			{
-				sData << uv[i];
+				sData << (glm::vec2&)uv[index];
 			}
-		}
-		std::cout << "Serialized start: " << start << " count: " << count << " primitive: " << itr->primitive << std::endl;
-		itr->pos += count;
-		if(start + count >= primitive.positions.size())
-		{
-			itr->primitive++;
-			itr->pos = 0;
-			itr->indicesSent = false;
-			if(itr->primitive >= primitives.size())
-				return false;
+			itr->vertexSent[index] = true;
 		}
 	}
+	itr->pos = end;
+
+	if(itr->pos == primitive.indices.size())
+	{
+		itr->primitive++;
+		itr->pos = 0;
+
+		if(itr->primitive >= primitives.size())
+			return false;
+		itr->vertexSent.clear();
+		itr->vertexSent.resize(primitives[itr->primitive].positions.size());
+	}
+
 	return true;
 }
 
@@ -216,26 +225,28 @@ void MeshAsset::deserializeIncrement(ISerializedData& sData)
 	sData >> pIndex;
 	auto& primitive = primitives[pIndex];
 
-	bool settingIndices;
-	sData >> settingIndices;
-	if(settingIndices)
+	uint32_t start, end;
+	sData >> start >> end;
+
+	for (size_t i = start; i < end; ++i)
 	{
-		sData >> primitive.materialIndex >> primitive.indices;
-	}
-	else
-	{
-		uint32_t start, count;
-		sData >> start >> count;
-		for(size_t i = start; i < start + count; i++)
+		uint16_t index;
+		sData >> index;
+		primitive.indices[i] = index;
+
+		bool vertexSent;
+		sData >> vertexSent;
+		// If we haven't sent this vertex, send it.
+		if(vertexSent)
 		{
-			sData >> primitive.positions[i];
+			sData >> (glm::vec3&)primitive.positions[index];
 			if(!primitive.normals.empty())
-				sData >> primitive.normals[i];
+				sData >> (glm::vec3&)primitive.normals[index];
 			if(!primitive.tangents.empty())
-				sData >> primitive.tangents[i];
+				sData >> (glm::vec3&)primitive.tangents[index];
 			for(auto& uv : primitive.uvs)
 			{
-				sData >> uv[i];
+				sData >> (glm::vec2&)uv[index];
 			}
 		}
 	}

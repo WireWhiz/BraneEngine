@@ -19,12 +19,12 @@ struct MeshPrimitive
 
 class MeshAsset : public IncrementalAsset
 {
-	const size_t _verticiesPerIncrement = 40 * 3;
+	const size_t _trisPerIncrement = 1;
 	struct IteratorData
 	{
 		size_t primitive;
-		bool indicesSent;
 		size_t pos;
+		std::vector<bool> vertexSent;
 	};
 public:
 	std::vector<MeshPrimitive> primitives;

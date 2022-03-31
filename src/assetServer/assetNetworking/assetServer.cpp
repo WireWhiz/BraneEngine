@@ -92,14 +92,23 @@ void AssetServer::processMessages()
 	//Send one increment from every incremental asset that we are sending, to create the illusion of them loading in parallel
 	_senders.remove_if([&](auto& sender)
 	{
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		try
+		{
+			//std::this_thread::sleep_for(std::chrono::milliseconds(2));
+			if (!sender.dest->connected())
+				return true;
 
-		std::shared_ptr<net::OMessage> o = std::make_shared<net::OMessage>();
-		o->header.type = net::MessageType::assetIncrementalData;
-		bool moreData = sender.asset->serializeIncrement(o->body, sender.iteratorData);
-		sender.dest->send(o);
+			std::shared_ptr<net::OMessage> o = std::make_shared<net::OMessage>();
+			o->header.type = net::MessageType::assetIncrementalData;
+			bool moreData = sender.asset->serializeIncrement(o->body, sender.iteratorData);
+			sender.dest->send(o);
 
-		return !moreData;
+			return !moreData;
+		}
+		catch(const std::exception& e) {
+			std::cerr << "Asset sender error: " << e.what() << std::endl;
+			return true;
+		}
 	});
 }
 
