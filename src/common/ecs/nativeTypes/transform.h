@@ -1,6 +1,6 @@
 #pragma once
-#include <ecs/core/Component.h>
 #include <glm/glm.hpp>
+#include "../core/component.h"
 #include "../core/entity.h"
 
 

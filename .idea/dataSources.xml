@@ -5,14 +5,14 @@
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\eli\Documents\GitHub\BraneEngine\cmake-build-release\assetServer\database\data.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:\cmake-build-release\assetServer\database\data.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
     <data-source source="LOCAL" name="data [2]" uuid="2b27affa-c6a3-4962-be3e-373ff955aab5">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:C:\Users\eli\Documents\GitHub\BraneEngine\cmake-build-debug\assetServer\database\data.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:\cmake-build-debug\assetServer\database\data.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>
@@ -31,6 +31,13 @@
           <url>file://$APPLICATION_CONFIG_DIR$/jdbc-drivers/Xerial SQLiteJDBC/3.34.0/sqlite-jdbc-3.34.0.jar</url>
         </library>
       </libraries>
+    </data-source>
+    <data-source source="LOCAL" name="Linux Debug" uuid="12fcc2ec-f428-4957-a0ea-0f362d14bb76">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/cmake-build-debug/assetServer/database/data.db</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
 </project>

@@ -5,7 +5,9 @@
 #include <functional>
 #include <vector>
 #include <queue>
+#include <memory>
 #include <system_error>
+#include <cassert>
 
 #include <iostream>
 

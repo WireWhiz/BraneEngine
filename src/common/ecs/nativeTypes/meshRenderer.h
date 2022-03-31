@@ -3,7 +3,7 @@
 //
 
 #pragma once
-#include <ecs/core/Component.h>
+#include <ecs/core/component.h>
 
 
 class MeshRendererComponent : public NativeComponent<MeshRendererComponent>

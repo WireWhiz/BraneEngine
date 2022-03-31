@@ -9,7 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <chrono>
-#include "ecs/core/Entity.h"
+#include "ecs/core/entity.h"
 #include "ecs/nativeTypes/transform.h"
 #include <utility/staticIndexVector.h>
 

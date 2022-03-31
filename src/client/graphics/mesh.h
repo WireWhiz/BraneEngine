@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "graphicsBuffer.h"
-#include <common/ecs/core/Component.h>
+#include <common/ecs/core/component.h>
 #include <assets/types/meshAsset.h>
 
 namespace graphics
@@ -38,7 +38,7 @@ namespace graphics
 
 		MeshAsset* meshAsset();
 		VkBuffer indexBuffer(uint32_t primitive) const;
-		VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const;
+		VkDeviceSize indexBufferOffset(uint32_t primitive) const;
 		std::vector<VkBuffer> vertexBuffers(uint32_t primitive) const;
 		std::vector<VkDeviceSize> vertexBufferOffsets(uint32_t primitive) const;
 
