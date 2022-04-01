@@ -29,8 +29,11 @@ namespace net
 		AsyncQueue<std::shared_ptr<OMessage>> _obuffer;
 		AsyncQueue<std::shared_ptr<IMessage>> _ibuffer;
 		std::shared_ptr<IMessage> _tempIn;
+		std::shared_ptr<bool> _exists;
 
 	public:
+		Connection();
+		~Connection();
 		virtual void disconnect() = 0;
 		virtual bool connected() = 0;
 
@@ -48,9 +51,10 @@ namespace net
 		std::string _address;
 		void async_readHeader()
 		{
+			std::shared_ptr<bool> exists = _exists;
 			_tempIn = std::make_shared<IMessage>();
-			asio::async_read(_socket, asio::buffer(&_tempIn->header, sizeof(MessageHeader)) ,[this](std::error_code ec, std::size_t length) {
-				if (!ec)
+			asio::async_read(_socket, asio::buffer(&_tempIn->header, sizeof(MessageHeader)) ,[this, exists](std::error_code ec, std::size_t length) {
+				if (!ec && *exists)
 				{
 					if(_tempIn->header.size > 0)
 						async_readBody();
@@ -62,32 +66,45 @@ namespace net
 				}
 				else
 				{
-					std::cerr << "[" << _address << "] Header Parse Fail: " << ec.message() << std::endl;
-					disconnect();
+					if(*exists)
+					{
+						std::cerr << "[" << _address << "] Header Parse Fail: " << ec.message() << std::endl;
+						disconnect();
+					}
+					else
+						std::cout << "Socket destroyed" << std::endl;
 				}
 
 			});
 		}
 		void async_readBody()
 		{
-			std::cout << "Message of size: " << _tempIn->header.size << std::endl;
+			std::shared_ptr<bool> exists = _exists;
 			_tempIn->body.data.resize(_tempIn->header.size);
-			asio::async_read(_socket, asio::buffer(_tempIn->body.data.data(), _tempIn->body.size()),  [this](std::error_code ec, std::size_t length) {
-				if (!ec)
+			asio::async_read(_socket, asio::buffer(_tempIn->body.data.data(), _tempIn->body.size()),  [this, exists](std::error_code ec, std::size_t length) {
+				if (!ec && *exists)
 				{
 					_ibuffer.push_back(_tempIn);
 					async_readHeader();
 				}
 				else
 				{
-					std::cerr << "[" << _address << "] Read message body fail: " << ec.message() << std::endl;
-					disconnect();
+					if(*exists)
+					{
+						std::cerr << "[" << _address << "] Read Message Body Fail: " << ec.message() << std::endl;
+						disconnect();
+					}
+					else
+						std::cout << "Socket destroyed" << std::endl;
 				}
 			});
 		}
 		void async_writeHeader()
 		{
-			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
+			std::shared_ptr<bool> exists = _exists;
+			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this, exists](std::error_code ec, std::size_t length) {
+				if(!*exists)
+					return;
 				if (!ec)
 				{
 					async_writeBody();
@@ -101,7 +118,10 @@ namespace net
 		}
 		void async_writeBody()
 		{
-			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this](std::error_code ec, std::size_t length) {
+			std::shared_ptr<bool> exists = _exists;
+			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this, exists](std::error_code ec, std::size_t length) {
+				if(!*exists)
+					return;
 				if (!ec)
 				{
 					_obuffer.pop_front();
@@ -126,8 +146,10 @@ namespace net
 		{
 			assert(msg->body.size() <= 65535); //unsigned int 16 max value
 			msg->header.size = msg->body.size();
-
-			asio::post(_socket.get_executor(), [this, msg]() {
+			std::shared_ptr<bool> exists = _exists;
+			asio::post(_socket.get_executor(), [this, msg, exists]() {
+				if(!*exists)
+					return;
 				bool sending = !_obuffer.empty();
 				_obuffer.push_back(msg);
 				if (!sending)
@@ -136,14 +158,19 @@ namespace net
 		}
 		void disconnect() override
 		{
-			asio::post(_socket.get_executor(), [this]{
-				if(connected())
+			std::shared_ptr<bool> exists = _exists;
+			asio::post(_socket.get_executor(), [this, exists]{
+				if(*exists && connected())
+				{
+					_socket.lowest_layer().shutdown(asio::ip::tcp::socket::shutdown_both);
 					_socket.lowest_layer().close();
+
+				}
 			});
 		}
 		bool connected() override
 		{
-			return _socket.lowest_layer().is_open();
+			return _socket.lowest_layer().is_open() && _exists;
 		}
 
 	};

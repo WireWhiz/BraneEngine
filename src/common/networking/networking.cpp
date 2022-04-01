@@ -13,6 +13,7 @@ NetworkManager::~NetworkManager()
 	std::cout << "Shutting down networking... ";
 	stop();
 	std::cout << "done" << std::endl;
+
 }
 
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
@@ -34,15 +35,16 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 
 void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, std::function<void()> callback)
 {
-	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
 
-	_tcpResolver.async_resolve(ip, std::to_string(port), [this, ip, callback, connection](const asio::error_code ec, auto endpoints){
+
+	_tcpResolver.async_resolve(ip, std::to_string(port), [this, ip, callback](const asio::error_code ec, auto endpoints){
 		if(!ec)
 		{
+			auto connection = std::make_shared<net::ClientConnection<net::tcp_socket>>(net::tcp_socket(_context));
 			connection->connectToServer(endpoints, [this, ip, callback, connection](){
 				_assetServerLock.lock();
-				_assetServers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
+				_assetServers.insert({ip,connection});
 				_assetServerLock.unlock();
 				callback();
 			});
@@ -67,10 +69,13 @@ void NetworkManager::start()
 
 void NetworkManager::stop()
 {
-
+	for(auto& connection : _assetServers)
+		connection.second->disconnect();
 	_running = false;
-	_context.stop();
 	_threadHandle->finish();
+	_context.run();
+
+	_assetServers.clear();
 }
 
 void NetworkManager::configureServer()
@@ -166,7 +171,7 @@ void NetworkManager::startAssetAcceptorSystem(EntityManager& em, AssetManager& a
 					case net::MessageType::assetData:
 					{
 						ThreadPool::enqueue([this, message, &am](){
-							Asset* asset = nullptr;
+							Asset* asset;
 							try{
 								asset = Asset::deserializeUnknown(message->body, am);
 							}

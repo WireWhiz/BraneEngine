@@ -13,6 +13,16 @@ namespace net
 		return false;
 	}
 
+	Connection::Connection()
+	{
+		_exists = std::make_shared<bool>(true);
+	}
+
+	Connection::~Connection()
+	{
+		*_exists = false;
+	}
+
 	template<>
 	void ServerConnection<tcp_socket>::connectToClient()
 	{
@@ -41,8 +51,9 @@ namespace net
 	void ClientConnection<tcp_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect)
 	{
 
-		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
-			if (!ec)
+		std::shared_ptr<bool> exists = _exists;
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect, exists](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+			if (!ec && *exists)
 			{
 				_address = _socket.remote_endpoint().address().to_string();
 				async_readHeader();
@@ -58,12 +69,13 @@ namespace net
 	template<>
 	void ClientConnection<ssl_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect)
 	{
-		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect = std::move(onConnect)](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
-			if (!ec)
+		std::shared_ptr<bool> exists = _exists;
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this, exists, onConnect = std::move(onConnect)](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+			if (!ec && *exists)
 			{
 				_address = _socket.lowest_layer().remote_endpoint().address().to_string();
-				_socket.async_handshake(asio::ssl::stream_base::client, [this, onConnect = std::move(onConnect)](std::error_code ec) {
-					if (!ec)
+				_socket.async_handshake(asio::ssl::stream_base::client, [this, exists, onConnect = std::move(onConnect)](std::error_code ec) {
+					if (!ec && *exists)
 					{
 						async_readHeader();
 						onConnect();

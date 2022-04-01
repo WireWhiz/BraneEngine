@@ -25,10 +25,10 @@ class NetworkManager
 	asio::ip::tcp::resolver _tcpResolver;
 
 	std::shared_mutex _assetServerLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _assetServers;
+	std::unordered_map<std::string, std::shared_ptr<net::Connection>> _assetServers;
 
 	std::shared_mutex _runtimeServerLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _runtimeServers;
+	std::unordered_map<std::string, std::shared_ptr<net::Connection>> _runtimeServers;
 
 	std::vector<asio::ip::tcp::acceptor> _acceptors;
 
@@ -53,12 +53,13 @@ class NetworkManager
 			if (!ec)
 			{
 				callback(std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket)));
-				delete socket;
+
 			}
 			else
 			{
 				std::cout << "Connection Error: " << ec.message() << std::endl;
 			}
+			delete socket;
 			async_acceptConnections<socket_t>(acceptor, callback);
 		});
 	}

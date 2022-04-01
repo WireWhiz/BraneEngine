@@ -36,8 +36,9 @@ int ThreadPool::threadRuntime()
 #endif
 				job.f();
 #if NDEBUG
-				catch (const std::exception& e)
+
 			}
+			catch (const std::exception& e)
 			{
 				std::cerr << "Thread Error: " << e.what() << std::endl;
 
