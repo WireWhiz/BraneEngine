@@ -33,6 +33,8 @@ public:
 
 	MeshAsset();
 
+	void toFile(MarkedSerializedData& sData) override;
+	void fromFile(MarkedSerializedData& sData, AssetManager& am) override;
 	void serialize(OSerializedData& message) override;
 	void deserialize(ISerializedData& message, AssetManager& am) override;
 	void serializeHeader(OSerializedData& sData) override;

@@ -153,6 +153,7 @@ void ComponentAsset::deserialize(ISerializedData& sdata, AssetManager& am)
 	new(this) ComponentAsset(types, id);
 }
 
+
 Json::Value ComponentAsset::toJson(byte* component) const
 {
 	VirtualComponentPtr componentPtr = VirtualComponentPtr(this, component);
@@ -352,5 +353,7 @@ void ComponentAsset::fromJson(Json::Value& comp, byte* component) const
 		index++;
 	}
 }
+
+
 
 

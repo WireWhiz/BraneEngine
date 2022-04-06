@@ -17,6 +17,8 @@ struct WorldEntity
 	std::vector<const ComponentAsset*> componentDefs();
 	void serialize(OSerializedData& message);
 	void deserialize(ISerializedData& message, AssetManager& am);
+	void writeToFile(MarkedSerializedData& sData, size_t index);
+	void readFromFile(MarkedSerializedData& sData, size_t index, AssetManager& am);
 };
 
 class Assembly : public Asset
@@ -27,6 +29,8 @@ public:
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
 	std::vector<AssetID> textures;
 	std::vector<WorldEntity> entities;
+	void toFile(MarkedSerializedData& sData) override;
+	void fromFile(MarkedSerializedData& sData, AssetManager& am) override;
 	void serialize(OSerializedData& message) override;
 	void deserialize(ISerializedData& message, AssetManager& am) override;
 	Json::Value toJson(AssetManager& am) const;

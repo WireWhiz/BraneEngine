@@ -17,30 +17,21 @@ void Asset::deserialize(ISerializedData& sData, AssetManager& am)
 #include "types/componentAsset.h"
 #include "types/meshAsset.h"
 #include "assembly.h"
-Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
-{
 
-	std::string typeStr;
-	AssetID id;
-	std::string name;
-	sData >> id >> name >> typeStr;
-	AssetType type;
-	type.set(typeStr);
-	Asset* asset;
+Asset* Asset::assetFromType(AssetType type)
+{
 	switch(type.type())
 	{
 		case AssetType::none:
 			throw std::runtime_error("Can't deserialize none type");
 			break;
 		case AssetType::component:
-			asset = new ComponentAsset();
-			break;
+			return new ComponentAsset();
 		case AssetType::system:
 			assert("Not implemented");
 			break;
 		case AssetType::mesh:
-			asset = new MeshAsset();
-			break;
+			return new MeshAsset();
 		case AssetType::texture:
 			assert("Not implemented");
 			break;
@@ -51,15 +42,61 @@ Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
 			assert("Not implemented");
 			break;
 		case AssetType::assembly:
-			asset = new Assembly();
+			return new Assembly();
 			break;
 		case AssetType::player:
 			assert("Not implemented");
 			break;
 	}
+	return nullptr;
+}
+
+Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
+{
+
+	std::string typeStr;
+	AssetID id;
+	std::string name;
+	sData >> id >> name >> typeStr;
+	AssetType type;
+	type.set(typeStr);
+	Asset* asset = assetFromType(type);
 	sData.restart();
+	if(!asset)
+		return nullptr;
 	asset->deserialize(sData, am);
 	return asset;
+}
+
+Asset* Asset::readUnknown(MarkedSerializedData& sData, AssetManager& am)
+{
+	std::string stype;
+	sData.readAttribute("type", stype);
+	AssetType type;
+	type.set(stype);
+	Asset* asset = assetFromType(type);
+	if(!asset)
+		return nullptr;
+	asset->fromFile(sData, am);
+
+	return asset;
+}
+
+void Asset::toFile(MarkedSerializedData& sData)
+{
+	sData.writeAttribute("id", id.string());
+	sData.writeAttribute("name", name);
+	sData.writeAttribute("type", type.string());
+}
+
+void Asset::fromFile(MarkedSerializedData& sData, AssetManager& am)
+{
+	std::string sid, stype;
+	sData.readAttribute("id", sid);
+	sData.readAttribute("name", name);
+	sData.readAttribute("type", stype);
+	id.parseString(sid);
+	type.set(stype);
 }
 
 void IncrementalAsset::serializeHeader(OSerializedData& sData)

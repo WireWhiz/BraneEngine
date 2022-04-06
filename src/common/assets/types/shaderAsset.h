@@ -1,6 +1,6 @@
 #pragma once
 #include "../asset.h"
-#include "networking/serializedData.h"
+#include "utility/serializedData.h"
 
 enum class ShaderType
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include <ecs/core/structMembers.h>
-#include "serializedData.h"
+#include <utility/serializedData.h>
 #include <ecs/core/component.h>
 
 namespace net

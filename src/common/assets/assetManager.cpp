@@ -1,6 +1,6 @@
 #include "assetManager.h"
 #include "ecs/ecs.h"
-#include "networking/serializedData.h"
+#include <utility/serializedData.h>
 #include "networking/message.h"
 #include "ecs/nativeTypes/transform.h"
 #include "ecs/nativeTypes/meshRenderer.h"

@@ -1,13 +1,19 @@
 #include "fileManager.h"
 #include <fstream>
-#include <networking/serializedData.h>
+#include <utility/serializedData.h>
 
 void FileManager::writeAsset(Asset* asset)
 {
-	OSerializedData data;
-	asset->serialize(data);
+	MarkedSerializedData data;
+	asset->toFile(data);
 
-	writeFile(asset->id.path(), data.data);
+	std::string filename = asset->id.path();
+	std::filesystem::path path{filename};
+	std::filesystem::create_directories(path.parent_path());
+
+	std::ofstream f(path, std::ios::out | std::ofstream::binary);
+	data.writeToFile(f);
+	f.close();
 }
 
 

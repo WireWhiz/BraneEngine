@@ -182,7 +182,11 @@ void NetworkManager::startAssetAcceptorSystem(EntityManager& em, AssetManager& a
 							}
 
 							_listenersLock.lock();
-							auto f = _assetLoadListeners[asset->id]; //We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
+							if(!_assetLoadListeners.count(asset->id)){
+								std::cout << "Unknown asset received: " << asset->name << std::endl;
+								return;
+							}
+							auto f = std::move(_assetLoadListeners[asset->id]); //We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
 							_assetLoadListeners.erase(asset->id);
 							_listenersLock.unlock();
 

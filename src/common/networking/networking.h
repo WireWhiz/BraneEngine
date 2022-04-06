@@ -10,7 +10,7 @@
 #include <vector>
 #include <memory>
 
-#include "serializedData.h"
+#include <utility/serializedData.h>
 #include "connection.h"
 #include "config/config.h"
 #include "networkError.h"

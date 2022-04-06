@@ -3,7 +3,7 @@
 #include <fstream>
 #include <json/json.h>
 #include <filesystem>
-#include <networking/serializedData.h>
+#include <utility/serializedData.h>
 #include <assets/asset.h>
 #include "utility/threadPool.h"
 
@@ -28,21 +28,24 @@ public:
 	template<typename T>
 	T* readAsset(const AssetID& id, AssetManager& am)
 	{
-		ISerializedData iMessage;
-		if(!readFile(id.path(), iMessage.data))
+		std::ifstream f(id.path(), std::ios::binary);
+		if (!f.is_open())
 			return nullptr;
+		MarkedSerializedData sData(f);
+		f.close();
 		T* asset = new T();
-		asset->deserialize(iMessage, am);
+		asset->fromFile(sData, am);
 		return asset;
 	}
 
 	Asset* readUnknownAsset(const AssetID& id, AssetManager& am)
 	{
-		ISerializedData iMessage;
-		if(!readFile(id.path(), iMessage.data))
+		std::ifstream f(id.path(), std::ios::binary);
+		if (!f.is_open())
 			return nullptr;
-
-		return Asset::deserializeUnknown(iMessage, am);
+		MarkedSerializedData sData(f);
+		f.close();
+		return Asset::readUnknown(sData, am);
 	}
 
 	template<typename T>

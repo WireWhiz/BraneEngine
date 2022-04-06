@@ -20,6 +20,9 @@ public:
 	const std::vector<std::unique_ptr<VirtualType>>& types() const;
 	void serializeComponent(OSerializedData& sdata, byte* component) const;
 	void deserializeComponent(ISerializedData& sdata, byte* component) const;
+
+	//void toFile(MarkedSerializedData& sData) override;
+	//void fromFile(MarkedSerializedData& sData, AssetManager& am) override;
 	void serialize(OSerializedData& sdata) override;
 	void deserialize(ISerializedData& sdata, AssetManager& am) override;
 	Json::Value toJson(byte* component) const;

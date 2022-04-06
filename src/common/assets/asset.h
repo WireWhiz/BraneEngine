@@ -1,6 +1,6 @@
 #pragma once
 #include "assets/assetID.h"
-#include <networking/serializedData.h>
+#include <utility/serializedData.h>
 #include <byte.h>
 #include <assets/assetType.h>
 //namespace net
@@ -22,15 +22,19 @@ public:
 		complete = 2
 	};
 private:
+	static Asset* assetFromType(AssetType type);
 public:
 
 	std::string name;
 	AssetID id;
 	AssetType type;
 	LoadState loadState;
+	static Asset* readUnknown(MarkedSerializedData& sData, AssetManager& am);
 	static Asset* deserializeUnknown(ISerializedData& sData, AssetManager& am);
 	virtual void serialize(OSerializedData& sData);
 	virtual void deserialize(ISerializedData& sData, AssetManager& am);
+	virtual void toFile(MarkedSerializedData& sData);
+	virtual void fromFile(MarkedSerializedData& sData, AssetManager& am);
 };
 
 class IncrementalAsset : public Asset

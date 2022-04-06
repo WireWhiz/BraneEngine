@@ -461,7 +461,15 @@ void AssetHttpServer::setUpAPICalls()
             if(authorizeSession(sessionID, {"create assets"}))
             {
                 std::cout << "Extracting Data From GLTF" << std::endl;
+	            if(!req.has_file("assetData") || !req.has_file(""))
+	            {
+		            std::cerr << "Problem parsing assetData" << std::endl;
+		            res.status = 400;
+		            res.set_content(R"({"text":"Request format incorrect"})", "application/json");
+				}
+
                 const httplib::MultipartFormData& assetDataField = req.get_file_value("assetData");
+
                 std::cout << "AssetData: " << assetDataField.content << std::endl;
 				// Convert to json
 				Json::Value assetData;
@@ -478,6 +486,12 @@ void AssetHttpServer::setUpAPICalls()
 	            }
 
 				const auto& file = req.get_file_value("file");
+				if(file.content.empty())
+				{
+					std::cerr << "File empty: " << err << std::endl;
+					res.status = 400;
+					res.set_content(R"({"text":"File empty"})", "application/json");
+				}
 
 				gltfLoader loader;
 				loader.loadGlbFromString(file.content);

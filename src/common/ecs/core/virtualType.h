@@ -4,7 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <byte.h>
-#include <networking/serializedData.h>
+#include <utility/serializedData.h>
 #include <json/json.h>
 
 #ifndef EntityID

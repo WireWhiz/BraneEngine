@@ -11,7 +11,7 @@
 #include "networkError.h"
 #include "config/config.h"
 #include "utility/asyncQueue.h"
-#include "serializedData.h"
+#include <utility/serializedData.h>
 #include <ecs/ecs.h>
 
 namespace net

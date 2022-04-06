@@ -37,6 +37,49 @@ void WorldEntity::deserialize(ISerializedData& message, AssetManager& am)
 	}
 }
 
+void WorldEntity::writeToFile(MarkedSerializedData& sData, size_t index)
+{
+	sData.enterScope("components");
+	for (int i = 0; i < components.size(); ++i)
+	{
+		sData.startIndex();
+
+		sData.writeAttribute("id", components[i].def()->id.string());
+		OSerializedData oData;
+		components[i].def()->serializeComponent(oData, components[i].data());
+		sData.writeAttribute("value", oData.data);
+
+		sData.pushIndex();
+	}
+	sData.exitScope();
+}
+void WorldEntity::readFromFile(MarkedSerializedData& sData, size_t index, AssetManager& am)
+{
+
+	sData.enterScope("components");
+	uint32_t size = sData.scopeSize();
+	components.reserve(size);
+	for (uint32_t i = 0; i < size; ++i)
+	{
+		sData.enterScope(i);
+
+		std::string compID;
+		sData.readAttribute("id", compID);
+		ComponentAsset* def = am.getAsset<ComponentAsset>(AssetID(compID));
+		if(def == nullptr)
+			throw std::runtime_error("unknown asset id: " + compID);
+
+		VirtualComponent component(def);
+		ISerializedData iData;
+		sData.readAttribute("value", iData.data);
+		def->deserializeComponent(iData, component.data());
+		components.push_back(std::move(component));
+
+		sData.exitScope();
+	}
+	sData.exitScope();
+}
+
 std::vector<const ComponentAsset*> WorldEntity::componentDefs()
 {
 	std::vector<const ComponentAsset*> defs;
@@ -46,6 +89,44 @@ std::vector<const ComponentAsset*> WorldEntity::componentDefs()
 		defs.push_back(c.def());
 	}
 	return defs;
+}
+
+
+
+void Assembly::toFile(MarkedSerializedData& sData)
+{
+	Asset::toFile(sData);
+	sData.writeAttribute("scripts", scripts);
+	sData.writeAttribute("meshes", meshes);
+	sData.writeAttribute("textures", textures);
+	sData.enterScope("entities");
+	for (uint32_t i = 0; i < entities.size(); ++i)
+	{
+		sData.startIndex();
+		entities[i].writeToFile(sData, i);
+		sData.pushIndex();
+	}
+	sData.exitScope();
+}
+
+void Assembly::fromFile(MarkedSerializedData& sData, AssetManager& am)
+{
+	Asset::fromFile(sData, am);
+	sData.readAttribute("scripts", scripts);
+	sData.readAttribute("meshes", meshes);
+	sData.readAttribute("textures", textures);
+
+	sData.enterScope("entities");
+
+	uint32_t count = sData.scopeSize();
+	entities.resize(count);
+	for (uint32_t i = 0; i < entities.size(); ++i)
+	{
+		sData.enterScope(i);
+		entities[i].readFromFile(sData, i, am);
+		sData.exitScope();
+	}
+	sData.exitScope();
 }
 
 void Assembly::serialize(OSerializedData& message)
@@ -213,5 +294,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 		}
 	}
 }
+
+
 
 

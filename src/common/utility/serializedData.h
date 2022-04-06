@@ -7,7 +7,9 @@
 #include <cstring>
 #include <regex>
 #include <typeinfo>
-
+#include <json/json.h>
+#include <fstream>
+#include <cassert>
 
 class SerializationError : virtual public std::runtime_error
 {
@@ -260,3 +262,184 @@ public:
 		return o;
 	}
 };
+
+//Indented for use in file serialization, thus static asserts and the like
+class MarkedSerializedData
+{
+	Json::Value attributes;
+	Json::Value* currentScope;
+	std::stack<Json::Value*> scopes;
+public:
+	std::vector<byte> data;
+	explicit MarkedSerializedData(std::ifstream& file);
+	MarkedSerializedData();
+	void writeToFile(std::ofstream& file);
+
+	void enterScope(const std::string& scope);
+	void enterScope(int index);
+	void exitScope();
+	void startIndex();
+	void pushIndex();
+	size_t scopeSize();
+
+	template<typename T>
+	void writeAttribute(const std::string& name, const T& value)
+	{
+		static_assert(std::is_trivially_copyable<T>::value);
+		assert(!(*currentScope).isMember(name));
+
+		size_t index = data.size();
+		size_t size = sizeof(value);
+		data.resize(index + size);
+		std::memcpy(&data[index], &value, size);
+
+
+		(*currentScope)[name]["index"] = index;
+	}
+
+	template<typename T>
+	void writeAttribute(const std::string& name, const std::vector<T>& value)
+	{
+		static_assert(std::is_trivially_copyable<T>::value);
+		assert(!(*currentScope).isMember(name));
+
+		size_t index = data.size();
+		size_t size = value.size() * sizeof(T);
+		data.resize(index + size);
+		if(size != 0)
+			std::memcpy(&data[index], value.data(), size);
+
+
+		(*currentScope)[name]["index"] = index;
+		(*currentScope)[name]["size"] = size;
+	}
+
+	template<>
+	void writeAttribute(const std::string& name, const std::string& value)
+	{
+		assert(!(*currentScope).isMember(name));
+
+		size_t index = data.size();
+		size_t size = value.size();
+		data.resize(index + size);
+		if(size != 0)
+			std::memcpy(&data[index], value.data(), size);
+
+
+		(*currentScope)[name]["index"] = index;
+		(*currentScope)[name]["size"] = size;
+	}
+
+	template<>
+	void writeAttribute(const std::string& name, const AssetID& value)
+	{
+		assert(!(*currentScope).isMember(name));
+
+		writeAttribute(name, value.string());
+	}
+
+	template<>
+	void writeAttribute(const std::string& name, const std::vector<AssetID>& value)
+	{
+		assert(!(*currentScope).isMember(name));
+
+		std::vector<byte> data;
+		Json::Value idSizes;
+		for(auto& id : value)
+		{
+			size_t index = data.size();
+			std::string s = id.string();
+			data.resize(index + s.size());
+			std::memcpy(&data[index], s.data(), s.size());
+			idSizes.append(s.size());
+		}
+		writeAttribute(name, data);
+		(*currentScope)[name]["sizes"] = idSizes;
+
+	}
+	
+	template<typename T>
+	void readAttribute(const std::string& name, T& value)
+	{
+		static_assert(std::is_trivially_copyable<T>::value);
+		if(!(*currentScope).isMember(name))
+			throw std::runtime_error(name + " was not found");
+
+		size_t index = (*currentScope)[name]["index"].asLargestUInt();
+		size_t size  = sizeof(T);
+		if(index + size > data.size())
+			throw std::runtime_error(name + " has invalid index or size");
+		if(size != 0)
+			std::memcpy(&value, &data[index], size);
+	}
+
+	template<typename T>
+	void readAttribute(const std::string& name, std::vector<T>& value)
+	{
+		static_assert(std::is_trivially_copyable<T>::value);
+		if(!(*currentScope).isMember(name))
+			throw std::runtime_error(name + " was not found");
+
+		size_t index = (*currentScope)[name]["index"].asLargestUInt();
+		size_t size  = (*currentScope)[name]["size"].asLargestUInt();
+		if(index + size > data.size())
+			throw std::runtime_error(name + " has invalid index or size");
+
+		value.resize(size / sizeof(T));
+		if(size != 0)
+			std::memcpy(value.data(), &data[index], size);
+	}
+
+	template<>
+	void readAttribute(const std::string& name, std::string& value)
+	{
+		if(!(*currentScope).isMember(name))
+			throw std::runtime_error(name + " was not found");
+
+		size_t index = (*currentScope)[name]["index"].asLargestUInt();
+		size_t size  = (*currentScope)[name]["size"].asLargestUInt();
+		if(index + size > data.size())
+			throw std::runtime_error(name + " has invalid index or size");
+
+		value.resize(size);
+		if(size != 0)
+			std::memcpy(value.data(), &data[index], size);
+	}
+
+	template<>
+	void readAttribute(const std::string& name, AssetID& value)
+	{
+		assert((*currentScope).isMember(name));
+
+		std::string id;
+		readAttribute(name, id);
+		value.parseString(id);
+	}
+
+	template<>
+	void readAttribute(const std::string& name, std::vector<AssetID>& value)
+	{
+		assert((*currentScope).isMember(name));
+
+		std::vector<byte> data;
+		readAttribute(name, data);
+		size_t sIndex = 0;
+		size_t idIndex = 0;
+		value.resize((*currentScope)[name]["sizes"].size());
+		for(auto& jsize : (*currentScope)[name]["sizes"])
+		{
+			size_t size = jsize.asUInt();
+			std::string s;
+			s.resize(size);
+			if(size != 0)
+				std::memcpy(s.data(), &data[sIndex], s.size());
+			sIndex += size;
+			value[idIndex++].parseString(s);
+		}
+
+
+
+	}
+};
+
+

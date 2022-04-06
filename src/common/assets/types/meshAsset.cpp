@@ -1,6 +1,6 @@
 #include "meshAsset.h"
 
-#include <networking/serializedData.h>
+#include <utility/serializedData.h>
 
 void MeshPrimitive::serialize(OSerializedData& message)
 {
@@ -72,6 +72,52 @@ std::vector<byte> MeshPrimitive::packedData() const
 	return pData;
 }
 
+void MeshAsset::toFile(MarkedSerializedData& sData)
+{
+	Asset::toFile(sData);
+	sData.writeAttribute("primitives", (uint32_t)primitives.size());
+
+	for (uint16_t i = 0; i < primitives.size(); ++i)
+	{
+		std::string pName = "primitive_" + std::to_string(i);
+		MeshPrimitive& p = primitives[i];
+		sData.writeAttribute(pName + "_indices", p.indices);
+		sData.writeAttribute(pName + "_positions", p.positions);
+		sData.writeAttribute(pName + "_tangents", p.tangents);
+		sData.writeAttribute(pName + "_normals", p.normals);
+		sData.writeAttribute(pName + "_uvs", (uint8_t)p.uvs.size());
+		for (int j = 0; j < p.uvs.size(); ++j)
+		{
+			sData.writeAttribute(pName + "_uv_" + std::to_string(j), p.uvs[j]);
+		}
+	}
+
+}
+
+void MeshAsset::fromFile(MarkedSerializedData& sData, AssetManager& am)
+{
+	Asset::fromFile(sData, am);
+	uint32_t count;
+	sData.readAttribute("primitives", count);
+	primitives.resize(count);
+	for (uint16_t i = 0; i < primitives.size(); ++i)
+	{
+		std::string pName = "primitive_" + std::to_string(i);
+		MeshPrimitive& p = primitives[i];
+		sData.readAttribute(pName + "_indices", p.indices);
+		sData.readAttribute(pName + "_positions", p.positions);
+		sData.readAttribute(pName + "_tangents", p.tangents);
+		sData.readAttribute(pName + "_normals", p.normals);
+		uint8_t uvs;
+		sData.readAttribute(pName + "_uvs", uvs);
+		p.uvs.resize(uvs);
+		for (int j = 0; j < p.uvs.size(); ++j)
+		{
+			sData.readAttribute(pName + "_uv_" + std::to_string(j), p.uvs[j]);
+		}
+	}
+}
+
 void MeshAsset::serialize(OSerializedData& message)
 {
 	Asset::serialize(message);
@@ -118,7 +164,6 @@ size_t MeshAsset::meshSize() const
 
 	return size;
 }
-
 void MeshAsset::serializeHeader(OSerializedData& sData)
 {
 	IncrementalAsset::serializeHeader(sData);
@@ -165,6 +210,7 @@ void MeshAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
 	}
 	loadState = partial;
 }
+
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
 bool MeshAsset::serializeIncrement(OSerializedData& sData, void*& iteratorData)
 {
