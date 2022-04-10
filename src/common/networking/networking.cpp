@@ -4,7 +4,7 @@
 
 NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
 {
-	_running = true;
+	_running = false;
 }
 
 NetworkManager::~NetworkManager()
@@ -37,10 +37,11 @@ void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, s
 {
 
 
-
-	_tcpResolver.async_resolve(ip, std::to_string(port), [this, ip, callback](const asio::error_code ec, auto endpoints){
+ std::cout << "connecting to: " << ip << ":" << port << std::endl;
+	_tcpResolver.async_resolve(asio::ip::tcp::resolver::query(ip, std::to_string(port), asio::ip::tcp::resolver::query::canonical_name),[this, ip, callback](const asio::error_code ec, auto endpoints){
 		if(!ec)
 		{
+            std::cout << "Connected to asset server: " << ip << std::endl;
 			auto connection = std::make_shared<net::ClientConnection<net::tcp_socket>>(net::tcp_socket(_context));
 			connection->connectToServer(endpoints, [this, ip, callback, connection](){
 				_assetServerLock.lock();
@@ -54,6 +55,9 @@ void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, s
 
 	});
 
+    if(!_running)
+        start();
+
 
 
 }
@@ -61,9 +65,9 @@ void NetworkManager::async_connectToAssetServer(std::string ip, uint16_t port, s
 void NetworkManager::start()
 {
 	_threadHandle = ThreadPool::addStaticThread([this](){
-		while(_running)
-            _context.run();
+        _context.run();
 		std::cout << "exiting networking thread\n";
+        _running = false;
 	});
 }
 
@@ -71,9 +75,9 @@ void NetworkManager::stop()
 {
 	for(auto& connection : _assetServers)
 		connection.second->disconnect();
-	_running = false;
-	_threadHandle->finish();
-	_context.run();
+    _context.stop();
+    if(_threadHandle)
+	    _threadHandle->finish();
 
 	_assetServers.clear();
 }

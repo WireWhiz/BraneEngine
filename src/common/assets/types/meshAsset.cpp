@@ -149,7 +149,6 @@ MeshAsset::MeshAsset()
 {
 	pipelineID = -1;
 	type.set(AssetType::Type::mesh);
-	_incrementCount = 1;
 	meshUpdated = false;
 }
 
@@ -212,16 +211,11 @@ void MeshAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
 }
 
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
-bool MeshAsset::serializeIncrement(OSerializedData& sData, void*& iteratorData)
+bool MeshAsset::serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData)
 {
 	IncrementalAsset::serializeIncrement(sData, iteratorData);
-	if(!iteratorData)
-	{
-		iteratorData = new IteratorData{};
-		((IteratorData*)iteratorData)->vertexSent.resize(primitives[0].positions.size(), false);
-	}
 
-	auto* itr = (IteratorData*)iteratorData;
+	auto* itr = (SContext*)iteratorData;
 	auto& primitive = primitives[itr->primitive];
 	sData << (uint16_t)itr->primitive;
 
@@ -297,6 +291,13 @@ void MeshAsset::deserializeIncrement(ISerializedData& sData)
 		}
 	}
 	meshUpdated = true;
+}
+
+std::unique_ptr<IncrementalAsset::SerializationContext> MeshAsset::createContext() const
+{
+    std::unique_ptr<SContext> sc = std::make_unique<SContext>();
+    sc->vertexSent.resize(primitives[0].positions.size());
+    return std::move(sc);
 }
 
 

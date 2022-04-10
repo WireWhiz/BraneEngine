@@ -39,15 +39,14 @@ public:
 
 class IncrementalAsset : public Asset
 {
-protected:
-	size_t _incrementCount;
 public:
+    struct SerializationContext{};
 	static IncrementalAsset* deserializeUnknownHeader(ISerializedData& sData, AssetManager& am);
 	virtual void serializeHeader(OSerializedData& sData);
 	virtual void deserializeHeader(ISerializedData& sData, AssetManager& am);
-	virtual bool serializeIncrement(OSerializedData& sData, void*& iteratorData);
+	virtual bool serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData);
 	virtual void deserializeIncrement(ISerializedData& sData) = 0;
-	size_t incrementCount() const;
+	virtual std::unique_ptr<SerializationContext> createContext() const = 0;
 };
 
 

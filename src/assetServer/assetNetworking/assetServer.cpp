@@ -76,9 +76,10 @@ void AssetServer::processMessages()
 								connection->send(res);
 
 								IncrementalAssetSender assetSender{};
+                                assetSender.iteratorData = ia->createContext();
 								assetSender.asset = ia;
 								assetSender.dest = connection.get();
-								_senders.push_back(assetSender);
+								_senders.push_back(std::move(assetSender));
 							}
 							else
 								std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
@@ -100,7 +101,7 @@ void AssetServer::processMessages()
 
 			std::shared_ptr<net::OMessage> o = std::make_shared<net::OMessage>();
 			o->header.type = net::MessageType::assetIncrementalData;
-			bool moreData = sender.asset->serializeIncrement(o->body, sender.iteratorData);
+			bool moreData = sender.asset->serializeIncrement(o->body, sender.iteratorData.get());
 			sender.dest->send(o);
 
 			return !moreData;

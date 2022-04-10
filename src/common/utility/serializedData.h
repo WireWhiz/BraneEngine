@@ -314,7 +314,6 @@ public:
 		(*currentScope)[name]["size"] = size;
 	}
 
-	template<>
 	void writeAttribute(const std::string& name, const std::string& value)
 	{
 		assert(!(*currentScope).isMember(name));
@@ -330,7 +329,6 @@ public:
 		(*currentScope)[name]["size"] = size;
 	}
 
-	template<>
 	void writeAttribute(const std::string& name, const AssetID& value)
 	{
 		assert(!(*currentScope).isMember(name));
@@ -338,7 +336,6 @@ public:
 		writeAttribute(name, value.string());
 	}
 
-	template<>
 	void writeAttribute(const std::string& name, const std::vector<AssetID>& value)
 	{
 		assert(!(*currentScope).isMember(name));
@@ -390,7 +387,6 @@ public:
 			std::memcpy(value.data(), &data[index], size);
 	}
 
-	template<>
 	void readAttribute(const std::string& name, std::string& value)
 	{
 		if(!(*currentScope).isMember(name))
@@ -406,7 +402,6 @@ public:
 			std::memcpy(value.data(), &data[index], size);
 	}
 
-	template<>
 	void readAttribute(const std::string& name, AssetID& value)
 	{
 		assert((*currentScope).isMember(name));
@@ -416,7 +411,6 @@ public:
 		value.parseString(id);
 	}
 
-	template<>
 	void readAttribute(const std::string& name, std::vector<AssetID>& value)
 	{
 		assert((*currentScope).isMember(name));

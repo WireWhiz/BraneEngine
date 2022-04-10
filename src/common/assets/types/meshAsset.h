@@ -20,14 +20,17 @@ struct MeshPrimitive
 class MeshAsset : public IncrementalAsset
 {
 	const size_t _trisPerIncrement = 1;
-	struct IteratorData
-	{
-		size_t primitive;
-		size_t pos;
-		std::vector<bool> vertexSent;
-	};
+
+    std::vector<byte> _data;
 public:
+    struct SContext : SerializationContext
+    {
+        size_t primitive;
+        size_t pos;
+        std::vector<bool> vertexSent;
+    };
 	std::vector<MeshPrimitive> primitives;
+
 	size_t pipelineID;
 	bool meshUpdated;
 
@@ -39,7 +42,10 @@ public:
 	void deserialize(ISerializedData& message, AssetManager& am) override;
 	void serializeHeader(OSerializedData& sData) override;
 	void deserializeHeader(ISerializedData& sData, AssetManager& am) override;
-	bool serializeIncrement(OSerializedData& sData, void*& iteratorData) override;
+    std::unique_ptr<SerializationContext> createContext() const override;
+	bool serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData) override;
 	void deserializeIncrement(ISerializedData& sData) override;
+
+
 	size_t meshSize() const;
 };

@@ -16,7 +16,7 @@ void Client::run()
 	ThreadPool::init(4);
 	FileManager fm;
 	NetworkManager nm;
-	nm.start();
+
 
 	AssetManager am(fm, nm);
 	EntityManager em;
@@ -35,7 +35,8 @@ void Client::run()
 	EntityID testHead = em.createEntity(headRootComponents);
 
 	AssemblyRoot testHeadRoot{};
-	testHeadRoot.id = AssetID("localhost/0000000000000CA8");
+	testHeadRoot.id = AssetID("localhost/0000000000000EC5");
+
 	em.setEntityComponent(testHead, testHeadRoot.toVirtual());
 
 	TransformComponent tc{};

@@ -10,7 +10,7 @@
 
 struct IncrementalAssetSender
 {
-	void* iteratorData = nullptr;
+	std::unique_ptr<IncrementalAsset::SerializationContext> iteratorData;
 	IncrementalAsset* asset = nullptr;
 	net::Connection* dest = nullptr;
 };

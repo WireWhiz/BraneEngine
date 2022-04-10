@@ -102,18 +102,11 @@ void Asset::fromFile(MarkedSerializedData& sData, AssetManager& am)
 void IncrementalAsset::serializeHeader(OSerializedData& sData)
 {
 	Asset::serialize(sData);
-	sData << _incrementCount;
 }
 
 void IncrementalAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
 {
 	Asset::deserialize(sData, am);
-	sData >> _incrementCount;
-}
-
-size_t IncrementalAsset::incrementCount() const
-{
-	return _incrementCount;
 }
 
 IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sData, AssetManager& am)
@@ -140,7 +133,7 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sD
 	return asset;
 }
 
-bool IncrementalAsset::serializeIncrement(OSerializedData& sData, void*& iteratorData)
+bool IncrementalAsset::serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData)
 {
 	sData << id; // We don't have id in the deserialize function because it is consumed by the
 				 // networkManager before the call to deserializeIncrement
