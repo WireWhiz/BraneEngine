@@ -99,7 +99,7 @@ namespace graphics
 		});
 
 		size_t rendererIndex = 0;
-	    _renderers.forEach([&](auto& r)
+	    _renderers.forEach([&](std::unique_ptr<Renderer>& r)
         {
 	        std::vector<VkCommandBuffer> buffers = r->createRenderBuffers(_swapChain, _renderCache[rendererIndex++], camera_matrix, inheritanceInfo, imageIndex);
             if(!buffers.empty())

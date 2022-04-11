@@ -234,36 +234,34 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 		mesh->name = meshData["name"].asString();
 		mesh->loadState = Asset::LoadState::complete;
 
-		uint8_t pIndex = 0;
-		mesh->primitives.resize(meshData["primitives"].size());
 		for(auto& primitive : meshData["primitives"])
 		{
+            auto positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
+            size_t pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()), positions.size());
+            mesh->addAttribute(pIndex, "POSITION", positions);
 
-
-			mesh->primitives[pIndex].indices = readScalarBuffer(primitive["indices"].asUInt());
-
-			mesh->primitives[pIndex].positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
 
 			if(primitive["attributes"].isMember("NORMAL"))
 			{
-				mesh->primitives[pIndex].normals = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
+                auto v = readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
+                mesh->addAttribute(pIndex, "NORMAL", v);
 			}
 
 			if(primitive["attributes"].isMember("TANGENT"))
 			{
-				mesh->primitives[pIndex].tangents = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+				auto v = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+                mesh->addAttribute(pIndex, "TANGENT", v);
 			}
 
+            //TODO  make it so that we automatically detext all texcoords
 			if(primitive["attributes"].isMember("TEXCOORD_0"))
 			{
-				if(mesh->primitives[pIndex].uvs.size() < 1)
-					mesh->primitives[pIndex].uvs.resize(1);
-				mesh->primitives[pIndex].uvs[0] = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
+				auto v = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
+                mesh->addAttribute(pIndex, "TEXCOORD_0", v);
 			}
 
-			//TODO: Remove vertices unused by indices array, since primitives reuse a lot of buffers
+			//TODO: Remove vertices unused by indices array, since primitives reuse buffers
 
-			pIndex += 1;
 		}
 
 		meshAssets.push_back(mesh);

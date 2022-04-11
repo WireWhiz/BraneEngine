@@ -7,7 +7,7 @@
 Database::Database()
 {
 	int rc;
-	rc = sqlite3_open(Config::json()["database"]["path"].asCString(), &_db);
+	rc = sqlite3_open(Config::json()["data"]["database_path"].asCString(), &_db);
 	if( rc ){
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(_db));
 		sqlite3_close(_db);

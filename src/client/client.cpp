@@ -35,7 +35,7 @@ void Client::run()
 	EntityID testHead = em.createEntity(headRootComponents);
 
 	AssemblyRoot testHeadRoot{};
-	testHeadRoot.id = AssetID("localhost/0000000000000EC5");
+	testHeadRoot.id = AssetID("localhost/0000000000000F5F");
 
 	em.setEntityComponent(testHead, testHeadRoot.toVirtual());
 

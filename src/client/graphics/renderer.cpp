@@ -92,15 +92,20 @@ namespace graphics
 
             vkCmdBindPipeline(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipeline());
 
-            auto vertexBuffers = mesh.mesh->vertexBuffers(mesh.primitive);
-			auto vertexBufferOffsets = mesh.mesh->vertexBufferOffsets(mesh.primitive);
+            VkBuffer b = mesh.mesh->buffer();
+            std::vector<VkBuffer> vertexBuffers;
+            vertexBuffers.resize(2, b);
+			std::vector<VkDeviceSize> vertexBufferOffsets = {
+                    mesh.mesh->attributeBufferOffset(mesh.primitive, "POSITION"),
+                    mesh.mesh->attributeBufferOffset(mesh.primitive, "NORMAL")
+                };
 			for(auto offset : vertexBufferOffsets)
 			{
 				assert(offset < mesh.mesh->size());
 			}
             vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
 
-	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh.mesh->indexBuffer(mesh.primitive), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);
+	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh.mesh->buffer(), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);
 
             vkCmdBindDescriptorSets(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipelineLayout(), 0, 1, &_descriptorSets[frame], 0, nullptr);
 
@@ -118,7 +123,7 @@ namespace graphics
             vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &constants);
 
 
-            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh.mesh->vertexCount(mesh.primitive)), 1, 0, 0, 0);
+            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh.mesh->indexCount(mesh.primitive)), 1, 0, 0, 0);
 
             if (vkEndCommandBuffer(_drawBuffers[frame][i]) != VK_SUCCESS)
             {

@@ -46,10 +46,10 @@ std::ostream& operator<<(std::ostream& os, const AssetID& id)
 	os << id.string();
 	return os;
 }
-
+#include <config/config.h>
 std::string AssetID::path() const
 {
-	return "assets/" + toHex(id) + ".asset";
+	return Config::json()["data"]["asset_path"].asString() + "/" + toHex(id) + ".asset";
 }
 
 uint32_t AssetID::size()

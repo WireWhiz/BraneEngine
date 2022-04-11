@@ -28,8 +28,6 @@ namespace graphics
 		GraphicsBuffer* _dataBuffer;
 		MeshAsset* _meshAsset;
 
-		std::vector<std::vector<VkDeviceSize>> _primitiveBufferOffsets;
-
 	public:
 
 
@@ -37,12 +35,12 @@ namespace graphics
 		~Mesh();
 
 		MeshAsset* meshAsset();
-		VkBuffer indexBuffer(uint32_t primitive) const;
+		VkBuffer buffer() const;
 		VkDeviceSize indexBufferOffset(uint32_t primitive) const;
-		std::vector<VkBuffer> vertexBuffers(uint32_t primitive) const;
-		std::vector<VkDeviceSize> vertexBufferOffsets(uint32_t primitive) const;
+        VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string& name) const;
 
 		uint32_t size() const;
+        uint32_t indexCount(uint32_t primitive) const;
 		uint32_t vertexCount(uint32_t primitive) const;
 		uint32_t primitiveCount() const;
 
