@@ -1,5 +1,6 @@
 # src/common
 add_subdirectory(assets)
+add_subdirectory(runtime)
 add_subdirectory(config)
 add_subdirectory(networking)
 add_subdirectory(utility)
