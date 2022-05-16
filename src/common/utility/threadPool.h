@@ -8,8 +8,11 @@
 #include <memory>
 #include <system_error>
 #include <cassert>
+#include <condition_variable>
 
 #include <iostream>
+
+//Eventually I might want to move this into the runtime class
 
 class JobHandle
 {
@@ -41,7 +44,9 @@ class ThreadPool
 	static size_t _staticThreads;
 	static size_t _minThreads;
 
+
 	static std::mutex _queueMutex;
+	static std::condition_variable _workAvailable;
 	static std::queue<Job> _jobs;
 	static std::atomic_bool _running;
 	static int threadRuntime();
@@ -61,25 +66,56 @@ public:
 template<typename T>
 class AsyncData
 {
-	std::function<void(T data, bool success, const std::string& error)> _callback;
+	struct InternalData{
+		std::unique_ptr<T> _data;
+		std::function<void(T)> _callback;
+		std::function<void(const std::string&)> _error;
+	};
+	std::shared_ptr<InternalData> _instance;
 public:
-	void callback(std::function<void(T data, bool success, const std::string& error)> callback)
+	AsyncData()
 	{
-		_callback = callback;
+		_instance = std::make_shared<InternalData>();
 	}
-	void setData(T data) const
+	AsyncData& then(std::function<void(T)> callback)
 	{
-		_callback(data, true, "");
+		if(_instance->_data)
+			callback(std::move(*_instance->_data));
+		else
+			_instance->_callback = std::move(callback);
+		return *this;
+	}
+	AsyncData& onError(std::function<void(const std::string& err)> callback)
+	{
+		_instance->_error = std::move(callback);
+		return *this;
+	}
+	void setData(T& data) const
+	{
+		if(callbackSet())
+			_instance->_callback(std::move(data));
+		else
+			_instance->_data = std::make_unique<T>(std::move(data));
+	}
+	void setData(T&& data) const
+	{
+		if(callbackSet())
+			_instance->_callback(std::move(data));
+		else
+			_instance->_data = std::make_unique<T>(std::move(data));
 	}
 	void setError(const std::string& error) const
 	{
 		T data;
-		_callback(data, false, error);
+		if(_instance->_error)
+			_instance->_error(error);
+		else
+			throw std::runtime_error(error);
 	}
 
 	[[nodiscard]] bool callbackSet() const
 	{
-		return (bool)_callback;
+		return (bool)(_instance->_callback);
 	}
 };
 

@@ -135,8 +135,6 @@ void MeshAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
 bool MeshAsset::serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData)
 {
-	IncrementalAsset::serializeIncrement(sData, iteratorData);
-
 	auto* itr = (MeshSerializationContext*)iteratorData;
 	auto& primitive = _primitives[itr->primitive];
 	sData << (uint16_t)itr->primitive;

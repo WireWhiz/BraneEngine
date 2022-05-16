@@ -2,17 +2,6 @@
 
 namespace net
 {
-
-	bool Connection::popIMessage(std::shared_ptr<IMessage>& iMessage)
-	{
-		if(!_ibuffer.empty())
-		{
-			iMessage = _ibuffer.pop_front();
-			return true;
-		}
-		return false;
-	}
-
 	Connection::Connection()
 	{
 		_exists = std::make_shared<bool>(true);
@@ -21,6 +10,59 @@ namespace net
 	Connection::~Connection()
 	{
 		*_exists = false;
+	}
+
+	bool Connection::messageAvailable()
+	{
+		return !_ibuffer.empty();
+	}
+
+	std::shared_ptr<IMessage> Connection::popMessage()
+	{
+		return _ibuffer.pop_front();
+	}
+
+	void Connection::sendStreamData(uint32_t id, OSerializedData&& sData)
+	{
+		auto message = std::make_shared<net::OMessage>();
+		message->body << id << sData;
+		message->header.type = net::MessageType::streamData;
+		send(message);
+	}
+
+	void Connection::sendStreamEnd(uint32_t id)
+	{
+		auto message = std::make_shared<net::OMessage>();
+		message->body << id;
+		message->header.type = net::MessageType::endStream;
+		send(message);
+	}
+
+	void Connection::addStreamListener(uint32_t id, std::function<void(ISerializedData&)> callback)
+	{
+		_streamLock.lock();
+		assert(!_streamListeners.count(id));
+		_streamListeners.insert({id, callback});
+		_streamLock.unlock();
+	}
+
+	void Connection::eraseStreamListener(uint32_t id)
+	{
+		_streamLock.lock();
+		_streamListeners.erase(id);
+		_streamLock.unlock();
+	}
+
+	AsyncData<ISerializedData> Connection::sendRequest(Request& req)
+	{
+		uint32_t id = _reqIDCounter++;
+		AsyncData<ISerializedData> res;
+		_responseLock.lock();
+		_responseListeners.insert({id, res});
+		_responseLock.unlock();
+
+		send(req.message(id));
+		return res;
 	}
 
 	template<>

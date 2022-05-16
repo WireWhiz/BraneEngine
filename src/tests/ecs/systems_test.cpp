@@ -59,7 +59,7 @@ public:
 
 TEST(Systems, NativeTest)
 {
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 
 	//Create entity and add test component
 	CounterComponent cc;
@@ -87,7 +87,7 @@ TEST(Systems, NativeTest)
 
 TEST(Systems, BeforeConstraint)
 {
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 
 	//Create entity and add test component
 	CounterComponent cc;
@@ -122,7 +122,7 @@ TEST(Systems, BeforeConstraint)
 
 TEST(Systems, AfterConstraint)
 {
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 
 	//Create entity and add test component
 	CounterComponent cc;

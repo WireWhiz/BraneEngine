@@ -1,9 +1,21 @@
 #pragma once
 
 #include "config/config.h"
+#include "runtime/module.h"
 
-class Client
+class AssetManager;
+namespace graphics
 {
+	class VulkanRuntime;
+}
+
+
+class Client : public Module
+{
+	void addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vkr);
+
 public:
-	void run();
+	Client(Runtime& rt);
+
+	const char * name() override;
 };

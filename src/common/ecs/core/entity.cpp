@@ -1,6 +1,6 @@
 #include "entity.h"
 
-EntityManager::EntityManager()
+EntityManager::EntityManager(Runtime& runtime) : Module(runtime)
 {
 
 }
@@ -227,48 +227,10 @@ void EntityManager::removeComponent(EntityID entity, const ComponentAsset* compo
 	_entities[entity].archetype = destArchetype;
 }
 
-void EntityManager::run(const std::function<void()>& task)
+const char* EntityManager::name()
 {
-	_runLock.lock();
-	_runQueue.push(task);
-	_runLock.unlock();
+	return "entityManager";
 }
-
-bool EntityManager::addSystem(std::unique_ptr<VirtualSystem>&& system)
-{
-	return _systems.addSystem(std::move(system));
-}
-
-void EntityManager::removeSystem(AssetID id)
-{
-	_systems.removeSystem(id);
-}
-
-bool EntityManager::addBeforeConstraint(AssetID id, AssetID before)
-{
-	return _systems.addBeforeConstraint(id, before);
-}
-
-bool EntityManager::addAfterConstraint(AssetID id, AssetID after)
-{
-	return _systems.addAfterConstraint(id, after);
-}
-
-VirtualSystem* EntityManager::getSystem(AssetID id)
-{
-	return _systems.findSystem(id);
-}
-
-void EntityManager::runSystems()
-{
-	while (!_runQueue.empty())
-	{
-		_runQueue.front()();
-		_runQueue.pop();
-	}
-	_systems.runSystems(*this);
-}
-
 
 
 NativeForEach::NativeForEach(std::vector<const ComponentAsset* >&& vector, EntityManager* em) : NativeForEach::NativeForEach(vector, em) {}

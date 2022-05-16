@@ -12,21 +12,23 @@ struct IncrementalAssetSender
 {
 	std::unique_ptr<IncrementalAsset::SerializationContext> iteratorData;
 	IncrementalAsset* asset = nullptr;
-	net::Connection* dest = nullptr;
+	uint32_t streamID;
+	net::Connection* connection = nullptr;
 };
 
-class AssetServer
+class AssetServer : public Module
 {
 	NetworkManager& _nm;
 	AssetManager& _am;
-	std::mutex _cLock;
-	std::vector<std::unique_ptr<net::Connection>> _connections;
 
 	std::list<IncrementalAssetSender> _senders;
 public:
-	AssetServer(NetworkManager& nm, AssetManager& am);
+	AssetServer(Runtime& runtime);
 	~AssetServer();
 	void processMessages();
+
+	const char* name() override;
+
 };
 
 

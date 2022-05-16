@@ -170,14 +170,15 @@ namespace graphics
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         VkAttachmentReference colorAttachmentRef{};
         colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+		_depthImageFormat = findDepthFormat();
         VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = findDepthFormat();
+        depthAttachment.format = _depthImageFormat;
         depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -334,11 +335,14 @@ namespace graphics
         createImageViews();
         createDepthResources();
         createRenderPass();
+		createImGuiRenderPass();
 	    createFrameBuffers();
+		createImGuiFrameBuffers();
     }
     SwapChain::~SwapChain()
     {
         vkDestroyRenderPass(device->get(), _renderPass, nullptr);
+	    vkDestroyRenderPass(device->get(), _imGuiRenderPass, nullptr);
 
         vkDestroyImageView(device->get(), _depthImageView, nullptr);
         vkDestroyImage(device->get(), _depthImage, nullptr);
@@ -348,6 +352,10 @@ namespace graphics
         {
             vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
         }
+	    for (auto framebuffer : _imGuiFrameBuffers)
+	    {
+		    vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
+	    }
 
         for (auto imageView : _imageViews)
         {
@@ -384,12 +392,95 @@ namespace graphics
     {
         return _imageFormat;
     }
-    VkRenderPass SwapChain::renderPass()
+	VkFormat SwapChain::depthImageFormat()
+	{
+		return _depthImageFormat;
+	}
+	VkRenderPass SwapChain::renderPass()
     {
         return _renderPass;
     }
+
     VkImage SwapChain::getImage(size_t index)
     {
         return _images[index];
     }
+
+	void SwapChain::createImGuiRenderPass()
+	{
+		VkAttachmentDescription alpha{};
+		alpha.format = _imageFormat;
+		alpha.samples = VK_SAMPLE_COUNT_1_BIT;
+		alpha.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		alpha.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		alpha.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		alpha.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		alpha.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		alpha.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+		VkAttachmentReference color_attachment = {};
+		color_attachment.attachment = 0;
+		color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &color_attachment;
+
+		VkSubpassDependency dependency = {};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT  | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.srcAccessMask = 0;
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT  | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		VkRenderPassCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		info.attachmentCount = 1;
+		info.pAttachments = &alpha;
+		info.subpassCount = 1;
+		info.pSubpasses = &subpass;
+		info.dependencyCount = 1;
+		info.pDependencies = &dependency;
+		if (vkCreateRenderPass(device->get(), &info, nullptr, &_imGuiRenderPass) != VK_SUCCESS) {
+			throw std::runtime_error("Could not create Dear ImGui's render pass");
+		}
+	}
+
+	void SwapChain::createImGuiFrameBuffers()
+	{
+		_imGuiFrameBuffers.resize(_imageViews.size());
+
+		for (size_t i = 0; i < _imageViews.size(); i++)
+		{
+			VkImageView attachments[] = {
+					_imageViews[i]
+			};
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = _imGuiRenderPass;
+			framebufferInfo.attachmentCount = 1;
+			framebufferInfo.pAttachments = attachments;
+			framebufferInfo.width = _extent.width;
+			framebufferInfo.height = _extent.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_imGuiFrameBuffers[i]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to create imgui framebuffer!");
+			}
+		}
+	}
+
+	VkFramebuffer SwapChain::imGuiFramebuffer(size_t index)
+	{
+		return _imGuiFrameBuffers[index];
+	}
+
+	VkRenderPass SwapChain::imGuiRenderPass()
+	{
+		return _imGuiRenderPass;
+	}
 }

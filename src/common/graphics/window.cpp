@@ -1,4 +1,5 @@
 #include "window.h"
+#include <iostream>
 
 namespace graphics
 {
@@ -38,8 +39,10 @@ namespace graphics
         //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         _window = glfwCreateWindow(800, 600, "Brane Surfer", nullptr, nullptr);
         assert(_window != NULL);
-
-
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	    const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
+		_framerate = vidMode->refreshRate;
+		std::cout << "Using framrate of: " << _framerate << std::endl;
     }
 
     void Window::update()
@@ -65,4 +68,14 @@ namespace graphics
 
         glfwTerminate();
     }
+
+	GLFWwindow* Window::window()
+	{
+		return _window;
+	}
+
+	int Window::framerate() const
+	{
+		return _framerate;
+	}
 }

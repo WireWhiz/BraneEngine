@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdint>
 #include "component.h"
-#include "virtualSystem.h"
 #include <memory>
 #include <functional>
 #include <unordered_map>

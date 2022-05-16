@@ -4,7 +4,7 @@
 
 #include "Database.h"
 
-Database::Database()
+Database::Database(Runtime& runtime) : Module(runtime)
 {
 	int rc;
 	rc = sqlite3_open(Config::json()["data"]["database_path"].asCString(), &_db);
@@ -122,6 +122,11 @@ std::string Database::assetName(AssetID& id)
 
 	}
 	return name;
+}
+
+const char* Database::name()
+{
+	return "database";
 }
 
 

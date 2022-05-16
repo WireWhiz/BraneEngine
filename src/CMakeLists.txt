@@ -13,6 +13,7 @@ add_subdirectory(common)
 # create executables
 add_subdirectory(tests)
 add_subdirectory(client)
+add_subdirectory(editor)
 add_subdirectory(runtimeServer)
 add_subdirectory(assetServer)
 add_subdirectory(assetUploader)

@@ -3,11 +3,6 @@
 #include <utility/serializedData.h>
 #include <byte.h>
 #include <assets/assetType.h>
-//namespace net
-//{
-//	class OMessage;
-//	class IMessage;
-//}
 
 class AssetManager;
 

@@ -9,6 +9,7 @@ size_t ThreadPool::_minThreads;
 std::atomic<bool> ThreadPool::_running = true;
 std::queue<Job> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
+std::condition_variable ThreadPool::_workAvailable;
 
 int ThreadPool::threadRuntime()
 {
@@ -16,41 +17,33 @@ int ThreadPool::threadRuntime()
 	{
 		
 		Job job;
-
-		// Lock queue and retrieve job
-		_queueMutex.lock();
-		bool jobAvailable = !_jobs.empty();
-		if (jobAvailable)
 		{
-			job = _jobs.front();
-			_jobs.pop();
+			std::unique_lock<std::mutex> lock(_queueMutex);
+			if (_workAvailable.wait_until(lock, std::chrono::system_clock::now() + std::chrono::milliseconds(200), []
+			{ return !_jobs.empty(); }))
+			{
+				job = _jobs.front();
+				_jobs.pop();
+			} else
+				continue;
 		}
-		_queueMutex.unlock();
-
-		// if we got a job, run it outside the lock
-		if (jobAvailable)
-		{
 #if NDEBUG
-			try
+		try
 			{
 #endif
-				job.f();
+		job.f();
 #if NDEBUG
 
-			}
+		}
 			catch (const std::exception& e)
 			{
 				std::cerr << "Thread Error: " << e.what() << std::endl;
 
 			}
 #endif
-			job.handle->_instances -= 1;
-			if(job.handle->_instances == 0)
-				job.handle->enqueueNext();
-		}
-		else
-			std::this_thread::sleep_for(std::chrono::nanoseconds (500)); //If there aren't any jobs to do, sleep. Otherwise, no sleep! Edit: Looking back at this, I realize it describes more than the thread pool
-
+		job.handle->_instances -= 1;
+		if(job.handle->_instances == 0)
+			job.handle->enqueueNext();
 	}
 	return 0;
 }
@@ -103,6 +96,7 @@ std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
 	_queueMutex.lock();
 	_jobs.push(Job( std::move(function), handle));
 	_queueMutex.unlock();
+	_workAvailable.notify_one();
 	return handle;
 }
 
@@ -112,6 +106,7 @@ void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHand
 	_queueMutex.lock();
 	_jobs.push(Job( std::move(function), handle));
 	_queueMutex.unlock();
+	_workAvailable.notify_one();
 }
 
 std::shared_ptr<JobHandle>  ThreadPool::enqueueBatch(std::vector<std::function<void()>> functions)
@@ -126,6 +121,7 @@ std::shared_ptr<JobHandle>  ThreadPool::enqueueBatch(std::vector<std::function<v
 	}
 	_queueMutex.unlock();
 
+	_workAvailable.notify_one();
 	return handle;
 }
 
@@ -134,8 +130,10 @@ std::shared_ptr<JobHandle> ThreadPool::addStaticThread(std::function<void()> fun
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 
 	_staticThreads++;
-	if(_threads.size() - _staticThreads < _minThreads)
+	if(_threads.size() - _staticThreads < _minThreads){
 		_threads.emplace_back(function);
+		_workAvailable.notify_one();
+	}
 	else
 		enqueue(std::move(function), handle);
 	return handle;

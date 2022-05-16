@@ -1,33 +1,33 @@
 #include "client.h"
-#include "asio/asio.hpp"
-#include "networking/connection.h"
-#include "assets/assetManager.h"
+#include "runtime/runtime.h"
+
+#include "networking/networking.h"
 #include "graphics/graphics.h"
-#include "graphics/graphicAssetPreprocessors.h"
 #include "assets/assembly.h"
 #include "ecs/nativeTypes/transform.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/nativeSystems/nativeSystems.h"
+#include "assets/assetManager.h"
 
-void Client::run()
+#include <utility/threadPool.h>
+#include "asio/asio.hpp"
+#include "networking/connection.h"
+
+const char* Client::name()
 {
-	std::cout << "BraneSurfer starting up\n";
-	ThreadPool::init(4);
-	FileManager fm;
-	NetworkManager nm;
+	return "client";
+}
 
+Client::Client(Runtime& rt) : Module(rt)
+{
+	EntityManager& em = *(EntityManager*)rt.getModule("entityManager");
+	AssetManager& am = *(AssetManager*)rt.getModule("assetManager");
+	graphics::VulkanRuntime& vkr = *(graphics::VulkanRuntime*)rt.getModule("graphics");
+	NetworkManager& nm = *(NetworkManager*)rt.getModule("networkManager");
 
-	AssetManager am(fm, nm);
-	EntityManager em;
-	graphics::VulkanRuntime vkr;
-
-	systems::addTransformSystem(em);
-
-	GraphicAssetPreprocessors::addAssetPreprocessors(am, vkr);
-	nm.startAssetAcceptorSystem(em, am);
-	am.startAssetLoaderSystem(em);
-
+	systems::addTransformSystem(em, rt.timeline());
+	addAssetPreprocessors(am, vkr);
 
 	ComponentSet headRootComponents;
 	headRootComponents.add(AssemblyRoot::def());
@@ -61,15 +61,27 @@ void Client::run()
 	mat2->addBinding(1, sizeof(glm::vec3));
 	mat2->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	mat2->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	//vkr.initRenderer(vkr.addMaterial(mat2));
+}
 
-	while (!vkr.window()->closed())
-	{
-		vkr.updateWindow();
-		em.runSystems();
-		vkr.draw(em); // Replace with system as well
-	}
+void Client::addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vkr)
+{
+	am.addAssetPreprocessor(AssetType::assembly, [&am, &vkr](Asset* asset){
+		auto assembly = (Assembly*)asset;
+		for(auto& entity : assembly->entities)
+		{
+			for(auto& component : entity.components)
+			{
+				if(component.def() == MeshRendererComponent::def())
+				{
+					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());
+					auto* meshAsset = am.getAsset<MeshAsset>(AssetID(assembly->meshes[mr->mesh]));
+					if(meshAsset->pipelineID == -1)
+						vkr.addMesh(meshAsset);
+					mr->mesh = meshAsset->pipelineID;
 
-	nm.stop();
-	ThreadPool::cleanup();
+					//TODO: process materials here as well
+				}
+			}
+		}
+	});
 }

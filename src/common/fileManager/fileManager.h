@@ -6,10 +6,12 @@
 #include <utility/serializedData.h>
 #include <assets/asset.h>
 #include "utility/threadPool.h"
+#include <runtime/module.h>
 
-class FileManager
+class FileManager : public Module
 {
 public:
+	explicit FileManager(Runtime& runtime);
 	template <typename T>
 	bool readFile(const std::string& filename, std::vector<T>& data)
 	{
@@ -49,14 +51,16 @@ public:
 	}
 
 	template<typename T>
-	void async_readAsset(const AssetID& id, AssetManager& am, AsyncData<T*> asset)
+	AsyncData<T*> async_readAsset(const AssetID& id, AssetManager& am)
 	{
+		AsyncData<T*> asset;
 		ThreadPool::enqueue([this, &id, &am, asset]{
 			asset.setData(readAsset<T>(id, am));
 		});
+		return asset;
 	}
 
-	void async_readUnknownAsset(const AssetID& id, AssetManager& am, AsyncData<Asset*> asset);
+	AsyncData<Asset*> async_readUnknownAsset(const AssetID& id, AssetManager& am);
 
 
 
@@ -79,4 +83,6 @@ public:
 	void writeFile(const std::string& filename, Json::Value& data);
 
 	void writeAsset(Asset* asset);
+
+	const char* name() override;
 };

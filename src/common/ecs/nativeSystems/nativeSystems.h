@@ -5,7 +5,6 @@
 #ifndef BRANEENGINE_NATIVESYSTEMS_H
 #define BRANEENGINE_NATIVESYSTEMS_H
 
-#include "../core/virtualSystem.h"
 #include "../core/entity.h"
 #include "../../assets/assetID.h"
 #include <unordered_set>
@@ -32,10 +31,10 @@ namespace systems
 		updated.insert(id);
 	}
 
-	void addTransformSystem(EntityManager& em)
+	void addTransformSystem(EntityManager& em, Timeline& tl)
 	{
 		NativeForEach forEveryTransform( {EntityIDComponent::def(), TransformComponent::def()},&em);
-		em.addSystem(std::make_unique<VirtualSystem>(AssetID("nativeSystem/0"), [forEveryTransform](EntityManager& em){
+		tl.addTask("transform", [forEveryTransform, &em](){
 			std::unordered_set<EntityID> updated(em.forEachCount(forEveryTransform.id()));
 			em.forEach(forEveryTransform.id(), [&](byte** components){
 				EntityID id = EntityIDComponent::fromVirtual(components[forEveryTransform.getComponentIndex(0)])->id;
@@ -43,7 +42,7 @@ namespace systems
 					updateTransform(id, updated, em);
 
 			});
-		}));
+		}, "before main");
 
 	}
 }

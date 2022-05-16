@@ -1,6 +1,6 @@
 file (GLOB_RECURSE source "*.cpp" "*.h" "../internal/*.h" "../internal/*.cpp")
 
-add_library(acme_lw ${source})
+add_library(acme_lw ${source} ../ImGui/imgui.cpp ../ImGui/imgui.h)
 
 find_package (CURL REQUIRED)
 find_package (OpenSSL 1.1 REQUIRED)

@@ -1,7 +1,6 @@
 #pragma once
 #include "component.h"
 #include "archetype.h"
-#include "systemList.h"
 #include "utility/shared_recursive_mutex.h"
 #include "chunk.h"
 
@@ -15,6 +14,8 @@
 #include <memory>
 #include <functional>
 #include <unordered_set>
+#include <runtime/runtime.h>
+#include <runtime/module.h>
 
 #ifndef EntityID
 typedef uint32_t EntityID;
@@ -34,7 +35,7 @@ struct EntityIndex
 	bool alive;
 };
 
-class EntityManager
+class EntityManager : public Module
 {
 #ifdef TEST_BUILD
 public:
@@ -42,12 +43,8 @@ public:
 	staticIndexVector<EntityIndex> _entities;
 
 	ArchetypeManager _archetypes;
-	
-	mutable std::mutex _runLock;
-	std::queue<std::function<void()>> _runQueue;
-	SystemList _systems;
 public:
-	EntityManager();
+	EntityManager(Runtime& runtime);
 	EntityManager(const EntityManager&) = delete;
 	~EntityManager();
 	Archetype* getArchetype(const ComponentSet& components);
@@ -71,14 +68,8 @@ public:
 	void constForEach(EntityForEachID id, const std::function <void(const byte* [])>& f);
 	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
 	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
-	//system stuff
-	void run(const std::function<void()>& task);
-	bool addSystem(std::unique_ptr<VirtualSystem>&& system);
-	void removeSystem(AssetID id);
-	bool addBeforeConstraint(AssetID id, AssetID before);
-	bool addAfterConstraint(AssetID id, AssetID after);
-	VirtualSystem* getSystem(AssetID id);
-	void runSystems();
+
+	const char* name() override;
 };
 
 class NativeForEach

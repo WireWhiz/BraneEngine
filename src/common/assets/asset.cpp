@@ -135,7 +135,5 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sD
 
 bool IncrementalAsset::serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData)
 {
-	sData << id; // We don't have id in the deserialize function because it is consumed by the
-				 // networkManager before the call to deserializeIncrement
 	return false; //Return false because there is no more data
 }

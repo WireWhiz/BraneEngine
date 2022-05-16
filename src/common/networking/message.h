@@ -8,10 +8,10 @@ namespace net
 	enum class MessageType : uint16_t
 	{
 		acknowledge = 0,
-		assetRequest = 1,
-		assetData = 2,
-		assetIncrementalHeader = 3,
-		assetIncrementalData = 4,
+		request     = 1,
+		response    = 2,
+		streamData  = 3,
+		endStream   = 4
 	};
 
 	struct alignas(2) MessageHeader

@@ -24,7 +24,7 @@ void async_acceptConnections(asio::ip::tcp::acceptor& acceptor, std::shared_ptr<
 int main()
 {
 	std::cout << "Asset Uploader Started" << std::endl;
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 	// Log in to server
 	asio::io_context ctx;
 	asio::ssl::context ssl_context(asio::ssl::context::tls);

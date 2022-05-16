@@ -10,10 +10,11 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "databaseAsset.h"
+#include "runtime/module.h"
 
-class Database
+
+class Database : public Module
 {
-
 	sqlite3* _db;
 	static int sqliteCallback(void *callback, int argc, char **argv, char **azColName);
 
@@ -25,7 +26,7 @@ public:
 		char* value;
 	};
 	typedef std::function<void(const std::vector<sqlColumn>& columns)> sqlCallbackFunction;
-	Database();
+	Database(Runtime& runtime);
 	~Database();
 	void rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f);
 	bool stringSafe(const std::string& str);
@@ -38,6 +39,8 @@ public:
 	std::string assetName(AssetID& id);
 
 	std::vector<AssetInfo> listUserAssets(const uint32_t& userID);
+
+	const char* name() override;
 };
 
 

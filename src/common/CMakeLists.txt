@@ -1,4 +1,6 @@
 # src/common
+
+add_subdirectory(graphics)
 add_subdirectory(assets)
 add_subdirectory(runtime)
 add_subdirectory(config)

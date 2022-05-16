@@ -10,10 +10,9 @@ add_library(graphics STATIC
 	shader.cpp
 	swapChain.cpp
 	texture.cpp
-	window.cpp
-        GraphicAssetPreprocessors.cpp graphicAssetPreprocessors.h)
+	window.cpp)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
-target_link_libraries(graphics PRIVATE utility glslang)
+target_link_libraries(graphics PUBLIC utility glslang imgui)
 if(WIN32)
 target_link_libraries(graphics PUBLIC vulkan glfw)
 else (WIN32)

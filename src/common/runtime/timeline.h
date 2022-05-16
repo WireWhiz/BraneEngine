@@ -13,9 +13,11 @@
 
 class ScheduledTask
 {
-    std::function _task;
+    std::function<void()> _task;
+	std::string _name;
 public:
-    ScheduledTask(const std::string& name, std::function task);
+	[[nodiscard]] const std::string& name() const;
+	ScheduledTask(const std::string& name, std::function<void()> task);
     void run();
 };
 
@@ -25,34 +27,23 @@ class ScheduledBlock
     std::string _name;
 
 public:
-    ScheduledBlock(const std::string& name);
-    std::vector<std::string> dependencies;
-    ScheduledBlock(const std::string& name);
+    explicit ScheduledBlock(const std::string& name);
     void run();
-    const std::string& name() const;
+    [[nodiscard]] const std::string& name() const;
 
     void addTask(const ScheduledTask& runnable);
 };
 
 class Timeline
 {
-    struct BlockNode
-    {
-        bool visited;
-        bool sorted;
-        std::unique_ptr<ScheduledBlock> block;
-        BlockNode* next;
-        bool sort(BlockNode*& first, BlockNode*& last, std::unordered_map<std::string, BlockNode>& blocks)
-    };
-    BlockNode* _first;
-
-    std::unordered_map<std::string, BlockNode> _blocks;
-    bool sortNodes();
+	std::list<ScheduledBlock> _blocks;
 public:
-    bool addBlock(ScheduledBlock* block);
-    bool addDependency(const std::string& before, const std::string& after);
+    void addBlock(const std::string& name);
+	void addBlockBefore(const std::string& name, const std::string& before);
+	void addBlockAfter(const std::string& name, const std::string& before);
     ScheduledBlock* getTimeBlock(const std::string& name);
     void addTask(const std::string& name, std::function<void()> task, const std::string& timeBlock);
+	void run();
 };
 
 

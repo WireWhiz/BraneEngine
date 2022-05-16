@@ -20,7 +20,7 @@ TEST(assets, ComponentAssetSerializeTest)
 	ComponentAsset testDefResult;
 
 	FileManager fm;
-	NetworkManager nm;
+	NetworkManager nm(<#initializer#>);
 	AssetManager am(fm, nm);
 	testDefResult.deserialize(iData, am);
 

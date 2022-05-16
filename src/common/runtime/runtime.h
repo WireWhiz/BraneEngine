@@ -8,25 +8,35 @@
 #include <unordered_map>
 #include <string>
 #include "timeline.h"
+#include <atomic>
 
 class Module;
 
 class Runtime
 {
 protected:
-    std::unordered_map<std::unique_ptr<Module>> _modules;
+    std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
     Timeline _timeline;
+	std::atomic_bool _running = true;
 
 public:
-
+	Runtime();
+	~Runtime();
     void addModule(Module* m);
-    void hasModule(const std::string& name);
+	template<typename T>
+	void addModule()
+	{
+		static_assert(std::is_base_of<Module, T>().value);
+		addModule(new T(*this));
+	}
+
+    bool hasModule(const std::string& name);
     Module* getModule(const std::string& name);
 
-    template<typename T>
-    T* hasModule();
-    template<typename T>
-    T* getModule();
+	Timeline& timeline();
+
+	void run();
+	void stop();
 };
 
 

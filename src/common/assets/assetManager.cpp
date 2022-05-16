@@ -7,7 +7,10 @@
 #include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/core/component.h"
 
-AssetManager::AssetManager(FileManager& fm, NetworkManager& nm) : _fm(fm), _nm(nm)
+AssetManager::AssetManager(Runtime& runtime) :
+	_fm(*((FileManager*)runtime.getModule("fileManager"))),
+	_nm(*((NetworkManager*)runtime.getModule("networkManager"))),
+	Module(runtime)
 {
 	addNativeComponent<EntityIDComponent>();
 	addNativeComponent<TransformComponent>();
@@ -30,10 +33,11 @@ void AssetManager::updateAsset(Asset* asset)
 
 }
 
-void AssetManager::startAssetLoaderSystem(EntityManager& em)
+void AssetManager::startAssetLoaderSystem()
 {
+	EntityManager& em = *(EntityManager*)_rt.getModule("entityManager");
 	NativeForEach forEachAssembly({EntityIDComponent::def(), AssemblyRoot::def()}, &em);
-	VirtualSystem vs(AssetID("nativeSystem/1"), [this, forEachAssembly](EntityManager& em){
+	_rt.timeline().addTask("asset loader", [this, forEachAssembly, &em](){
 
 		//Start loading all unloaded assemblies TODO change it so that the state is stored through components and not a bool, so we're not always iterating over literally everything
 		em.forEach(forEachAssembly.id(), [&](byte** components){
@@ -59,36 +63,26 @@ void AssetManager::startAssetLoaderSystem(EntityManager& em)
 		}
 		_stagedAssemblies.clear();
 
-	});
-	assert(em.addSystem(std::make_unique<VirtualSystem>(vs)));
+	}, "asset management");
 }
 
 void AssetManager::async_loadAssembly(AssetID id, EntityID rootID)
 {
-	AsyncData<Assembly*> assembly;
-	assembly.callback([this, rootID](Assembly* assembly, bool successful, const std::string& error){
-		if(successful)
+	async_getAsset<Assembly>(id).then([this, rootID](Assembly* assembly){
+		//Load dependencies TODO actually load in all of them & implement incremental loading of some
+		std::cout << "Loaded: " << assembly->name << " requesting dependencies" << std::endl;
+		std::shared_ptr<size_t> unloaded = std::make_unique<size_t>();
+		*unloaded = assembly->meshes.size();
+		for(auto& mesh : assembly->meshes)
 		{
-			//Load dependencies TODO actually load in all of them & implement incremental loading of some
-			auto dependencies = std::make_shared<AsyncDataArray<MeshAsset*>>(assembly->meshes.size());
-			dependencies->indexLoaded([dependencies](size_t index, MeshAsset* mesh){
-					std::cout << "Loaded: " << mesh->name << std::endl;
-			});
-			dependencies->fullyLoaded([this, assembly, rootID, dependencies](bool successful, const std::string& error){
-				_stagedAssemblies.push_back({assembly, rootID});
-			});
-
-			size_t index = 0;
-			for(auto& mesh : assembly->meshes)
+			async_getAsset<MeshAsset>(AssetID(mesh)).then([this, unloaded, assembly, rootID](MeshAsset* mesh)
 			{
-				async_getAsset(AssetID(mesh), (*dependencies)[index++]);
-			}
-
+				std::cout << "Loaded: " << mesh->name << std::endl;
+				if(--(*unloaded) == 0)
+					_stagedAssemblies.push_back({assembly, rootID});
+			});
 		}
-		else
-			std::cerr << error << std::endl;
 	});
-	async_getAsset(id, assembly);
 }
 
 void AssetManager::addAssetPreprocessor(AssetType::Type type, std::function<void(Asset*)> processor)
@@ -105,6 +99,16 @@ void AssetManager::addAsset(Asset* asset)
 	assetLock.lock();
 	_assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
 	assetLock.unlock();
+}
+
+const char* AssetManager::name()
+{
+	return "assetManager";
+}
+
+void AssetManager::start()
+{
+	startAssetLoaderSystem();
 }
 
 

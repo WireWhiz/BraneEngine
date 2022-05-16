@@ -3,102 +3,108 @@
 //
 
 #include "timeline.h"
-
-bool Timeline::BlockNode::sort(Timeline::BlockNode*& first, Timeline::BlockNode*& last,
-                               std::unordered_map<std::string, BlockNode>& blocks)
-{
-    if(sorted)
-        return true;
-    if(visited)
-        return false;
-
-    visited = true;
-    for(auto& d : block->dependencies)
-    {
-        auto node = blocks.find(d);
-        if(node == blocks.end())
-            return false;
-        node->second.sort(first, last, blocks);
-    }
-
-    if(last)
-        last->next = this;
-    else
-    {
-        first = this;
-        last = this;
-    }
-
-    visited = false;
-
-    return true;
-}
-
-bool Timeline::sortNodes()
-{
-    for(auto& n : _blocks)
-    {
-        n.second.next = nullptr;
-        n.second.visited = false;
-        n.second.sorted = false;
-    }
-
-    BlockNode* last;
-    for(auto& n : _blocks)
-    {
-        if(!n.second.sort(_first, last, _blocks))
-            return false;
-    }
-
-    return true;
-}
-
-bool Timeline::addBlock(ScheduledBlock* block)
-{
-    BlockNode bn{};
-    bn.block = std::unique_ptr<ScheduledBlock>(block);
-
-    _blocks.insert({block->name(), std::move(bn)});
-    if(!sortNodes())
-    {
-        _blocks.erase(block->name());
-        sortNodes();
-        return false;
-    }
-    return true;
-}
-
-bool Timeline::addDependency(const std::string& before, const std::string& after)
-{
-    assert(_blocks.count(before));
-    assert(_blocks.count(after));
-
-    auto a = _blocks.find(after);
-    if(a == _blocks.end() || !_blocks.count(before))
-        return false;
-
-    a->second.block->dependencies.push_back(before);
-
-    if(!sortNodes())
-    {
-        a->second.block->dependencies.resize(a->second.block->dependencies.size() - 1);
-        sortNodes();
-        return false;
-    }
-    return true;
-}
+#include <stdexcept>
 
 ScheduledBlock* Timeline::getTimeBlock(const std::string& name)
 {
-    auto i = _blocks.find(name);
-    if(i == _blocks.end())
-        return nullptr;
-    return i->second.block.get();
+    for(auto& block : _blocks)
+    {
+		if(name == block.name())
+			return &block;
+	}
+    return nullptr;
 }
 
 void Timeline::addTask(const std::string& name, std::function<void()> task, const std::string& timeBlock)
 {
-    _blocks.find(timeBlock)->second.block->addTask(ScheduledTask(name, task));
+	ScheduledBlock* block = getTimeBlock(timeBlock);
+	if(!block)
+		throw std::runtime_error("Could not find time block: " + timeBlock);
+	block->addTask(ScheduledTask(name, task));
+}
+
+void Timeline::addBlock(const std::string& name)
+{
+	_blocks.emplace_back(name);
+}
+
+void Timeline::addBlockBefore(const std::string& name, const std::string& before)
+{
+	auto parentBlock = _blocks.begin();
+	if(parentBlock->name() == before)
+		_blocks.push_front(ScheduledBlock(name));
+	parentBlock++;
+
+	while(parentBlock != _blocks.end())
+	{
+		if(parentBlock->name() == before)
+		{
+			parentBlock--;
+			_blocks.insert(parentBlock, ScheduledBlock(name));
+			return;
+		}
+		parentBlock++;
+	}
+	addBlock(name);
+}
+
+void Timeline::addBlockAfter(const std::string& name, const std::string& before)
+{
+	auto parentBlock = _blocks.begin();
+	while(parentBlock != _blocks.end())
+	{
+		if(parentBlock->name() == before)
+		{
+			_blocks.insert(parentBlock, ScheduledBlock(name));
+			return;
+		}
+		parentBlock++;
+	}
+	addBlock(name);
+}
+
+void Timeline::run()
+{
+	for(auto& block : _blocks)
+		block.run();
 }
 
 
+ScheduledTask::ScheduledTask(const std::string& name, std::function<void()> task)
+{
+	_task = task;
+	_name = name;
+}
+
+void ScheduledTask::run()
+{
+	_task();
+}
+
+const std::string& ScheduledTask::name() const
+{
+	return _name;
+}
+
+ScheduledBlock::ScheduledBlock(const std::string& name)
+{
+	_name = name;
+}
+
+void ScheduledBlock::run()
+{
+	for(auto& task : _tasks)
+	{
+		task.run();
+	}
+}
+
+const std::string& ScheduledBlock::name() const
+{
+	return _name;
+}
+
+void ScheduledBlock::addTask(const ScheduledTask& runnable)
+{
+	_tasks.push_front(runnable);
+}

@@ -10,7 +10,7 @@ add_executable(AssetServer main.cpp assetProcessing/AssetBuilder.cpp assetProces
 target_include_directories(AssetServer PRIVATE
 	${INCS})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(AssetServer PRIVATE config networking ecs utility fileManager assetHttpServer gltf)
+target_link_libraries(AssetServer PRIVATE runtime config networking ecs utility fileManager assetHttpServer gltf)
 target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS} ASIO_STANDALONE)
 
 

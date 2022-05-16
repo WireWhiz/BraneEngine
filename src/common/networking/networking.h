@@ -15,8 +15,9 @@
 #include "config/config.h"
 #include "networkError.h"
 #include <shared_mutex>
+#include "request.h"
 
-class NetworkManager
+class NetworkManager : public Module
 {
 	asio::io_context _context;
 
@@ -25,24 +26,31 @@ class NetworkManager
 	asio::ip::tcp::resolver _tcpResolver;
 
 	std::shared_mutex _assetServerLock;
-	std::unordered_map<std::string, std::shared_ptr<net::Connection>> _assetServers;
+	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _assetServers;
 
 	std::shared_mutex _runtimeServerLock;
-	std::unordered_map<std::string, std::shared_ptr<net::Connection>> _runtimeServers;
+	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _runtimeServers;
+
+	std::shared_mutex _clientLock;
+	std::vector<std::unique_ptr<net::Connection>> _clients;
+
+	std::shared_mutex _scriptLock;
+	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _scripts;
 
 	std::vector<asio::ip::tcp::acceptor> _acceptors;
 
 	std::atomic_bool _running;
 
-	std::mutex _listenersLock;
-	std::unordered_map<AssetID, std::function<void(Asset* asset)>> _assetLoadListeners;
-	std::unordered_map<AssetID, std::function<void(IncrementalAsset* asset)>> _assetHeaderListeners;
-	std::unordered_map<AssetID, std::function<void(ISerializedData& sData)>> _assetIncrementListeners;
+	std::mutex _requestLock;
+	std::unordered_map<std::string, std::function<void(net::RequestResponse&)>> _requestListeners;
+
+
+	uint32_t _streamIDCounter = 1000;
 
 	void connectToAssetServer(std::string ip, uint16_t port);
-	void async_connectToAssetServer(std::string ip, uint16_t port, std::function<void()> callback);
+
 	template<typename socket_t>
-	void async_acceptConnections(size_t acceptor, std::function<void (std::unique_ptr<net::Connection>&& connection)> callback)
+	void async_acceptConnections(size_t acceptor, std::function<void (std::unique_ptr<net::Connection>& connection)> callback)
 	{
 		socket_t* socket;
 		if constexpr(std::is_same<socket_t, net::tcp_socket>().value)
@@ -52,7 +60,11 @@ class NetworkManager
 		_acceptors[acceptor].async_accept(socket->lowest_layer(), [this, acceptor, socket, callback](std::error_code ec) {
 			if (!ec)
 			{
-				callback(std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket)));
+				std::unique_ptr<net::Connection> connection = std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket));
+				callback(connection);
+				_clientLock.lock();
+				_clients.push_back(std::move(connection));
+				_clientLock.unlock();
 
 			}
 			else
@@ -63,31 +75,29 @@ class NetworkManager
 			async_acceptConnections<socket_t>(acceptor, callback);
 		});
 	}
+
+	void startSystems(Runtime& rt);
+	void ingestData(net::Connection* conneciton);
 public:
-	NetworkManager();
+	NetworkManager(Runtime& runtime);
 	~NetworkManager();
-	void start();
-	void stop();
+	void start() override;
+	void stop() override;
 	void configureServer();
 
 	template<typename socket_t>
-	void openAcceptor(const uint32_t port, std::function<void (std::unique_ptr<net::Connection>&& connection)> callback)
+	void openClientAcceptor(const uint32_t port, std::function<void (const std::unique_ptr<net::Connection>& connection)> callback)
 	{
 		_acceptors.emplace_back(_context, asio::ip::tcp::endpoint(asio::ip::tcp::v4(), port));
 		auto& acceptor = *(_acceptors.end() - 1);
 		async_acceptConnections<socket_t>(_acceptors.size()-1, callback);
 	}
 
-	void startAssetAcceptorSystem(EntityManager& em, AssetManager& am);
+	void async_connectToAssetServer(const std::string& address, uint16_t port, const std::function<void(bool)>& callback);
+	AsyncData<Asset*> async_requestAsset(const AssetID& id, AssetManager& am);
+	AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id, AssetManager& am);
 
-	void async_requestAsset(const AssetID& id, AssetManager& am, AsyncData<Asset*> asset);
-	void async_requestAssetIncremental(const AssetID& id, AssetManager& am, AsyncData<IncrementalAsset*> asset);
-};
+	void addRequestListener(const std::string& name, std::function<void(net::RequestResponse&)> callback);
 
-struct AssetRequest
-{
-	AssetID id;
-	bool incremental = false;
-	std::shared_ptr<net::OMessage> toMessage();
-	void fromMessage(std::shared_ptr<net::IMessage> message);
+	const char* name() override;
 };

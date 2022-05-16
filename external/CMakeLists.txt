@@ -4,4 +4,5 @@ elseif(UNIX)
     add_subdirectory(repos/acme-lw-linux)
 endif()
 
-add_subdirectory(repos/SQLite)
+
+add_subdirectory(repos/)

@@ -87,6 +87,12 @@ public:
 		return msg;
 	}
 
+	friend ISerializedData& operator >> (ISerializedData& msg, ISerializedData& data)
+	{
+		msg >> data.data;
+		return msg;
+	}
+
 	friend ISerializedData& operator >> (ISerializedData& msg, std::string& data)
 	{
 		uint32_t size;
@@ -213,6 +219,12 @@ public:
 			std::memcpy(&msg.data[index], data.data(), arrLength);
 
 
+		return msg;
+	}
+
+	friend OSerializedData& operator << (OSerializedData& msg, const OSerializedData& data)
+	{
+		msg << data.data;
 		return msg;
 	}
 

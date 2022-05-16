@@ -307,7 +307,7 @@ TEST(ECS, EntityManagerTest)
 	ComponentAsset vcd3(comps3, aID3);
 
 	ThreadPool::init(4);
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 
 	// Create entity
 	EntityID entity = em.createEntity();
@@ -385,7 +385,7 @@ TEST(ECS, ForEachCachingTest)
 	ComponentAsset ca4(comps4, aID4);
 
 	ThreadPool::init(4);
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 
 	// Create entity
 	EntityID entity = em.createEntity();
@@ -422,7 +422,7 @@ TEST(ECS, ForEachTest)
 	EntityIDComponent::constructDef();
 
 	ThreadPool::init(4);
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 	//Create two for each ID one for entities with one component, another for those with two
 	ComponentSet comps;
 	TestNativeComponent::constructDef();
@@ -527,7 +527,7 @@ TEST(ECS, ForEachParellelTest)
 
 	ComponentAsset counterComponent(variables, AssetID("localhost/0"));
 	ThreadPool::init(4);
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 	ComponentSet comps;
 	comps.add(&counterComponent);
 	EntityForEachID forEachID = em.getForEachID(comps, ComponentSet());
@@ -561,7 +561,7 @@ TEST(ECS, NativeForEachTest)
 	components.add((const ComponentAsset*)2);
 	components.add((const ComponentAsset*)3);
 	ThreadPool::init(4);
-	EntityManager em;
+	EntityManager em(<#initializer#>);
 	NativeForEach nfe(std::vector<const ComponentAsset*>{ (const ComponentAsset*)2 ,(const ComponentAsset*)3 ,(const ComponentAsset*)1 }, &em);
 
 	EXPECT_EQ(nfe.getComponentIndex(0), 1);

@@ -9,7 +9,10 @@
 #include <thread>
 #include <utility/asyncQueue.h>
 
-class AssetManager
+#include <runtime/module.h>
+#include <runtime/runtime.h>
+
+class AssetManager : public Module
 {
 	std::unordered_map<AssetID, std::unique_ptr<Asset>> _assets;
 	FileManager& _fm;
@@ -23,7 +26,7 @@ class AssetManager
 	void async_loadAssembly(AssetID assembly, EntityID rootID);
 public:
 	bool isServer = false;
-	AssetManager(FileManager& fm, NetworkManager& nm);
+	AssetManager(Runtime& runtime);
 
 
 
@@ -59,74 +62,66 @@ public:
 	}
 
 	template<typename T>
-	void async_getAsset(const AssetID& id, AsyncData<T*> asset)
+	AsyncData<T*> async_getAsset(const AssetID& id)
 	{
+		AsyncData<T*> asset;
 		static_assert(std::is_base_of<Asset, T>());
 		{
 			std::scoped_lock l(assetLock);
 			if (_assets.count(id))
 			{
 				asset.setData((T*)(_assets[id].get()));
-				return;
+				return asset;
 			}
 		}
 
         if (isServer && id.serverAddress == "localhost")
         {
-	        //Create a callback in-between the one that was passed in so that we can save it
-	        AsyncData<T*> assetToSave;
-	        assetToSave.callback([this, asset, id](T* data, bool successful, const std::string& error){
-		        if(successful)
-		        {
-					addAsset(data);
-			        asset.setData(data);
-		        }
-		        else
-			        asset.setError(error);
-
-	        });
             if constexpr(std::is_same<Asset, T>().value)
-                _fm.async_readUnknownAsset(id, *this, assetToSave);
+            {
+	            _fm.async_readUnknownAsset(id, *this).then([this, asset, id](T* data){
+		            addAsset(data);
+		            asset.setData(std::move(data));
+	            });
+			}
             else
-                _fm.async_readAsset<T>(id, *this, assetToSave);
+            {
+	            _fm.async_readAsset<T>(id, *this).then([this, asset, id](T* data){
+		            addAsset(data);
+		            asset.setData(std::move(data));
+	            });
+			}
+
 
         }
 		else
         {
 	        //Create a callback in-between the one that was passed in so that we can save it
-
-			if constexpr(std::is_base_of<IncrementalAsset, T>())
-			{
-				AsyncData<IncrementalAsset*> assetToSave;
-				assetToSave.callback([this, asset, id](Asset* data, bool successful, const std::string& error){
-					if(successful)
-					{
+			_nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [this, id, asset](bool connected){
+				if(!connected)
+				{
+					std::cerr << "Could not get asset: " << id << std::endl;
+					return;
+				}
+				if constexpr(std::is_base_of<IncrementalAsset, T>())
+				{
+					_nm.async_requestAssetIncremental(id, *this).then([this, asset, id](Asset* data){
 						addAsset(data);
-						asset.setData((T*)data);
-					}
-					else
-						asset.setError(error);
+						asset.setData(std::move((T*)data));
 
-				});
-				_nm.async_requestAssetIncremental(id, *this, assetToSave);
-			}
-			else
-			{
-				AsyncData<Asset*> assetToSave;
-				assetToSave.callback([this, asset, id](Asset* data, bool successful, const std::string& error){
-					if(successful)
-					{
+					});
+				}
+				else
+				{
+					AsyncData<Asset*> assetToSave;
+					_nm.async_requestAsset(id, *this).then([this, asset, id](Asset* data){
 						addAsset(data);
-						asset.setData((T*)data);
-					}
-					else
-						asset.setError(error);
-
-				});
-				_nm.async_requestAsset(id, *this, assetToSave);
-			}
-
+						asset.setData(std::move((T*)data));
+					});
+				}
+			});
         }
+		return asset;
 	}
 
 	void addAsset(Asset* asset);
@@ -139,6 +134,9 @@ public:
 		_assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
 	}
 
-	void startAssetLoaderSystem(EntityManager& em);
+	void startAssetLoaderSystem();
 	void addAssetPreprocessor(AssetType::Type type, std::function<void(Asset* asset)> processor);
+
+	const char* name() override;
+	void start() override;
 };

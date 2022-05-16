@@ -12,13 +12,17 @@
 #include "ecs/core/entity.h"
 #include "ecs/nativeTypes/transform.h"
 #include <utility/staticIndexVector.h>
+#include <runtime/module.h>
+#include <runtime/runtime.h>
 
-
+#include <imgui.h>
+#include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_glfw.h>
 
 namespace graphics
 {
 
-	class VulkanRuntime
+	class VulkanRuntime : public Module
 	{
 		Window* _window;
 		GraphicsDevice* _device;
@@ -32,6 +36,8 @@ namespace graphics
 		staticIndexVector<std::unique_ptr<Mesh>> _meshes;
 
 		VkInstance _instance;
+
+		VkDescriptorPool _imGuiDescriptorPool;
 
 		std::vector<VkSemaphore> _imageAvailableSemaphores;
 		std::vector<VkSemaphore> _renderFinishedSemaphores;
@@ -51,6 +57,8 @@ namespace graphics
 		void cleanup();
 		void createInstance();
 		void createSyncObjects();
+		void setupImGui();
+		void cleanupImGui();
 
 		void createDrawBuffers();
 
@@ -64,8 +72,10 @@ namespace graphics
 		
 	public:
 		
-		VulkanRuntime();
+		VulkanRuntime(Runtime& runtime);
 		~VulkanRuntime();
+
+		const char* name() override;
 
 		VkInstance instance();
 		VkDevice device();

@@ -17,11 +17,13 @@ namespace graphics
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             vkDeviceWaitIdle(_device->get());
+			ImGui::EndFrame();
             delete _swapChain;
             _swapChain = new SwapChain(_window);
 	        _materials.forEach([&](auto& m){
 		        m->buildGraphicsPipeline(_swapChain);
 			});
+			ImGui::NewFrame();
             return;
         }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -106,7 +108,33 @@ namespace graphics
 				vkCmdExecuteCommands(drawBuffer, buffers.size(), buffers.data());
         });
 
+
+
+
         vkCmdEndRenderPass(drawBuffer);
+
+		//ImGui render pass
+	    VkClearValue imGuiClear[2] = {};
+		imGuiClear[0].color = { {1, 1, 1, 1.0f} };
+		imGuiClear[1].depthStencil = { 1.0f, 0 };;
+
+	    VkRenderPassBeginInfo info = {};
+	    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	    info.renderPass = _swapChain->imGuiRenderPass();
+	    info.framebuffer = _swapChain->imGuiFramebuffer(imageIndex);
+	    info.renderArea.extent = _swapChain->extent();
+	    info.clearValueCount = 2;
+	    info.pClearValues = imGuiClear;
+
+		vkCmdBeginRenderPass(drawBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+	    ImGui::Render();
+	    ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
+	    ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, drawBuffer);
+	    ImGui_ImplVulkan_NewFrame();
+	    ImGui_ImplGlfw_NewFrame();
+	    ImGui::NewFrame();
+
+	    vkCmdEndRenderPass(drawBuffer);
         vkEndCommandBuffer(drawBuffer);
 
         VkSubmitInfo submitInfo{};
@@ -184,6 +212,7 @@ namespace graphics
         createSyncObjects();
         createDrawBuffers();
 
+		setupImGui();
     }
 
     void VulkanRuntime::cleanup()
@@ -195,6 +224,7 @@ namespace graphics
         _textures.clear();
         _meshes.clear();
 
+		cleanupImGui();
         
         delete _shaderManager;
         delete _swapChain;
@@ -422,7 +452,7 @@ namespace graphics
 
     
 
-    VulkanRuntime::VulkanRuntime()
+    VulkanRuntime::VulkanRuntime(Runtime& runtime) : Module(runtime)
     {
         _window = new Window();
 #ifdef DEBUG
@@ -431,6 +461,18 @@ namespace graphics
         _validationLayersEnabled = false;
 #endif
         init();
+		EntityManager* em = dynamic_cast<EntityManager*>(runtime.getModule("entityManager"));
+
+		runtime.timeline().addTask("draw", [this, em, &runtime]{
+			updateWindow();
+			if(_window->closed())
+			{
+
+				runtime.stop();
+				return;
+			}
+			draw(*em);
+		}, "draw");
     }
 
     VulkanRuntime::~VulkanRuntime()
@@ -474,6 +516,90 @@ namespace graphics
 	Material* VulkanRuntime::getMaterial(size_t id)
 	{
 		return _materials[id].get();
+	}
+
+	const char* VulkanRuntime::name()
+	{
+		return "graphics";
+	}
+
+	void VulkanRuntime::setupImGui()
+	{
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags   |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
+		io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+
+		//Find queue families
+		auto families = _device->queueFamilyIndices();
+
+		//Create a descriptor pool
+		{
+			VkDescriptorPoolSize pool_sizes[] =
+			{
+					{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+					{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+					{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+			};
+			VkDescriptorPoolCreateInfo pool_info = {};
+			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+			pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
+			pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
+			pool_info.pPoolSizes = pool_sizes;
+			if (vkCreateDescriptorPool(_device->get(), &pool_info, nullptr, &_imGuiDescriptorPool) != VK_SUCCESS) {
+				throw std::runtime_error("Could not create Dear ImGui's descriptor pool");
+			}
+		}
+
+		//Init ImGui integrations
+		ImGui_ImplGlfw_InitForVulkan(_window->window(), true);
+		ImGui_ImplVulkan_InitInfo init_info = {};
+		init_info.Instance = _instance;
+		init_info.PhysicalDevice = _device->physicalDevice();
+		init_info.Device = _device->get();
+		init_info.QueueFamily = *families.graphicsFamily;
+		init_info.Queue = _device->graphicsQueue();
+		init_info.PipelineCache = VK_NULL_HANDLE;
+		init_info.DescriptorPool = _imGuiDescriptorPool;
+		init_info.Allocator = nullptr;
+		init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
+		init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
+		init_info.CheckVkResultFn = [](VkResult r){
+			if(r != VK_SUCCESS)
+				std::cerr << "ImGui vulkan returned " << r << std::endl;
+		};
+		ImGui_ImplVulkan_Init(&init_info, _swapChain->imGuiRenderPass());
+
+		//Upload Fonts
+		SingleUseCommandBuffer commandBuffer(_device->graphicsPool());
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.get());
+		commandBuffer.submit(_device->graphicsQueue());
+
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+	}
+
+	void VulkanRuntime::cleanupImGui()
+	{
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		vkDestroyDescriptorPool(_device->get(), _imGuiDescriptorPool, nullptr);
 	}
 
 
