@@ -5,15 +5,18 @@
 #ifndef BRANEENGINE_EDITORUI_H
 #define BRANEENGINE_EDITORUI_H
 
-#include <imgui.h>
-#include <imgui_internal.h>
 #include <runtime/module.h>
+#include "editorWindow.h"
+#include <memory>
+#include <vector>
+
 
 class EditorUI : public Module
 {
 
-
+	std::vector<std::unique_ptr<EditorWindow>> _windows;
 	void drawUI();
+	void mainMenu();
 public:
 	EditorUI(Runtime& runtime);
 

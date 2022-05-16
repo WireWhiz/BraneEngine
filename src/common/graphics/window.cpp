@@ -37,7 +37,7 @@ namespace graphics
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        _window = glfwCreateWindow(800, 600, "Brane Surfer", nullptr, nullptr);
+        _window = glfwCreateWindow(800, 600, "Brane Engine", nullptr, nullptr);
         assert(_window != NULL);
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
 	    const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
@@ -77,5 +77,10 @@ namespace graphics
 	int Window::framerate() const
 	{
 		return _framerate;
+	}
+
+	void Window::setTitle(std::string_view name)
+	{
+		glfwSetWindowTitle(_window, name.data());
 	}
 }

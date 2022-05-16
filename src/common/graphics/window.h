@@ -28,6 +28,7 @@ namespace graphics
 		glm::ivec2 size();
 		void setSize(glm::ivec2& newSize);
 		int framerate() const;
+		void setTitle(std::string_view name);
 	};
 
 }

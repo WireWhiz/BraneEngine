@@ -531,7 +531,7 @@ namespace graphics
 		io.ConfigFlags   |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
 		io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
-
+		io.IniFilename = NULL;
 		// Setup Dear ImGui style
 		ImGui::StyleColorsDark();
 

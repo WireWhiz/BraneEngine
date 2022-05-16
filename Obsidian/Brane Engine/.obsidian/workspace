@@ -9,7 +9,7 @@
         "state": {
           "type": "markdown",
           "state": {
-            "file": "In progress.md",
+            "file": "Client.md",
             "mode": "source",
             "source": false
           }
@@ -69,7 +69,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "In progress.md",
+                "file": "Client.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -86,7 +86,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "In progress.md",
+                "file": "Client.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -101,15 +101,15 @@
   },
   "active": "b802667759cf8d9f",
   "lastOpenFiles": [
-    "In progress.md",
-    "GLTF Loading.md",
-    "Async Asset Loading.md",
-    "Reloading Assets.md",
-    "Assets.md",
-    "Asset Manager.md",
-    "ECS.md",
     "Client.md",
+    "Vulkan Module.md",
+    "In progress.md",
+    "ECS.md",
+    "Async Asset Loading.md",
+    "Assets.md",
     "Asset Server.md",
-    "Networking.md"
+    "Asset Manager.md",
+    "GLTF Loading.md",
+    "Reloading Assets.md"
   ]
 }

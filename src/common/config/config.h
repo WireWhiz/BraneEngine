@@ -11,6 +11,7 @@ class Config
 
 public:
 	static void loadConfig();
+	static void save();
 
 	static Json::Value& json();
 };

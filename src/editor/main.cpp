@@ -12,6 +12,8 @@
 
 int main()
 {
+	Config::loadConfig();
+
 	Runtime rt;
 	Timeline& tl = rt.timeline();
 	tl.addBlock("asset management");
