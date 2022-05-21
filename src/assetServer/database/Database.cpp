@@ -3,6 +3,15 @@
 //
 
 #include "Database.h"
+#include "utility/hex.h"
+#include "openssl/rand.h"
+
+#define WIN32_LEAN_AND_MEAN
+#include <openssl/err.h>
+#include <openssl/md5.h>
+#include <openssl/ssl.h>
+#include <openssl/x509v3.h>
+#include <iomanip>
 
 Database::Database(Runtime& runtime) : Module(runtime)
 {
@@ -13,6 +22,8 @@ Database::Database(Runtime& runtime) : Module(runtime)
 		sqlite3_close(_db);
 		throw std::runtime_error("Can't open database");
 	}
+	_loginCall.initialize("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
+	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
 	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
 	{
@@ -58,21 +69,21 @@ bool Database::stringSafe(const std::string& str)
 	return true;
 }
 
-std::string Database::getUserID(const std::string& username)
+int64_t Database::getUserID(const std::string& username)
 {
-	std::string userID;
-	rawSQLCall("SELECT UserID FROM Users WHERE lower(Username)=lower('" + username + "');",
-	           [&userID](const std::vector<Database::sqlColumn>& columns)
-	           {
-		           userID = columns[0].value;
-	           });
+	int64_t userID;
+	_userIDCall.run(username, std::function([&userID](int64_t id)
+	{
+		userID = id;
+    }));
 	return userID;
 }
 
-std::unordered_set<std::string> Database::userPermissions(const std::string& userID)
+std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 {
 	std::unordered_set<std::string> pems;
-	rawSQLCall("SELECT PermissionID FROM UserPermissions WHERE UserID=" + userID + ";",
+	//TODO change this to prepared call
+	rawSQLCall("SELECT PermissionID FROM UserPermissions WHERE UserID=" + std::to_string(userID) + ";",
 	           [&pems, this](const std::vector<Database::sqlColumn>& columns)
 	           {
 		           pems.insert(_permissions[std::stoi(columns[0].value)]);
@@ -127,6 +138,52 @@ std::string Database::assetName(AssetID& id)
 const char* Database::name()
 {
 	return "database";
+}
+
+bool Database::authenticate(const std::string& username, const std::string& password)
+{
+	std::string passwordHashTarget;
+	std::string salt;
+	_loginCall.run("WireWhiz", std::function([&passwordHashTarget, &salt](std::string h, std::string s){
+		passwordHashTarget = h;
+		salt = s;
+	}));
+	std::string hashedPassword = hashPassword(password, salt);
+	return hashedPassword == passwordHashTarget;
+}
+
+std::string Database::hashPassword(const std::string& password, const std::string& salt)
+{
+	size_t hashIterations = Config::json()["security"].get("hash_iterations", 10000).asLargestInt();
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	std::string output = password;
+	for (int i = 0; i < hashIterations; ++i)
+	{
+		output += salt;
+		SHA256_CTX sha256;
+		SHA256_Init(&sha256);
+		SHA256_Update(&sha256, output.c_str(), output.size());
+		SHA256_Final(hash, &sha256);
+		std::stringstream ss;
+		for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+		{
+			ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
+		}
+		output = ss.str();
+	}
+	return output;
+}
+
+std::string Database::randHex(size_t length)
+{
+	uint8_t* buffer = new uint8_t[length];
+	RAND_bytes(buffer, length);
+	std::stringstream output;
+	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+	{
+		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
+	}
+	return output.str();
 }
 
 

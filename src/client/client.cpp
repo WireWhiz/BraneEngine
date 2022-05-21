@@ -19,15 +19,17 @@ const char* Client::name()
 	return "client";
 }
 
-Client::Client(Runtime& rt) : Module(rt)
+Client::Client(Runtime& rt) : Module(rt),
+_am(*(AssetManager*)rt.getModule("assetManager")),
+_nm(*(NetworkManager*)rt.getModule("networkManager"))
 {
+	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
+
 	EntityManager& em = *(EntityManager*)rt.getModule("entityManager");
-	AssetManager& am = *(AssetManager*)rt.getModule("assetManager");
 	graphics::VulkanRuntime& vkr = *(graphics::VulkanRuntime*)rt.getModule("graphics");
-	NetworkManager& nm = *(NetworkManager*)rt.getModule("networkManager");
 
 	systems::addTransformSystem(em, rt.timeline());
-	addAssetPreprocessors(am, vkr);
+	addAssetPreprocessors(_am, vkr);
 
 	ComponentSet headRootComponents;
 	headRootComponents.add(AssemblyRoot::def());
@@ -84,4 +86,32 @@ void Client::addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vk
 			}
 		}
 	});
+}
+
+AsyncData<Asset*> Client::fetchAssetCallback(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	_nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [this, id, incremental, asset](bool connected){
+		if(!connected)
+		{
+			asset.setError("Could not connect to server: " + id.serverAddress);
+			std::cerr << "Could not get asset: " << id << std::endl;
+			return;
+		}
+		if (incremental)
+		{
+			_nm.async_requestAssetIncremental(id, _am).then([this, asset, id](Asset* data){
+				asset.setData(data);
+
+			});
+		}
+		else
+		{
+			AsyncData<Asset*> assetToSave;
+			_nm.async_requestAsset(id, _am).then([this, asset, id](Asset* data){
+				asset.setData(data);
+			});
+		}
+	});;
+	return asset;
 }

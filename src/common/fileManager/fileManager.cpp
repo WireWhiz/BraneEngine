@@ -66,7 +66,7 @@ void FileManager::writeFile(const std::string& filename, Json::Value& data)
 AsyncData<Asset*> FileManager::async_readUnknownAsset(const AssetID& id, AssetManager& am)
 {
 	AsyncData<Asset*> asset;
-	ThreadPool::enqueue([this, &id, &am, asset]{
+	ThreadPool::enqueue([this, id, &am, asset]{
 		asset.setData(readUnknownAsset(id, am));
 	});
 	return asset;

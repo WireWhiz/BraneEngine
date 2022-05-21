@@ -19,8 +19,9 @@ namespace net{
 		OSerializedData _body;
 		AsyncData<ISerializedData> _data;
 	public:
-		Request(const std::string& name, OSerializedData&& body);
+		Request(const std::string& name);
 		std::shared_ptr<net::OMessage> message(uint32_t reqID);
+		OSerializedData& body();
 	};
 
 	class RequestResponse

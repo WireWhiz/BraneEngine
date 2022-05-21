@@ -5,10 +5,9 @@
 #include "request.h"
 namespace net
 {
-	Request::Request(const std::string& name, OSerializedData&& body)
+	Request::Request(const std::string& name)
 	{
 		_name = name;
-		_body = body;
 	}
 
 	std::shared_ptr<net::OMessage> Request::message(uint32_t reqID)
@@ -17,6 +16,11 @@ namespace net
 		message->header.type = net::MessageType::request;
 		message->body << _name << reqID << _body;
 		return message;
+	}
+
+	OSerializedData& Request::body()
+	{
+		return _body;
 	}
 
 

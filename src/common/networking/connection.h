@@ -25,11 +25,9 @@ namespace net
 
 	class Connection
 	{
-
-
 	protected:
-
-		AsyncQueue<std::shared_ptr<OMessage>> _obuffer;
+		std::mutex _oLock;
+		std::deque<std::shared_ptr<OMessage>> _obuffer;
 		AsyncQueue<std::shared_ptr<IMessage>> _ibuffer;
 		std::shared_mutex _streamLock;
 		std::unordered_map<uint32_t, std::function<void(ISerializedData& data)>> _streamListeners;
@@ -39,9 +37,11 @@ namespace net
 		std::shared_ptr<IMessage> _tempIn;
 		std::shared_ptr<bool> _exists;
 
+		std::vector<std::function<void()>> _onDisconnect;
+
 	public:
 		Connection();
-		~Connection();
+		virtual ~Connection();
 		virtual void disconnect() = 0;
 		virtual bool connected() = 0;
 
@@ -51,6 +51,7 @@ namespace net
 		void addStreamListener(uint32_t id, std::function<void(ISerializedData& data)> callback);
 		void eraseStreamListener(uint32_t id);
 		AsyncData<ISerializedData> sendRequest(Request& req);
+		void onDisconnect(std::function<void()> f);
 		bool messageAvailable();
 		std::shared_ptr<IMessage> popMessage();
 
@@ -63,7 +64,6 @@ namespace net
 	protected:
 		socket_t _socket;
 		std::string _address;
-		std::atomic_bool _sending;
 		void async_readHeader()
 		{
 			std::shared_ptr<bool> exists = _exists;
@@ -183,12 +183,14 @@ namespace net
 		void async_writeHeader()
 		{
 			std::shared_ptr<bool> exists = _exists;
-			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this, exists](std::error_code ec, std::size_t length) {
+			std::shared_ptr<net::OMessage> sending = _obuffer.front();
+			_obuffer.pop_front();
+			asio::async_write(_socket, asio::buffer(&sending->header, sizeof(MessageHeader)), [this, sending, exists](std::error_code ec, std::size_t length) {
 				if(!*exists)
 					return;
 				if (!ec)
 				{
-					async_writeBody();
+					async_writeBody(sending);
 				}
 				else
 				{
@@ -197,19 +199,17 @@ namespace net
 				}
 			});
 		}
-		void async_writeBody()
+		void async_writeBody(std::shared_ptr<net::OMessage> sending)
 		{
 			std::shared_ptr<bool> exists = _exists;
-			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->body.data.size()), [this, exists](std::error_code ec, std::size_t length) {
+			asio::async_write(_socket, asio::buffer(sending->body.data.data(), sending->body.data.size()), [this, sending, exists](std::error_code ec, std::size_t length) {
 				if(!*exists)
 					return;
 				if (!ec)
 				{
-					_obuffer.pop_front();
+					std::scoped_lock lock(_oLock);
 					if(!_obuffer.empty())
 						async_writeHeader();
-					else
-						_sending = false;
 				}
 				else
 				{
@@ -221,7 +221,6 @@ namespace net
 	public:
 		ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
 		{
-
 		}
 		~ConnectionBase()
 		{
@@ -230,16 +229,18 @@ namespace net
 		{
 			assert(msg->body.size() <= 65535); //unsigned int 16 max value
 			msg->header.size = msg->body.size();
-			_obuffer.push_back(msg);
+
 			std::shared_ptr<bool> exists = _exists;
-			asio::post(_socket.get_executor(), [this, exists]() {
-				if(!*exists)
+			asio::post(_socket.get_executor(), [this, exists, msg]()
+			{
+				if (!*exists)
 					return;
-				if (!_sending)
-				{
-					_sending = true;
+				std::scoped_lock lock(_oLock);
+				bool sending = !_obuffer.empty();
+				_obuffer.push_back(msg);
+
+				if (!sending)
 					async_writeHeader();
-				}
 			});
 		}
 		void disconnect() override
@@ -249,6 +250,13 @@ namespace net
 				if(*exists && connected())
 				{
 					_socket.lowest_layer().close();
+					for(auto& f: _onDisconnect)
+						f();
+					_responseLock.lock();
+					for(auto& r: _responseListeners)
+						r.second.setError("Socket Disconnect");
+					_responseLock.unlock();
+					//TODO have a way for streams to be notified of disconnect
 				}
 			});
 		}
@@ -262,8 +270,6 @@ namespace net
 	template<class socket_t>
 	class ServerConnection : public ConnectionBase<socket_t>
 	{
-
-
 	public:
 		ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
 		{
@@ -282,7 +288,7 @@ namespace net
 		ClientConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
 		{
 		}
-		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect);
+		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail);
 	};
 
 

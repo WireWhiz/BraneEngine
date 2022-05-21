@@ -3,12 +3,18 @@
 //
 
 #include "assetServer.h"
+#include <utility/threadPool.h>
 
-AssetServer::AssetServer(Runtime& runtime) : Module(runtime), _nm(*(NetworkManager*)runtime.getModule("networkManager")), _am(*(AssetManager*)runtime.getModule("assetManager"))
+AssetServer::AssetServer(Runtime& runtime) : Module(runtime),
+_nm(*(NetworkManager*)runtime.getModule("networkManager")),
+_am(*(AssetManager*)runtime.getModule("assetManager")),
+_fm(*(FileManager*)runtime.getModule("fileManager")),
+_db(*(Database*)runtime.getModule("database"))
 {
 	_nm.start();
-	_am.isServer = true;
 	_nm.configureServer();
+
+	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
 
 	if(!Config::json()["network"]["use_ssl"].asBool())
 	{
@@ -25,53 +31,72 @@ AssetServer::AssetServer(Runtime& runtime) : Module(runtime), _nm(*(NetworkManag
 		});
 	}
 
+	_nm.addRequestListener("login", [this](net::RequestResponse& res){
+		auto& ctx = getContext(res.sender());
+		if(ctx.authenticated)
+		{
+			res.res() << true;
+			res.send();
+			return;
+		}
+		ThreadPool::enqueue([this, res, &ctx]() mutable{
+			std::string username, password;
+			res.body() >> username >> password;
+			if(_db.authenticate(username, password))
+			{
+				res.res() << true;
+				ctx.authenticated = true;
+				ctx.username = username;
+				ctx.userID = _db.getUserID(username);
+				ctx.permissions = _db.userPermissions(ctx.userID);
+			}
+			else
+				res.res() << false;
+			res.send();
+		});
+
+	});
+
 	_nm.addRequestListener("asset", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!ctx.authenticated)
+			return;
 		AssetID id;
 		res.body() >> id;
 		std::cout << "request for: " << id.string() << std::endl;
 
-		Asset* asset = nullptr;
-		try{
-			asset = _am.getAsset<Asset>(id);
-
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << "Failed to read asset: " << e.what();
-		}
-
-		if(asset)
+		Asset* asset = _am.getAsset<Asset>(id);
+		auto f = [this, res](Asset* asset) mutable
 		{
 			asset->serialize(res.res());
 			res.send();
-		}
+		};
+
+		if(asset)
+			f(asset);
+		else
+			_am.fetchAsset<Asset>(id).then(f);
 
 	});
 
 	_nm.addRequestListener("incrementalAsset", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!ctx.authenticated)
+			return;
 		AssetID id;
 		uint32_t streamID;
 		res.body() >> id >> streamID;
 		std::cout << "request for: " << id.string() << std::endl;
 
-		Asset* asset = nullptr;
-		try{
-			asset = _am.getAsset<Asset>(id);
+		Asset* asset = _am.getAsset<Asset>(id);
 
-		}
-		catch(const std::exception& e)
-		{
-			std::cerr << "Failed to read asset: " << e.what();
-		}
-
-		if(asset)
+		auto f = [this, res, streamID](Asset* asset) mutable
 		{
 			auto* ia = dynamic_cast<IncrementalAsset*>(asset);
 			if(ia)
 			{
 				std::cout<< "Sending header for: " << ia->id << std::endl;
 				ia->serializeHeader(res.res());
-
 
 				res.send();
 
@@ -84,7 +109,12 @@ AssetServer::AssetServer(Runtime& runtime) : Module(runtime), _nm(*(NetworkManag
 			}
 			else
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
-		}
+		};
+
+		if(asset)
+			f(asset);
+		else
+			_am.fetchAsset<Asset>(id).then(f);
 
 	});
 	runtime.timeline().addTask("send asset data", [this]{processMessages();}, "networking");
@@ -120,3 +150,31 @@ const char* AssetServer::name()
 {
 	return "assetServer";
 }
+
+AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	_fm.async_readUnknownAsset(id, _am).then([this, asset, id](Asset* data){
+		if(data)
+			asset.setData(data);
+		else
+			asset.setError("Could not read asset: " + std::to_string(id.id));
+	});
+
+	return asset;
+}
+
+AssetServer::ConnectionContext& AssetServer::getContext(net::Connection* connection)
+{
+	if(!_connectionCtx.count(connection))
+	{
+		_connectionCtx.insert({connection, ConnectionContext{}});
+		connection->onDisconnect([this, connection]{
+			_connectionCtx.erase(connection);
+		});
+	}
+
+	return _connectionCtx[connection];
+}
+
+

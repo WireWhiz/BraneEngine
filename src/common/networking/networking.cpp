@@ -11,7 +11,7 @@ NetworkManager::NetworkManager(Runtime& runtime) : _tcpResolver(_context), _ssl_
 
 NetworkManager::~NetworkManager()
 {
-
+	stop();
 }
 
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
@@ -21,10 +21,10 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 
 	auto tcpEndpoints = _tcpResolver.resolve(ip, std::to_string(port));
 	connection->connectToServer(tcpEndpoints, [this, ip, connection]() mutable{
-		_assetServerLock.lock();
-		_assetServers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
-		_assetServerLock.unlock();
-	} );
+		_serverLock.lock();
+		_servers.insert({ip, std::unique_ptr<net::ClientConnection<net::tcp_socket>>(connection)});
+		_serverLock.unlock();
+	}, []{});
 
 
 }
@@ -33,28 +33,29 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 
 void NetworkManager::async_connectToAssetServer(const std::string& address, uint16_t port, const std::function<void(bool)>& callback)
 {
-	_assetServerLock.lock_shared();
-	if(_assetServers.count(address))
+	_serverLock.lock_shared();
+	if(_servers.count(address))
 	{
 		callback(true);
-		_assetServerLock.unlock_shared();
+		_serverLock.unlock_shared();
 		return;
 	}
-	_assetServerLock.unlock_shared();
+	_serverLock.unlock_shared();
 
     std::cout << "connecting to: " << address << ":" << port << std::endl;
 	_tcpResolver.async_resolve(asio::ip::tcp::resolver::query(address, std::to_string(port), asio::ip::tcp::resolver::query::canonical_name), [this, address, callback](const asio::error_code ec, auto endpoints){
 		if(!ec)
 		{
-            std::cout << "Connected to asset server: " << address << std::endl;
 			auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 			connection->connectToServer(endpoints, [this, address, callback, connection](){
-				_assetServerLock.lock();
-				_assetServers.insert({address, std::unique_ptr<net::Connection>(connection)});
-				_assetServerLock.unlock();
+				_serverLock.lock();
+				_servers.insert({address, std::unique_ptr<net::Connection>(connection)});
+				_serverLock.unlock();
 				callback(true);
 				if(!_running)
 					start();
+			}, [callback]{
+				callback(false);
 			});
 		}
 		else
@@ -68,6 +69,8 @@ void NetworkManager::async_connectToAssetServer(const std::string& address, uint
 
 void NetworkManager::start()
 {
+	if(_running)
+		return;
 	_running = true;
 	_threadHandle = ThreadPool::addStaticThread([this](){
 		while(_running)
@@ -79,14 +82,14 @@ void NetworkManager::start()
 void NetworkManager::stop()
 {
 	std::cout << "Shutting down networking... ";
-	for(auto& connection : _assetServers)
+	for(auto& connection : _servers)
 		connection.second->disconnect();
 	_running = false;
     _context.stop();
     if(_threadHandle)
 	    _threadHandle->finish();
 
-	_assetServers.clear();
+	_servers.clear();
 
 	std::cout << "done" << std::endl;
 }
@@ -116,18 +119,17 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id, AssetMan
 {
 	AsyncData<Asset*> asset;
 
-	_assetServerLock.lock_shared();
-	if(!_assetServers.count(id.serverAddress))
+	_serverLock.lock_shared();
+	if(!_servers.count(id.serverAddress))
 		throw std::runtime_error("No connection with " + id.serverAddress);
-	net::Connection* server = _assetServers[id.serverAddress].get();
-	_assetServerLock.unlock_shared();
+	net::Connection* server = _servers[id.serverAddress].get();
+	_serverLock.unlock_shared();
 
 	std::cout << "async requesting: " << id.string() << std::endl;
 
 	// Set up a listener for the asset response
-	OSerializedData o;
-	o << id;
-	net::Request req("asset", std::move(o));
+	net::Request req("asset");
+	req.body() << id;
 
 	server->sendRequest(req).then([asset, &am](ISerializedData&& sData){
 		asset.setData(Asset::deserializeUnknown(sData, am));
@@ -140,15 +142,14 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 {
 	AsyncData<IncrementalAsset*> asset;
 
-	_assetServerLock.lock_shared();
-	net::Connection* server = _assetServers[id.serverAddress].get();
-	_assetServerLock.unlock_shared();
+	_serverLock.lock_shared();
+	net::Connection* server = _servers[id.serverAddress].get();
+	_serverLock.unlock_shared();
 
 	std::cout << "async requesting incremental: " << id.string() << std::endl;
 	uint32_t streamID = _streamIDCounter++;
-	OSerializedData o;
-	o << id << streamID;
-	net::Request req("incrementalAsset", std::move(o));
+	net::Request req("incrementalAsset");
+	req.body() << id << streamID;
 
 	// Set up a listener for the asset response
 	server->sendRequest(req).then([this, asset, server, streamID, &am](ISerializedData sData){
@@ -165,16 +166,11 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 void NetworkManager::startSystems(Runtime& rt)
 {
 	rt.timeline().addTask("ingest data", [this]{
-		_assetServerLock.lock_shared();
-		for(auto& s : _assetServers){
+		_serverLock.lock_shared();
+		for(auto& s : _servers){
 			ingestData(s.second.get());
 		}
-		_assetServerLock.unlock_shared();
-		_runtimeServerLock.lock_shared();
-		for(auto& s : _runtimeServers){
-			ingestData(s.second.get());
-		}
-		_runtimeServerLock.unlock_shared();
+		_serverLock.unlock_shared();
 		_clientLock.lock_shared();
 		for(auto& s : _clients){
 			if(s)
@@ -206,16 +202,21 @@ void NetworkManager::ingestData(net::Connection* connection)
 		{
 			case net::MessageType::request:
 			{
-				std::string name;
-				net::RequestResponse response(connection, message);
-				{
-					std::scoped_lock l(_requestLock);
-					if(!_requestListeners.count(response.name())){
-						std::cout << "Unknown request received: " << response.name() << std::endl;
-						break;
+				try{
+					net::RequestResponse response(connection, message);
+					{
+						std::scoped_lock l(_requestLock);
+						if(!_requestListeners.count(response.name())){
+							std::cout << "Unknown request received: " << response.name() << std::endl;
+							break;
+						}
+						_requestListeners[response.name()](response);
 					}
-					_requestListeners[response.name()](response);
 				}
+				catch(std::exception& e){
+					std::cerr << "Error with received request: " << e.what() << std::endl;
+				}
+
 				break;
 			}
 			default:
@@ -223,4 +224,11 @@ void NetworkManager::ingestData(net::Connection* connection)
 				break;
 		}
 	}
+}
+
+net::Connection* NetworkManager::getServer(const std::string& address) const
+{
+	if(!_servers.count(address))
+		return nullptr;
+	return _servers.at(address).get();
 }

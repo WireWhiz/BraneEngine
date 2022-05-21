@@ -6,8 +6,6 @@
 
 class AssetManager;
 
-
-
 class Asset
 {
 public:

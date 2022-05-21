@@ -11,9 +11,11 @@
 class EditorUI;
 class EditorWindow
 {
+protected:
 	EditorUI& _ui;
 public:
 	EditorWindow(EditorUI& ui);
+	virtual ~EditorWindow() = default;
 	virtual void draw() = 0;
 };
 

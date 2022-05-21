@@ -1,5 +1,7 @@
 #include "connection.h"
 
+#include <utility>
+
 namespace net
 {
 	Connection::Connection()
@@ -65,6 +67,11 @@ namespace net
 		return res;
 	}
 
+	void Connection::onDisconnect(std::function<void()> f)
+	{
+		_onDisconnect.push_back(std::move(f));
+	}
+
 	template<>
 	void ServerConnection<tcp_socket>::connectToClient()
 	{
@@ -90,11 +97,11 @@ namespace net
 	}
 
 	template<>
-	void ClientConnection<tcp_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect)
+	void ClientConnection<tcp_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail)
 	{
 
 		std::shared_ptr<bool> exists = _exists;
-		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect, exists](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this, onConnect, onFail, exists](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec && *exists)
 			{
 				_address = _socket.remote_endpoint().address().to_string();
@@ -103,20 +110,21 @@ namespace net
 			}
 			else
 			{
-				std::cerr << "Failed to connect to server.";
+				std::cerr << "Failed to connect to server." << std::endl;
+				onFail();
 			}
 		});
 	}
 
 	template<>
-	void ClientConnection<ssl_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect)
+	void ClientConnection<ssl_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail)
 	{
 		std::shared_ptr<bool> exists = _exists;
-		asio::async_connect(_socket.lowest_layer(), endpoints, [this, exists, onConnect = std::move(onConnect)](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+		asio::async_connect(_socket.lowest_layer(), endpoints, [this, exists, onConnect , onFail](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec && *exists)
 			{
 				_address = _socket.lowest_layer().remote_endpoint().address().to_string();
-				_socket.async_handshake(asio::ssl::stream_base::client, [this, exists, onConnect = std::move(onConnect)](std::error_code ec) {
+				_socket.async_handshake(asio::ssl::stream_base::client, [this, exists, onConnect, onFail](std::error_code ec) {
 					if (!ec && *exists)
 					{
 						async_readHeader();
@@ -125,12 +133,14 @@ namespace net
 					else
 					{
 						std::cout << "SSL handshake failed: " << ec.message() << std::endl;
+						onFail();
 					}
 				});
 			}
 			else
 			{
-				std::cerr << "Failed to connect to server.";
+				std::cerr << "Failed to connect to server." << std::endl;
+				onFail();
 			}
 		});
 	}

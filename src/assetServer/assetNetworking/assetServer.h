@@ -6,6 +6,7 @@
 #define BRANEENGINE_ASSETSERVER_H
 #include <networking/networking.h>
 #include <assets/assetManager.h>
+#include "database/Database.h"
 #include <list>
 
 struct IncrementalAssetSender
@@ -20,8 +21,20 @@ class AssetServer : public Module
 {
 	NetworkManager& _nm;
 	AssetManager& _am;
+	FileManager& _fm;
+	Database& _db;
 
+	struct ConnectionContext{
+		bool authenticated = false;
+		std::string username;
+		int64_t userID;
+		std::unordered_set<std::string> permissions;
+	};
+
+	std::unordered_map<net::Connection*, ConnectionContext> _connectionCtx;
 	std::list<IncrementalAssetSender> _senders;
+	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
+	ConnectionContext& getContext(net::Connection* connection);
 public:
 	AssetServer(Runtime& runtime);
 	~AssetServer();

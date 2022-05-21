@@ -7,10 +7,7 @@
 #include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/core/component.h"
 
-AssetManager::AssetManager(Runtime& runtime) :
-	_fm(*((FileManager*)runtime.getModule("fileManager"))),
-	_nm(*((NetworkManager*)runtime.getModule("networkManager"))),
-	Module(runtime)
+AssetManager::AssetManager(Runtime& runtime) : Module(runtime)
 {
 	addNativeComponent<EntityIDComponent>();
 	addNativeComponent<TransformComponent>();
@@ -46,7 +43,7 @@ void AssetManager::startAssetLoaderSystem()
 			{
 				ar->loaded = true;
 				EntityIDComponent* id = EntityIDComponent::fromVirtual(components[forEachAssembly.getComponentIndex(0)]);
-				async_loadAssembly(ar->id, id->id);
+				loadAssembly(ar->id, id->id);
 				std::cout << "loading assembly: " << id-id << std::endl;
 			}
 		});
@@ -66,22 +63,39 @@ void AssetManager::startAssetLoaderSystem()
 	}, "asset management");
 }
 
-void AssetManager::async_loadAssembly(AssetID id, EntityID rootID)
+void AssetManager::loadAssembly(AssetID assembly, EntityID rootID)
 {
-	async_getAsset<Assembly>(id).then([this, rootID](Assembly* assembly){
-		//Load dependencies TODO actually load in all of them & implement incremental loading of some
-		std::cout << "Loaded: " << assembly->name << " requesting dependencies" << std::endl;
+	auto f = [this, rootID](Assembly* a){
+		std::cout << "Loaded: " << a->name << " requesting dependencies" << std::endl;
 		std::shared_ptr<size_t> unloaded = std::make_unique<size_t>();
-		*unloaded = assembly->meshes.size();
-		for(auto& mesh : assembly->meshes)
+		*unloaded = a->meshes.size();
+		for(auto& mesh : a->meshes)
 		{
-			async_getAsset<MeshAsset>(AssetID(mesh)).then([this, unloaded, assembly, rootID](MeshAsset* mesh)
+			MeshAsset* m = getAsset<MeshAsset>(mesh);
+			if(m)
 			{
-				std::cout << "Loaded: " << mesh->name << std::endl;
-				if(--(*unloaded) == 0)
-					_stagedAssemblies.push_back({assembly, rootID});
-			});
+				std::cout << "Loaded: " << m->name << std::endl;
+				--(*unloaded);
+				continue;
+			}
+
+			fetchAsset<MeshAsset>(AssetID(mesh)).then([this, unloaded, a, rootID](MeshAsset* mesh)
+            {
+	            std::cout << "Loaded: " << mesh->name << std::endl;
+                if(-(*unloaded) == 0)
+                     _stagedAssemblies.push_back({a, rootID});
+            });
 		}
+		if(*unloaded == 0)
+			_stagedAssemblies.push_back({a, rootID});
+	};
+	Assembly* a = getAsset<Assembly>(assembly);
+	if(a)
+	{
+		f(a);
+	}
+	fetchAsset<Assembly>(assembly).then([f](Assembly* assembly){
+		f(assembly);
 	});
 }
 
@@ -109,6 +123,22 @@ const char* AssetManager::name()
 void AssetManager::start()
 {
 	startAssetLoaderSystem();
+}
+
+void AssetManager::setFetchCallback(std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)> callback)
+{
+	assert(callback);
+	_fetchCallback = callback;
+}
+
+AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	_fetchCallback(id, incremental).then([this, asset](Asset * a){
+		addAsset(a);
+		asset.setData(a);
+	});
+	return asset;
 }
 
 

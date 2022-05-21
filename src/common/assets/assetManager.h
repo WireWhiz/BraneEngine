@@ -14,34 +14,31 @@
 
 class AssetManager : public Module
 {
-	std::unordered_map<AssetID, std::unique_ptr<Asset>> _assets;
-	FileManager& _fm;
-	NetworkManager& _nm;
-	std::mutex assetLock;
+public:
+	typedef std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)> FetchCallback;
 
+private:
+	std::mutex assetLock;
+	std::unordered_map<AssetID, std::unique_ptr<Asset>> _assets;
 
 	AsyncQueue<std::pair<Assembly*, EntityID>> _stagedAssemblies;
 	std::unordered_map<AssetType::Type, std::vector<std::function<void(Asset* asset)>>> _assetPreprocessors;
 
-	void async_loadAssembly(AssetID assembly, EntityID rootID);
+	FetchCallback _fetchCallback;
+
+	void loadAssembly(AssetID assembly, EntityID rootID);
 public:
-	bool isServer = false;
 	AssetManager(Runtime& runtime);
-
-
 
 	template<typename T>
 	T* getAsset(const AssetID& id)
 	{
 		static_assert(std::is_base_of<Asset, T>());
-		assetLock.lock();
+		std::scoped_lock lock(assetLock);
 		if(_assets.count(id))
-		{
-			assetLock.unlock();
 			return (T*)(_assets[id].get());
-		}
-		assetLock.unlock();
-		if(isServer && id.serverAddress == "localhost")
+		return nullptr;
+		/*if(isServer && id.serverAddress == "localhost")
 		{
 			T* asset;
 			if constexpr(std::is_same<Asset, T>().value)
@@ -58,10 +55,10 @@ public:
 			if(id.serverAddress.empty())
 				throw std::runtime_error("invalid server address");
 			return nullptr; //(T*)_nm.requestAsset(id, *this);
-		}
+		}*/
 	}
 
-	template<typename T>
+	/*template<typename T>
 	AsyncData<T*> async_getAsset(const AssetID& id)
 	{
 		AsyncData<T*> asset;
@@ -122,8 +119,20 @@ public:
 			});
         }
 		return asset;
+	}*/
+	void setFetchCallback(std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)> callback);
+	AsyncData<Asset*> fetchAsset(const AssetID& id, bool incremental = true);
+	template <typename T>
+	AsyncData<T*> fetchAsset(const AssetID& id)
+	{
+		static_assert(std::is_base_of<Asset, T>());
+		AsyncData<T*> asset;
+		fetchAsset(id, std::is_base_of<IncrementalAsset, T>()).then([asset](Asset* a)
+		{
+			asset.setData(std::move((T*)a));
+		});
+		return asset;
 	}
-
 	void addAsset(Asset* asset);
 	void updateAsset(Asset* asset);
 

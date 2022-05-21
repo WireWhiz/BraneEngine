@@ -7,7 +7,7 @@
 #define CPPHTTPLIB_OPENSSL_SUPPORT
 #define WIN32_LEAN_AND_MEAN
 #include <httpLib/httpLib.h>
-#include <acme-lw.h>
+//#include <acme-lw.h>
 #include <thread>
 #include <memory>
 #include <config/config.h>

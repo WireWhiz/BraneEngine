@@ -25,17 +25,12 @@ class NetworkManager : public Module
 	asio::ssl::context _ssl_context;
 	asio::ip::tcp::resolver _tcpResolver;
 
-	std::shared_mutex _assetServerLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _assetServers;
-
-	std::shared_mutex _runtimeServerLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _runtimeServers;
+	std::shared_mutex _serverLock;
+	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _servers;
 
 	std::shared_mutex _clientLock;
 	std::vector<std::unique_ptr<net::Connection>> _clients;
-
-	std::shared_mutex _scriptLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _scripts;
+	std::vector<std::function<void()>> _onClientDisconnect;
 
 	std::vector<asio::ip::tcp::acceptor> _acceptors;
 
@@ -43,7 +38,6 @@ class NetworkManager : public Module
 
 	std::mutex _requestLock;
 	std::unordered_map<std::string, std::function<void(net::RequestResponse&)>> _requestListeners;
-
 
 	uint32_t _streamIDCounter = 1000;
 
@@ -84,6 +78,8 @@ public:
 	void start() override;
 	void stop() override;
 	void configureServer();
+
+	net::Connection* getServer(const std::string& address) const;
 
 	template<typename socket_t>
 	void openClientAcceptor(const uint32_t port, std::function<void (const std::unique_ptr<net::Connection>& connection)> callback)

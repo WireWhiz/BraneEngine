@@ -6,27 +6,70 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <iostream>
 #include <config/config.h>
+#include <networking/networking.h>
+#include "../editorUI.h"
 
 void LoginWindow::draw()
 {
-	if(ImGui::Begin("login")){
-		auto inputFlags = ImGuiInputTextFlags_AlwaysInsertMode;
-		ImGui::InputText("Server", &_serverAddress, inputFlags);
-		ImGui::InputText("port", &_port, inputFlags);
-		ImGui::InputText("Username", &_username, inputFlags);
-		ImGui::InputText("Password", &_password, inputFlags | ImGuiInputTextFlags_Password);
+	ImVec2 center = ImGui::GetCurrentContext()->CurrentViewport->GetCenter();
+	ImVec2 size(400, 220);
+	ImGui::SetNextWindowPos({center.x - size.x / 2, center.y - size.y / 2});
+	ImGui::SetNextWindowSize(size);
+	if(ImGui::Begin("login", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)){
+		ImGui::Text("Select Server:");
+		ImGui::InputText("address", &_serverAddress);
+		ImGui::InputText("port", &_port);
+		ImGui::Separator();
+		ImGui::Text("Login:");
+		ImGui::InputText("username", &_username);
+		ImGui::InputText("password", &_password, ImGuiInputTextFlags_Password);
 		ImGui::Separator();
 
 		ImGui::Checkbox("Save username", &_saveUsername);
 
 		if(ImGui::Button("Submit"))
 		{
-			if(_saveUsername)
-			{
-				Config::json()["user"]["name"] = _username;
-				Config::save();
-			}
+			NetworkManager* nm = (NetworkManager*)_ui.runtime().getModule("networkManager");
+			nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success){
+				if(success)
+				{
+					_feedbackMessage = "Connected, logging in...";
+					net::Request req("login");
+
+					req.body() << _username << _password;
+
+					nm->getServer(_serverAddress)->sendRequest(req).then([this](ISerializedData sData){
+						bool result;
+						sData >> result;
+						if(!result)
+						{
+							_feedbackMessage = "invalid username/password";
+							return;
+						}
+
+						_feedbackMessage = "Logged in!";
+						_loggedIn = true;
+						if(_saveUsername)
+						{
+							Config::json()["user"]["name"] = _username;
+							Config::save();
+						}
+
+						_ui.defaultDocking();
+						_ui.addMainWindows();
+
+						_ui.removeWindow(this);
+					});
+
+				}
+				else
+				{
+					_feedbackMessage = "Unable to connect to server";
+				}
+			});
+
 		}
+		ImGui::Text(_feedbackMessage.c_str());
 
 		ImGui::End();
 	}
