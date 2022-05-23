@@ -11,7 +11,7 @@ AssetDataWindow::AssetDataWindow(EditorUI& ui) : EditorWindow(ui)
 
 void AssetDataWindow::draw()
 {
-	if(ImGui::Begin("Asset Data")){
-		ImGui::End();
+	if(ImGui::Begin("Asset Data", nullptr, ImGuiWindowFlags_None)){
 	}
+	ImGui::End();
 }

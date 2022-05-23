@@ -11,7 +11,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 
 void RenderWindow::draw()
 {
-	if(ImGui::Begin("Render")){
-		ImGui::End();
+	if(ImGui::Begin("Render", nullptr, ImGuiWindowFlags_None)){
 	}
+	ImGui::End();
 }

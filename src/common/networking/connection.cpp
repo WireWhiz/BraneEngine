@@ -55,6 +55,11 @@ namespace net
 		_streamLock.unlock();
 	}
 
+	AsyncData<ISerializedData> Connection::sendRequest(Request&& req)
+	{
+		return sendRequest(req);
+	}
+
 	AsyncData<ISerializedData> Connection::sendRequest(Request& req)
 	{
 		uint32_t id = _reqIDCounter++;
@@ -66,6 +71,8 @@ namespace net
 		send(req.message(id));
 		return res;
 	}
+
+
 
 	void Connection::onDisconnect(std::function<void()> f)
 	{

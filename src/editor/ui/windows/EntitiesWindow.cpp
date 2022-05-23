@@ -11,7 +11,7 @@ EntitiesWindow::EntitiesWindow(EditorUI& ui) : EditorWindow(ui)
 
 void EntitiesWindow::draw()
 {
-	if(ImGui::Begin("Entities")){
-		ImGui::End();
+	if(ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_None)){
 	}
+	ImGui::End();
 }

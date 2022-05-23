@@ -24,6 +24,8 @@ Database::Database(Runtime& runtime) : Module(runtime)
 	}
 	_loginCall.initialize("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
+	_directoryChildren.initialize("SELECT * FROM AssetDirectories WHERE ParentFolder = ?1;", _db);
+	_directoryAssets.initialize("SELECT * FROM Assets WHERE DirectoryID = ?1;", _db);
 
 	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
 	{
@@ -186,4 +188,40 @@ std::string Database::randHex(size_t length)
 	return output.str();
 }
 
+Database::Directory Database::directoryTree()
+{
+	Directory tree;
+	tree.id = 0;
+	tree.name = "root";
+	tree.parent = -1;
+	populateDirectoryChildren(tree);
 
+	return std::move(tree);
+}
+
+void Database::populateDirectoryChildren(Database::Directory& dir)
+{
+	_directoryChildren.run(dir.id, std::function([&dir](int FolderID, std::string Name, int ParentFolder){
+		dir.children.push_back(Directory{FolderID, std::move(Name), ParentFolder});
+	}));
+	for(auto& child : dir.children)
+		populateDirectoryChildren(child);
+}
+
+std::vector<Database::Asset> Database::directoryAssets(int directoryID)
+{
+	std::vector<Database::Asset> assets;
+	_directoryAssets.run(directoryID, std::function([&assets](int AssetID, std::string Name, std::string Type, int DirectoryID){
+		assets.push_back({AssetID, std::move(Name), std::move(Type), DirectoryID});
+	}));
+	return assets;
+}
+
+
+void Database::Directory::serialize(OSerializedData& sData)
+{
+	sData << (uint64_t)id << name << (uint16_t)children.size();
+	for(auto& child : children){
+		child.serialize(sData);
+	}
+}

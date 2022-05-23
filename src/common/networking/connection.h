@@ -50,6 +50,7 @@ namespace net
 		void sendStreamEnd(uint32_t id);
 		void addStreamListener(uint32_t id, std::function<void(ISerializedData& data)> callback);
 		void eraseStreamListener(uint32_t id);
+		AsyncData<ISerializedData> sendRequest(Request&& req);
 		AsyncData<ISerializedData> sendRequest(Request& req);
 		void onDisconnect(std::function<void()> f);
 		bool messageAvailable();

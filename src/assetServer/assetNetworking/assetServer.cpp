@@ -111,12 +111,40 @@ _db(*(Database*)runtime.getModule("database"))
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
 		};
 
+
+
 		if(asset)
 			f(asset);
 		else
 			_am.fetchAsset<Asset>(id).then(f);
 
 	});
+
+	_nm.addRequestListener("directoryTree", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+		    return;
+		Database::Directory tree = _db.directoryTree();
+		tree.serialize(res.res());
+		res.send();
+	});
+
+	_nm.addRequestListener("directoryAssets", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+			return;
+		int64_t dirID;
+		res.body() >> dirID;
+
+		std::vector<Database::Asset> assets = _db.directoryAssets(dirID);
+		res.res() << (uint32_t)assets.size();
+		for(auto& asset : assets)
+			res.res() << (int64_t)asset.assetID << asset.name << asset.type << (int64_t)asset.directoryID;
+
+
+		res.send();
+	});
+
 	runtime.timeline().addTask("send asset data", [this]{processMessages();}, "networking");
 }
 
@@ -175,6 +203,16 @@ AssetServer::ConnectionContext& AssetServer::getContext(net::Connection* connect
 	}
 
 	return _connectionCtx[connection];
+}
+
+bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const std::vector<std::string>& permissions)
+{
+	for(auto p : permissions)
+	{
+		if(!ctx.permissions.count(p))
+			return false;
+	}
+	return true;
 }
 
 

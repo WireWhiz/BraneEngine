@@ -11,7 +11,7 @@ ConsoleWindow::ConsoleWindow(EditorUI& ui) : EditorWindow(ui)
 
 void ConsoleWindow::draw()
 {
-	if(ImGui::Begin("Console")){
-		ImGui::End();
+	if(ImGui::Begin("Console", nullptr, ImGuiWindowFlags_None)){
 	}
+	ImGui::End();
 }

@@ -10,4 +10,6 @@ target_link_libraries(BraneEditor PRIVATE ecs networking config graphics assets 
 
 configure_file(config.json ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json COPYONLY)
 
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/fa-solid-900.ttf DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
 add_subdirectory(ui)

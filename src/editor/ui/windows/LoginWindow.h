@@ -8,6 +8,18 @@
 #include "../editorWindow.h"
 #include <string>
 #include <atomic>
+#include "../EditorEvent.h"
+
+namespace net{
+	class Connection;
+}
+
+class LoginEvent : public EditorEvent{
+	net::Connection* _server;
+public:
+	LoginEvent(const std::string& name, net::Connection* server);
+	inline net::Connection* server() const {return _server;}
+};
 
 class LoginWindow : public EditorWindow
 {

@@ -15,7 +15,7 @@ void LoginWindow::draw()
 	ImVec2 size(400, 220);
 	ImGui::SetNextWindowPos({center.x - size.x / 2, center.y - size.y / 2});
 	ImGui::SetNextWindowSize(size);
-	if(ImGui::Begin("login", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)){
+	if(ImGui::Begin("login", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)){
 		ImGui::Text("Select Server:");
 		ImGui::InputText("address", &_serverAddress);
 		ImGui::InputText("port", &_port);
@@ -38,7 +38,8 @@ void LoginWindow::draw()
 
 					req.body() << _username << _password;
 
-					nm->getServer(_serverAddress)->sendRequest(req).then([this](ISerializedData sData){
+					auto* server = nm->getServer(_serverAddress);
+					server->sendRequest(req).then([this, server](ISerializedData sData){
 						bool result;
 						sData >> result;
 						if(!result)
@@ -54,11 +55,7 @@ void LoginWindow::draw()
 							Config::json()["user"]["name"] = _username;
 							Config::save();
 						}
-
-						_ui.defaultDocking();
-						_ui.addMainWindows();
-
-						_ui.removeWindow(this);
+						_ui.sendEvent(std::make_unique<LoginEvent>("loginSuccessful", server));
 					});
 
 				}
@@ -70,9 +67,8 @@ void LoginWindow::draw()
 
 		}
 		ImGui::Text(_feedbackMessage.c_str());
-
-		ImGui::End();
 	}
+	ImGui::End();
 }
 
 LoginWindow::LoginWindow(EditorUI& ui) : EditorWindow(ui)
@@ -80,4 +76,9 @@ LoginWindow::LoginWindow(EditorUI& ui) : EditorWindow(ui)
 	_serverAddress = Config::json()["network"]["asset_server"].asString();
 	_port = Config::json()["network"]["tcp_port"].asString();
 	_username = Config::json()["user"]["name"].asString();
+}
+
+LoginEvent::LoginEvent(const std::string& name, net::Connection* server) : EditorEvent(name)
+{
+	_server = server;
 }

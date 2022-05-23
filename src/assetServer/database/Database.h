@@ -16,15 +16,41 @@
 
 class Database : public Module
 {
+public:
+	struct Directory{
+		int id;
+		std::string name;
+		int parent;
+		std::vector<Directory> children;
+		void serialize(OSerializedData& sData);
+	};
+
+	struct Asset{
+		int assetID;
+		std::string name;
+		std::string type;
+		int directoryID;
+	};
+
+	struct DirectoryContents{
+		std::vector<Directory> directories;
+		std::vector<Asset> assets;
+	};
+
+private:
 	sqlite3* _db;
 	PreppedSQLCall<const std::string&> _loginCall;
 	PreppedSQLCall<const std::string&> _userIDCall;
+	PreppedSQLCall<int> _directoryChildren;
+	PreppedSQLCall<int> _directoryAssets;
+
 	static int sqliteCallback(void *callback, int argc, char **argv, char **azColName);
 
 	std::string randHex(size_t length);
 	std::string hashPassword(const std::string& password, const std::string& salt);
 
 	std::unordered_map<size_t, std::string> _permissions;
+	void populateDirectoryChildren(Directory& dir);
 public:
 	struct sqlColumn
 	{
@@ -46,6 +72,9 @@ public:
 	std::string assetName(AssetID& id);
 
 	std::vector<AssetInfo> listUserAssets(const uint32_t& userID);
+
+	Directory directoryTree();
+	std::vector<Database::Asset> directoryAssets(int directoryID);
 
 	const char* name() override;
 };

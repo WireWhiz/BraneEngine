@@ -35,6 +35,7 @@ class AssetServer : public Module
 	std::list<IncrementalAssetSender> _senders;
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
 	ConnectionContext& getContext(net::Connection* connection);
+	bool validatePermissions(ConnectionContext& ctx, const std::vector<std::string>& permissions);
 public:
 	AssetServer(Runtime& runtime);
 	~AssetServer();
