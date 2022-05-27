@@ -2,137 +2,232 @@
 
 namespace graphics
 {
-	Renderer::Renderer(Material* material)
+	Renderer::Renderer(SwapChain& swapChain) : _swapChain(swapChain)
 	{
-        _material = material;
-        _drawBuffers.resize(SwapChain::size());
-        createDescriptorSets(SwapChain::size());
+
 	}
-	void Renderer::createDescriptorSets(size_t count)
+	Renderer::~Renderer()
 	{
-        //Create sets
-        if (_descriptorSets.size() < count)
-        {
-            size_t currentSize = _descriptorSets.size();
-            std::vector<VkDescriptorSetLayout> layouts(count - currentSize, _material->descriptorLayout());
-            VkDescriptorSetAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = _material->descriptorPool();
-            allocInfo.descriptorSetCount = static_cast<uint32_t>(count - currentSize);
-            allocInfo.pSetLayouts = layouts.data();
-
-            _descriptorSets.resize(count);
-            if (vkAllocateDescriptorSets(device->get(), &allocInfo, &_descriptorSets[currentSize]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to allocate descriptor sets!");
-            }
-        }
-        
-
-        for (size_t i = 0; i < count; i++)
-        {
-            std::vector<VkWriteDescriptorSet> descriptorWrites;
-
-            /*
-            VkDescriptorBufferInfo bufferInfo{};
-            bufferInfo.buffer = uniformBuffers[i].get();
-            bufferInfo.offset = 0;
-            bufferInfo.range = sizeof(UniformBufferObject);
-
-            descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet = _descriptorSets[i];
-            descriptorWrites[0].dstBinding = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo = &bufferInfo;
-            */
-            std::vector<VkDescriptorImageInfo> descriptorImages; // If we don't have this vector, referenced structs go out of scope
-            _material->getImageDescriptors(descriptorWrites,  descriptorImages, _descriptorSets[i]);
-
-            vkUpdateDescriptorSets(device->get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        }
+		if(_onDestroy)
+			_onDestroy();
+		vkDestroyRenderPass(device->get(), _renderPass, nullptr);
+		for (auto framebuffer : _frameBuffers)
+		{
+			vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
+		}
 	}
-	std::vector<VkCommandBuffer> Renderer::createRenderBuffers(SwapChain* swapChain, std::vector<RenderObject>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame)
-    {
-        if (_drawBuffers[frame].size() < meshes.size())
-        {
-            size_t start = _drawBuffers[frame].size();
-            _drawBuffers[frame].resize(meshes.size());
-            VkCommandBufferAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            allocInfo.commandPool = device->graphicsPool();
-            allocInfo.level = VK_COMMAND_BUFFER_LEVEL_SECONDARY;
-            allocInfo.commandBufferCount = (uint32_t)(meshes.size() - start);
 
-            if (vkAllocateCommandBuffers(device->get(), &allocInfo, &_drawBuffers[frame][start]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to allocate command buffers!");
-            }
-        }
+	void Renderer::createRenderPass(VkFormat imageFormat, VkFormat depthImageFormat)
+	{
+		if(_renderPass)
+			vkDestroyRenderPass(device->get(), _renderPass, nullptr);
+		std::vector<VkAttachmentDescription> attachments;
 
-	    std::vector<VkCommandBuffer> retBuffers;
-		retBuffers.reserve(meshes.size());
-        for (size_t i = 0; i < meshes.size(); i++)
-        {
+		_depthTexture = depthImageFormat != VK_FORMAT_UNDEFINED;
 
-            vkResetCommandBuffer(_drawBuffers[frame][i], 0); // No flags so that the buffer will hold onto memory
+		VkAttachmentDescription colorAttachment{};
+		colorAttachment.format = imageFormat;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		if(!_target)
+			colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+		else
+			colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		attachments.push_back(colorAttachment);
 
-            RenderObject& mesh = meshes[i];
+		VkAttachmentReference colorAttachmentRef{};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            VkCommandBufferBeginInfo beginInfo{};
-            beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-            beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-            beginInfo.pInheritanceInfo = &inheritanceInfo;
+		if(depthImageFormat)
+		{
+			VkAttachmentDescription depthAttachment{};
+			depthAttachment.format = depthImageFormat;
+			depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+			depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+			depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+			depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+			depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			attachments.push_back(depthAttachment);
+		}
 
-            if (vkBeginCommandBuffer(_drawBuffers[frame][i], &beginInfo) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to begin recording command buffer!");
-            }
+		VkSubpassDescription subpass{};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
-            vkCmdBindPipeline(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipeline());
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+		if(depthImageFormat)
+		{
+			VkAttachmentReference depthAttachmentRef{};
+			depthAttachmentRef.attachment = 1;
+			depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-            VkBuffer b = mesh.mesh->buffer();
-            std::vector<VkBuffer> vertexBuffers;
-            vertexBuffers.resize(2, b);
-			std::vector<VkDeviceSize> vertexBufferOffsets = {
-                    mesh.mesh->attributeBufferOffset(mesh.primitive, "POSITION"),
-                    mesh.mesh->attributeBufferOffset(mesh.primitive, "NORMAL")
-                };
-			for(auto offset : vertexBufferOffsets)
+			subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		}
+
+
+		VkSubpassDependency dependency{};
+		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependency.dstSubpass = 0;
+
+		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.srcAccessMask = 0;
+
+		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+
+		VkRenderPassCreateInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+		renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		renderPassInfo.pAttachments = attachments.data();
+		renderPassInfo.subpassCount = 1;
+		renderPassInfo.pSubpasses = &subpass;
+		renderPassInfo.dependencyCount = 1;
+		renderPassInfo.pDependencies = &dependency;
+
+		if (vkCreateRenderPass(device->get(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create render pass!");
+		}
+	}
+
+	void Renderer::createFrameBuffers(VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture)
+	{
+		_extent = size;
+		for(auto buffer : _frameBuffers)
+			vkDestroyFramebuffer(device->get(), buffer, nullptr);
+		_frameBuffers.resize(0);
+		_frameBuffers.resize(images.size());
+
+		for (size_t i = 0; i < images.size(); i++)
+		{
+			std::vector<VkImageView> attachments = {images[i]};
+			if(depthTexture)
+				attachments.push_back(depthTexture);
+
+			VkFramebufferCreateInfo framebufferInfo{};
+			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+			framebufferInfo.renderPass = _renderPass;
+			framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			framebufferInfo.pAttachments = attachments.data();
+			framebufferInfo.width = size.width;
+			framebufferInfo.height = size.height;
+			framebufferInfo.layers = 1;
+
+			if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_frameBuffers[i]) != VK_SUCCESS)
 			{
-				assert(offset < mesh.mesh->size());
+				throw std::runtime_error("failed to create framebuffer!");
 			}
-            vkCmdBindVertexBuffers(_drawBuffers[frame][i], 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
+		}
+	}
 
-	        vkCmdBindIndexBuffer(_drawBuffers[frame][i], mesh.mesh->buffer(), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);
+	void Renderer::setRenderCallback(const std::function<void(VkCommandBuffer)>& callback)
+	{
+		assert(callback);
+		_renderCallback =callback;
+	}
 
-            vkCmdBindDescriptorSets(_drawBuffers[frame][i], VK_PIPELINE_BIND_POINT_GRAPHICS, _material->pipelineLayout(), 0, 1, &_descriptorSets[frame], 0, nullptr);
+	void Renderer::startRenderPass(VkCommandBuffer cmdBuffer)
+	{
+		VkRenderPassBeginInfo renderPassInfo{};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = _renderPass;
+		renderPassInfo.framebuffer = _frameBuffers[_swapChain.currentFrame()];
 
-            MeshPushConstants constants{};
-            constants.render_matrix = cameraMatrix * mesh.transform;
-			constants.objectToWorld = mesh.transform;
+		renderPassInfo.renderArea.offset = { 0, 0 };
+		renderPassInfo.renderArea.extent = _extent;
 
-	        static auto start = std::chrono::high_resolution_clock::now();
-	        auto currentTime = std::chrono::high_resolution_clock::now();
-	        float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - start).count();
+		std::array<VkClearValue, 2> clearValues{};
+		clearValues[0].color = _clearColor;
+		clearValues[1].depthStencil = { 1.0f, 0 };
 
-			glm::mat4 lightPos = glm::translate(glm::rotate(glm::mat4(1), glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3{2, 2, -4});;
-			constants.lightPosition = lightPos * glm::vec4{1,1,1,1};
+		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+		renderPassInfo.pClearValues = clearValues.data();
 
-            vkCmdPushConstants(_drawBuffers[frame][i], _material->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &constants);
+		vkCmdBeginRenderPass(cmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	}
 
+	void Renderer::endRenderPass(VkCommandBuffer cmdBuffer)
+	{
+		vkCmdEndRenderPass(cmdBuffer);
+	}
 
-            vkCmdDrawIndexed(_drawBuffers[frame][i], static_cast<uint32_t>(mesh.mesh->indexCount(mesh.primitive)), 1, 0, 0, 0);
+	void Renderer::render(VkCommandBuffer cmdBuffer)
+	{
+		if(_renderPass == VK_NULL_HANDLE)
+			return;
+		startRenderPass(cmdBuffer);
+		_renderCallback(cmdBuffer);
+		endRenderPass(cmdBuffer);
+	}
 
-            if (vkEndCommandBuffer(_drawBuffers[frame][i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to record command buffer!");
-            }
-			retBuffers.push_back(_drawBuffers[frame][i]);
+	void Renderer::setTargetAsSwapChain(bool depthTexture)
+	{
+		_target = nullptr;
+		if(depthTexture)
+		{
+			createRenderPass(_swapChain.imageFormat(), _swapChain.depthImageFormat());
+			createFrameBuffers(_swapChain.extent(),_swapChain.getImages(), _swapChain.depthTexture());
+		}
+		else
+		{
+			createRenderPass(_swapChain.imageFormat());
+			createFrameBuffers(_swapChain.extent(),_swapChain.getImages());
+		}
 
-        }
-		return retBuffers;
+	}
 
-    }
+	void Renderer::setTarget(RenderTexture* texture)
+	{
+		_target = texture;
+		createRenderPass(texture->imageFormat(), texture->depthTextureFormat());
+		createFrameBuffers(texture->size(),texture->images(), texture->depthTexture());
+	}
+
+	VkRenderPass Renderer::renderPass()
+	{
+		return _renderPass;
+	}
+
+	void Renderer::windowResize()
+	{
+		//only resize if our target is the swap chain
+		if(_target)
+			return;
+		setTargetAsSwapChain(_depthTexture);
+	}
+
+	void Renderer::setClearColor(VkClearColorValue color)
+	{
+		_shouldClear = true;
+		_clearColor = color;
+	}
+
+	void Renderer::dontClear()
+	{
+		_shouldClear = false;
+	}
+
+	void Renderer::clearTarget()
+	{
+		for(auto buffer : _frameBuffers)
+			vkDestroyFramebuffer(device->get(), buffer, nullptr);
+		if(_renderPass)
+			vkDestroyRenderPass(device->get(), _renderPass, nullptr);
+		_frameBuffers.resize(0);
+		_renderPass = VK_NULL_HANDLE;
+	}
+
+	void Renderer::onDestroyCallback(const std::function<void()>& callback)
+	{
+		_onDestroy = callback;
+	}
+
 }

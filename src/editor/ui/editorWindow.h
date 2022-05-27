@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 #include <imgui_internal.h>
+#include "IconsFontAwesome6.h"
 
 class EditorUI;
 class EditorWindow
@@ -17,6 +18,7 @@ public:
 	EditorWindow(EditorUI& ui);
 	virtual ~EditorWindow() = default;
 	virtual void draw() = 0;
+	virtual void update();
 };
 
 

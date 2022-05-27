@@ -53,7 +53,7 @@ namespace graphics
         {
             throw std::runtime_error("failed to create descriptor pool!");
         }
-        
+
         
     }
 
@@ -264,7 +264,8 @@ namespace graphics
 
         pipelineInfo.layout = _pipelineLayout;
 
-        pipelineInfo.renderPass = swapChain->renderPass();
+		assert(false); //You need to refactor this
+        pipelineInfo.renderPass = VK_NULL_HANDLE;
         pipelineInfo.subpass = 0;
 
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -277,28 +278,6 @@ namespace graphics
 
         buildDescriptorSetVars(swapChain);
 	}
-    void Material::getImageDescriptors(std::vector<VkWriteDescriptorSet>& descriptors, std::vector<VkDescriptorImageInfo>& imageInfo, VkDescriptorSet& descriptorSet)
-    {
-        for (size_t i = 0; i < _textures.size(); i++)
-        {
-            VkDescriptorImageInfo newImageInfo{};
-            newImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            newImageInfo.imageView = _textures[i]->view();
-            newImageInfo.sampler = _textures[i]->sampler();
-            imageInfo.push_back(newImageInfo);
-
-            VkWriteDescriptorSet newSet{};
-            newSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            newSet.dstSet = descriptorSet;
-            newSet.dstBinding = i + 1;
-            newSet.dstArrayElement = 0;
-            newSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            newSet.descriptorCount = 1;
-            newSet.pImageInfo = &imageInfo[imageInfo.size() - 1];
-            descriptors.push_back(newSet);
-        }
-        
-    }
     VkPipeline Material::pipeline()
     {
         assert(_pipeline != VK_NULL_HANDLE);
@@ -338,5 +317,60 @@ namespace graphics
 		attributeDescription.format = format;
 		attributeDescription.offset = offset;
 		_attributes.push_back(attributeDescription);
+	}
+
+	void Material::createDescriptorSets(size_t swapChainSize)
+	{
+		//Create sets
+		if (_descriptorSets.size() < swapChainSize)
+		{
+			size_t currentSize = _descriptorSets.size();
+			std::vector<VkDescriptorSetLayout> layouts(swapChainSize - currentSize, _descriptorSetLayout);
+			VkDescriptorSetAllocateInfo allocInfo{};
+			allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			allocInfo.descriptorPool = _descriptorPool;
+			allocInfo.descriptorSetCount = static_cast<uint32_t>(swapChainSize - currentSize);
+			allocInfo.pSetLayouts = layouts.data();
+
+			_descriptorSets.resize(swapChainSize);
+			if (vkAllocateDescriptorSets(device->get(), &allocInfo, &_descriptorSets[currentSize]) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to allocate descriptor sets!");
+			}
+		}
+
+
+		for (size_t i = 0; i < swapChainSize; i++)
+		{
+			std::vector<VkWriteDescriptorSet> descriptorWrites;
+			std::vector<VkDescriptorImageInfo> descriptorImages; // If we don't have this vector, referenced structs go out of scope
+			for (size_t i = 0; i < _textures.size(); i++)
+			{
+				VkDescriptorImageInfo newImageInfo{};
+				newImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				newImageInfo.imageView = _textures[i]->view();
+				newImageInfo.sampler = _textures[i]->sampler();
+				descriptorImages.push_back(newImageInfo);
+
+				VkWriteDescriptorSet newSet{};
+				newSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				newSet.dstSet = _descriptorSets[i];
+				newSet.dstBinding = i + 1;
+				newSet.dstArrayElement = 0;
+				newSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				newSet.descriptorCount = 1;
+				newSet.pImageInfo = &descriptorImages[descriptorImages.size() - 1];
+				descriptorWrites.push_back(newSet);
+			}
+
+			vkUpdateDescriptorSets(device->get(), static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+		}
+
+	}
+
+	VkDescriptorSet* Material::descriptorSet(size_t frame)
+	{
+		assert(frame < _descriptorSets.size());
+		return &_descriptorSets[frame];
 	}
 }

@@ -8,5 +8,5 @@ add_library(editor_gui STATIC
         windows/EntitiesWindow.cpp
         windows/RenderWindow.cpp
         windows/AssetBrowserWindow.cpp
-        )
+        windows/MemoryManagerWindow.cpp windows/MemoryManagerWindow.h)
 target_link_libraries(editor_gui PUBLIC imgui runtime)

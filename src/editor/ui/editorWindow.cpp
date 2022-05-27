@@ -8,3 +8,8 @@ EditorWindow::EditorWindow(EditorUI& ui) : _ui(ui)
 {
 
 }
+
+void EditorWindow::update()
+{
+
+}

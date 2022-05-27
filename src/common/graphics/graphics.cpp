@@ -4,7 +4,6 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#include "IconsFontAwesome6.h"
 
 namespace graphics
 {
@@ -12,39 +11,32 @@ namespace graphics
     {
 		if(_window->size().x == 0 ||  _window->size().y == 0)
 		{
-			ImGui::EndFrame();
-			ImGui::NewFrame();
 			return;
 		}
-        vkWaitForFences(_device->get(), 1, &_inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
 
-        uint32_t imageIndex;
-        VkResult result = _swapChain->acquireNextImage(_imageAvailableSemaphores[currentFrame], imageIndex);
+        VkResult result = _swapChain->acquireNextImage();
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             vkDeviceWaitIdle(_device->get());
-			ImGui::EndFrame();
-            delete _swapChain;
-            _swapChain = new SwapChain(_window);
-	        _materials.forEach([&](auto& m){
-		        m->buildGraphicsPipeline(_swapChain);
-			});
-			ImGui::NewFrame();
-            return;
+            _swapChain->resize();
+			for(auto& r : _renderers)
+				r->windowResize();
+			result = _swapChain->acquireNextImage();
         }
-        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
         
 
-        if (_imagesInFlight[imageIndex] != VK_NULL_HANDLE)
+        if (_imagesInFlight[_swapChain->currentFrame()] != VK_NULL_HANDLE)
         {
-            vkWaitForFences(_device->get(), 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            vkWaitForFences(_device->get(), 1, &_imagesInFlight[_swapChain->currentFrame()], VK_TRUE, UINT64_MAX);
         }
-        _imagesInFlight[imageIndex] = _inFlightFences[currentFrame];
+        _imagesInFlight[_swapChain->currentFrame()] = _inFlightFences[_swapChain->currentFrame()];
 
-        VkCommandBuffer& drawBuffer = _drawBuffers[imageIndex];
+        VkCommandBuffer drawBuffer = _drawBuffers[_swapChain->currentFrame()];
         vkResetCommandBuffer(drawBuffer, 0);
 
         VkCommandBufferBeginInfo beginInfo{};
@@ -52,7 +44,12 @@ namespace graphics
 
         vkBeginCommandBuffer(drawBuffer, &beginInfo);
 
+	    for (int i = _renderers.size() - 1; i >= 0; --i)
+	    {
+		    _renderers[i]->render(drawBuffer);
+	    }
 
+		/*
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = _swapChain->renderPass();
@@ -68,12 +65,7 @@ namespace graphics
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
         renderPassInfo.pClearValues = clearValues.data();
 
-        vkCmdBeginRenderPass(drawBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
-
-        VkCommandBufferInheritanceInfo inheritanceInfo{};
-        inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-        inheritanceInfo.framebuffer = _swapChain->framebuffer(imageIndex);
-        inheritanceInfo.renderPass = _swapChain->renderPass();
+        vkCmdBeginRenderPass(drawBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 		//Update incremental asset derived objects:
 		_meshes.forEach([&](auto& mesh)
@@ -82,10 +74,10 @@ namespace graphics
 		});
 
         //Draw models:
-        glm::mat4x4 view = glm::lookAt(glm::vec3(1.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4x4  proj = glm::perspective(glm::radians(45.0f), _swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 500.0f);
-        proj[1][1] *= -1;
-        glm::mat4x4 camera_matrix = proj * view;
+        glm::mat4x4 cameraTransform = glm::lookAt(glm::vec3(1.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4x4  view = glm::perspective(glm::radians(45.0f), (float)_swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 500.0f);
+        view[1][1] *= -1;
+		Camera camera{cameraTransform, view};
 
 		const static NativeForEach forEachMeshRenderer( {MeshRendererComponent::def(), TransformComponent::def()},&em);
 
@@ -96,26 +88,22 @@ namespace graphics
 			Mesh* mesh = _meshes[mr->mesh].get();
 			for (int j = 0; j < mesh->primitiveCount(); ++j)
 			{
-				RenderObject ro;
+				RenderObject ro{};
 				ro.mesh = mesh;
 				ro.primitive = j;
 				ro.transform = TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
 
 
-				_renderCache[/*mr->materials[j]*/0].push_back(ro);
+				_renderCache[0].push_back(ro);
 			}
 		});
 
 		size_t rendererIndex = 0;
 	    _renderers.forEach([&](std::unique_ptr<Renderer>& r)
         {
-	        std::vector<VkCommandBuffer> buffers = r->createRenderBuffers(_swapChain, _renderCache[rendererIndex++], camera_matrix, inheritanceInfo, imageIndex);
-            if(!buffers.empty())
-				vkCmdExecuteCommands(drawBuffer, buffers.size(), buffers.data());
+	        r->drawObjects(_renderCache[rendererIndex++], nullptr,
+	                       &camera, drawBuffer);
         });
-
-
-
 
         vkCmdEndRenderPass(drawBuffer);
 
@@ -141,12 +129,13 @@ namespace graphics
 	    ImGui::NewFrame();
 
 	    vkCmdEndRenderPass(drawBuffer);
+		*/
         vkEndCommandBuffer(drawBuffer);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = { _imageAvailableSemaphores[currentFrame] };
+        VkSemaphore waitSemaphores[] = { _swapChain->currentSemaphore() };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -156,12 +145,12 @@ namespace graphics
         submitInfo.commandBufferCount = cmdBuffers.size();
         submitInfo.pCommandBuffers = cmdBuffers.data();
 
-        VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[currentFrame] };
+        VkSemaphore signalSemaphores[] = { _renderFinishedSemaphores[_swapChain->currentFrame()] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        vkResetFences(_device->get(), 1, &_inFlightFences[currentFrame]);
-        if (vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, _inFlightFences[currentFrame]) != VK_SUCCESS)
+        vkResetFences(_device->get(), 1, &_inFlightFences[_swapChain->currentFrame()]);
+        if (vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, _inFlightFences[_swapChain->currentFrame()]) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
@@ -175,26 +164,18 @@ namespace graphics
         VkSwapchainKHR swapChains[] = { _swapChain->get() };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &imageIndex;
+        presentInfo.pImageIndices = &_swapChain->currentFrame();
         presentInfo.pResults = nullptr; // Optional
         vkQueuePresentKHR(_device->presentQueue(), &presentInfo);
-
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
 	size_t VulkanRuntime::addTexture(Texture* texture)
     {
-
         return _textures.push(std::unique_ptr<Texture>(texture));
     }
 	Shader* VulkanRuntime::loadShader(size_t shaderID)
     {
         return _shaderManager->loadShader(shaderID);
-    }
-	size_t VulkanRuntime::initRenderer(size_t material)
-    {
-        _materials[material]->buildGraphicsPipeline(_swapChain);
-        return _renderers.push(std::make_unique<Renderer>(_materials[material].get()));
     }
     size_t VulkanRuntime::addMesh(MeshAsset* mesh)
     {
@@ -218,7 +199,7 @@ namespace graphics
         createSyncObjects();
         createDrawBuffers();
 
-		setupImGui();
+
     }
 
     void VulkanRuntime::cleanup()
@@ -229,16 +210,13 @@ namespace graphics
         _materials.clear();
         _textures.clear();
         _meshes.clear();
-
-		cleanupImGui();
         
         delete _shaderManager;
         delete _swapChain;
         
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < _renderFinishedSemaphores.size(); i++)
         {
             vkDestroySemaphore(_device->get(), _renderFinishedSemaphores[i], nullptr);
-            vkDestroySemaphore(_device->get(), _imageAvailableSemaphores[i], nullptr);
             vkDestroyFence(_device->get(), _inFlightFences[i], nullptr);
         }
 
@@ -309,9 +287,8 @@ namespace graphics
 
     void VulkanRuntime::createSyncObjects()
     {
-        _imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        _renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        _inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+        _renderFinishedSemaphores.resize(_swapChain->size());
+        _inFlightFences.resize(_swapChain->size());
         _imagesInFlight.resize(_swapChain->size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};
@@ -320,10 +297,9 @@ namespace graphics
         fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        for (size_t i = 0; i < _swapChain->size(); i++)
         {
-            if (vkCreateSemaphore(_device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(_device->get(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]) != VK_SUCCESS ||
+            if (vkCreateSemaphore(_device->get(), &semaphoreInfo, nullptr, &_renderFinishedSemaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(_device->get(), &fenceInfo, nullptr, &_inFlightFences[i]) != VK_SUCCESS)
             {
 
@@ -334,12 +310,12 @@ namespace graphics
 
     void VulkanRuntime::createDrawBuffers()
     {
-        _drawBuffers.resize(SwapChain::size());
+        _drawBuffers.resize(_swapChain->size());
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandPool = _device->graphicsPool();
-        allocInfo.commandBufferCount = SwapChain::size();
+        allocInfo.commandBufferCount = _swapChain->size();
 
         vkAllocateCommandBuffers(_device->get(), &allocInfo, _drawBuffers.data());
     }
@@ -443,13 +419,17 @@ namespace graphics
     {
         if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
-            if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+            if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
                 std::cerr << "Vulkan [Warning]: ";
-            else if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+            else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
                 std::cerr << "Vulkan [Error]: ";
             else
                 std::cerr << "Vulkan [Unknown]: ";
             std::cerr  << pCallbackData->pMessage << std::endl;
+#if DEBUG
+			if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+				throw std::runtime_error("Vulkan debug error");
+#endif
         }
         return VK_FALSE;
     }
@@ -512,11 +492,11 @@ namespace graphics
         _window->update();
     }
 
-	size_t VulkanRuntime::addMaterial(Material* material)
+	void VulkanRuntime::addMaterial(Material* material)
 	{
-		size_t index = _materials.push(std::unique_ptr<Material>(material));
-
-		return index;
+		material->buildGraphicsPipeline(_swapChain);
+		material->createDescriptorSets(_swapChain->size());
+		_materials.push(std::unique_ptr<Material>(material));
 	}
 
 	Material* VulkanRuntime::getMaterial(size_t id)
@@ -529,148 +509,15 @@ namespace graphics
 		return "graphics";
 	}
 
-	void VulkanRuntime::setupImGui()
+	Renderer* VulkanRuntime::createRenderer()
 	{
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
-		io.ConfigFlags   |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
-		io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
-		io.IniFilename = NULL;
-
-		io.Fonts->AddFontDefault();
-
-		ImFontConfig config;
-		config.MergeMode = true;
-		config.GlyphMinAdvanceX = 13.0f;
-		static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-		io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, 15.0f, &config, icon_ranges);
-
-		// Setup ImGui style TODO move this to config.json
-		ImVec4* colors = ImGui::GetStyle().Colors;
-		colors[ImGuiCol_Text]                   = ImVec4(1.00f, 1.00f, 1.00f, 1.00f);
-		colors[ImGuiCol_TextDisabled]           = ImVec4(0.50f, 0.50f, 0.50f, 1.00f);
-		colors[ImGuiCol_WindowBg]               = ImVec4(0.06f, 0.06f, 0.06f, 0.94f);
-		colors[ImGuiCol_ChildBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-		colors[ImGuiCol_PopupBg]                = ImVec4(0.08f, 0.08f, 0.08f, 0.94f);
-		colors[ImGuiCol_Border]                 = ImVec4(0.43f, 0.50f, 0.43f, 0.50f);
-		colors[ImGuiCol_BorderShadow]           = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-		colors[ImGuiCol_FrameBg]                = ImVec4(0.16f, 0.48f, 0.29f, 0.54f);
-		colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.26f, 0.98f, 0.59f, 0.40f);
-		colors[ImGuiCol_FrameBgActive]          = ImVec4(0.26f, 0.98f, 0.59f, 0.67f);
-		colors[ImGuiCol_TitleBg]                = ImVec4(0.04f, 0.04f, 0.04f, 1.00f);
-		colors[ImGuiCol_TitleBgActive]          = ImVec4(0.16f, 0.48f, 0.29f, 1.00f);
-		colors[ImGuiCol_TitleBgCollapsed]       = ImVec4(0.00f, 0.00f, 0.00f, 0.51f);
-		colors[ImGuiCol_MenuBarBg]              = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-		colors[ImGuiCol_ScrollbarBg]            = ImVec4(0.02f, 0.02f, 0.02f, 0.53f);
-		colors[ImGuiCol_ScrollbarGrab]          = ImVec4(0.31f, 0.31f, 0.31f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabHovered]   = ImVec4(0.41f, 0.41f, 0.41f, 1.00f);
-		colors[ImGuiCol_ScrollbarGrabActive]    = ImVec4(0.51f, 0.51f, 0.51f, 1.00f);
-		colors[ImGuiCol_CheckMark]              = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
-		colors[ImGuiCol_SliderGrab]             = ImVec4(0.24f, 0.88f, 0.52f, 1.00f);
-		colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
-		colors[ImGuiCol_Button]                 = ImVec4(0.26f, 0.98f, 0.59f, 0.40f);
-		colors[ImGuiCol_ButtonHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
-		colors[ImGuiCol_ButtonActive]           = ImVec4(0.06f, 0.98f, 0.53f, 1.00f);
-		colors[ImGuiCol_Header]                 = ImVec4(0.26f, 0.98f, 0.59f, 0.31f);
-		colors[ImGuiCol_HeaderHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 0.80f);
-		colors[ImGuiCol_HeaderActive]           = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
-		colors[ImGuiCol_Separator]              = colors[ImGuiCol_Border];
-		colors[ImGuiCol_SeparatorHovered]       = ImVec4(0.10f, 0.75f, 0.40f, 0.78f);
-		colors[ImGuiCol_SeparatorActive]        = ImVec4(0.10f, 0.75f, 0.40f, 1.00f);
-		colors[ImGuiCol_ResizeGrip]             = ImVec4(0.26f, 0.98f, 0.59f, 0.20f);
-		colors[ImGuiCol_ResizeGripHovered]      = ImVec4(0.26f, 0.98f, 0.59f, 0.67f);
-		colors[ImGuiCol_ResizeGripActive]       = ImVec4(0.26f, 0.98f, 0.59f, 0.95f);
-		colors[ImGuiCol_Tab]                    = ImLerp(colors[ImGuiCol_Header],       colors[ImGuiCol_TitleBgActive], 0.80f);
-		colors[ImGuiCol_TabHovered]             = colors[ImGuiCol_HeaderHovered];
-		colors[ImGuiCol_TabActive]              = ImLerp(colors[ImGuiCol_HeaderActive], colors[ImGuiCol_TitleBgActive], 0.60f);
-		colors[ImGuiCol_TabUnfocused]           = ImLerp(colors[ImGuiCol_Tab],          colors[ImGuiCol_TitleBg], 0.80f);
-		colors[ImGuiCol_TabUnfocusedActive]     = ImLerp(colors[ImGuiCol_TabActive],    colors[ImGuiCol_TitleBg], 0.40f);
-		colors[ImGuiCol_DockingPreview]         = colors[ImGuiCol_HeaderActive];
-		colors[ImGuiCol_DockingPreview].w = 0.75f;
-		colors[ImGuiCol_DockingEmptyBg]         = ImVec4(0.20f, 0.20f, 0.20f, 1.00f);
-		colors[ImGuiCol_PlotLines]              = ImVec4(0.61f, 0.61f, 0.61f, 1.00f);
-		colors[ImGuiCol_PlotLinesHovered]       = ImVec4(1.00f, 0.43f, 0.35f, 1.00f);
-		colors[ImGuiCol_PlotHistogram]          = ImVec4(0.90f, 0.70f, 0.00f, 1.00f);
-		colors[ImGuiCol_PlotHistogramHovered]   = ImVec4(1.00f, 0.60f, 0.00f, 1.00f);
-		colors[ImGuiCol_TableHeaderBg]          = ImVec4(0.19f, 0.20f, 0.19f, 1.00f);
-		colors[ImGuiCol_TableBorderStrong]      = ImVec4(0.31f, 0.35f, 0.31f, 1.00f);   // Prefer using Alpha=1.0 here
-		colors[ImGuiCol_TableBorderLight]       = ImVec4(0.23f, 0.25f, 0.23f, 1.00f);   // Prefer using Alpha=1.0 here
-		colors[ImGuiCol_TableRowBg]             = ImVec4(0.00f, 0.00f, 0.00f, 0.00f);
-		colors[ImGuiCol_TableRowBgAlt]          = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
-		colors[ImGuiCol_TextSelectedBg]         = ImVec4(0.26f, 0.98f, 0.59f, 0.35f);
-		colors[ImGuiCol_DragDropTarget]         = ImVec4(1.00f, 1.00f, 0.00f, 0.90f);
-		colors[ImGuiCol_NavHighlight]           = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
-		colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
-		colors[ImGuiCol_NavWindowingDimBg]      = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-		colors[ImGuiCol_ModalWindowDimBg]       = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
-
-		//Find queue families
-		auto families = _device->queueFamilyIndices();
-
-		//Create a descriptor pool
-		{
-			VkDescriptorPoolSize pool_sizes[] =
-			{
-					{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-					{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-					{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-					{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-					{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-					{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-			};
-			VkDescriptorPoolCreateInfo pool_info = {};
-			pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-			pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
-			pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
-			pool_info.pPoolSizes = pool_sizes;
-			if (vkCreateDescriptorPool(_device->get(), &pool_info, nullptr, &_imGuiDescriptorPool) != VK_SUCCESS) {
-				throw std::runtime_error("Could not create Dear ImGui's descriptor pool");
-			}
-		}
-
-		//Init ImGui integrations
-		ImGui_ImplGlfw_InitForVulkan(_window->window(), true);
-		ImGui_ImplVulkan_InitInfo init_info = {};
-		init_info.Instance = _instance;
-		init_info.PhysicalDevice = _device->physicalDevice();
-		init_info.Device = _device->get();
-		init_info.QueueFamily = *families.graphicsFamily;
-		init_info.Queue = _device->graphicsQueue();
-		init_info.PipelineCache = VK_NULL_HANDLE;
-		init_info.DescriptorPool = _imGuiDescriptorPool;
-		init_info.Allocator = nullptr;
-		init_info.MinImageCount = MAX_FRAMES_IN_FLIGHT;
-		init_info.ImageCount = MAX_FRAMES_IN_FLIGHT;
-		init_info.CheckVkResultFn = [](VkResult r){
-			if(r != VK_SUCCESS)
-				std::cerr << "ImGui vulkan returned " << r << std::endl;
-		};
-		ImGui_ImplVulkan_Init(&init_info, _swapChain->imGuiRenderPass());
-
-		//Upload Fonts
-		SingleUseCommandBuffer commandBuffer(_device->graphicsPool());
-		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.get());
-		commandBuffer.submit(_device->graphicsQueue());
-
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		_renderers.push_back(std::make_unique<Renderer>(*_swapChain));
+		return _renderers[_renderers.size() - 1].get();
 	}
 
-	void VulkanRuntime::cleanupImGui()
+	SwapChain* VulkanRuntime::swapChain()
 	{
-		ImGui_ImplVulkan_Shutdown();
-		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
-		vkDestroyDescriptorPool(_device->get(), _imGuiDescriptorPool, nullptr);
+		return _swapChain;
 	}
 
 

@@ -5,6 +5,8 @@
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "mesh.h"
 #include "material.h"
+#include "RenderTarget.h"
+#include "Camera.h"
 
 namespace graphics
 {
@@ -20,16 +22,40 @@ namespace graphics
 
 	class Renderer
 	{
-		Material* _material;
+		VkRenderPass _renderPass = VK_NULL_HANDLE;
+		std::vector<VkFramebuffer> _frameBuffers;
+		SwapChain& _swapChain;
+		RenderTexture* _target = nullptr;
+		std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
+		std::function<void()> _onDestroy;
+		VkClearColorValue _clearColor;
+		VkExtent2D _extent;
+		bool _depthTexture = false;
+		bool _shouldClear = true;
 
-		std::vector<VkDescriptorSet> _descriptorSets;
-		std::vector<std::vector<VkCommandBuffer>> _drawBuffers;
-
-		NativeForEach _forEach;
+		void createRenderPass(VkFormat imageFormat, VkFormat depthImageFormat = VkFormat::VK_FORMAT_UNDEFINED);
+		void createFrameBuffers(VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture = VK_NULL_HANDLE);
+		void startRenderPass(VkCommandBuffer cmdBuffer);
+		void endRenderPass(VkCommandBuffer cmdBuffer);
 	public:
-		Renderer(Material* material);
-		//~Renderer();
-		void createDescriptorSets(size_t count);
-		std::vector<VkCommandBuffer> createRenderBuffers(SwapChain* swapChain, std::vector<RenderObject>& meshes, glm::mat4x4 cameraMatrix, VkCommandBufferInheritanceInfo& inheritanceInfo, size_t frame);
+		uint8_t priority;
+		Renderer(SwapChain& swapChain);
+		virtual ~Renderer();
+
+		void setTargetAsSwapChain(bool depthTexture);
+		void setTarget(RenderTexture* texture);
+		void windowResize();
+		void setClearColor(VkClearColorValue color);
+		void dontClear();
+
+		VkFramebuffer framebuffer(size_t index);
+
+		void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
+		void onDestroyCallback(const std::function<void()>& callback);
+		void render(VkCommandBuffer cmdBuffer);
+
+		VkRenderPass renderPass();
+
+		void clearTarget();
 	};
 }

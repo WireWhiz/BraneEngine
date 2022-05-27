@@ -4,7 +4,6 @@
 
 namespace graphics
 {
-    size_t SwapChain::_size;
 
     void SwapChain::createSwapChain()
     {
@@ -67,6 +66,7 @@ namespace graphics
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, nullptr);
         _images.resize(imageCount);
         _size = imageCount;
+		_currentFrame = _size - 1;
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, _images.data());
     }
 
@@ -102,7 +102,7 @@ namespace graphics
 
     void SwapChain::createDepthResources()
     {
-        VkFormat depthFormat = findDepthFormat();
+        _depthImageFormat = findDepthFormat();
         VkImageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         createInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -112,7 +112,7 @@ namespace graphics
         createInfo.mipLevels = 1;
         createInfo.arrayLayers = 1;
 
-        createInfo.format = depthFormat;
+        createInfo.format = _depthImageFormat;
         createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
@@ -146,7 +146,7 @@ namespace graphics
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = _depthImage;
         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format = depthFormat;
+        viewInfo.format = _depthImageFormat;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
         viewInfo.subresourceRange.levelCount = 1;
@@ -156,98 +156,6 @@ namespace graphics
         if (vkCreateImageView(device->get(), &viewInfo, nullptr, &_depthImageView) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create texture image view!");
-        }
-
-    }
-
-    void SwapChain::createRenderPass()
-    {
-        VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = _imageFormat;
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		_depthImageFormat = findDepthFormat();
-        VkAttachmentDescription depthAttachment{};
-        depthAttachment.format = _depthImageFormat;
-        depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkAttachmentReference depthAttachmentRef{};
-        depthAttachmentRef.attachment = 1;
-        depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-        subpass.pDepthStencilAttachment = &depthAttachmentRef;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.srcAccessMask = 0;
-
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-        std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-        VkRenderPassCreateInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        renderPassInfo.pAttachments = attachments.data();
-        renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;
-        renderPassInfo.dependencyCount = 1;
-        renderPassInfo.pDependencies = &dependency;
-
-        if (vkCreateRenderPass(device->get(), &renderPassInfo, nullptr, &_renderPass) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create render pass!");
-        }
-    }
-
-    void SwapChain::createFrameBuffers()
-    {
-        _frameBuffers.resize(_imageViews.size());
-
-        for (size_t i = 0; i < _imageViews.size(); i++)
-        {
-            VkImageView attachments[] = {
-                _imageViews[i],
-                _depthImageView
-            };
-
-            VkFramebufferCreateInfo framebufferInfo{};
-            framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = _renderPass;
-            framebufferInfo.attachmentCount = 2;
-            framebufferInfo.pAttachments = attachments;
-            framebufferInfo.width = _extent.width;
-            framebufferInfo.height = _extent.height;
-            framebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_frameBuffers[i]) != VK_SUCCESS)
-            {
-                throw std::runtime_error("failed to create framebuffer!");
-            }
         }
     }
 
@@ -334,28 +242,28 @@ namespace graphics
         createSwapChain();
         createImageViews();
         createDepthResources();
-        createRenderPass();
-		createImGuiRenderPass();
-	    createFrameBuffers();
-		createImGuiFrameBuffers();
+
+	    _imageAvailableSemaphores.resize(_size);
+	    VkSemaphoreCreateInfo semaphoreInfo{};
+	    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	    VkFenceCreateInfo fenceInfo{};
+	    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+		for(size_t i = 0; i < _size; i++)
+		{
+			if(vkCreateSemaphore(device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS){
+				throw std::runtime_error("failed to create semaphores for a frame!");
+			}
+		}
     }
     SwapChain::~SwapChain()
     {
-        vkDestroyRenderPass(device->get(), _renderPass, nullptr);
-	    vkDestroyRenderPass(device->get(), _imGuiRenderPass, nullptr);
+	    for(auto s : _imageAvailableSemaphores)
+		    vkDestroySemaphore(device->get(), s, nullptr);
 
         vkDestroyImageView(device->get(), _depthImageView, nullptr);
         vkDestroyImage(device->get(), _depthImage, nullptr);
         vkFreeMemory(device->get(), _depthImageMemory, nullptr);
-        
-        for (auto framebuffer : _frameBuffers)
-        {
-            vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
-        }
-	    for (auto framebuffer : _imGuiFrameBuffers)
-	    {
-		    vkDestroyFramebuffer(device->get(), framebuffer, nullptr);
-	    }
 
         for (auto imageView : _imageViews)
         {
@@ -364,20 +272,15 @@ namespace graphics
 
         vkDestroySwapchainKHR(device->get(), _swapChain, nullptr);
 
+
     }
     VkSwapchainKHR SwapChain::get()
     {
         return _swapChain;
     }
-    VkResult SwapChain::acquireNextImage(VkSemaphore semaphore, uint32_t& index)
+    VkResult SwapChain::acquireNextImage()
     {
-
-        return vkAcquireNextImageKHR(device->get(), _swapChain, UINT64_MAX, semaphore, VK_NULL_HANDLE, &index);
-    }
-
-    VkFramebuffer SwapChain::framebuffer(size_t index)
-    {
-        return _frameBuffers[index];
+        return vkAcquireNextImageKHR(device->get(), _swapChain, UINT64_MAX, _imageAvailableSemaphores[nextFrame()], VK_NULL_HANDLE, &_currentFrame);
     }
 
     size_t SwapChain::size()
@@ -396,91 +299,47 @@ namespace graphics
 	{
 		return _depthImageFormat;
 	}
-	VkRenderPass SwapChain::renderPass()
+
+	const std::vector<VkImageView>& SwapChain::getImages()
     {
-        return _renderPass;
+        return _imageViews;
     }
 
-    VkImage SwapChain::getImage(size_t index)
-    {
-        return _images[index];
-    }
-
-	void SwapChain::createImGuiRenderPass()
+	const uint32_t& SwapChain::currentFrame()
 	{
-		VkAttachmentDescription alpha{};
-		alpha.format = _imageFormat;
-		alpha.samples = VK_SAMPLE_COUNT_1_BIT;
-		alpha.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-		alpha.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		alpha.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		alpha.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		alpha.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		alpha.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-		VkAttachmentReference color_attachment = {};
-		color_attachment.attachment = 0;
-		color_attachment.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		VkSubpassDescription subpass = {};
-		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &color_attachment;
-
-		VkSubpassDependency dependency = {};
-		dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		dependency.dstSubpass = 0;
-		dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT  | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.srcAccessMask = 0;
-		dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-		dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT  | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-		VkRenderPassCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-		info.attachmentCount = 1;
-		info.pAttachments = &alpha;
-		info.subpassCount = 1;
-		info.pSubpasses = &subpass;
-		info.dependencyCount = 1;
-		info.pDependencies = &dependency;
-		if (vkCreateRenderPass(device->get(), &info, nullptr, &_imGuiRenderPass) != VK_SUCCESS) {
-			throw std::runtime_error("Could not create Dear ImGui's render pass");
-		}
+		return _currentFrame;
 	}
 
-	void SwapChain::createImGuiFrameBuffers()
+	uint32_t  SwapChain::nextFrame()
 	{
-		_imGuiFrameBuffers.resize(_imageViews.size());
+		return (_currentFrame + 1) % _images.size();
+	}
 
-		for (size_t i = 0; i < _imageViews.size(); i++)
+	VkSemaphore SwapChain::currentSemaphore()
+	{
+		return _imageAvailableSemaphores[_currentFrame];
+	}
+
+	VkImageView SwapChain::depthTexture()
+	{
+		return _depthImageView;
+	}
+
+	void SwapChain::resize()
+	{
+		vkDestroyImageView(device->get(), _depthImageView, nullptr);
+		vkDestroyImage(device->get(), _depthImage, nullptr);
+		vkFreeMemory(device->get(), _depthImageMemory, nullptr);
+
+		for (auto imageView : _imageViews)
 		{
-			VkImageView attachments[] = {
-					_imageViews[i]
-			};
-
-			VkFramebufferCreateInfo framebufferInfo{};
-			framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-			framebufferInfo.renderPass = _imGuiRenderPass;
-			framebufferInfo.attachmentCount = 1;
-			framebufferInfo.pAttachments = attachments;
-			framebufferInfo.width = _extent.width;
-			framebufferInfo.height = _extent.height;
-			framebufferInfo.layers = 1;
-
-			if (vkCreateFramebuffer(device->get(), &framebufferInfo, nullptr, &_imGuiFrameBuffers[i]) != VK_SUCCESS)
-			{
-				throw std::runtime_error("failed to create imgui framebuffer!");
-			}
+			vkDestroyImageView(device->get(), imageView, nullptr);
 		}
-	}
 
-	VkFramebuffer SwapChain::imGuiFramebuffer(size_t index)
-	{
-		return _imGuiFrameBuffers[index];
-	}
+		vkDestroySwapchainKHR(device->get(), _swapChain, nullptr);
 
-	VkRenderPass SwapChain::imGuiRenderPass()
-	{
-		return _imGuiRenderPass;
+		createSwapChain();
+		createImageViews();
+		createDepthResources();
 	}
 }

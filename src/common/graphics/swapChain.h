@@ -12,13 +12,11 @@ namespace graphics
 	{
 		Window* _window;
 		VkSwapchainKHR _swapChain;
-		VkRenderPass _renderPass;
-		VkRenderPass _imGuiRenderPass;
 
-		std::vector<VkFramebuffer> _frameBuffers;
-		std::vector<VkFramebuffer> _imGuiFrameBuffers;
 		std::vector<VkImage> _images;
 		std::vector<VkImageView> _imageViews;
+
+		std::vector<VkSemaphore> _imageAvailableSemaphores;
 
 		VkImage _depthImage;
 		VkDeviceMemory _depthImageMemory;
@@ -26,17 +24,13 @@ namespace graphics
 
 		VkFormat _imageFormat;
 		VkFormat _depthImageFormat;
-		VkImageLayout _imageLayout;
 		VkExtent2D _extent;
-		static size_t _size;
+		size_t _size;
+		uint32_t _currentFrame;
 
 		void createSwapChain();
 		void createImageViews();
 		void createDepthResources();
-		void createRenderPass();
-		void createImGuiRenderPass();
-		void createFrameBuffers();
-		void createImGuiFrameBuffers();
 
 
 		VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
@@ -51,16 +45,19 @@ namespace graphics
 		~SwapChain();
 
 		VkSwapchainKHR get();
-		VkResult acquireNextImage(VkSemaphore semaphore, uint32_t& index);
-		VkFramebuffer framebuffer(size_t index);
-		VkFramebuffer imGuiFramebuffer(size_t index);
+		VkResult acquireNextImage();
+		const uint32_t&  currentFrame();
+		uint32_t  nextFrame();
 
-		static size_t size();
+		VkSemaphore currentSemaphore();
+
+		size_t size();
 		VkExtent2D extent();
 		VkFormat imageFormat();
 		VkFormat depthImageFormat();
-		VkRenderPass renderPass();
-		VkRenderPass imGuiRenderPass();
-		VkImage getImage(size_t index);
+		const std::vector<VkImageView>& getImages();
+		VkImageView depthTexture();
+
+		void resize();
 	};
 }

@@ -45,7 +45,7 @@ _nm(*(NetworkManager*)rt.getModule("networkManager"))
 	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
 	em.setEntityComponent(testHead, tc.toVirtual());
 
-	graphics::Material* mat = new graphics::Material();
+	auto* mat = new graphics::Material();
 	mat->setVertex(vkr.loadShader(0));
 	mat->setFragment(vkr.loadShader(1));
 	//mat->addTextureDescriptor(vkr.loadTexture(0));
@@ -53,7 +53,7 @@ _nm(*(NetworkManager*)rt.getModule("networkManager"))
 	mat->addBinding(1, sizeof(glm::vec3));
 	mat->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
 	mat->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	vkr.initRenderer(vkr.addMaterial(mat));
+	vkr.addMaterial(mat);
 
 	graphics::Material* mat2 = new graphics::Material();
 	mat2->setVertex(vkr.loadShader(0));

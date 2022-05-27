@@ -2,9 +2,10 @@
 #include "shader.h"
 #include "texture.h"
 
-#include "graphicsPipeline.h"
+#include "swapChain.h"
 #include <vulkan/vulkan.h>
 #include <ecs/core/entity.h>
+#include "mesh.h"
 
 namespace graphics
 {
@@ -26,6 +27,7 @@ namespace graphics
 
 		VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
 		VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
+		std::vector<VkDescriptorSet> _descriptorSets;
 
 		void buildDescriptorSetVars(SwapChain* swapChain);
 
@@ -39,11 +41,12 @@ namespace graphics
 		void addBinding(uint32_t binding, uint32_t stride);
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildGraphicsPipeline(SwapChain* swapChain);
-		void getImageDescriptors(std::vector<VkWriteDescriptorSet>& descriptors, std::vector<VkDescriptorImageInfo>& imageInfo, VkDescriptorSet& descriptorSet);
+		void createDescriptorSets(size_t swapChainSize);
 		VkPipeline pipeline();
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();
 		VkDescriptorPool descriptorPool();
+		VkDescriptorSet* descriptorSet(size_t frame);
 		
 	};
 

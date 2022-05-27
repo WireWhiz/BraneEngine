@@ -9,6 +9,7 @@
 #include <networking/connection.h>
 #include "editorWindow.h"
 #include "EditorEvent.h"
+#include "graphics/graphics.h"
 #include <memory>
 #include <vector>
 #include <mutex>
@@ -16,11 +17,15 @@
 #include <deque>
 #include <unordered_map>
 #include <functional>
+#include <graphics/renderer.h>
 
 
 class EditorUI : public Module
 {
 	bool _redockQueued;
+	graphics::Renderer* _renderer;
+	VkDescriptorPool _imGuiDescriptorPool;
+
 	std::vector<std::unique_ptr<EditorWindow>> _windows;
 	void drawUI();
 	void mainMenu();
@@ -36,6 +41,7 @@ class EditorUI : public Module
 	void addMainWindows();
 public:
 	EditorUI(Runtime& runtime);
+	~EditorUI();
 
 	const char* name() override;
 	Runtime& runtime();
@@ -56,6 +62,10 @@ public:
 				callback(e);
 			});
 	}
+
+	VkDescriptorPool descriptorPool();
+	void setupImGui(graphics::VulkanRuntime& runtime);
+	void cleanupImGui();
 };
 
 

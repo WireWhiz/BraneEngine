@@ -6,10 +6,8 @@
 #include "../editorUI.h"
 #include <stack>
 #include <utility/hex.h>
-#include <graphics/IconsFontAwesome6.h>
 
-AssetBrowserWindow::AssetBrowserWindow(EditorUI& ui) : EditorWindow(ui),
-                                                       _nm(*(NetworkManager*)(ui.runtime().getModule("networkManager")))
+AssetBrowserWindow::AssetBrowserWindow(EditorUI& ui) : EditorWindow(ui)
 {
 	ui.server()->sendRequest(net::Request("directoryTree")).then([this](ISerializedData sData){
 		_root = deserializeDirectory(sData);
@@ -19,12 +17,12 @@ AssetBrowserWindow::AssetBrowserWindow(EditorUI& ui) : EditorWindow(ui),
 
 void AssetBrowserWindow::draw()
 {
-	if(ImGui::Begin("Asset Browser"))
+	if(ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::TextDisabled("%s",_strPath.c_str());
 		ImGui::Separator();
 
-		if(_root && ImGui::BeginTable("window split", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_ScrollY, ImGui::GetContentRegionAvail()))
+		if(_root && ImGui::BeginTable("window split", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail()))
 		{
 			ImGui::TableNextColumn();
 			displayDirectories();
@@ -35,6 +33,7 @@ void AssetBrowserWindow::draw()
 				ImGui::Text("No Assets");
 			else
 			{
+				ImGui::BeginChild("Directory Contents", {0,0}, false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.4f,0.4f,0.5f, 1});
 				ImGui::PushStyleColor(ImGuiCol_Button, {0.1f,0.1f,0.1f, 1});
@@ -50,6 +49,7 @@ void AssetBrowserWindow::draw()
 					}
 				ImGui::PopStyleVar(1);
 				ImGui::PopStyleColor(2);
+				ImGui::EndChild();
 			}
 
 			ImGui::EndTable();

@@ -31,15 +31,12 @@ namespace graphics
 		std::vector<VkCommandBuffer> _drawBuffers;
 
 		staticIndexVector<std::unique_ptr<Material>> _materials;
-		staticIndexVector<std::unique_ptr<Renderer>> _renderers;
+		std::vector<std::unique_ptr<Renderer>> _renderers;
 		staticIndexVector<std::unique_ptr<Texture>> _textures;
 		staticIndexVector<std::unique_ptr<Mesh>> _meshes;
 
 		VkInstance _instance;
 
-		VkDescriptorPool _imGuiDescriptorPool;
-
-		std::vector<VkSemaphore> _imageAvailableSemaphores;
 		std::vector<VkSemaphore> _renderFinishedSemaphores;
 
 		bool _validationLayersEnabled;
@@ -51,14 +48,11 @@ namespace graphics
 		const int MAX_FRAMES_IN_FLIGHT = 2;
 		std::vector<VkFence> _inFlightFences;
 		std::vector<VkFence> _imagesInFlight;
-		size_t currentFrame = 0;
 
 		void init();
 		void cleanup();
 		void createInstance();
 		void createSyncObjects();
-		void setupImGui();
-		void cleanupImGui();
 
 		void createDrawBuffers();
 
@@ -81,6 +75,7 @@ namespace graphics
 		VkDevice device();
 		VkPhysicalDevice physicalDevice();
 		Window* window();
+		SwapChain* swapChain();
 
 		void updateWindow();
 
@@ -90,9 +85,9 @@ namespace graphics
 		
 		size_t addTexture(Texture* texture);
 		Shader* loadShader(size_t shaderID);
-		size_t addMaterial(Material* material);
-		size_t initRenderer(size_t id);
+		void addMaterial(Material* material);
 		size_t addMesh(MeshAsset* mesh);
+		Renderer* createRenderer();
 
 		Material* getMaterial(size_t id);
 	};

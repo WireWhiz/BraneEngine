@@ -5,13 +5,13 @@
 #ifndef BRANEENGINE_ASSETBROWSERWINDOW_H
 #define BRANEENGINE_ASSETBROWSERWINDOW_H
 
+
 #include "../editorWindow.h"
 #include "networking/networking.h"
 #include <string>
 
 class AssetBrowserWindow : public EditorWindow
 {
-	NetworkManager& _nm;
 	std::string _strPath = "/";
 
 	struct Directory
