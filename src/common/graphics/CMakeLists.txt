@@ -11,7 +11,7 @@ add_library(graphics STATIC
 	texture.cpp
 	window.cpp
 	RenderTarget.cpp
-	RenderTarget.h Camera.cpp Camera.h)
+	RenderTarget.h Camera.cpp Camera.h MeshRenderer.cpp MeshRenderer.h)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
 target_link_libraries(graphics PUBLIC utility glslang imgui)
 if(WIN32)

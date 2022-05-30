@@ -66,7 +66,7 @@ void LoginWindow::draw()
 			});
 
 		}
-		ImGui::Text(_feedbackMessage.c_str());
+		ImGui::Text("%s", _feedbackMessage.c_str());
 	}
 	ImGui::End();
 }

@@ -22,14 +22,15 @@ namespace graphics
 
 	class Renderer
 	{
+	protected:
 		VkRenderPass _renderPass = VK_NULL_HANDLE;
 		std::vector<VkFramebuffer> _frameBuffers;
 		SwapChain& _swapChain;
 		RenderTexture* _target = nullptr;
-		std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
+
 		std::function<void()> _onDestroy;
 		VkClearColorValue _clearColor;
-		VkExtent2D _extent;
+		VkExtent2D _extent = {0,0};
 		bool _depthTexture = false;
 		bool _shouldClear = true;
 
@@ -37,25 +38,36 @@ namespace graphics
 		void createFrameBuffers(VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture = VK_NULL_HANDLE);
 		void startRenderPass(VkCommandBuffer cmdBuffer);
 		void endRenderPass(VkCommandBuffer cmdBuffer);
+		virtual void rebuild();
 	public:
 		uint8_t priority;
 		Renderer(SwapChain& swapChain);
 		virtual ~Renderer();
 
+		bool targetingSwapChain();
 		void setTargetAsSwapChain(bool depthTexture);
 		void setTarget(RenderTexture* texture);
-		void windowResize();
 		void setClearColor(VkClearColorValue color);
 		void dontClear();
 
 		VkFramebuffer framebuffer(size_t index);
+		VkExtent2D extent();
 
-		void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
-		void onDestroyCallback(const std::function<void()>& callback);
-		void render(VkCommandBuffer cmdBuffer);
+
+		virtual void render(VkCommandBuffer cmdBuffer) = 0;
 
 		VkRenderPass renderPass();
 
+		bool depthTexture();
 		void clearTarget();
+	};
+
+	class CustomRenderer : public Renderer
+	{
+		std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
+	public:
+		CustomRenderer(SwapChain& swapChain);
+		void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
+		void render(VkCommandBuffer cmdBuffer) override;
 	};
 }

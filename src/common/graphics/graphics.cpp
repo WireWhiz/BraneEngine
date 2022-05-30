@@ -21,7 +21,8 @@ namespace graphics
             vkDeviceWaitIdle(_device->get());
             _swapChain->resize();
 			for(auto& r : _renderers)
-				r->windowResize();
+				if(r->targetingSwapChain())
+					r->setTargetAsSwapChain(r->depthTexture());
 			result = _swapChain->acquireNextImage();
         }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -494,8 +495,8 @@ namespace graphics
 
 	void VulkanRuntime::addMaterial(Material* material)
 	{
-		material->buildGraphicsPipeline(_swapChain);
-		material->createDescriptorSets(_swapChain->size());
+		material->buildPipelineLayout(_swapChain);
+		material->initialize(_swapChain->size());
 		_materials.push(std::unique_ptr<Material>(material));
 	}
 
@@ -509,15 +510,20 @@ namespace graphics
 		return "graphics";
 	}
 
-	Renderer* VulkanRuntime::createRenderer()
-	{
-		_renderers.push_back(std::make_unique<Renderer>(*_swapChain));
-		return _renderers[_renderers.size() - 1].get();
-	}
 
 	SwapChain* VulkanRuntime::swapChain()
 	{
 		return _swapChain;
+	}
+
+	const staticIndexVector<std::unique_ptr<Material>>& VulkanRuntime::materials()
+	{
+		return _materials;
+	}
+
+	const staticIndexVector<std::unique_ptr<Mesh>>& VulkanRuntime::meshes()
+	{
+		return _meshes;
 	}
 
 

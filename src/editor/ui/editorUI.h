@@ -23,7 +23,7 @@
 class EditorUI : public Module
 {
 	bool _redockQueued;
-	graphics::Renderer* _renderer;
+	graphics::CustomRenderer* _renderer;
 	VkDescriptorPool _imGuiDescriptorPool;
 
 	std::vector<std::unique_ptr<EditorWindow>> _windows;

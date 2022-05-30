@@ -100,6 +100,15 @@ public:
 				f(_data[i]);
 		}
 	}
+
+	void forEach(const std::function<void(const T&)> f) const
+	{
+		for (size_t i = 0; i < _data.size(); ++i)
+		{
+			if(_isUsed[i])
+				f(_data[i]);
+		}
+	}
 };
 
 #endif //BRANEENGINE_STATICINDEXVECTOR_H

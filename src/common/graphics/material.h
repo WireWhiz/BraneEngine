@@ -9,6 +9,7 @@
 
 namespace graphics
 {
+	class Renderer;
 	typedef uint64_t MaterialID;
 	class Material
 	{
@@ -16,11 +17,8 @@ namespace graphics
 		Shader* _vertexShader       = nullptr;
 		Shader* _fragmentShader     = nullptr;
 		VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
-		VkPipeline _pipeline = VK_NULL_HANDLE;
 
 		//Descriptors
-		AssetID _id;
-		EntityForEachID _forEachID = ULONG_MAX;
 		std::vector<Texture*> _textures;
 		std::vector<VkVertexInputBindingDescription> _bindings;
 		std::vector<VkVertexInputAttributeDescription> _attributes;
@@ -29,24 +27,30 @@ namespace graphics
 		VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> _descriptorSets;
 
-		void buildDescriptorSetVars(SwapChain* swapChain);
+		std::vector<VirtualType::Type> _inputs;
 
+		ComponentAsset* _component;
+
+		void buildDescriptorSetVars(SwapChain* swapChain);
+		void generateComponent();
 	public:
 		~Material();
 
+		void setInputs(std::vector<VirtualType::Type> types);
 		void addTextureDescriptor(Texture* texture);
 		void setGeometry(Shader* shader);
 		void setVertex(Shader* shader);
 		void setFragment(Shader* shader);
 		void addBinding(uint32_t binding, uint32_t stride);
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
-		void buildGraphicsPipeline(SwapChain* swapChain);
-		void createDescriptorSets(size_t swapChainSize);
-		VkPipeline pipeline();
+		void buildPipelineLayout(SwapChain* swapChain);
+		void initialize(size_t swapChainSize);
+		const ComponentAsset* component() const;
+		VkPipeline pipeline(Renderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();
 		VkDescriptorPool descriptorPool();
-		VkDescriptorSet* descriptorSet(size_t frame);
+		VkDescriptorSet const* descriptorSet(size_t frame) const;
 		
 	};
 

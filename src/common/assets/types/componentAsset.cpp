@@ -42,7 +42,7 @@ ComponentAsset::ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types,
 
 }
 
-ComponentAsset::ComponentAsset(std::vector<VirtualType*>& types, AssetID id, size_t size)
+ComponentAsset::ComponentAsset(const std::vector<VirtualType*>& types, AssetID id, size_t size)
 {
 	type.set(AssetType::Type::component);
 	_size = size;

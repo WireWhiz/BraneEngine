@@ -128,12 +128,6 @@ namespace graphics
 		}
 	}
 
-	void Renderer::setRenderCallback(const std::function<void(VkCommandBuffer)>& callback)
-	{
-		assert(callback);
-		_renderCallback =callback;
-	}
-
 	void Renderer::startRenderPass(VkCommandBuffer cmdBuffer)
 	{
 		VkRenderPassBeginInfo renderPassInfo{};
@@ -159,15 +153,6 @@ namespace graphics
 		vkCmdEndRenderPass(cmdBuffer);
 	}
 
-	void Renderer::render(VkCommandBuffer cmdBuffer)
-	{
-		if(_renderPass == VK_NULL_HANDLE)
-			return;
-		startRenderPass(cmdBuffer);
-		_renderCallback(cmdBuffer);
-		endRenderPass(cmdBuffer);
-	}
-
 	void Renderer::setTargetAsSwapChain(bool depthTexture)
 	{
 		_target = nullptr;
@@ -181,7 +166,7 @@ namespace graphics
 			createRenderPass(_swapChain.imageFormat());
 			createFrameBuffers(_swapChain.extent(),_swapChain.getImages());
 		}
-
+		rebuild();
 	}
 
 	void Renderer::setTarget(RenderTexture* texture)
@@ -189,19 +174,12 @@ namespace graphics
 		_target = texture;
 		createRenderPass(texture->imageFormat(), texture->depthTextureFormat());
 		createFrameBuffers(texture->size(),texture->images(), texture->depthTexture());
+		rebuild();
 	}
 
 	VkRenderPass Renderer::renderPass()
 	{
 		return _renderPass;
-	}
-
-	void Renderer::windowResize()
-	{
-		//only resize if our target is the swap chain
-		if(_target)
-			return;
-		setTargetAsSwapChain(_depthTexture);
 	}
 
 	void Renderer::setClearColor(VkClearColorValue color)
@@ -225,9 +203,43 @@ namespace graphics
 		_renderPass = VK_NULL_HANDLE;
 	}
 
-	void Renderer::onDestroyCallback(const std::function<void()>& callback)
+	bool Renderer::targetingSwapChain()
 	{
-		_onDestroy = callback;
+		return !_target;
 	}
 
+	void Renderer::rebuild()
+	{
+
+	}
+
+	VkExtent2D Renderer::extent()
+	{
+		return _extent;
+	}
+
+	bool Renderer::depthTexture()
+	{
+		return _depthTexture;
+	}
+
+	CustomRenderer::CustomRenderer(SwapChain& swapChain) : Renderer(swapChain)
+	{
+
+	}
+
+	void CustomRenderer::setRenderCallback(const std::function<void(VkCommandBuffer)>& callback)
+	{
+		assert(callback);
+		_renderCallback =callback;
+	}
+
+	void CustomRenderer::render(VkCommandBuffer cmdBuffer)
+	{
+		if(_renderPass == VK_NULL_HANDLE)
+			return;
+		startRenderPass(cmdBuffer);
+		_renderCallback(cmdBuffer);
+		endRenderPass(cmdBuffer);
+	}
 }

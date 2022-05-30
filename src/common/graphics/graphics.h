@@ -87,9 +87,19 @@ namespace graphics
 		Shader* loadShader(size_t shaderID);
 		void addMaterial(Material* material);
 		size_t addMesh(MeshAsset* mesh);
-		Renderer* createRenderer();
+		const staticIndexVector<std::unique_ptr<Material>>& materials();
+
+		template<typename T, typename... Args>
+		T* createRenderer(Args... args)
+		{
+			static_assert(std::is_base_of<Renderer, T>());
+			_renderers.push_back(std::make_unique<T>(*_swapChain, args...));
+			return (T*)_renderers[_renderers.size() - 1].get();
+		}
 
 		Material* getMaterial(size_t id);
+
+		const staticIndexVector<std::unique_ptr<Mesh>>& meshes();
 	};
 
 }

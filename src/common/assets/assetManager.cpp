@@ -82,7 +82,7 @@ void AssetManager::loadAssembly(AssetID assembly, EntityID rootID)
 			fetchAsset<MeshAsset>(AssetID(mesh)).then([this, unloaded, a, rootID](MeshAsset* mesh)
             {
 	            std::cout << "Loaded: " << mesh->name << std::endl;
-                if(-(*unloaded) == 0)
+                if(--(*unloaded) == 0)
                      _stagedAssemblies.push_back({a, rootID});
             });
 		}

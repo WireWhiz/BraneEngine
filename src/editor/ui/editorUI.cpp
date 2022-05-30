@@ -28,7 +28,7 @@ EditorUI::EditorUI(Runtime& runtime) : Module(runtime)
 	graphics::VulkanRuntime* vkr = (graphics::VulkanRuntime*)runtime.getModule("graphics");
 
 
-	_renderer = vkr->createRenderer();
+	_renderer = vkr->createRenderer<graphics::CustomRenderer>();
 	_renderer->setRenderCallback([this](VkCommandBuffer cmdBuffer){
 
 		ImGui_ImplGlfw_NewFrame();

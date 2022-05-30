@@ -13,7 +13,7 @@ public:
 	ComponentAsset();
 	ComponentAsset(const ComponentAsset&) = delete;
 	ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types, AssetID id);
-	ComponentAsset(std::vector<VirtualType*>& types, AssetID id, size_t size);
+	ComponentAsset(const std::vector<VirtualType*>& types, AssetID id, size_t size);
 	~ComponentAsset();
 	size_t size() const;
 	size_t getByteIndex(size_t index) const;

@@ -184,14 +184,12 @@ namespace net
 		void async_writeHeader()
 		{
 			std::shared_ptr<bool> exists = _exists;
-			std::shared_ptr<net::OMessage> sending = _obuffer.front();
-			_obuffer.pop_front();
-			asio::async_write(_socket, asio::buffer(&sending->header, sizeof(MessageHeader)), [this, sending, exists](std::error_code ec, std::size_t length) {
+			asio::async_write(_socket, asio::buffer(&_obuffer.front()->header, sizeof(MessageHeader)), [this, exists](std::error_code ec, std::size_t length) {
 				if(!*exists)
 					return;
 				if (!ec)
 				{
-					async_writeBody(sending);
+					async_writeBody();
 				}
 				else
 				{
@@ -200,15 +198,16 @@ namespace net
 				}
 			});
 		}
-		void async_writeBody(std::shared_ptr<net::OMessage> sending)
+		void async_writeBody()
 		{
 			std::shared_ptr<bool> exists = _exists;
-			asio::async_write(_socket, asio::buffer(sending->body.data.data(), sending->body.data.size()), [this, sending, exists](std::error_code ec, std::size_t length) {
+			asio::async_write(_socket, asio::buffer(_obuffer.front()->body.data.data(), _obuffer.front()->header.size), [this, exists](std::error_code ec, std::size_t length) {
 				if(!*exists)
 					return;
 				if (!ec)
 				{
 					std::scoped_lock lock(_oLock);
+					_obuffer.pop_front();
 					if(!_obuffer.empty())
 						async_writeHeader();
 				}

@@ -7,21 +7,23 @@
 
 #include "../editorWindow.h"
 #include "graphics/RenderTarget.h"
-#include "graphics/renderer.h"
+#include "graphics/MeshRenderer.h"
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
 
 class RenderWindow : public EditorWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
-	graphics::Renderer* _renderer;
+	graphics::MeshRenderer* _renderer;
 	std::vector<VkDescriptorSet> _imGuiBindings;
 	graphics::SwapChain* _swapChain;
 	VkExtent2D _windowSize = {0,0};
 	bool _queueReload = false;
 	uint64_t _frameCount = 0;
 
-	void renderScene(VkCommandBuffer cmdBuffer);
+	float zoom = 0;
+	glm::vec3 position = {0,0,0};
+	glm::vec2 rotation = {0,0};
 public:
 	RenderWindow(EditorUI& ui);
 	~RenderWindow();
