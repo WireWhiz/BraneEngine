@@ -38,7 +38,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 					asset.setData(data);
 				});
 			}
-		});;
+		});
 		return asset;
 	});
 
@@ -47,8 +47,6 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 	_renderer = vkr->createRenderer<graphics::MeshRenderer>(vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr->swapChain();
-	_renderer->position = {1,2,-6};
-	_renderer->rotation = glm::quatLookAt(-_renderer->position, {0, 1, 0});
 
 	systems::addTransformSystem(em, ui.runtime().timeline());
 
@@ -149,14 +147,43 @@ void RenderWindow::draw()
 			}
 			if(_texture)
 				ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
-			ImGui::DragFloat3("camera position", &position.x);
-			ImGui::DragFloat2("camera rotation", &rotation.x);
-			ImGui::DragFloat("camera zoom", &zoom);
-			_renderer->position = position;
-			_renderer->rotation = glm::angleAxis(glm::radians(rotation.y), glm::vec3(0.0f,1.0f,0.0f)) * glm::angleAxis(glm::radians(rotation.x), glm::vec3(1.0f,0.0f,0.0f));
+
+			if(ImGui::IsWindowFocused())
+			{
+				//TODO add in sensitivity settings for all these
+				zoom = glm::min<float>(0,  zoom + ImGui::GetIO().MouseWheel);
+
+				bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+				if(!_panning && mouseDown)
+					_lastMousePos = ImGui::GetMousePos();
+				_panning = mouseDown;
+				if(_panning)
+				{
+					ImVec2 mousePos = ImGui::GetMousePos();
+					rotation.x += (mousePos.y - _lastMousePos.y);
+					rotation.y += (mousePos.x - _lastMousePos.x);
+					_lastMousePos = ImGui::GetMousePos();
+				}
+			}
+
+			glm::quat rot = rotationQuat();
+			_renderer->position = position + rot * glm::vec3(0, 0, zoom);
+			_renderer->rotation = rot;
 		}
 	}
 	ImGui::End();
+}
+
+void RenderWindow::lookAt(glm::vec3 pos)
+{
+	float yaw = atan2(-pos.x, -pos.z);
+	float pitch = acos(glm::dot(glm::normalize(position), {0,1,0}));
+	rotation = {glm::degrees(pitch) - 90, glm::degrees(yaw)};
+}
+
+glm::quat RenderWindow::rotationQuat() const
+{
+	return glm::angleAxis(glm::radians(rotation.y), glm::vec3(0.0f,1.0f,0.0f)) * glm::angleAxis(glm::radians(rotation.x), glm::vec3(1.0f,0.0f,0.0f));
 }
 
 
