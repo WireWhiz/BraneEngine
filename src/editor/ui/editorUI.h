@@ -44,6 +44,8 @@ public:
 	~EditorUI();
 
 	const char* name() override;
+	void stop() override;
+
 	Runtime& runtime();
 	net::Connection* server() const;
 

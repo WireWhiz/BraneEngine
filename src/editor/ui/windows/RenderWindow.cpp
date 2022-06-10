@@ -100,6 +100,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 
 RenderWindow::~RenderWindow()
 {
+	vkDeviceWaitIdle(graphics::device->get());
 	if(_texture)
 		delete _texture;
 }

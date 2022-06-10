@@ -32,6 +32,7 @@ public:
 	}
 	void setArchetype(Archetype* archetype)
 	{
+		_lock.lock();
 		clear();
 		_archetype = archetype;
 
@@ -44,7 +45,7 @@ public:
 					_componentIndices[i] = _componentIndices[i - 1] + _archetype->components()[i - 1]->size() * maxCapacity();
 			}
 		}
-		
+		_lock.unlock();
 	}
 
 	byte* getComponentData(const ComponentAsset* component, size_t entity)

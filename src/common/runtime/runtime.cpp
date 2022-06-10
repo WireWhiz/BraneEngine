@@ -28,6 +28,8 @@ void Runtime::run()
 
 void Runtime::stop()
 {
+	if(!_running)
+		return;
 	for (auto& m : _modules)
 	{
 		m.second->stop();
@@ -56,5 +58,6 @@ Runtime::Runtime()
 
 Runtime::~Runtime()
 {
+	stop();
 	ThreadPool::cleanup();
 }

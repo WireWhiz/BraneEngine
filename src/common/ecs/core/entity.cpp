@@ -232,6 +232,11 @@ const char* EntityManager::name()
 	return "entityManager";
 }
 
+void EntityManager::stop()
+{
+	_archetypes.clear();
+}
+
 
 NativeForEach::NativeForEach(std::vector<const ComponentAsset* >&& vector, EntityManager* em) : NativeForEach::NativeForEach(vector, em) {}
 NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)

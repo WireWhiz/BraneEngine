@@ -599,6 +599,11 @@ EntityForEachID ArchetypeManager::getForEachID(const ComponentSet& components, c
 	return id;
 }
 
+void ArchetypeManager::clear()
+{
+	_archetypes.resize(0);
+}
+
 ArchetypeManager::ForEachData::ForEachData(ComponentSet components, ComponentSet exclude)
 {
 	this->components = std::move(components);

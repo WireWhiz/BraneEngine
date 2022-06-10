@@ -111,4 +111,12 @@ namespace graphics{
 		}
 		return _cachedForEach.at(mat);
 	}
+
+	MeshRenderer::~MeshRenderer()
+	{
+		if(!_cachedPipelines.empty())
+			for(auto p : _cachedPipelines)
+				vkDestroyPipeline(graphics::device->get(), p.second, nullptr);
+		_cachedPipelines.clear();
+	}
 }

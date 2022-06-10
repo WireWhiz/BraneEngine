@@ -86,14 +86,13 @@ public:
 		ComponentSet exclude;
 		std::vector<Archetype*> archetypes;
 		ForEachData(ComponentSet components, ComponentSet exclude);
-
 	};
 
 	std::vector<ForEachData> _forEachData;
 
+	std::shared_ptr<ChunkPool> _chunkAllocator;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
-	std::shared_ptr<ChunkPool> _chunkAllocator;
 
 	void findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const;
 	void cacheArchetype(Archetype* arch);
@@ -113,4 +112,5 @@ public:
 	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
 	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
+	void clear();
 };

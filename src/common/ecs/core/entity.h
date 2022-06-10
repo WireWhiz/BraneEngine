@@ -70,6 +70,7 @@ public:
 	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
 	const char* name() override;
+	void stop() override;
 };
 
 class NativeForEach

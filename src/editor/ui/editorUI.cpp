@@ -347,4 +347,9 @@ VkDescriptorPool EditorUI::descriptorPool()
 	return _imGuiDescriptorPool;
 }
 
+void EditorUI::stop()
+{
+	_windows.resize(0);
+}
+
 

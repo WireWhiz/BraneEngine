@@ -24,6 +24,7 @@ namespace graphics{
 		glm::quat rotation;
 		float fov = 45;
 		MeshRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em);
+		~MeshRenderer() override;
 		void render(VkCommandBuffer cmdBuffer) override;
 	};
 }
