@@ -256,7 +256,6 @@ namespace net
 					for(auto& r: _responseListeners)
 						r.second.setError("Socket Disconnect");
 					_responseLock.unlock();
-					//TODO have a way for streams to be notified of disconnect
 				}
 			});
 		}
