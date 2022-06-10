@@ -9,7 +9,6 @@
 #include "assetNetworking/assetServer.h"
 #include <assets/types/meshAsset.h>
 #include <assets/types/shaderAsset.h>
-#include "httpServer/assetHttpServer.h"
 #include <database/Database.h>
 #include <runtime/runtime.h>
 

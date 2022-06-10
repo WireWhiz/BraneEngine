@@ -1,0 +1,3 @@
+add_library(include_dir INTERFACE)
+target_include_directories(include_dir INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(include_dir INTERFACE external_include_dirs)

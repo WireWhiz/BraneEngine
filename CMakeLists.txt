@@ -44,12 +44,8 @@ set(CLIENT_DEFS CLIENT)
 set(RUNTIME_SERVER_DEFS RUNTIME_SERVER)
 set(ASSET_SERVER_DEFS ASSET_SERVER)
 
-set(LIBS "")
 
-
-# Run subdir cmakelists
-add_subdirectory(include)
-add_subdirectory(bin)
-add_subdirectory(lib)
+add_subdirectory(libraries)
 add_subdirectory(src)
-add_subdirectory(external)
+
+

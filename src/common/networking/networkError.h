@@ -1,5 +1,5 @@
 #pragma once
-#include <asio/asio.hpp>
+#include <asio.hpp>
 #include <iostream>
 
 namespace net

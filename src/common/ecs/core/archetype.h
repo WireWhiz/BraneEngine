@@ -100,45 +100,6 @@ public:
 	void removeCachedArchetype(Archetype* arch); //TODO create archetype cleanup system
 	std::vector<Archetype*>& getForEachArchetypes(EntityForEachID id);
 
-	/*
-	template<typename T>
-	void forEachRecursive(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed)
-	{
-		if (executed.count(archetype))
-			return;
-
-		archetype->forEach(components, f, 0, archetype->size());
-		executed.insert(archetype);
-
-		archetype->forAddEdge([this, &components, &f, &executed](std::shared_ptr<const ArchetypeEdge> edge) {
-			forEachRecursive(edge->archetype, components, f, executed);
-		});
-	}
-
-	template<typename T>
-	void forEachRecursiveParallel(Archetype* archetype, const ComponentSet& components, const std::function <T>& f, std::unordered_set<Archetype*>& executed, size_t entitiesPerThread, std::shared_ptr<JobHandle> handle)
-	{
-		if (executed.count(archetype))
-			return;
-		size_t threads = archetype->size() / entitiesPerThread + 1;
-
-		for (size_t t = 0; t < threads; t++)
-		{
-			size_t start = t * entitiesPerThread;
-			size_t end = std::min(t * entitiesPerThread + entitiesPerThread, archetype->size());
-			ThreadPool::enqueue([archetype, &f, &components, start, end]() {
-				archetype->forEach(components, f, start, end);
-			}, handle);
-		}
-
-		executed.insert(archetype);
-
-		archetype->forAddEdge([this, &components, &f, &executed, &entitiesPerThread, &handle](std::shared_ptr<const ArchetypeEdge> edge) {
-			forEachRecursiveParallel(edge->archetype, components, f, executed, entitiesPerThread, handle);
-		});
-	}
-	*/
-
 public:
 	ArchetypeManager();
 	Archetype* getArchetype(const ComponentSet& components);

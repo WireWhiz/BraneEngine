@@ -1,5 +1,5 @@
 #pragma once
-#include <asio/asio.hpp>
+#include <asio.hpp>
 #include <asio/ts/buffer.hpp>
 #include <asio/ts/internet.hpp>
 #include <asio/ssl.hpp>

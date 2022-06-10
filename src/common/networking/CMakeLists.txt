@@ -6,7 +6,7 @@ add_library(networking STATIC
     "networkError.cpp"
     "message.h"
     "request.cpp")
- target_link_libraries(networking PUBLIC ssl)
+ target_link_libraries(networking PUBLIC ssl include_dir)
  target_compile_definitions(networking PUBLIC ASIO_STANDALONE)
 
  if(win32)

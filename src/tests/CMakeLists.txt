@@ -11,7 +11,6 @@ FetchContent_MakeAvailable(googletest)
 
 add_executable(tests
  "ecs/ecs_test.cpp"
- "ecs/systems_test.cpp"
  "ecs/virtualType_test.cpp"
  "jit/jit_test.cpp"
    "assets/assets_test.cpp" "utility/threadPool.cpp" networking/networking.cpp utility/hex.cpp assets/component_asset.cpp)

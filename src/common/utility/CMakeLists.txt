@@ -5,7 +5,7 @@ add_library(utility STATIC
 	threadPool.cpp
  "shared_recursive_mutex.h" "shared_recursive_mutex.cpp" hex.h staticIndexVector.h serializedData.cpp)
 
- target_link_libraries(utility PRIVATE -lpthread)
+ target_link_libraries(utility PUBLIC include_dir)
 
  add_library(utility_test STATIC
 	clock.cpp
