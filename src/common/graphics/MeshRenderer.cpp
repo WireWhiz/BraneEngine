@@ -24,9 +24,9 @@ namespace graphics{
 			return;
 		}
 		glm::mat4 transform = glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
-		glm::mat4 projection = glm::perspective(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
 		projection[1][1] *= -1;
-		glm::mat4 cameraMatrix = projection * transform;
+ 		glm::mat4 cameraMatrix = projection * transform;
 		_vkr.materials().forEach([this, cmdBuffer, cameraMatrix, transform](auto& mat){
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
@@ -74,7 +74,7 @@ namespace graphics{
 				auto currentTime = std::chrono::high_resolution_clock::now();
 				float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - start).count();
 
-				glm::mat4 lightPos = glm::translate(glm::rotate(glm::mat4(1), glm::radians(-45.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::vec3{2, 2, -4});;
+				glm::mat4 lightPos = glm::translate(glm::mat4(1), glm::vec3{2, 2, -4});;
 				constants.lightPosition = lightPos * glm::vec4{1,1,1,1};
 
 				vkCmdPushConstants(cmdBuffer, mat->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &constants);

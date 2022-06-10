@@ -56,6 +56,5 @@ Runtime::Runtime()
 
 Runtime::~Runtime()
 {
-
 	ThreadPool::cleanup();
 }
