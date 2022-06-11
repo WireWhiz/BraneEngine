@@ -14,6 +14,7 @@ add_library(graphics STATIC
 	RenderTarget.h Camera.cpp Camera.h MeshRenderer.cpp MeshRenderer.h)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
 target_link_libraries(graphics PUBLIC utility glslang imgui)
+target_compile_definitions(graphics PRIVATE ICON_IMAGE_PATH="branelogo.png")
 if(WIN32)
 target_link_libraries(graphics PUBLIC vulkan glfw)
 else (WIN32)

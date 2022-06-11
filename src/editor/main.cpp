@@ -10,7 +10,9 @@
 #include "networking/networking.h"
 #include "ui/editorUI.h"
 
-int main()
+
+
+int main(int argc, char** argv)
 {
 	Config::loadConfig();
 
@@ -30,3 +32,12 @@ int main()
 
 	rt.run();
 }
+
+#ifdef _WIN32
+int APIENTRY WinMain(HINSTANCE hInstance,
+                     HINSTANCE hPrevInstance,
+                     LPSTR lpCmdLine, int nCmdShow)
+{
+	return main(__argc, __argv);
+}
+#endif

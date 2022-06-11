@@ -1,5 +1,6 @@
 #include "window.h"
 #include <iostream>
+#include <stb/stb_image.h>
 
 namespace graphics
 {
@@ -43,6 +44,20 @@ namespace graphics
 	    const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
 		_framerate = vidMode->refreshRate;
 		std::cout << "Using framrate of: " << _framerate << std::endl;
+
+	    int w, h, texChannels;
+	    unsigned char* pixels = stbi_load(ICON_IMAGE_PATH, &w, &h, &texChannels, STBI_rgb_alpha);
+	    if (pixels == nullptr)
+	    {
+		    throw std::runtime_error("failed to load icon");
+	    }
+		GLFWimage icon{};
+	    icon.width = w;
+	    icon.height = h;
+		icon.pixels = pixels;
+	    glfwSetWindowIcon(_window, 1, &icon);
+
+	    stbi_image_free(pixels);
     }
 
     void Window::update()

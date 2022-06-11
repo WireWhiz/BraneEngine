@@ -39,6 +39,7 @@ else ()
     endif(win32)
 endif ()
 
+set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/media/brane.res)
 
 set(CLIENT_DEFS CLIENT)
 set(RUNTIME_SERVER_DEFS RUNTIME_SERVER)
