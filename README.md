@@ -5,5 +5,5 @@
 
 The insperation is that scripting is all done through nodes, so they are connected by "strings' thus string theory. 
 
-#Mission Statement
+# Mission Statement
 To create a framework for a creator focused metaverse, by creating an engine and server framwork that caters to what creators need to build AAA quailty immersive worlds.
