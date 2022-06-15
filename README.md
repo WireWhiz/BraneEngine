@@ -1,6 +1,6 @@
 # BraneEngine
 
-<img alt="Engine Logo" src="https://github.com/WireWhiz/BraneEngine/blob/Main/media/Brane-Logo.png?raw=true" width="30%" />
+<img alt="Engine Logo" src="https://github.com/WireWhiz/BraneEngine/blob/Main/media/branelogo.png?raw=true" width="30%" />
  A metaverse framework, built on a custom game engine. Inspired by the String Theory version of a multiverse, where each universe rests upon a membrane or "brane"
 
 # Mission Statement
