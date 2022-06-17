@@ -3,28 +3,27 @@
 #include <cassert>
 #include <cstddef>
 #include <vector>
-
-class ComponentAsset;
+#include "assets/types/componentAsset.h"
 
 // Class that always has components sorted
 class ComponentSet
 {
 private:
-	std::set<const ComponentAsset*> _components;
+	std::vector<ComponentID> _components;
 public:
 	ComponentSet() = default;
-	ComponentSet(std::vector<const ComponentAsset*> components);
-	void add(const ComponentAsset* component);
-	void remove(const  ComponentAsset* component);
+	ComponentSet(const std::vector<ComponentID>& components);
+	void add(ComponentID component);
+	void remove(ComponentID component);
 
-	bool contains(const ComponentAsset* component) const;
+	bool contains(ComponentID component) const;
 	bool contains(const ComponentSet& subset) const;
-	size_t index(const ComponentAsset* component) const;
-	void indicies(const ComponentSet& subset, size_t* indices) const;
-
+	size_t index(ComponentID component) const;
 	size_t size() const;
 
-	const ComponentAsset* operator[](size_t index) const;
-	typename std::set<const ComponentAsset*>::const_iterator begin() const;
-	typename std::set<const ComponentAsset*>::const_iterator end() const;
+	ComponentID operator[](size_t index) const;
+	std::vector<ComponentID>::const_iterator begin() const;
+	std::vector<ComponentID>::const_iterator end() const;
+
+	void indices(const ComponentSet& subset, std::vector<size_t>& offsets) const;
 };

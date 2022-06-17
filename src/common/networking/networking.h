@@ -70,10 +70,10 @@ class NetworkManager : public Module
 		});
 	}
 
-	void startSystems(Runtime& rt);
+	void startSystems();
 	void ingestData(net::Connection* conneciton);
 public:
-	NetworkManager(Runtime& runtime);
+	NetworkManager();
 	~NetworkManager();
 	void start() override;
 	void stop() override;
@@ -90,8 +90,8 @@ public:
 	}
 
 	void async_connectToAssetServer(const std::string& address, uint16_t port, const std::function<void(bool)>& callback);
-	AsyncData<Asset*> async_requestAsset(const AssetID& id, AssetManager& am);
-	AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id, AssetManager& am);
+	AsyncData<Asset*> async_requestAsset(const AssetID& id);
+	AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id);
 
 	void addRequestListener(const std::string& name, std::function<void(net::RequestResponse&)> callback);
 

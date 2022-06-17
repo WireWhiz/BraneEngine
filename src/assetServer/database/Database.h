@@ -58,7 +58,7 @@ public:
 		char* value;
 	};
 	typedef std::function<void(const std::vector<sqlColumn>& columns)> sqlCallbackFunction;
-	Database(Runtime& runtime);
+	Database();
 	~Database();
 	void rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f);
 	bool stringSafe(const std::string& str);

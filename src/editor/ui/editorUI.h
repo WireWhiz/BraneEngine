@@ -40,13 +40,11 @@ class EditorUI : public Module
 	void callEvents();
 	void addMainWindows();
 public:
-	EditorUI(Runtime& runtime);
+	EditorUI();
 	~EditorUI();
 
 	const char* name() override;
 	void stop() override;
-
-	Runtime& runtime();
 	net::Connection* server() const;
 
 	void removeWindow(EditorWindow* window);

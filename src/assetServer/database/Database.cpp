@@ -13,7 +13,7 @@
 #include <openssl/x509v3.h>
 #include <iomanip>
 
-Database::Database(Runtime& runtime) : Module(runtime)
+Database::Database()
 {
 	int rc;
 	rc = sqlite3_open(Config::json()["data"]["database_path"].asCString(), &_db);

@@ -6,6 +6,7 @@ struct AssetID
 {
 	AssetID() = default;
 	AssetID(const std::string& id);
+	AssetID(const std::string& serverAddress, uint64_t id);
 	uint64_t id;
 	std::string serverAddress;
 	void parseString(const std::string& id);

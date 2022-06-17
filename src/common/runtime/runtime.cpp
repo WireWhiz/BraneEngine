@@ -5,59 +5,66 @@
 #include "runtime.h"
 #include <utility/threadPool.h>
 
-void Runtime::addModule(Module* m)
+namespace Runtime
 {
-	_modules.insert({m->name(), std::unique_ptr<Module>(m)});
-}
+	std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
+	Timeline _timeline;
+	std::atomic_bool _running = true;
 
-Timeline& Runtime::timeline()
-{
-	return _timeline;
-}
-
-void Runtime::run()
-{
-	for (auto& m : _modules)
+	void addModule(Module* m)
 	{
-		m.second->start();
+		_modules.insert({m->name(), std::unique_ptr<Module>(m)});
 	}
 
-	while (_running)
-		_timeline.run();
-}
-
-void Runtime::stop()
-{
-	if(!_running)
-		return;
-	for (auto& m : _modules)
+	Timeline& timeline()
 	{
-		m.second->stop();
+		return _timeline;
 	}
 
-	_running = false;
-}
+	void run()
+	{
+		for (auto& m : _modules)
+		{
+			m.second->start();
+		}
 
-bool Runtime::hasModule(const std::string& name)
-{
-	return _modules.count(name);
-}
+		while (_running)
+			_timeline.run();
+	}
 
-Module* Runtime::getModule(const std::string& name)
-{
-	auto m = _modules.find(name);
-	if(m == _modules.end())
-		return nullptr;
-	return m->second.get();
-}
+	void stop()
+	{
+		if(!_running)
+			return;
+		for (auto& m : _modules)
+		{
+			m.second->stop();
+		}
 
-Runtime::Runtime()
-{
-	ThreadPool::init(4);
-}
+		_running = false;
+	}
 
-Runtime::~Runtime()
-{
-	stop();
-	ThreadPool::cleanup();
+	bool hasModule(const std::string& name)
+	{
+		return _modules.count(name);
+	}
+
+	Module* getModule(const std::string& name)
+	{
+		auto m = _modules.find(name);
+		if(m == _modules.end())
+			return nullptr;
+		return m->second.get();
+	}
+
+	void init()
+	{
+		ThreadPool::init(4);
+	}
+
+	void cleanup()
+	{
+		stop();
+		ThreadPool::cleanup();
+	}
 }

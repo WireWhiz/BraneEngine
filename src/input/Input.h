@@ -12,7 +12,7 @@ class InputManager : public Module
 {
 	graphics::Window* _window;
 public:
-	InputManager(Runtime& runtime);
+	InputManager();
 	void start() override;
 };
 

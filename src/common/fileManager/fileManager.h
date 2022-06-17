@@ -11,7 +11,7 @@
 class FileManager : public Module
 {
 public:
-	explicit FileManager(Runtime& runtime);
+	FileManager();
 	template <typename T>
 	bool readFile(const std::string& filename, std::vector<T>& data)
 	{
@@ -28,7 +28,7 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(const AssetID& id, AssetManager& am)
+	T* readAsset(const AssetID& id)
 	{
 		std::ifstream f(id.path(), std::ios::binary);
 		if (!f.is_open())
@@ -36,31 +36,31 @@ public:
 		MarkedSerializedData sData(f);
 		f.close();
 		T* asset = new T();
-		asset->fromFile(sData, am);
+		asset->fromFile(sData);
 		return asset;
 	}
 
-	Asset* readUnknownAsset(const AssetID& id, AssetManager& am)
+	Asset* readUnknownAsset(const AssetID& id)
 	{
 		std::ifstream f(id.path(), std::ios::binary);
 		if (!f.is_open())
 			return nullptr;
 		MarkedSerializedData sData(f);
 		f.close();
-		return Asset::readUnknown(sData, am);
+		return Asset::readUnknown(sData);
 	}
 
 	template<typename T>
-	AsyncData<T*> async_readAsset(const AssetID& id, AssetManager& am)
+	AsyncData<T*> async_readAsset(const AssetID& id)
 	{
 		AsyncData<T*> asset;
-		ThreadPool::enqueue([this, &id, &am, asset]{
-			asset.setData(readAsset<T>(id, am));
+		ThreadPool::enqueue([this, &id, asset]{
+			asset.setData(readAsset<T>(id));
 		});
 		return asset;
 	}
 
-	AsyncData<Asset*> async_readUnknownAsset(const AssetID& id, AssetManager& am);
+	AsyncData<Asset*> async_readUnknownAsset(const AssetID& id);
 
 
 

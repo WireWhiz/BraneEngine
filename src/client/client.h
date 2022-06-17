@@ -23,7 +23,7 @@ class Client : public Module
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
 
 public:
-	Client(Runtime& rt);
+	Client();
 
 	const char * name() override;
 };

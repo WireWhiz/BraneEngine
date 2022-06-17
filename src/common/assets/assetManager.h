@@ -28,7 +28,7 @@ private:
 
 	void loadAssembly(AssetID assembly, EntityID rootID);
 public:
-	AssetManager(Runtime& runtime);
+	AssetManager();
 
 	template<typename T>
 	T* getAsset(const AssetID& id)
@@ -137,9 +137,12 @@ public:
 	void updateAsset(Asset* asset);
 
 	template<typename T>
-	inline void addNativeComponent()
+	inline void addNativeComponent(EntityManager& em)
 	{
-		ComponentAsset* asset = T::constructDef();
+		static size_t nativeComponentID = 0;
+		ComponentDescription* description = T::constructDescription();
+		ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), AssetID("native", nativeComponentID));
+		asset->componentID = em.components().registerComponent(description);
 		_assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
 	}
 

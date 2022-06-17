@@ -66,7 +66,7 @@ namespace graphics
 		
 	public:
 		
-		VulkanRuntime(Runtime& runtime);
+		VulkanRuntime();
 		~VulkanRuntime();
 
 		const char* name() override;

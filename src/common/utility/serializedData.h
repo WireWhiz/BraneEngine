@@ -230,7 +230,7 @@ public:
 
 	friend OSerializedData& operator << (OSerializedData& msg, const std::string& data)
 	{
-		uint32_t arrLength = data.size();
+		uint32_t arrLength = static_cast<uint32_t>(data.size());
 		msg << arrLength;
 		size_t index = msg.data.size();
 		msg.data.resize(index + arrLength);

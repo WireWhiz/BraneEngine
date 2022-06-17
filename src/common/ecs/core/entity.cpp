@@ -1,8 +1,9 @@
 #include "entity.h"
 
-EntityManager::EntityManager(Runtime& runtime) : Module(runtime)
+EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
-
+	EntityIDComponent::constructDescription();
+	_components.registerComponent(EntityIDComponent::def());
 }
 
 EntityManager::~EntityManager()
@@ -24,9 +25,9 @@ EntityID EntityManager::createEntity()
 EntityID EntityManager::createEntity(ComponentSet components)
 {
 	ASSERT_MAIN_THREAD();
-	components.add(EntityIDComponent::def());
+	components.add(EntityIDComponent::def()->id);
 	Archetype* arch = getArchetype(components);
-	EntityIDComponent id;
+	EntityIDComponent id{};
 	id.id = (EntityID)_entities.push(EntityIndex());
 
 	EntityIndex& eIndex = _entities[id.id];
@@ -44,7 +45,7 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 
 	for (size_t i = 0; i < count; i++)
 	{
-		EntityIDComponent id;
+		EntityIDComponent id{};
 		id.id = (EntityID)_entities.push(EntityIndex());
 		_entities[id.id].archetype = arch;
 		_entities[id.id].index = arch->createEntity();
@@ -62,39 +63,24 @@ void EntityManager::destroyEntity(EntityID entity)
 
 }
 
-EntityForEachID EntityManager::getForEachID(const ComponentSet& components, const ComponentSet& exclude)
+void EntityManager::forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f)
 {
-	return _archetypes.getForEachID(components, exclude);
+	_archetypes.forEach(components, f);
 }
 
-size_t EntityManager::forEachCount(EntityForEachID id)
+void EntityManager::constForEach(const std::vector<ComponentID>& components, const std::function<void(const byte* [])>& f)
 {
-	ASSERT_MAIN_THREAD();
-	return _archetypes.forEachCount(id);
+	_archetypes.constForEach(components, f);
 }
 
-void EntityManager::forEach(EntityForEachID id, const std::function<void(byte* [])>& f)
+std::shared_ptr<JobHandle> EntityManager::forEachParallel(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
 {
-	ASSERT_MAIN_THREAD();
-	_archetypes.forEach(id, f);
+	return _archetypes.forEachParallel(components, f, entitiesPerThread);
 }
 
-void EntityManager::constForEach(EntityForEachID id, const std::function<void(const byte* [])>& f)
+std::shared_ptr<JobHandle> EntityManager::constForEachParallel(const std::vector<ComponentID>& components, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
 {
-	ASSERT_MAIN_THREAD();
-	_archetypes.constForEach(id, f);
-}
-
-std::shared_ptr<JobHandle> EntityManager::forEachParallel(EntityForEachID id, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
-{
-	ASSERT_MAIN_THREAD();
-	return _archetypes.forEachParallel(id, f, entitiesPerThread);
-}
-
-std::shared_ptr<JobHandle> EntityManager::constForEachParallel(EntityForEachID id, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
-{
-	ASSERT_MAIN_THREAD();
-	return _archetypes.constForEachParallel(id, f, entitiesPerThread);
+	return _archetypes.constForEachParallel(components, f, entitiesPerThread);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
@@ -111,14 +97,13 @@ bool EntityManager::hasArchetype(EntityID entity) const
 	return o;
 }
 
-bool EntityManager::entityHasComponent(EntityID entity, const ComponentAsset* component) const
+bool EntityManager::entityHasComponent(EntityID entity, ComponentID component) const
 {
 	return getEntityArchetype(entity)->hasComponent(component);
 }
 
-VirtualComponent EntityManager::getEntityComponent(EntityID entity, const ComponentAsset* component) const
+VirtualComponent EntityManager::getEntityComponent(EntityID entity, ComponentID component) const
 {
-	assert(component != nullptr);
 	assert(getEntityArchetype(entity)->hasComponent(component));
 	VirtualComponent o = getEntityArchetype(entity)->getComponent(_entities[entity].index, component);
 	return o;
@@ -126,21 +111,20 @@ VirtualComponent EntityManager::getEntityComponent(EntityID entity, const Compon
 
 void EntityManager::setEntityComponent(EntityID entity, const VirtualComponent& component)
 {
-	assert(getEntityArchetype(entity)->hasComponent(component.def()));
+	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
 }
 
-void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentPtr& component)
+void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentView& component)
 {
-	assert(getEntityArchetype(entity)->hasComponent(component.def()));
+	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
 }
 
-void EntityManager::addComponent(EntityID entity, const ComponentAsset* component)
+void EntityManager::addComponent(EntityID entity, ComponentID component)
 {
 	ASSERT_MAIN_THREAD();
 	assert(entity < _entities.size());
-	assert(component != nullptr);
 	Archetype* destArchetype = nullptr;
 	if (hasArchetype(entity))
 	{
@@ -186,7 +170,7 @@ void EntityManager::addComponent(EntityID entity, const ComponentAsset* componen
 	_entities[entity].archetype = destArchetype;
 }
 
-void EntityManager::removeComponent(EntityID entity, const ComponentAsset* component)
+void EntityManager::removeComponent(EntityID entity, ComponentID component)
 {
 	ASSERT_MAIN_THREAD();
 	Archetype* destArchetype = nullptr;
@@ -237,51 +221,7 @@ void EntityManager::stop()
 	_archetypes.clear();
 }
 
-
-NativeForEach::NativeForEach(std::vector<const ComponentAsset* >&& vector, EntityManager* em) : NativeForEach::NativeForEach(vector, em) {}
-NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em)
+ComponentManager& EntityManager::components()
 {
-	ComponentSet componentSet;
-	for (size_t i = 0; i < components.size(); i++)
-	{
-		componentSet.add(components[i]);
-	}
-
-	_componentOrder.resize(components.size());
-	for (size_t i = 0; i < components.size(); i++)
-	{
-		_componentOrder[i] = componentSet.index(components[i]);
-	}
-
-	_forEachId = em->getForEachID(componentSet);
-}
-
-NativeForEach::NativeForEach(std::vector<const ComponentAsset*>&& components, ComponentSet&& exclude, EntityManager* em) : NativeForEach(components, exclude, em) {}
-
-NativeForEach::NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em)
-{
-	ComponentSet componentSet;
-	for (size_t i = 0; i < components.size(); i++)
-	{
-		componentSet.add(components[i]);
-	}
-
-	_componentOrder.resize(components.size());
-	for (size_t i = 0; i < components.size(); i++)
-	{
-		_componentOrder[i] = componentSet.index(components[i]);
-	}
-
-    _forEachId = em->getForEachID(componentSet, exclude);
-}
-
-size_t NativeForEach::getComponentIndex(size_t index) const
-{
-	assert(index < _componentOrder.size());
-	return _componentOrder[index];
-}
-
-EntityForEachID NativeForEach::id() const
-{
-	return _forEachId;
+	return _components;
 }

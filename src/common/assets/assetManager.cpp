@@ -7,14 +7,14 @@
 #include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/core/component.h"
 
-AssetManager::AssetManager(Runtime& runtime) : Module(runtime)
+AssetManager::AssetManager()
 {
-	addNativeComponent<EntityIDComponent>();
-	addNativeComponent<TransformComponent>();
-	addNativeComponent<LocalTransformComponent>();
-	addNativeComponent<ChildrenComponent>();
-	addNativeComponent<MeshRendererComponent>();
-	addNativeComponent<AssemblyRoot>();
+	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
+	addNativeComponent<TransformComponent>(em);
+	addNativeComponent<TransformComponent>(em);
+	addNativeComponent<TransformComponent>(em);
+	addNativeComponent<TransformComponent>(em);
+	addNativeComponent<TransformComponent>(em);
 }
 
 void AssetManager::updateAsset(Asset* asset)
@@ -32,17 +32,16 @@ void AssetManager::updateAsset(Asset* asset)
 
 void AssetManager::startAssetLoaderSystem()
 {
-	EntityManager& em = *(EntityManager*)_rt.getModule("entityManager");
-	NativeForEach forEachAssembly({EntityIDComponent::def(), AssemblyRoot::def()}, &em);
-	_rt.timeline().addTask("asset loader", [this, forEachAssembly, &em](){
+	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
+	Runtime::timeline().addTask("asset loader", [this, &em](){
 
 		//Start loading all unloaded assemblies TODO change it so that the state is stored through components and not a bool, so we're not always iterating over literally everything
-		em.forEach(forEachAssembly.id(), [&](byte** components){
-			AssemblyRoot* ar = AssemblyRoot::fromVirtual(components[forEachAssembly.getComponentIndex(1)]);
+		em.forEach({EntityIDComponent::def()->id, AssemblyRoot::def()->id}, [&](byte** components){
+			AssemblyRoot* ar = AssemblyRoot::fromVirtual(components[1]);
 			if(!ar->loaded)
 			{
 				ar->loaded = true;
-				EntityIDComponent* id = EntityIDComponent::fromVirtual(components[forEachAssembly.getComponentIndex(0)]);
+				EntityIDComponent* id = EntityIDComponent::fromVirtual(components[0]);
 				loadAssembly(ar->id, id->id);
 				std::cout << "loading assembly: " << id-id << std::endl;
 			}

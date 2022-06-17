@@ -18,4 +18,4 @@ endif ()
 
 target_include_directories(acme_lw PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-target_link_libraries(acme_lw PRIVATE -lcurl -lssl)
+target_link_libraries(acme_lw PRIVATE -lcurl -lssl include_dir)

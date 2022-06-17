@@ -37,7 +37,7 @@ class AssetServer : public Module
 	ConnectionContext& getContext(net::Connection* connection);
 	bool validatePermissions(ConnectionContext& ctx, const std::vector<std::string>& permissions);
 public:
-	AssetServer(Runtime& runtime);
+	AssetServer();
 	~AssetServer();
 	void processMessages();
 

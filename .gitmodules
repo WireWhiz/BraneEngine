@@ -12,3 +12,6 @@
 [submodule "libraries/external/repos/glm"]
 	path = libraries/external/repos/glm
 	url = http://github.com/g-truc/glm
+[submodule "libraries/external/repos/entt"]
+	path = libraries/external/repos/entt
+	url = http://github.com/skypjack/entt/

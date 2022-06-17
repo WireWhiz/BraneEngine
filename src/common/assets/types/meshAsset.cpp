@@ -29,9 +29,9 @@ void MeshAsset::toFile(MarkedSerializedData& sData)
     sData.writeAttribute("data", _data);
 }
 
-void MeshAsset::fromFile(MarkedSerializedData& sData, AssetManager& am)
+void MeshAsset::fromFile(MarkedSerializedData& sData)
 {
-	Asset::fromFile(sData, am);
+	Asset::fromFile(sData);
     sData.enterScope("primitives");
     _primitives.resize(sData.scopeSize());
     for (int i = 0; i < _primitives.size(); ++i)
@@ -66,10 +66,10 @@ void MeshAsset::serialize(OSerializedData& sData)
     sData << _data;
 }
 
-void MeshAsset::deserialize(ISerializedData& sData, AssetManager& am)
+void MeshAsset::deserialize(ISerializedData& sData)
 {
-	Asset::deserialize(sData, am);
-    deserializeHeader(sData, am);
+	Asset::deserialize(sData);
+    deserializeHeader(sData);
     sData >> _data;
 }
 
@@ -104,9 +104,9 @@ void MeshAsset::serializeHeader(OSerializedData& sData)
     sData << (uint32_t)_data.size();
 }
 
-void MeshAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
+void MeshAsset::deserializeHeader(ISerializedData& sData)
 {
-	IncrementalAsset::deserializeHeader(sData, am);
+	IncrementalAsset::deserializeHeader(sData);
     uint16_t primitiveCount;
     sData >> primitiveCount;
     _primitives.resize(primitiveCount);

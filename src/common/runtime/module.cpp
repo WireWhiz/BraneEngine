@@ -4,10 +4,6 @@
 
 #include "module.h"
 
-Module::Module(Runtime& rt) : _rt{rt}
-{
-
-}
 
 void Module::start()
 {

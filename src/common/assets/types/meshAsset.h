@@ -57,11 +57,11 @@ public:
 
 
 	void toFile(MarkedSerializedData& sData) override;
-	void fromFile(MarkedSerializedData& sData, AssetManager& am) override;
+	void fromFile(MarkedSerializedData& sData) override;
 	void serialize(OSerializedData& message) override;
-	void deserialize(ISerializedData& message, AssetManager& am) override;
+	void deserialize(ISerializedData& message) override;
 	void serializeHeader(OSerializedData& sData) override;
-	void deserializeHeader(ISerializedData& sData, AssetManager& am) override;
+	void deserializeHeader(ISerializedData& sData) override;
     std::unique_ptr<SerializationContext> createContext() const override;
 	bool serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData) override;
 	void deserializeIncrement(ISerializedData& sData) override;

@@ -60,6 +60,12 @@ uint32_t AssetID::size()
 	return size;
 }
 
+AssetID::AssetID(const std::string& serverAddress, uint64_t id)
+{
+	this->serverAddress = serverAddress;
+	this->id = id;
+}
+
 std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
 {
 	using std::size_t;

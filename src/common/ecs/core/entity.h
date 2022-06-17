@@ -40,11 +40,13 @@ class EntityManager : public Module
 #ifdef TEST_BUILD
 public:
 #endif
+	uint16_t _componentIDCount = 0;
 	staticIndexVector<EntityIndex> _entities;
 
+	ComponentManager _components;
 	ArchetypeManager _archetypes;
 public:
-	EntityManager(Runtime& runtime);
+	EntityManager();
 	EntityManager(const EntityManager&) = delete;
 	~EntityManager();
 	Archetype* getArchetype(const ComponentSet& components);
@@ -54,36 +56,20 @@ public:
 	void destroyEntity(EntityID entity);
 	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity) const;
-	bool entityHasComponent(EntityID entity, const ComponentAsset* component) const;
-	VirtualComponent getEntityComponent(EntityID entity, const ComponentAsset* component) const;
+	bool entityHasComponent(EntityID entity, ComponentID component) const;
+	VirtualComponent getEntityComponent(EntityID entity, ComponentID component) const;
 	void setEntityComponent(EntityID entity, const VirtualComponent& component);
-	void setEntityComponent(EntityID entity, const VirtualComponentPtr& component);
-	void addComponent(EntityID entity, const ComponentAsset* component);
-	void removeComponent(EntityID entity, const ComponentAsset* component);
+	void setEntityComponent(EntityID entity, const VirtualComponentView& component);
+	void addComponent(EntityID entity, ComponentID component);
+	void removeComponent(EntityID entity, ComponentID component);
+	ComponentManager& components();
 
 	//for each stuff
-	EntityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
-	size_t forEachCount(EntityForEachID id);
-	void forEach(EntityForEachID id, const std::function <void(byte* [])>& f);
-	void constForEach(EntityForEachID id, const std::function <void(const byte* [])>& f);
-	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
-	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
+	void forEach(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f);
+	void constForEach(const std::vector<ComponentID>& components, const std::function <void(const byte* [])>& f);
+	std::shared_ptr<JobHandle> forEachParallel(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> constForEachParallel(const std::vector<ComponentID>& components, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
 	const char* name() override;
 	void stop() override;
-};
-
-class NativeForEach
-{
-    std::vector<size_t> _componentOrder;
-	EntityForEachID _forEachId;
-public:
-	NativeForEach() = default;
-	NativeForEach(std::vector<const ComponentAsset*>&& components, EntityManager* em);
-	NativeForEach(std::vector<const ComponentAsset*>& components, EntityManager* em);
-	NativeForEach(std::vector<const ComponentAsset*>&& components, ComponentSet&& exclude, EntityManager* em);
-	NativeForEach(std::vector<const ComponentAsset*>& components, ComponentSet& exclude, EntityManager* em);
-	[[nodiscard]] size_t getComponentIndex(size_t index) const;
-
-	[[nodiscard]] EntityForEachID id() const;
 };

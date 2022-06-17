@@ -63,11 +63,11 @@ void FileManager::writeFile(const std::string& filename, Json::Value& data)
 	f.close();
 }
 
-AsyncData<Asset*> FileManager::async_readUnknownAsset(const AssetID& id, AssetManager& am)
+AsyncData<Asset*> FileManager::async_readUnknownAsset(const AssetID& id)
 {
 	AsyncData<Asset*> asset;
-	ThreadPool::enqueue([this, id, &am, asset]{
-		asset.setData(readUnknownAsset(id, am));
+	ThreadPool::enqueue([this, id, asset]{
+		asset.setData(readUnknownAsset(id));
 	});
 	return asset;
 }
@@ -77,7 +77,7 @@ const char* FileManager::name()
 	return "fileManager";
 }
 
-FileManager::FileManager(Runtime& runtime) : Module(runtime)
+FileManager::FileManager()
 {
 
 }

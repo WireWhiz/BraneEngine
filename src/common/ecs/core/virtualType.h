@@ -39,8 +39,6 @@ void setVirtual(const byte* var, T value)
 	*(T*)var = value;
 }
 
-class VirtualComponentPtr;
-
 class VirtualType
 {
 public:
@@ -61,113 +59,83 @@ public:
 		virtualIntVector,
 		virtualUIntVector
 	};
-protected:
-	size_t _offset;
 public:
-	VirtualType(size_t offset);
-	void setOffset(size_t offset);
-	size_t offset();
-	virtual Type getType() = 0;
-	static VirtualType* constructTypeOf(Type type);
+	template<typename T>
+	static Type type();
 	static std::string typeToString(Type type);
 	static Type stringToType(const std::string& type);
-	virtual void serialize(OSerializedData& data, const byte* source)  = 0;
-	virtual void deserialize(ISerializedData& data, byte* source) = 0;
-	virtual const size_t size() const = 0;
-	virtual void construct(byte*) = 0;
-	void construct(VirtualComponentPtr& vcp);
-	virtual void copy(byte* dest, const byte* source) = 0;
-	virtual void move(byte* dest, const byte* source) = 0;
-	virtual void deconstruct(byte*) = 0;
-	void deconstruct(VirtualComponentPtr& vcp);
-};
-
-template<typename T>
-class VirtualVariable : public VirtualType
-{
-public:
-	VirtualVariable() : VirtualType(0)
-	{
-	}
-	VirtualVariable(size_t offset) : VirtualType(offset)
-	{
-	}
-
-	Type getType() override //constexpr makes it so there are no branches here at runtime
-	{
-		if constexpr(std::is_same<T, bool>().value)
-			return Type::virtualBool;
-		if constexpr(std::is_same<T, int32_t>().value)
-			return Type::virtualInt;
-		if constexpr(std::is_same<T, uint32_t>().value)
-			return Type::virtualUInt;
-		if constexpr(std::is_same<T, int64_t>().value)
-			return Type::virtualInt64;
-		if constexpr(std::is_same<T, uint64_t>().value)
-			return Type::virtualUInt64;
-		if constexpr(std::is_same<T, float>().value)
-			return Type::virtualFloat;
-		if constexpr(std::is_same<T, std::string>().value)
-			return Type::virtualString;
-		if constexpr(std::is_same<T, AssetID>().value)
-			return Type::virtualAssetID;
-		if constexpr(std::is_same<T, glm::vec3>().value)
-			return Type::virtualVec3;
-		if constexpr(std::is_same<T, glm::vec4>().value)
-			return Type::virtualVec4;
-		if constexpr(std::is_same<T, glm::mat4>().value)
-			return Type::virtualMat4;
-		if constexpr(std::is_same<T, std::vector<float>>().value)
-			return Type::virtualFloatVector;
-		if constexpr(std::is_same<T, std::vector<int32_t>>().value)
-			return Type::virtualIntVector;
-		if constexpr(std::is_same<T, std::vector<uint32_t>>().value)
-			return Type::virtualUIntVector;
-
-		std::cerr << "Tried to serialize type of: " << typeid(T).name() << std::endl;
-		return Type::virtualUnknown;
-	}
-
-	void serialize(OSerializedData& data, const byte* source) override
+	static void serialize(Type type, OSerializedData& data, const byte* source);
+	static void deserialize(Type type, ISerializedData& data, byte* source);
+	static size_t size(Type type);
+	static void construct(Type type, byte* var);
+	static void deconstruct(Type type, byte* var);
+	static void copy(Type type, byte* dest, const byte* source);
+	static void move(Type type, byte* dest, const byte* source);
+	template<typename T>
+	static void serialize(OSerializedData& data, const byte* source)
 	{
 		data << *getVirtual<T>(source);
 	}
-	void deserialize(ISerializedData& data, byte* source) override
+	template<typename T>
+	static void deserialize(ISerializedData& data, byte* source)
 	{
 		data >> *getVirtual<T>(source);
 	}
-	void construct(byte* var) override
+	template<typename T>
+	static void construct(byte* var)
 	{
 		new(var) T();
 	}
-	template<class... Params>
-	void construct(byte* var, Params... params)
-	{
-		new(var) T(params...);
-	}
-	virtual void copy(byte* dest, const byte* source)
-	{
-		*((T*)dest) = *((T*)source);
-	}
-	virtual void move(byte* dest, const byte* source)
-	{
-		*((T*)dest) = std::move(*((T*)source));
-	}
-	void deconstruct(byte* var) override
+	template<typename T>
+	static void deconstruct(byte* var)
 	{
 		((T*)var)->~T();
 	}
-	T* get(const byte* var)
+	template<typename T>
+	static void copy(byte* dest, const byte* source)
 	{
-		return (T*)var;
+		*((T*)dest) = *((T*)source);
 	}
-	const size_t size() const override
+	template<typename T>
+	static void move(byte* dest, const byte* source)
 	{
-		return sizeof(T);
+		*((T*)dest) = std::move(*((T*)source));
 	}
 };
 
-typedef VirtualVariable<bool>    VirtualBool;
-typedef VirtualVariable<int64_t> VirtualInt;
-typedef VirtualVariable<float>   VirtualFloat;
+template<typename T>
+VirtualType::Type VirtualType::type()
+{
+	if constexpr(std::is_same<T, bool>().value)
+		return Type::virtualBool;
+	if constexpr(std::is_same<T, int32_t>().value)
+		return Type::virtualInt;
+	if constexpr(std::is_same<T, uint32_t>().value)
+		return Type::virtualUInt;
+	if constexpr(std::is_same<T, int64_t>().value)
+		return Type::virtualInt64;
+	if constexpr(std::is_same<T, uint64_t>().value)
+		return Type::virtualUInt64;
+	if constexpr(std::is_same<T, float>().value)
+		return Type::virtualFloat;
+	if constexpr(std::is_same<T, std::string>().value)
+		return Type::virtualString;
+	if constexpr(std::is_same<T, AssetID>().value)
+		return Type::virtualAssetID;
+	if constexpr(std::is_same<T, glm::vec3>().value)
+		return Type::virtualVec3;
+	if constexpr(std::is_same<T, glm::vec4>().value)
+		return Type::virtualVec4;
+	if constexpr(std::is_same<T, glm::mat4>().value)
+		return Type::virtualMat4;
+	if constexpr(std::is_same<T, std::vector<float>>().value)
+		return Type::virtualFloatVector;
+	if constexpr(std::is_same<T, std::vector<int32_t>>().value)
+		return Type::virtualIntVector;
+	if constexpr(std::is_same<T, std::vector<uint32_t>>().value)
+		return Type::virtualUIntVector;
+
+	std::cerr << "Tried to find type of: [" << typeid(T).name() << "] and failed"<< std::endl;
+	return Type::virtualUnknown;
+}
 

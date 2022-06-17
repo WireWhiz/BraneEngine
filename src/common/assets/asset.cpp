@@ -6,7 +6,7 @@ void Asset::serialize(OSerializedData& sData)
 	sData << id  << name << type.string();
 }
 
-void Asset::deserialize(ISerializedData& sData, AssetManager& am)
+void Asset::deserialize(ISerializedData& sData)
 {
 	std::string typeStr;
 	sData >> id >> name >> typeStr;
@@ -51,7 +51,7 @@ Asset* Asset::assetFromType(AssetType type)
 	return nullptr;
 }
 
-Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
+Asset* Asset::deserializeUnknown(ISerializedData& sData)
 {
 
 	std::string typeStr;
@@ -64,11 +64,11 @@ Asset* Asset::deserializeUnknown(ISerializedData& sData, AssetManager& am)
 	sData.restart();
 	if(!asset)
 		return nullptr;
-	asset->deserialize(sData, am);
+	asset->deserialize(sData);
 	return asset;
 }
 
-Asset* Asset::readUnknown(MarkedSerializedData& sData, AssetManager& am)
+Asset* Asset::readUnknown(MarkedSerializedData& sData)
 {
 	std::string stype;
 	sData.readAttribute("type", stype);
@@ -77,7 +77,7 @@ Asset* Asset::readUnknown(MarkedSerializedData& sData, AssetManager& am)
 	Asset* asset = assetFromType(type);
 	if(!asset)
 		return nullptr;
-	asset->fromFile(sData, am);
+	asset->fromFile(sData);
 
 	return asset;
 }
@@ -89,7 +89,7 @@ void Asset::toFile(MarkedSerializedData& sData)
 	sData.writeAttribute("type", type.string());
 }
 
-void Asset::fromFile(MarkedSerializedData& sData, AssetManager& am)
+void Asset::fromFile(MarkedSerializedData& sData)
 {
 	std::string sid, stype;
 	sData.readAttribute("id", sid);
@@ -104,12 +104,12 @@ void IncrementalAsset::serializeHeader(OSerializedData& sData)
 	Asset::serialize(sData);
 }
 
-void IncrementalAsset::deserializeHeader(ISerializedData& sData, AssetManager& am)
+void IncrementalAsset::deserializeHeader(ISerializedData& sData)
 {
-	Asset::deserialize(sData, am);
+	Asset::deserialize(sData);
 }
 
-IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sData, AssetManager& am)
+IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sData)
 {
 	std::string typeStr;
 	AssetID id;
@@ -129,7 +129,7 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(ISerializedData& sD
 			throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
 	}
 	sData.restart();
-	asset->deserializeHeader(sData, am);
+	asset->deserializeHeader(sData);
 	return asset;
 }
 

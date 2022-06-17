@@ -345,7 +345,7 @@ namespace graphics
 		return &_descriptorSets[frame];
 	}
 
-	const ComponentAsset* Material::component() const
+	const ComponentDescription* Material::component() const
 	{
 		return _component;
 	}
@@ -357,11 +357,6 @@ namespace graphics
 
 	void Material::generateComponent()
 	{
-		std::vector<std::unique_ptr<VirtualType>> types;
-		for (auto t : _inputs)
-		{
-			types.push_back(std::unique_ptr<VirtualType>(VirtualType::constructTypeOf(t)));
-		}
-		_component = new ComponentAsset(types, AssetID("native/4"));
+		_component = new ComponentDescription(_inputs);
 	}
 }

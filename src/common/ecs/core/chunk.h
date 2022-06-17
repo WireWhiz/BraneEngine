@@ -2,10 +2,12 @@
 #include <array>
 #include <vector>
 #include "virtualType.h"
-#include "archetype.h"
 #include <algorithm>
 #include <functional>
 #include <utility/shared_recursive_mutex.h>
+
+#include "archetype.h"
+class Archetype;
 
 template<size_t N>
 class ChunkBase
@@ -14,7 +16,6 @@ class ChunkBase
 public:
 #endif
 	size_t _size;
-	size_t _maxCapacity;
 	std::array<byte, N> _data;
 	Archetype* _archetype;
 	std::vector<size_t> _componentIndices;
@@ -42,25 +43,25 @@ public:
 			for (size_t i = 0; i < _archetype->components().size(); i++)
 			{
 				if (i != 0)
-					_componentIndices[i] = _componentIndices[i - 1] + _archetype->components()[i - 1]->size() * maxCapacity();
+					_componentIndices[i] = _componentIndices[i - 1] + _archetype->componentDescriptions()[i - 1]->size() * maxCapacity();
 			}
 		}
 		_lock.unlock();
 	}
 
-	byte* getComponentData(const ComponentAsset* component, size_t entity)
+	byte* getComponentData(const ComponentDescription* component, size_t entity)
 	{
 
-		return &_data[_componentIndices[_archetype->components().index(component)] + entity * component->size()];
+		return &_data[_componentIndices[_archetype->components().index(component->id)] + entity * component->size()];
 	}
 	
 	byte* getComponentData(size_t component, size_t entity)
 	{
 
-		return &_data[_componentIndices[component] + entity * _archetype->components()[component]->size()];
+		return &_data[_componentIndices[component] + entity * _archetype->componentDescriptions()[component]->size()];
 	}
 
-	VirtualComponent getComponent(const ComponentAsset* component, size_t entity)
+	VirtualComponent getComponent(const ComponentDescription* component, size_t entity)
 	{
 		_lock.lock_shared();
 		VirtualComponent o = VirtualComponent(component, getComponentData(component, entity));
@@ -71,16 +72,14 @@ public:
 	void setComponent(const VirtualComponent& component, size_t entity)
 	{
 		_lock.lock();
-		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
-		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		component.description()->copy(component.data(),getComponentData(_archetype->components().index(component.description()->id), entity));
 		_lock.unlock();
 	}
 
-	void setComponent(const VirtualComponentPtr& component, size_t entity)
+	void setComponent(const VirtualComponentView& component, size_t entity)
 	{
 		_lock.lock();
-		component.def()->copy(getComponentData(_archetype->components().index(component.def()), entity), component.data());
-		//std::copy(component.data(), component.data() + component.def()->size(), getComponentData(_archetype->components().index(component.def()), entity));
+		component.description()->copy(component.data(), getComponentData(_archetype->components().index(component.description()->id), entity));
 		_lock.unlock();
 	}
 
@@ -89,27 +88,27 @@ public:
 		_lock.lock();
 		assert(_size < maxCapacity());
 		size_t index = _size;
-		for (size_t c = 0; c < _archetype->components().size(); c++)
+		for (size_t c = 0; c < _archetype->componentDescriptions().size(); c++)
 		{
-			if(_archetype->components()[c]->size() != 0)
-				_archetype->components()[c]->construct(getComponentData(c, index));
+			if(_archetype->componentDescriptions()[c]->size() != 0)
+				_archetype->componentDescriptions()[c]->construct(getComponentData(c, index));
 		}
 		++_size;
 		_lock.unlock();
 		return index;
 	}
 
-	void copyComponenet(ChunkBase* source, size_t sIndex, size_t dIndex, const ComponentAsset* component)
+	void copyComponenet(ChunkBase* source, size_t sIndex, size_t dIndex, const ComponentDescription* component)
 	{
 		_lock.lock();
 		source->_lock.lock();
-		assert(source->_archetype->components().contains(component));
-		assert(_archetype->components().contains(component));
+		assert(source->_archetype->components().contains(component->id));
+		assert(_archetype->components().contains(component->id));
 		assert(sIndex < source->size());
 		assert(dIndex < size());
 
-		size_t sourceCompIndex = source->_archetype->components().index(component);
-		size_t destCompIndex = _archetype->components().index(component);
+		size_t sourceCompIndex = source->_archetype->components().index(component->id);
+		size_t destCompIndex = _archetype->components().index(component->id);
 
 		assert(sIndex + source->_componentIndices[sourceCompIndex] + component->size() < N);
 		assert(dIndex + _componentIndices[destCompIndex] + component->size() < N);
@@ -117,7 +116,7 @@ public:
 		size_t src = sIndex * component->size() + source->_componentIndices[sourceCompIndex];
 		size_t dest = dIndex * component->size() + _componentIndices[destCompIndex];
 
-		component->copy(&_data[dest], &source->_data[src]);
+		component->copy(&source->_data[src], &_data[dest]);
 		source->_lock.unlock();
 		_lock.unlock();
 	}
@@ -131,8 +130,8 @@ public:
 		// Deconstruct the components of the removed entity
 		for (size_t c = 0; c < _archetype->components().size(); c++)
 		{
-			if (_archetype->components()[c]->size() != 0)
-				_archetype->components()[c]->deconstruct(getComponentData(c, index));
+			if (_archetype->componentDescriptions()[c]->size() != 0)
+				_archetype->componentDescriptions()[c]->deconstruct(getComponentData(c, index));
 		}
 
 		//Copy last index to the one that we are removing
@@ -140,8 +139,8 @@ public:
 		{
 			for (size_t i = 0; i < _archetype->components().size(); i++)
 			{
-				if (_archetype->components()[i]->size() != 0)
-					_archetype->components()[i]->move(getComponentData(i, index), getComponentData(i, _size - 1));
+				if (_archetype->componentDescriptions()[i]->size() != 0)
+					_archetype->componentDescriptions()[i]->move(getComponentData(i, _size - 1), getComponentData(i, index));
 			}
 		}
 
@@ -155,10 +154,11 @@ public:
 		_lock.lock();
 		if (_archetype && _size > 0)
 		{
-			for (auto c : _archetype->components())
+			for (auto c : _archetype->componentDescriptions())
 			{
 				for (size_t i = 0; i < _size; i++)
 				{
+
 					c->deconstruct(getComponentData(c, i));
 				}
 			}

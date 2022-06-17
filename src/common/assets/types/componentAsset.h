@@ -4,32 +4,24 @@
 #include <vector>
 #include "../asset.h"
 
+typedef uint16_t ComponentID;
 class ComponentAsset : public Asset
 {
 private:
 	size_t _size;
-	std::vector<std::unique_ptr<VirtualType>> _types;
+	std::vector<VirtualType::Type> _members;
 public:
+	ComponentID componentID;
+
 	ComponentAsset();
 	ComponentAsset(const ComponentAsset&) = delete;
-	ComponentAsset(std::vector<std::unique_ptr<VirtualType>>& types, AssetID id);
-	ComponentAsset(const std::vector<VirtualType*>& types, AssetID id, size_t size);
+	ComponentAsset(const std::vector<VirtualType::Type>& members, AssetID id);
 	~ComponentAsset();
-	size_t size() const;
-	size_t getByteIndex(size_t index) const;
-	const std::vector<std::unique_ptr<VirtualType>>& types() const;
-	void serializeComponent(OSerializedData& sdata, byte* component) const;
-	void deserializeComponent(ISerializedData& sdata, byte* component) const;
+	[[nodiscard]] size_t size() const;
+	[[nodiscard]] const std::vector<VirtualType::Type>& members() const;
 
-	//void toFile(MarkedSerializedData& sData) override;
-	//void fromFile(MarkedSerializedData& sData, AssetManager& am) override;
+	void toFile(MarkedSerializedData& sData) override;
+	void fromFile(MarkedSerializedData& sData) override;
 	void serialize(OSerializedData& sdata) override;
-	void deserialize(ISerializedData& sdata, AssetManager& am) override;
-	Json::Value toJson(byte* component) const;
-	void fromJson(Json::Value& json, byte* component) const;
-
-	void construct(byte* component) const;
-	void deconstruct(byte* component) const;
-	void copy(byte* dest, byte* source) const;
-	void move(byte* dest, byte* source) const;
+	void deserialize(ISerializedData& sdata) override;
 };

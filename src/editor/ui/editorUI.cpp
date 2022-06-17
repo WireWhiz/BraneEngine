@@ -15,17 +15,17 @@
 
 #include "IconsFontAwesome6.h"
 
-EditorUI::EditorUI(Runtime& runtime) : Module(runtime)
+EditorUI::EditorUI()
 {
-	runtime.timeline().addBlockBefore("editorUI", "draw");
-	runtime.timeline().addTask("drawEditorUI", [&]{
+	Runtime::timeline().addBlockBefore("editorUI", "draw");
+	Runtime::timeline().addTask("drawEditorUI", [&]{
 		for(auto& w : _windows)
 		{
 			w->update();
 		}
 	}, "editorUI");
 
-	graphics::VulkanRuntime* vkr = (graphics::VulkanRuntime*)runtime.getModule("graphics");
+	graphics::VulkanRuntime* vkr = (graphics::VulkanRuntime*)Runtime::getModule("graphics");
 
 
 	_renderer = vkr->createRenderer<graphics::CustomRenderer>();
@@ -115,11 +115,6 @@ void EditorUI::mainMenu()
 		}
 		ImGui::EndMainMenuBar();
 	}
-}
-
-Runtime& EditorUI::runtime()
-{
-	return _rt;
 }
 
 void EditorUI::defaultDocking()

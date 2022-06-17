@@ -15,14 +15,46 @@ class Archetype;
 
 struct ArchetypeEdge
 {
-	const ComponentAsset* component;
+	ComponentID component;
 	Archetype* archetype;
-	ArchetypeEdge(const ComponentAsset* component, Archetype* archetype);
+	ArchetypeEdge(ComponentID component, Archetype* archetype);
 };
 
 template <size_t N> class ChunkBase;
 typedef ChunkBase<16384> Chunk;
 class ChunkPool;
+
+class ArchetypeView
+{
+	Archetype* _arch = nullptr;
+	std::vector<size_t> componentSizes;
+	std::vector<size_t> componentOffsets;
+	std::vector<const ComponentDescription*> descriptions;
+	ArchetypeView(Archetype& archetype, const ComponentSet& components);
+	ArchetypeView();
+public:
+	class iterator
+	{
+		ArchetypeView& _view;
+		size_t _chunkIndex = 0;
+		size_t _entityIndex = 0;
+		std::vector<byte*> components;
+	public:
+		iterator(ArchetypeView& view, size_t chunkIndex, size_t entityIndex);
+		friend class Archetype;
+		void operator++();
+		bool operator!=(const iterator&) const;
+		bool operator==(const iterator&) const;
+		const std::vector<byte*>& operator*() const;
+
+		using iterator_category = std::forward_iterator_tag;
+		using reference = const std::vector<byte*>&;
+	};
+	friend class Archetype;
+
+	iterator begin();
+	iterator end();
+};
 
 class Archetype
 {
@@ -37,7 +69,8 @@ public:
 	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
 	//
 
-	const ComponentSet _components;
+	ComponentSet _components;
+	std::vector<const ComponentDescription*> _componentDescriptions;
 	std::vector<std::unique_ptr<Chunk>> _chunks;
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 
@@ -46,33 +79,61 @@ public:
 	size_t chunkIndex(size_t entity) const;
 	Chunk* getChunk(size_t entity) const;
 public:
-	Archetype(const ComponentSet& components, std::shared_ptr<ChunkPool>& _chunkAllocator);
+	Archetype(const std::vector<const ComponentDescription*>& components, std::shared_ptr<ChunkPool>& _chunkAllocator);
 	~Archetype();
-	bool hasComponent(const ComponentAsset* component) const;
+	bool hasComponent(ComponentID component) const;
 	bool hasComponents(const ComponentSet& comps) const;
-	VirtualComponent getComponent(size_t entity, const ComponentAsset* component) const;
+	VirtualComponent getComponent(size_t entity, ComponentID component) const;
 	void setComponent(size_t entity, const VirtualComponent& component);
-	void setComponent(size_t entity, const VirtualComponentPtr& component);
-	bool isChildOf(const Archetype* parent, const ComponentAsset*& connectingComponent) const;
+	void setComponent(size_t entity, const VirtualComponentView& component);
+	bool isChildOf(const Archetype* parent, ComponentID& connectingComponent) const;
 	const ComponentSet& components() const;
-	std::shared_ptr<ArchetypeEdge> getAddEdge(const ComponentAsset* component);
-	std::shared_ptr<ArchetypeEdge> getRemoveEdge(const ComponentAsset* component);
-	void addAddEdge(const ComponentAsset* component, Archetype* archetype);
-	void addRemoveEdge(const ComponentAsset* component, Archetype* archetype);
-	void forAddEdge(const std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
-	void forRemoveEdge(std::function<void(std::shared_ptr<const ArchetypeEdge>)>& f) const;
+	const std::vector<const ComponentDescription*>& componentDescriptions();
+	std::shared_ptr<ArchetypeEdge> getAddEdge(ComponentID component);
+	std::shared_ptr<ArchetypeEdge> getRemoveEdge(ComponentID component);
+	void addAddEdge(ComponentID component, Archetype* archetype);
+	void addRemoveEdge(ComponentID component, Archetype* archetype);
 	size_t size() const;
 	size_t createEntity();
 	size_t copyEntity(Archetype* source, size_t index);
 	size_t entitySize() const;
 	void remove(size_t index);
 
-	void forEach(const ComponentSet& components, const std::function<void(const byte* [])>& f, size_t start, size_t end);
-	void forEach(const ComponentSet& components, const std::function<void(byte* [])>& f, size_t start, size_t end);
-}; 
+	void forEach(const std::vector<ComponentID>& components, const std::function<void(const byte* [])>& f, size_t start, size_t end);
+	void forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f, size_t start, size_t end);
+
+	ArchetypeView getComponents(const ComponentSet& components);
+
+	friend class ArchetypeView;
+};
+
+class ArchetypeManager;
+class ArchetypeSet
+{
+	ArchetypeManager& _manager;
+	std::vector<Archetype*> _archetypes;
+public:
+	class iterator
+	{
+		ArchetypeSet& _set;
+		size_t _archetypeIndex = 0;
+	public:
+		iterator(ArchetypeSet& set, size_t index);
+		void operator++();
+		bool operator!=(const iterator&) const;
+		bool operator==(const iterator&) const;
+		Archetype& operator*();
+
+		using iterator_category = std::forward_iterator_tag;
+		using reference = Archetype&;
+	};
+	friend class ArchetypeManager;
+	ArchetypeSet(ArchetypeManager& manager, const ComponentSet& components);
+	iterator begin();
+	iterator end();
+};
 
 
-typedef uint64_t EntityForEachID;
 
 class ArchetypeManager
 {
@@ -80,37 +141,22 @@ class ArchetypeManager
 public:
 #endif
 
-	struct ForEachData
-	{
-		ComponentSet components;
-		ComponentSet exclude;
-		std::vector<Archetype*> archetypes;
-		ForEachData(ComponentSet components, ComponentSet exclude);
-	};
-
-	std::vector<ForEachData> _forEachData;
-
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
-
-	void findArchetypes(const ComponentSet& components, const ComponentSet& exclude, std::vector<Archetype*>& archetypes) const;
-	void cacheArchetype(Archetype* arch);
-	void removeCachedArchetype(Archetype* arch); //TODO create archetype cleanup system
-	std::vector<Archetype*>& getForEachArchetypes(EntityForEachID id);
-
+	ComponentManager& _componentManager;
+	friend class ArchetypeSet;
 public:
-	ArchetypeManager();
+	ArchetypeManager(ComponentManager& componentManager);
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& components);
+	ArchetypeSet getArchetypes(const ComponentSet& components);
 
-	EntityForEachID getForEachID(const ComponentSet& components, const ComponentSet& exclude = ComponentSet());
-	size_t forEachCount(EntityForEachID id);
+	void forEach(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f);
+	void constForEach(const std::vector<ComponentID>& components, const std::function <void(const byte* [])>& f);
+	std::shared_ptr<JobHandle> forEachParallel(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
+	std::shared_ptr<JobHandle> constForEachParallel(const std::vector<ComponentID>& components, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
-	void forEach(EntityForEachID id, const std::function <void(byte* [])>& f);
-	void constForEach(EntityForEachID id, const std::function <void(const byte* [])>& f);
-	std::shared_ptr<JobHandle> forEachParallel(EntityForEachID id, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
-	std::shared_ptr<JobHandle> constForEachParallel(EntityForEachID id, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
-
+	void removeEmpty();
 	void clear();
 };

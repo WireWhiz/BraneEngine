@@ -19,5 +19,5 @@ public:
 	ShaderAsset();
 
 	virtual void serialize(OSerializedData& message) override;
-	virtual void deserialize(ISerializedData& message, AssetManager& am) override;
+	virtual void deserialize(ISerializedData& message) override;
 };

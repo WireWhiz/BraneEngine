@@ -439,7 +439,7 @@ namespace graphics
 
     
 
-    VulkanRuntime::VulkanRuntime(Runtime& runtime) : Module(runtime)
+    VulkanRuntime::VulkanRuntime()
     {
         _window = new Window();
 #ifdef DEBUG
@@ -448,14 +448,14 @@ namespace graphics
         _validationLayersEnabled = false;
 #endif
         init();
-		EntityManager* em = dynamic_cast<EntityManager*>(runtime.getModule("entityManager"));
+		EntityManager* em = dynamic_cast<EntityManager*>(Runtime::getModule("entityManager"));
 
-		runtime.timeline().addTask("draw", [this, em, &runtime]{
+		Runtime::timeline().addTask("draw", [this, em]{
 			updateWindow();
 			if(_window->closed())
 			{
 
-				runtime.stop();
+				Runtime::stop();
 				return;
 			}
 			draw(*em);

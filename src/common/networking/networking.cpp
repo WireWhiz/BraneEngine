@@ -3,10 +3,10 @@
 #include "request.h"
 #include <atomic>
 
-NetworkManager::NetworkManager(Runtime& runtime) : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls), Module(runtime)
+NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
 {
 	_running = false;
-	startSystems(runtime);
+	startSystems();
 }
 
 NetworkManager::~NetworkManager()
@@ -115,7 +115,7 @@ void NetworkManager::configureServer()
 	}
 }
 
-AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id, AssetManager& am)
+AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 {
 	AsyncData<Asset*> asset;
 
@@ -131,14 +131,14 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id, AssetMan
 	net::Request req("asset");
 	req.body() << id;
 
-	server->sendRequest(req).then([asset, &am](ISerializedData&& sData){
-		asset.setData(Asset::deserializeUnknown(sData, am));
+	server->sendRequest(req).then([asset](ISerializedData&& sData){
+		asset.setData(Asset::deserializeUnknown(sData));
 	});
 	return asset;
 }
 
 
-AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const AssetID& id, AssetManager& am)
+AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const AssetID& id)
 {
 	AsyncData<IncrementalAsset*> asset;
 
@@ -152,8 +152,8 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 	req.body() << id << streamID;
 
 	// Set up a listener for the asset response
-	server->sendRequest(req).then([this, asset, server, streamID, &am](ISerializedData sData){
-		IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData, am);
+	server->sendRequest(req).then([this, asset, server, streamID](ISerializedData sData){
+		IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
 		asset.setData(assetPtr);
 		server->addStreamListener(streamID, [assetPtr](ISerializedData& sData){
 			assetPtr->deserializeIncrement(sData);
@@ -163,9 +163,9 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 
 }
 
-void NetworkManager::startSystems(Runtime& rt)
+void NetworkManager::startSystems()
 {
-	rt.timeline().addTask("ingest data", [this]{
+	Runtime::timeline().addTask("ingest data", [this]{
 		_serverLock.lock_shared();
 		for(auto& s : _servers){
 			ingestData(s.second.get());

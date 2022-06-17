@@ -66,7 +66,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 		{
 			for(auto& component : entity.components)
 			{
-				if(component.def() == MeshRendererComponent::def())
+				if(component.description() == MeshRendererComponent::def())
 				{
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());
 					auto* meshAsset = am.getAsset<MeshAsset>(AssetID(assembly->meshes[mr->mesh]));

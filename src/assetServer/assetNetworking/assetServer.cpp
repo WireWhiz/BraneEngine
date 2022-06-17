@@ -5,11 +5,11 @@
 #include "assetServer.h"
 #include <utility/threadPool.h>
 
-AssetServer::AssetServer(Runtime& runtime) : Module(runtime),
-_nm(*(NetworkManager*)runtime.getModule("networkManager")),
-_am(*(AssetManager*)runtime.getModule("assetManager")),
-_fm(*(FileManager*)runtime.getModule("fileManager")),
-_db(*(Database*)runtime.getModule("database"))
+AssetServer::AssetServer() :
+_nm(*(NetworkManager*)Runtime::getModule("networkManager")),
+_am(*(AssetManager*)Runtime::getModule("assetManager")),
+_fm(*(FileManager*)Runtime::getModule("fileManager")),
+_db(*(Database*)Runtime::getModule("database"))
 {
 	_nm.start();
 	_nm.configureServer();
@@ -145,7 +145,7 @@ _db(*(Database*)runtime.getModule("database"))
 		res.send();
 	});
 
-	runtime.timeline().addTask("send asset data", [this]{processMessages();}, "networking");
+	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
 }
 
 void AssetServer::processMessages()

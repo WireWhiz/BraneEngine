@@ -12,31 +12,25 @@
 
 class Module;
 
-class Runtime
+namespace Runtime
 {
-protected:
-    std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
-    Timeline _timeline;
-	std::atomic_bool _running = true;
-
-public:
-	Runtime();
-	~Runtime();
-    void addModule(Module* m);
+	extern void init();
+	extern void cleanup();
+	extern void addModule(Module* m);
 	template<typename T>
-	void addModule()
+	inline void addModule()
 	{
 		static_assert(std::is_base_of<Module, T>().value);
-		addModule(new T(*this));
+		addModule(new T());
 	}
 
-    bool hasModule(const std::string& name);
-    Module* getModule(const std::string& name);
+	extern bool hasModule(const std::string& name);
+	extern Module* getModule(const std::string& name);
 
-	Timeline& timeline();
+	extern Timeline& timeline();
 
-	void run();
-	void stop();
+	extern void run();
+	extern void stop();
 };
 
 

@@ -11,7 +11,7 @@
 #include "assets/assetManager.h"
 
 #include <utility/threadPool.h>
-#include "asio/asio.hpp"
+#include <asio.hpp>
 #include "networking/connection.h"
 
 const char* Client::name()
@@ -19,21 +19,21 @@ const char* Client::name()
 	return "client";
 }
 
-Client::Client(Runtime& rt) : Module(rt),
-_am(*(AssetManager*)rt.getModule("assetManager")),
-_nm(*(NetworkManager*)rt.getModule("networkManager"))
+Client::Client() :
+_am(*(AssetManager*)Runtime::getModule("assetManager")),
+_nm(*(NetworkManager*)Runtime::getModule("networkManager"))
 {
 	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
 
-	EntityManager& em = *(EntityManager*)rt.getModule("entityManager");
-	graphics::VulkanRuntime& vkr = *(graphics::VulkanRuntime*)rt.getModule("graphics");
+	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
+	graphics::VulkanRuntime& vkr = *(graphics::VulkanRuntime*)Runtime::getModule("graphics");
 
-	systems::addTransformSystem(em, rt.timeline());
+	systems::addTransformSystem(em, Runtime::timeline());
 	addAssetPreprocessors(_am, vkr);
 
 	ComponentSet headRootComponents;
-	headRootComponents.add(AssemblyRoot::def());
-	headRootComponents.add(TransformComponent::def());
+	headRootComponents.add(AssemblyRoot::def()->id);
+	headRootComponents.add(TransformComponent::def()->id);
 	EntityID testHead = em.createEntity(headRootComponents);
 
 	AssemblyRoot testHeadRoot{};
@@ -73,7 +73,7 @@ void Client::addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vk
 		{
 			for(auto& component : entity.components)
 			{
-				if(component.def() == MeshRendererComponent::def())
+				if(component.description() == MeshRendererComponent::def())
 				{
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());
 					auto* meshAsset = am.getAsset<MeshAsset>(AssetID(assembly->meshes[mr->mesh]));

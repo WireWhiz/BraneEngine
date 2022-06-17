@@ -29,7 +29,7 @@ namespace graphics
 
 		std::vector<VirtualType::Type> _inputs;
 
-		ComponentAsset* _component;
+		ComponentDescription* _component;
 
 		void buildDescriptorSetVars(SwapChain* swapChain);
 		void generateComponent();
@@ -45,7 +45,7 @@ namespace graphics
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildPipelineLayout(SwapChain* swapChain);
 		void initialize(size_t swapChainSize);
-		const ComponentAsset* component() const;
+		const ComponentDescription* component() const;
 		VkPipeline pipeline(Renderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();

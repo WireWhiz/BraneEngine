@@ -14,9 +14,9 @@ void ShaderAsset::serialize(OSerializedData& message)
 	message << spirv;
 }
 
-void ShaderAsset::deserialize(ISerializedData& message, AssetManager& am)
+void ShaderAsset::deserialize(ISerializedData& message)
 {
-	Asset::deserialize(message, am);
+	Asset::deserialize(message);
 	message >> shaderType;
 	message >> spirv;
 }

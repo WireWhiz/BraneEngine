@@ -10,89 +10,127 @@
 #include <mutex>
 #include <iterator>
 #include <set>
+#include <utility/staticIndexVector.h>
+#include <unordered_set>
+
+#ifdef _64BIT
+#define WORD_SIZE 8
+#endif
+#ifdef _32BIT
+#define WORD_SIZE 4
+#endif
+
+class ComponentDescription
+{
+	struct Member{
+		VirtualType::Type type;
+		size_t offset;
+	};
+
+	std::vector<Member> _members;
+	size_t _size;
 
 
-extern std::vector<ComponentAsset*> nativeComponentDefinitions;
+	std::vector<size_t> generateOffsets(const std::vector<VirtualType::Type>&);
+public:
+	ComponentID id;
+	std::string name;
+
+	ComponentDescription(const ComponentAsset* asset);
+	ComponentDescription(const std::vector<VirtualType::Type>& members);
+	ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size);
+	void construct(byte* component) const;
+	void deconstruct(byte* component) const;
+	void serialize(OSerializedData sData, byte* component) const;
+	void deserialize(ISerializedData sData, byte* component) const;
+	void copy(byte* src, byte* dest) const;
+	void move(byte* src, byte* dest) const;
+	const std::vector<Member>& members() const;
+	size_t size() const;
+};
 
 class VirtualComponent
 {
 protected:
 	byte* _data;
-	const ComponentAsset* _def;
+	const ComponentDescription* _description;
 public:
 	VirtualComponent(const VirtualComponent& source);
 	VirtualComponent(VirtualComponent&& source);
-	VirtualComponent(const ComponentAsset* definition);
-	VirtualComponent(const ComponentAsset* definition, const byte* data);
+	VirtualComponent(const ComponentDescription* definition);
+	VirtualComponent(const ComponentDescription* definition, const byte* data);
 	~VirtualComponent();
 	VirtualComponent& operator=(const VirtualComponent& source);
 	template<class T>
 	T* getVar(size_t index) const
 	{
-		return getVirtual<T>(&_data[_def->getByteIndex(index)]);
+		return getVirtual<T>(&_data[_description->members()[index].offset]);
 	}
 	template<class T>
 	void setVar(size_t index, T value)
 	{
-		*(T*)&_data[_def->getByteIndex(index)] = value;
+		*(T*)&_data[_description->members()[index].offset] = value;
 	}
 	template<class T>
 	T readVar(size_t index) const
 	{
-		return *(T*)&_data[_def->getByteIndex(index)];
+		return *(T*)&_data[_description->members()[index].offset];
 	}
 	byte* data() const;
-	const ComponentAsset* def() const;
+	const ComponentDescription* description() const;
 };
 
-class VirtualComponentPtr
+class VirtualComponentView
 {
+protected:
 	byte* _data;
-	const ComponentAsset* _def;
+	const ComponentDescription* _description;
 public:
-	VirtualComponentPtr(const ComponentAsset* definition, byte* const data);
+	VirtualComponentView(const VirtualComponent& source);
+	VirtualComponentView(const ComponentDescription* description, byte* data);
 	template<class T>
 	T* getVar(size_t index) const
 	{
-		return getVirtual<T>(&_data[_def->getByteIndex(index)]);
+		return getVirtual<T>(&_data[_description->members()[index].offset]);
 	}
 	template<class T>
 	void setVar(size_t index, T value)
 	{
-		setVirtual<T>(&_data[_def->getByteIndex(index)], value);
+		*(T*)&_data[_description->members()[index].offset] = value;
 	}
 	template<class T>
 	T readVar(size_t index) const
 	{
-		return readVirtual<T>(&_data[_def->getByteIndex(index)]);
+		return *(T*)&_data[_description->members()[index].offset];
 	}
-	const ComponentAsset* def() const;
 	byte* data() const;
+	const ComponentDescription* description() const;
 };
 
 template <class T>
 class NativeComponent
 {
 public:
-	static ComponentAsset* constructDef()
+	static ComponentDescription* constructDescription()
 	{
-		if(_def != nullptr)
-			return _def;
+		if(_description != nullptr)
+			return _description;
 		AssetID id;
-		std::vector<VirtualType*> vars = T::getMembers(id);
-		_def = new ComponentAsset(vars, id, sizeof(T));
-		std::string name = typeid(T).name();
-		size_t nameStart = name.find_last_of("::") + 1;
-		if(nameStart == std::string::npos)
-			nameStart = 0;
-		_def->name =  name.substr(nameStart, name.size() - nameStart);
-		return _def;
+		std::vector<VirtualType::Type> members = T::getMemberTypes();
+		std::vector<size_t> offsets = T::getMemberOffsets();
+		_description = new ComponentDescription(members, offsets, sizeof(T));
+		_description->name =  T::getComponentName();
+		return _description;
 	}
 protected:
 	typedef T ComponentType;
-	static ComponentAsset* _def;
+	static ComponentDescription* _description;
 public:
 	NativeComponent() = default;
+	VirtualComponentView toVirtual()
+	{
+		return VirtualComponentView(_description, (byte*)this);
+	}
 	static T* fromVirtual(byte* data)
 	{
 		return (T*)data;
@@ -101,49 +139,23 @@ public:
 	{
 		return (const T*)data;
 	}
-	VirtualComponentPtr toVirtual()
+	static ComponentDescription* def()
 	{
-		return VirtualComponentPtr(def(), (byte*)this);
-	}
-	static ComponentAsset* def()
-	{
-		return _def;
+		return _description;
 	}
 };
-template <class T> ComponentAsset* NativeComponent<T>::_def = nullptr;
 
-class VirtualComponentVector
-{
-private:
-	std::vector<byte> _data;
-	const ComponentAsset* _def;
+
+template <class T> ComponentDescription* NativeComponent<T>::_description = nullptr;
+
+class ComponentManager {
+	staticIndexVector<std::unique_ptr<ComponentDescription>> _components;
+	std::unordered_set<uint16_t> _externalComponents;
 public:
-	VirtualComponentVector(const ComponentAsset* definition, size_t initalSize);
-	VirtualComponentVector(const ComponentAsset* definition);
-	VirtualComponentVector(const VirtualComponentVector& other);
-	byte* getComponentData(size_t index) const;
-	VirtualComponentPtr getComponent(size_t index) const;
-	template<class T>
-	const T readComponentVar(size_t componentIndex, size_t varIndex) const
-	{
-		componentIndex = structIndex(componentIndex);
-		varIndex = _def->getByteIndex(varIndex);
-		return readVirtual<T>(&_data[componentIndex + varIndex]);
-	}
-	template<class T>
-	void setComponentVar(size_t componentIndex, size_t varIndex, T value)
-	{
-		componentIndex = structIndex(componentIndex);
-		varIndex = _def->getByteIndex(varIndex);
-		setVirtual(&_data[componentIndex + varIndex], value);
-	}
-	size_t structIndex(size_t index) const;
-	size_t size() const;
-	const ComponentAsset* def() const;
-	void reserve(size_t size);
-	void pushBack(VirtualComponent& virtualComponent);
-	void pushBack(VirtualComponentPtr& virtualComponentPtr);
-	void pushEmpty();
-	void remove(size_t index);
-	void copy(const VirtualComponentVector* source, size_t sourceIndex, size_t destIndex);
+	~ComponentManager();
+	ComponentID createComponent(ComponentAsset* component);
+	ComponentID createComponent(const std::vector<VirtualType::Type>& component, const std::string& name);
+	ComponentID registerComponent(ComponentDescription* componentDescription);
+	const ComponentDescription* getComponent(ComponentID id);
+	void eraseComponent(ComponentID id);
 };
