@@ -29,7 +29,7 @@ void LoginWindow::draw()
 
 		if(ImGui::Button("Submit"))
 		{
-			NetworkManager* nm = (NetworkManager*)_ui.runtime().getModule("networkManager");
+			NetworkManager* nm = Runtime::getModule<NetworkManager>();
 			nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success){
 				if(success)
 				{

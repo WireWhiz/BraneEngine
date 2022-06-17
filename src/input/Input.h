@@ -14,6 +14,7 @@ class InputManager : public Module
 public:
 	InputManager();
 	void start() override;
+	static const char* name();
 };
 
 

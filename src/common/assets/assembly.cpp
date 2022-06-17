@@ -101,8 +101,8 @@ void Assembly::toFile(MarkedSerializedData& sData)
 
 void Assembly::fromFile(MarkedSerializedData& sData)
 {
-	ComponentManager& cm = ((EntityManager*)Runtime::getModule("entityManager"))->components();
-	AssetManager& am = *(AssetManager*)Runtime::getModule("assetManager");
+	ComponentManager& cm = Runtime::getModule<EntityManager>()->components();
+	AssetManager& am = *Runtime::getModule<AssetManager>();
 
 	Asset::fromFile(sData);
 	sData.readAttribute("scripts", scripts);
@@ -135,8 +135,8 @@ void Assembly::serialize(OSerializedData& message)
 
 void Assembly::deserialize(ISerializedData& message)
 {
-	ComponentManager& cm = ((EntityManager*)Runtime::getModule("entityManager"))->components();
-	AssetManager& am = *(AssetManager*)Runtime::getModule("assetManager");
+	ComponentManager& cm = Runtime::getModule<EntityManager>()->components();
+	AssetManager& am = *Runtime::getModule<AssetManager>();
 
 	Asset::deserialize(message);
 	message >> components >> scripts >> meshes >> textures;

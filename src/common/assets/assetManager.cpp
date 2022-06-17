@@ -9,12 +9,7 @@
 
 AssetManager::AssetManager()
 {
-	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
-	addNativeComponent<TransformComponent>(em);
-	addNativeComponent<TransformComponent>(em);
-	addNativeComponent<TransformComponent>(em);
-	addNativeComponent<TransformComponent>(em);
-	addNativeComponent<TransformComponent>(em);
+
 }
 
 void AssetManager::updateAsset(Asset* asset)
@@ -32,7 +27,7 @@ void AssetManager::updateAsset(Asset* asset)
 
 void AssetManager::startAssetLoaderSystem()
 {
-	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
+	EntityManager& em = *Runtime::getModule<EntityManager>();
 	Runtime::timeline().addTask("asset loader", [this, &em](){
 
 		//Start loading all unloaded assemblies TODO change it so that the state is stored through components and not a bool, so we're not always iterating over literally everything
@@ -121,6 +116,13 @@ const char* AssetManager::name()
 
 void AssetManager::start()
 {
+	EntityManager& em = *Runtime::getModule<EntityManager>();
+	addNativeComponent<EntityIDComponent>(em);
+	addNativeComponent<TransformComponent>(em);
+	addNativeComponent<LocalTransformComponent>(em);
+	addNativeComponent<ChildrenComponent>(em);
+	addNativeComponent<MeshRendererComponent>(em);
+	addNativeComponent<AssemblyRoot>(em);
 	startAssetLoaderSystem();
 }
 

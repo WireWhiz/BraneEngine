@@ -95,5 +95,5 @@ public:
 
 	void addRequestListener(const std::string& name, std::function<void(net::RequestResponse&)> callback);
 
-	const char* name() override;
+	static const char* name();
 };

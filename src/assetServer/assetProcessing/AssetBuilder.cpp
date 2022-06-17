@@ -29,10 +29,10 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 
 
 
-	std::vector<WorldEntity> entities;
+	std::vector<Assembly::WorldEntity> entities;
 	for (Json::Value& node : loader.nodes())
 	{
-		WorldEntity entity;
+		Assembly::WorldEntity entity;
 		glm::mat4 transform = glm::mat4(1);
 		if (node.isMember("matrix"))
 		{
@@ -101,7 +101,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 		{
 			for (auto& child: node["children"])
 			{
-				WorldEntity& childEnt = entities[child.asUInt()];
+				Assembly::WorldEntity& childEnt = entities[child.asUInt()];
 				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
 				VirtualComponent tc(LocalTransformComponent::def());

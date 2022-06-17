@@ -19,22 +19,23 @@
 
 int main()
 {
+	Runtime::init();
 	Config::loadConfig();
 
-	Runtime rt;
-	Timeline& tl = rt.timeline();
+	Timeline& tl = Runtime::timeline();
 	tl.addBlock("asset management");
 	tl.addBlock("networking");
 	tl.addBlock("before main");
 	tl.addBlock("main");
 	tl.addBlock("draw");
-	rt.addModule<FileManager>();
-	rt.addModule<NetworkManager>();
-	rt.addModule<AssetManager>();
-	rt.addModule<EntityManager>();
-	rt.addModule<Database>();
-	rt.addModule<AssetServer>();
+	Runtime::addModule<FileManager>();
+	Runtime::addModule<NetworkManager>();
+	Runtime::addModule<AssetManager>();
+	Runtime::addModule<EntityManager>();
+	Runtime::addModule<Database>();
+	Runtime::addModule<AssetServer>();
 
-	rt.run();
+	Runtime::run();
+	Runtime::cleanup();
 	return 0;
 }

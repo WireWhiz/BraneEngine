@@ -70,6 +70,6 @@ public:
 	std::shared_ptr<JobHandle> forEachParallel(const std::vector<ComponentID>& components, const std::function <void(byte* [])>& f, size_t entitiesPerThread);
 	std::shared_ptr<JobHandle> constForEachParallel(const std::vector<ComponentID>& components, const std::function <void(const byte* [])>& f, size_t entitiesPerThread);
 
-	const char* name() override;
+	static const char* name();
 	void stop() override;
 };

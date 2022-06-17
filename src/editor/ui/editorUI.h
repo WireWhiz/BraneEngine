@@ -43,7 +43,7 @@ public:
 	EditorUI();
 	~EditorUI();
 
-	const char* name() override;
+	static const char* name();
 	void stop() override;
 	net::Connection* server() const;
 

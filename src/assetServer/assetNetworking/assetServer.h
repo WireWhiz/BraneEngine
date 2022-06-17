@@ -41,7 +41,7 @@ public:
 	~AssetServer();
 	void processMessages();
 
-	const char* name() override;
+	static const char* name();
 
 };
 

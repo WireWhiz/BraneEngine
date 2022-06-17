@@ -30,17 +30,16 @@ namespace graphics{
 		_vkr.materials().forEach([this, cmdBuffer, cameraMatrix, transform](auto& mat){
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
-			const NativeForEach& nfe = getForEach(mat.get());
 			std::vector<RenderObject> meshes;
-			_em.forEach(nfe.id(), [this, &meshes, &nfe](byte** components){
-				MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[nfe.getComponentIndex(1)]);
+			_em.forEach({TransformComponent::def()->id, mat->component()->id}, [this, &meshes](byte** components){
+				MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
 				Mesh* mesh = _vkr.meshes()[mr->mesh].get();
 				for (int j = 0; j < mesh->primitiveCount(); ++j)
 				{
 					RenderObject ro{};
 					ro.mesh = mesh;
 					ro.primitive = j;
-					ro.transform = TransformComponent::fromVirtual(components[nfe.getComponentIndex(0)])->value;
+					ro.transform = TransformComponent::fromVirtual(components[0])->value;
 					//_renderCache[/*mr->materials[j]*/0].push_back(ro);
 					//TODO actually add in support for more than one material
 					meshes.push_back(ro);
@@ -101,15 +100,6 @@ namespace graphics{
 		if(!_cachedPipelines.count(mat))
 			_cachedPipelines.insert({mat, mat->pipeline(this)});
 		return _cachedPipelines.at(mat);
-	}
-
-	NativeForEach& MeshRenderer::getForEach(const Material* mat)
-	{
-		if(!_cachedForEach.count(mat)){
-			std::vector<const ComponentAsset*> components = {TransformComponent::def(), MeshRendererComponent::def(), mat->component()};
-			_cachedForEach.insert({mat, NativeForEach(components, &_em)});
-		}
-		return _cachedForEach.at(mat);
 	}
 
 	MeshRenderer::~MeshRenderer()

@@ -25,7 +25,7 @@ EditorUI::EditorUI()
 		}
 	}, "editorUI");
 
-	graphics::VulkanRuntime* vkr = (graphics::VulkanRuntime*)Runtime::getModule("graphics");
+	graphics::VulkanRuntime* vkr = Runtime::getModule<graphics::VulkanRuntime>();
 
 
 	_renderer = vkr->createRenderer<graphics::CustomRenderer>();

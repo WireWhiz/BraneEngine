@@ -76,7 +76,7 @@ public:
 	Directory directoryTree();
 	std::vector<Database::Asset> directoryAssets(int directoryID);
 
-	const char* name() override;
+	static const char* name();
 };
 
 

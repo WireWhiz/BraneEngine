@@ -69,7 +69,7 @@ namespace graphics
 		VulkanRuntime();
 		~VulkanRuntime();
 
-		const char* name() override;
+		static const char* name();
 
 		VkInstance instance();
 		VkDevice device();

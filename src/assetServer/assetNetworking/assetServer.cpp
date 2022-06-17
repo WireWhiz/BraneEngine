@@ -6,10 +6,10 @@
 #include <utility/threadPool.h>
 
 AssetServer::AssetServer() :
-_nm(*(NetworkManager*)Runtime::getModule("networkManager")),
-_am(*(AssetManager*)Runtime::getModule("assetManager")),
-_fm(*(FileManager*)Runtime::getModule("fileManager")),
-_db(*(Database*)Runtime::getModule("database"))
+_nm(*Runtime::getModule<NetworkManager>()),
+_am(*Runtime::getModule<AssetManager>()),
+_fm(*Runtime::getModule<FileManager>()),
+_db(*Runtime::getModule<Database>())
 {
 	_nm.start();
 	_nm.configureServer();
@@ -182,7 +182,7 @@ const char* AssetServer::name()
 AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	_fm.async_readUnknownAsset(id, _am).then([this, asset, id](Asset* data){
+	_fm.async_readUnknownAsset(id).then([this, asset, id](Asset* data){
 		if(data)
 			asset.setData(data);
 		else

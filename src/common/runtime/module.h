@@ -10,10 +10,9 @@ class Module
 {
 public:
 	virtual ~Module() = default;
-	virtual const char* name() = 0;
 	virtual void start();
 	virtual void stop();
-
+	//All native modules must have static "const char* name()" function to work with Runtime::GetName<Module>()
 };
 
 

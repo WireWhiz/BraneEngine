@@ -20,13 +20,13 @@ const char* Client::name()
 }
 
 Client::Client() :
-_am(*(AssetManager*)Runtime::getModule("assetManager")),
-_nm(*(NetworkManager*)Runtime::getModule("networkManager"))
+_am(*Runtime::getModule<AssetManager>()),
+_nm(*Runtime::getModule<NetworkManager>())
 {
 	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
 
-	EntityManager& em = *(EntityManager*)Runtime::getModule("entityManager");
-	graphics::VulkanRuntime& vkr = *(graphics::VulkanRuntime*)Runtime::getModule("graphics");
+	EntityManager& em = *Runtime::getModule<EntityManager>();
+	graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
 
 	systems::addTransformSystem(em, Runtime::timeline());
 	addAssetPreprocessors(_am, vkr);

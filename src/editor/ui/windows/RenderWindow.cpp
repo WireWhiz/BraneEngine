@@ -14,11 +14,11 @@
 
 RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 {
-	auto& am = (*(AssetManager*)ui.runtime().getModule("assetManager"));
-	auto& nm = (*(NetworkManager*)ui.runtime().getModule("networkManager"));
+	auto& am = *Runtime::getModule<AssetManager>();
+	auto& nm = *Runtime::getModule<NetworkManager>();
 	am.setFetchCallback([&](auto id, auto incremental){
 		AsyncData<Asset*> asset;
-		nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [&am, &nm, id, incremental, asset](bool connected){
+		nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [&nm, id, incremental, asset](bool connected){
 			if(!connected)
 			{
 				asset.setError("Could not connect to server: " + id.serverAddress);
@@ -27,14 +27,14 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 			}
 			if (incremental)
 			{
-				nm.async_requestAssetIncremental(id, am).then([asset, id](Asset* data){
+				nm.async_requestAssetIncremental(id).then([asset, id](Asset* data){
 					asset.setData(data);
 				});
 			}
 			else
 			{
 				AsyncData<Asset*> assetToSave;
-				nm.async_requestAsset(id, am).then([asset, id](Asset* data){
+				nm.async_requestAsset(id).then([asset, id](Asset* data){
 					asset.setData(data);
 				});
 			}
@@ -42,13 +42,13 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 		return asset;
 	});
 
-	EntityManager& em = *(EntityManager*)ui.runtime().getModule("entityManager");
-	graphics::VulkanRuntime* vkr = ((graphics::VulkanRuntime*)ui.runtime().getModule("graphics"));
+	EntityManager& em = *Runtime::getModule<EntityManager>();
+	graphics::VulkanRuntime* vkr = Runtime::getModule<graphics::VulkanRuntime>();
 	_renderer = vkr->createRenderer<graphics::MeshRenderer>(vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr->swapChain();
 
-	systems::addTransformSystem(em, ui.runtime().timeline());
+	systems::addTransformSystem(em, Runtime::timeline());
 
 	auto* mat = new graphics::Material();
 	mat->setVertex(vkr->loadShader(0));
@@ -82,8 +82,8 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 	});
 
 	ComponentSet headRootComponents;
-	headRootComponents.add(AssemblyRoot::def());
-	headRootComponents.add(TransformComponent::def());
+	headRootComponents.add(AssemblyRoot::def()->id);
+	headRootComponents.add(TransformComponent::def()->id);
 	EntityID testHead = em.createEntity(headRootComponents);
 
 	AssemblyRoot testHeadRoot{};

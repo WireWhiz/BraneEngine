@@ -448,7 +448,7 @@ namespace graphics
         _validationLayersEnabled = false;
 #endif
         init();
-		EntityManager* em = dynamic_cast<EntityManager*>(Runtime::getModule("entityManager"));
+	    EntityManager* em = Runtime::getModule<EntityManager>();
 
 		Runtime::timeline().addTask("draw", [this, em]{
 			updateWindow();

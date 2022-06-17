@@ -149,6 +149,6 @@ public:
 	void startAssetLoaderSystem();
 	void addAssetPreprocessor(AssetType::Type type, std::function<void(Asset* asset)> processor);
 
-	const char* name() override;
+	static const char* name();
 	void start() override;
 };

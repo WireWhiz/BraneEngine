@@ -84,5 +84,5 @@ public:
 
 	void writeAsset(Asset* asset);
 
-	const char* name() override;
+	static const char* name();
 };

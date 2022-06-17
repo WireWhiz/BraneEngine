@@ -13,11 +13,9 @@ namespace graphics{
 		VulkanRuntime& _vkr;
 		EntityManager& _em;
 		std::unordered_map<const Material*, VkPipeline> _cachedPipelines;
-		std::unordered_map<const Material*, NativeForEach> _cachedForEach;
 
 		void rebuild() override;
 		VkPipeline getPipeline(const Material* mat);
-		NativeForEach& getForEach(const Material* mat);
 
 	public:
 		glm::vec3 position;

@@ -25,5 +25,5 @@ class Client : public Module
 public:
 	Client();
 
-	const char * name() override;
+	static const char* name();
 };

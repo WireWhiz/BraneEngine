@@ -14,23 +14,30 @@ class Module;
 
 namespace Runtime
 {
-	extern void init();
-	extern void cleanup();
-	extern void addModule(Module* m);
+	void init();
+	void cleanup();
+	void addModule(const std::string& name, Module* m);
 	template<typename T>
-	inline void addModule()
+	void addModule()
 	{
-		static_assert(std::is_base_of<Module, T>().value);
-		addModule(new T());
+		static_assert(std::is_base_of<Module, T>());
+		addModule(T::name(), new T());
 	}
 
-	extern bool hasModule(const std::string& name);
-	extern Module* getModule(const std::string& name);
+	bool hasModule(const std::string& name);
+	Module* getModule(const std::string& name);
+	template<typename T>
+	T* getModule()
+	{
+		static_assert(std::is_base_of<Module, T>());
+		return (T*)getModule(T::name());
+	}
 
-	extern Timeline& timeline();
 
-	extern void run();
-	extern void stop();
+	Timeline& timeline();
+
+	void run();
+	void stop();
 };
 
 

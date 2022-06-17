@@ -11,9 +11,9 @@ namespace Runtime
 	Timeline _timeline;
 	std::atomic_bool _running = true;
 
-	void addModule(Module* m)
+	void addModule(const std::string& name, Module* m)
 	{
-		_modules.insert({m->name(), std::unique_ptr<Module>(m)});
+		_modules.insert({name, std::unique_ptr<Module>(m)});
 	}
 
 	Timeline& timeline()

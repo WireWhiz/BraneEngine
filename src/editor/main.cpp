@@ -16,21 +16,22 @@ int main(int argc, char** argv)
 {
 	Config::loadConfig();
 
-	Runtime rt;
-	Timeline& tl = rt.timeline();
+	Runtime::init();
+	Timeline& tl = Runtime::timeline();
 	tl.addBlock("asset management");
 	tl.addBlock("networking");
 	tl.addBlock("before main");
 	tl.addBlock("main");
 	tl.addBlock("draw");
-	rt.addModule<NetworkManager>();
-	rt.addModule<FileManager>();
-	rt.addModule<AssetManager>();
-	rt.addModule<EntityManager>();
-	rt.addModule<graphics::VulkanRuntime>();
-	rt.addModule<EditorUI>();
+	Runtime::addModule<NetworkManager>();
+	Runtime::addModule<FileManager>();
+	Runtime::addModule<AssetManager>();
+	Runtime::addModule<EntityManager>();
+	Runtime::addModule<graphics::VulkanRuntime>();
+	Runtime::addModule<EditorUI>();
 
-	rt.run();
+	Runtime::run();
+	Runtime::cleanup();
 }
 
 #ifdef _WIN32

@@ -2,8 +2,6 @@
 
 EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
-	EntityIDComponent::constructDescription();
-	_components.registerComponent(EntityIDComponent::def());
 }
 
 EntityManager::~EntityManager()

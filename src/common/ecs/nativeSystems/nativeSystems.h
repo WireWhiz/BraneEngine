@@ -14,14 +14,14 @@ namespace systems
 {
 	void updateTransform(EntityID id, std::unordered_set<EntityID>& updated, EntityManager& em)
 	{
-		if(em.entityHasComponent(id, LocalTransformComponent::def()))
+		if(em.entityHasComponent(id, LocalTransformComponent::def()->id))
 		{
-			VirtualComponent localTransform = em.getEntityComponent(id, LocalTransformComponent::def());
+			VirtualComponent localTransform = em.getEntityComponent(id, LocalTransformComponent::def()->id);
 			EntityID parent = localTransform.readVar<EntityID>(1);
 			if(!updated.count(parent))
 				updateTransform(parent, updated, em);
 
-			VirtualComponent parentTransform = em.getEntityComponent(parent, TransformComponent::def());
+			VirtualComponent parentTransform = em.getEntityComponent(parent, TransformComponent::def()->id);
 
 			TransformComponent transform{};
 			transform.value =  parentTransform.readVar<glm::mat4>(0) * localTransform.readVar<glm::mat4>(0);
@@ -33,11 +33,10 @@ namespace systems
 
 	void addTransformSystem(EntityManager& em, Timeline& tl)
 	{
-		NativeForEach forEveryTransform( {EntityIDComponent::def(), TransformComponent::def()},&em);
-		tl.addTask("transform", [forEveryTransform, &em](){
-			std::unordered_set<EntityID> updated(em.forEachCount(forEveryTransform.id()));
-			em.forEach(forEveryTransform.id(), [&](byte** components){
-				EntityID id = EntityIDComponent::fromVirtual(components[forEveryTransform.getComponentIndex(0)])->id;
+		tl.addTask("transform", [&em](){
+			std::unordered_set<EntityID> updated;
+			em.forEach({EntityIDComponent::def()->id, TransformComponent::def()->id}, [&](byte** components){
+				EntityID id = EntityIDComponent::fromVirtual(components[0])->id;
 				if(!updated.count(id))
 					updateTransform(id, updated, em);
 
