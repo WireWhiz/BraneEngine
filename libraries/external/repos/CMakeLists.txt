@@ -26,10 +26,12 @@ add_subdirectory(asmjit)
 target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
 
 add_subdirectory(SQLite)
+add_subdirectory(gtest)
 
 add_library(external_include_dirs INTERFACE)
 target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/asio/asio/include
         ${CMAKE_CURRENT_SOURCE_DIR}/asmjit/src
         ${CMAKE_CURRENT_SOURCE_DIR}/glm
-        ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include
+        ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include)

@@ -15,3 +15,6 @@
 [submodule "libraries/external/repos/entt"]
 	path = libraries/external/repos/entt
 	url = http://github.com/skypjack/entt/
+[submodule "libraries/external/repos/gtest"]
+	path = libraries/external/repos/gtest
+	url = https://github.com/google/googletest
