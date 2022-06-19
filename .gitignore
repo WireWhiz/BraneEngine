@@ -24,10 +24,6 @@ mysqlcppconn8-static.lib
 mono_crash.*
 
 # external repos
-libraries/external/repos/imgui/
-libraries/external/repos/asio/
-/libraries/external/repos/asmjit/
-/libraries/external/repos/glm/
 
 # Build results
 [Dd]ebugPublic/
