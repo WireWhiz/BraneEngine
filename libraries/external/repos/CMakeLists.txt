@@ -28,6 +28,7 @@ target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
 
 add_subdirectory(SQLite)
 add_subdirectory(gtest)
+add_subdirectory(glslang)
 
 option(BUILD_SHARED_LIBS "Build jsoncpp_lib as a shared library." OFF)
 option(BUILD_STATIC_LIBS "Build jsoncpp_lib as a static library." ON)
@@ -41,4 +42,7 @@ target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/glm
         ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/glslang/glslang/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/glslang/glslang/
+        ${CMAKE_CURRENT_SOURCE_DIR}/glslang)

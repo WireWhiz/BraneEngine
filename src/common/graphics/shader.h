@@ -4,7 +4,7 @@
 #define DEBUG_DEFINED
 #endif
 
-#include <glslang/SPIRV/GlslangToSpv.h>
+#include <SPIRV/GlslangToSpv.h>
 #include <vulkan/vulkan.h>
 #include <iostream>
 #include <fstream>
