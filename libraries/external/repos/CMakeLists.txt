@@ -1,4 +1,3 @@
-set(FOLDER "External Libraries")
 add_library(imgui STATIC
         imgui/imconfig.h
         imgui/imgui.cpp

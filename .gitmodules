@@ -20,3 +20,6 @@
 [submodule "libraries/external/repos/jsoncpp"]
 	path = libraries/external/repos/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp
+[submodule "libraries/external/repos/glslang"]
+	path = libraries/external/repos/glslang
+	url = https://github.com/KhronosGroup/glslang
