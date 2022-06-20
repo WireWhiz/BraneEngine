@@ -1,7 +1,6 @@
 [submodule "libraries/external/repos/imgui"]
 	path = libraries/external/repos/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "imgui"]
 	branch = docking
 [submodule "libraries/external/repos/asmjit"]
 	path = libraries/external/repos/asmjit
@@ -18,3 +17,6 @@
 [submodule "libraries/external/repos/gtest"]
 	path = libraries/external/repos/gtest
 	url = https://github.com/google/googletest
+[submodule "libraries/external/repos/jsoncpp"]
+	path = libraries/external/repos/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp

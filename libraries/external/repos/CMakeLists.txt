@@ -21,6 +21,7 @@ add_library(imgui STATIC
 target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui/)
 target_include_directories(imgui PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(imgui PUBLIC include_dir)
+add_library(external_include_dirs INTERFACE)
 
 add_subdirectory(asmjit)
 target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
@@ -28,10 +29,16 @@ target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
 add_subdirectory(SQLite)
 add_subdirectory(gtest)
 
-add_library(external_include_dirs INTERFACE)
+option(BUILD_SHARED_LIBS "Build jsoncpp_lib as a shared library." OFF)
+option(BUILD_STATIC_LIBS "Build jsoncpp_lib as a static library." ON)
+option(BUILD_OBJECT_LIBS "Build jsoncpp_lib as a object library." OFF)
+add_subdirectory(jsoncpp)
+
+
 target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/asio/asio/include
         ${CMAKE_CURRENT_SOURCE_DIR}/asmjit/src
         ${CMAKE_CURRENT_SOURCE_DIR}/glm
         ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include
-        ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include)
