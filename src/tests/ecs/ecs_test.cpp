@@ -196,6 +196,7 @@ TEST(ECS, EntityManagerTest)
 	ComponentDescription vcd3(comps3);
 
 	EntityManager em;
+	em.components().registerComponent(EntityIDComponent::constructDescription());
 	em.components().registerComponent(&vcd1);
 	em.components().registerComponent(&vcd2);
 	em.components().registerComponent(&vcd3);
@@ -251,12 +252,9 @@ TEST(ECS, ForEachTest)
 {
 	Runtime::init();
 	EntityManager em;
-	//Create two for each ID one for entities with one component, another for those with two
-	TestNativeComponent::constructDescription();
-	TestNativeComponent2::constructDescription();
-
-	em.components().registerComponent(TestNativeComponent::def());
-	em.components().registerComponent(TestNativeComponent2::def());
+	em.components().registerComponent(EntityIDComponent::constructDescription());
+	em.components().registerComponent(TestNativeComponent::constructDescription());
+	em.components().registerComponent(TestNativeComponent2::constructDescription());
 
 
 	//Create 50 entities with one component, and 50 with two
@@ -346,6 +344,7 @@ TEST(ECS, ForEachParellelTest)
 
 	ComponentDescription counterComponent(variables);
 	EntityManager em;
+	em.components().registerComponent(EntityIDComponent::constructDescription());
 	em.components().registerComponent(&counterComponent);
 
 	size_t instances = 200000;

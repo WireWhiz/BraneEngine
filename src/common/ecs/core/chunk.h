@@ -33,8 +33,8 @@ public:
 	}
 	void setArchetype(Archetype* archetype)
 	{
-		_lock.lock();
 		clear();
+		_lock.lock();
 		_archetype = archetype;
 
 		if (archetype)
@@ -104,8 +104,8 @@ public:
 		source->_lock.lock();
 		assert(source->_archetype->components().contains(component->id));
 		assert(_archetype->components().contains(component->id));
-		assert(sIndex < source->size());
-		assert(dIndex < size());
+		assert(sIndex < source->_size);
+		assert(dIndex < _size);
 
 		size_t sourceCompIndex = source->_archetype->components().index(component->id);
 		size_t destCompIndex = _archetype->components().index(component->id);

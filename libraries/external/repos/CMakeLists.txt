@@ -25,14 +25,12 @@ add_library(external_include_dirs INTERFACE)
 
 add_subdirectory(asmjit)
 target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 add_subdirectory(SQLite)
 add_subdirectory(gtest)
 add_subdirectory(glslang)
 
-option(BUILD_SHARED_LIBS "Build jsoncpp_lib as a shared library." OFF)
-option(BUILD_STATIC_LIBS "Build jsoncpp_lib as a static library." ON)
-option(BUILD_OBJECT_LIBS "Build jsoncpp_lib as a object library." OFF)
 add_subdirectory(jsoncpp)
 
 

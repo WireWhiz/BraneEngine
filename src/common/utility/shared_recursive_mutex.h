@@ -12,8 +12,8 @@ class shared_recursive_mutex
 	size_t srmId;
 	std::mutex _m;
 	std::thread::id _owner;
-	size_t _ownerLockCount;
-	std::unordered_map<std::thread::id, size_t> _sharedOwners;
+	size_t _ownerLockCount = 0;
+	size_t _sharedOwners = 0;
 public:
 	shared_recursive_mutex();
 	void lock();
