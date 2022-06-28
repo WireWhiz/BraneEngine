@@ -5,8 +5,8 @@
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "mesh.h"
 #include "material.h"
-#include "RenderTarget.h"
-#include "Camera.h"
+#include "renderTarget.h"
+#include "camera.h"
 
 namespace graphics
 {

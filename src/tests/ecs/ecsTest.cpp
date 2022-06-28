@@ -347,7 +347,12 @@ TEST(ECS, ForEachParellelTest)
 	em.components().registerComponent(EntityIDComponent::constructDescription());
 	em.components().registerComponent(&counterComponent);
 
+#ifdef _DEBUG
 	size_t instances = 200000;
+#else
+	//Try to make it so this takes 1 second
+	size_t instances = 20000000;
+#endif
 
 	em.createEntities(ComponentSet({counterComponent.id}), instances);
 	Stopwatch sw;
@@ -362,7 +367,7 @@ TEST(ECS, ForEachParellelTest)
     em.forEachParallel({counterComponent.id}, [&](byte *components[]) {
         VirtualComponentView counter = VirtualComponentView(&counterComponent, components[0]);
         counter.setVar(0, 420);
-    }, instances / 22)->finish();
+    }, instances / 12)->finish();
 	time = sw2.time();
 	std::cout << "For Each Parallel took: " << time << std::endl;
 

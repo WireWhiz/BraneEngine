@@ -2,7 +2,7 @@
 // Created by eli on 5/21/2022.
 //
 
-#include "ConsoleWindow.h"
+#include "consoleWindow.h"
 
 ConsoleWindow::ConsoleWindow(EditorUI& ui) : EditorWindow(ui)
 {

@@ -2,8 +2,8 @@
 // Created by eli on 2/1/2022.
 //
 
-#ifndef BRANEENGINE_ASSETBUILDER_H
-#define BRANEENGINE_ASSETBUILDER_H
+#ifndef BRANEENGINE_ASSSETBUILDER_H
+#define BRANEENGINE_ASSSETBUILDER_H
 
 #include "assets/assembly.h"
 #include "assets/types/meshAsset.h"
@@ -18,4 +18,4 @@ public:
 
 
 
-#endif //BRANEENGINE_ASSETBUILDER_H
+#endif //BRANEENGINE_ASSSETBUILDER_H

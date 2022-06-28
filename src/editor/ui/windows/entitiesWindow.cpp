@@ -2,7 +2,7 @@
 // Created by eli on 5/21/2022.
 //
 
-#include "EntitiesWindow.h"
+#include "entitiesWindow.h"
 
 EntitiesWindow::EntitiesWindow(EditorUI& ui) : EditorWindow(ui)
 {

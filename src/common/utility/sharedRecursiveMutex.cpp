@@ -1,14 +1,14 @@
-#include "shared_recursive_mutex.h"
+#include "sharedRecursiveMutex.h"
 #include <iostream>
 
 
-size_t shared_recursive_mutex::srmIdCounter = 0;
-shared_recursive_mutex::shared_recursive_mutex()
+size_t SharedRecursiveMutex::srmIdCounter = 0;
+SharedRecursiveMutex::SharedRecursiveMutex()
 {
 	srmId = srmIdCounter++;
 }
 
-void shared_recursive_mutex::lock()
+void SharedRecursiveMutex::lock()
 {
 	while (true)
 	{
@@ -25,14 +25,14 @@ void shared_recursive_mutex::lock()
 	_m.unlock();
 }
 
-void shared_recursive_mutex::unlock()
+void SharedRecursiveMutex::unlock()
 {
 	std::scoped_lock lock(_m);
 	assert(_ownerLockCount != 0);
 	_ownerLockCount -= 1;
 }
 
-void shared_recursive_mutex::lock_shared()
+void SharedRecursiveMutex::lock_shared()
 {
 	while (true)
 	{
@@ -46,7 +46,7 @@ void shared_recursive_mutex::lock_shared()
 	_m.unlock();
 }
 
-void shared_recursive_mutex::unlock_shared()
+void SharedRecursiveMutex::unlock_shared()
 {
 	std::scoped_lock lock(_m);
 	assert(_sharedOwners != 0);

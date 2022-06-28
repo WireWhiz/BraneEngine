@@ -2,7 +2,7 @@
 // Created by eli on 5/21/2022.
 //
 
-#include "AssetDataWindow.h"
+#include "assetDataWindow.h"
 
 AssetDataWindow::AssetDataWindow(EditorUI& ui) : EditorWindow(ui)
 {

@@ -2,7 +2,7 @@
 // Created by eli on 5/29/2022.
 //
 
-#include "MeshRenderer.h"
+#include "meshRenderer.h"
 #include "graphics.h"
 
 namespace graphics{

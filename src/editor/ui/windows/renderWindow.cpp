@@ -2,10 +2,10 @@
 // Created by eli on 5/21/2022.
 //
 
-#include "RenderWindow.h"
+#include "renderWindow.h"
 #include "../editorUI.h"
 #include "graphics/graphics.h"
-#include "graphics/MeshRenderer.h"
+#include "graphics/meshRenderer.h"
 #include "networking/networking.h"
 #include "assets/assetManager.h"
 #include "ecs/nativeSystems/nativeSystems.h"

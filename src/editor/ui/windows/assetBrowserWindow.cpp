@@ -2,7 +2,7 @@
 // Created by eli on 5/22/2022.
 //
 
-#include "AssetBrowserWindow.h"
+#include "assetBrowserWindow.h"
 #include "../editorUI.h"
 #include <stack>
 #include <utility/hex.h>

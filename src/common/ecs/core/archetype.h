@@ -5,7 +5,7 @@
 #include <functional>
 #include <unordered_map>
 #include <common/utility/stackAllocate.h>
-#include <utility/shared_recursive_mutex.h>
+#include <utility/sharedRecursiveMutex.h>
 #include <utility/threadPool.h>
 #include <unordered_set>
 #include <list>
@@ -74,7 +74,7 @@ public:
 	std::vector<std::unique_ptr<Chunk>> _chunks;
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 
-	mutable shared_recursive_mutex _mutex;
+	mutable SharedRecursiveMutex _mutex;
 
 	size_t chunkIndex(size_t entity) const;
 	Chunk* getChunk(size_t entity) const;

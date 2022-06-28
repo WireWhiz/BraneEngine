@@ -563,7 +563,7 @@ std::shared_ptr<JobHandle> ArchetypeManager::constForEachParallel(const std::vec
 	ArchetypeSet archetypes = getArchetypes(components);
 	for (Archetype& archetype : archetypes)
 	{
-		size_t threads = archetype.size() / entitiesPerThread + 1;
+		size_t threads = std::max<size_t>(archetype.size() / entitiesPerThread, 1);
 
 		for (size_t t = 0; t < threads; t++)
 		{
@@ -586,7 +586,7 @@ std::shared_ptr<JobHandle> ArchetypeManager::forEachParallel(const std::vector<C
 	ArchetypeSet archetypes = getArchetypes(components);
 	for (Archetype& archetype : archetypes)
 	{
-		size_t threads = archetype.size() / entitiesPerThread + 1;
+		size_t threads = std::max<size_t>(archetype.size() / entitiesPerThread, 1);
 
 		for (size_t t = 0; t < threads; t++)
 		{

@@ -3,12 +3,12 @@
 //
 
 #include "editorUI.h"
-#include "windows/LoginWindow.h"
-#include "editor/ui/windows/AssetDataWindow.h"
-#include "editor/ui/windows/ConsoleWindow.h"
-#include "editor/ui/windows/EntitiesWindow.h"
-#include "editor/ui/windows/RenderWindow.h"
-#include "editor/ui/windows/AssetBrowserWindow.h"
+#include "windows/loginWindow.h"
+#include "editor/ui/windows/assetDataWindow.h"
+#include "editor/ui/windows/consoleWindow.h"
+#include "editor/ui/windows/entitiesWindow.h"
+#include "editor/ui/windows/renderWindow.h"
+#include "editor/ui/windows/assetBrowserWindow.h"
 #include "graphics/graphics.h"
 
 #include <runtime/runtime.h>

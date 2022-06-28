@@ -3,15 +3,15 @@
 add_library(utility STATIC
 	clock.cpp
 	threadPool.cpp
- "shared_recursive_mutex.h" "shared_recursive_mutex.cpp" hex.h staticIndexVector.h serializedData.cpp)
+ "sharedRecursiveMutex.h" "sharedRecursiveMutex.cpp" hex.h staticIndexVector.h serializedData.cpp)
 
  target_link_libraries(utility PUBLIC include_dir)
 
  add_library(utility_test STATIC
 	clock.cpp
 	threadPool.cpp
- "shared_recursive_mutex.h" 
- "shared_recursive_mutex.cpp"
+ "sharedRecursiveMutex.h"
+ "sharedRecursiveMutex.cpp"
 	 )
 
 target_compile_definitions(utility_test PUBLIC TEST_BUILD)

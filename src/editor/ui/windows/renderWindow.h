@@ -6,8 +6,8 @@
 #define BRANEENGINE_RENDERWINDOW_H
 
 #include "../editorWindow.h"
-#include "graphics/RenderTarget.h"
-#include "graphics/MeshRenderer.h"
+#include "graphics/renderTarget.h"
+#include "graphics/meshRenderer.h"
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
 

@@ -2,7 +2,7 @@
 // Created by eli on 2/1/2022.
 //
 
-#include "AssetBuilder.h"
+#include "asssetBuilder.h"
 #include <ecs/nativeTypes/transform.h>
 #include <ecs/nativeTypes/meshRenderer.h>
 

@@ -4,7 +4,7 @@
 #include "virtualType.h"
 #include <algorithm>
 #include <functional>
-#include <utility/shared_recursive_mutex.h>
+#include <utility/sharedRecursiveMutex.h>
 
 #include "archetype.h"
 class Archetype;
@@ -19,7 +19,7 @@ public:
 	std::array<byte, N> _data;
 	Archetype* _archetype;
 	std::vector<size_t> _componentIndices;
-	shared_recursive_mutex _lock;
+	SharedRecursiveMutex _lock;
 public:
 	ChunkBase()
 	{

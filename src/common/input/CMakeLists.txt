@@ -1,5 +1,5 @@
 add_library(input STATIC
-        Input.cpp
-        Input.h
+        input.cpp
+        input.h
         )
 target_link_libraries(input PUBLIC graphics)

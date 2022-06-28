@@ -1,7 +1,7 @@
 #pragma once
 #include "component.h"
 #include "archetype.h"
-#include "utility/shared_recursive_mutex.h"
+#include "utility/sharedRecursiveMutex.h"
 #include "chunk.h"
 
 #include <utility/staticIndexVector.h>

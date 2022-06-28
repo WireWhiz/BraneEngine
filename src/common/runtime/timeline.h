@@ -6,6 +6,7 @@
 #define BRANEENGINE_TIMELINE_H
 
 #include <forward_list>
+#include <list>
 #include "module.h"
 #include <functional>
 #include <memory>

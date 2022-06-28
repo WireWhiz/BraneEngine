@@ -2,7 +2,7 @@
 // Created by eli on 5/25/2022.
 //
 
-#include "RenderTarget.h"
+#include "renderTarget.h"
 #include <exception>
 #include "swapChain.h"
 #include "graphicsDevice.h"

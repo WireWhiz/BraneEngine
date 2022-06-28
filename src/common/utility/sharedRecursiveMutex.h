@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <assert.h>
 
-class shared_recursive_mutex
+class SharedRecursiveMutex
 {
 
 	static size_t srmIdCounter;
@@ -15,7 +15,7 @@ class shared_recursive_mutex
 	size_t _ownerLockCount = 0;
 	size_t _sharedOwners = 0;
 public:
-	shared_recursive_mutex();
+	SharedRecursiveMutex();
 	void lock();
 	void unlock();
 	void lock_shared();

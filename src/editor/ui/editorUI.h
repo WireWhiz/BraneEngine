@@ -8,7 +8,7 @@
 #include <runtime/module.h>
 #include <networking/connection.h>
 #include "editorWindow.h"
-#include "EditorEvent.h"
+#include "editorEvent.h"
 #include "graphics/graphics.h"
 #include <memory>
 #include <vector>

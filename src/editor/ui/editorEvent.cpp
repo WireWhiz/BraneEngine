@@ -2,7 +2,7 @@
 // Created by eli on 5/22/2022.
 //
 
-#include "EditorEvent.h"
+#include "editorEvent.h"
 
 EditorEvent::EditorEvent(std::string name)
 {

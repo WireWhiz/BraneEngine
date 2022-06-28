@@ -2,7 +2,7 @@
 // Created by eli on 5/16/2022.
 //
 
-#include "LoginWindow.h"
+#include "loginWindow.h"
 #include <misc/cpp/imgui_stdlib.h>
 #include <iostream>
 #include <config/config.h>

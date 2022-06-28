@@ -8,7 +8,7 @@
 #include "../editorWindow.h"
 #include <string>
 #include <atomic>
-#include "../EditorEvent.h"
+#include "../editorEvent.h"
 
 namespace net{
 	class Connection;
