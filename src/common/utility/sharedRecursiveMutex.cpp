@@ -2,10 +2,8 @@
 #include <iostream>
 
 
-size_t SharedRecursiveMutex::srmIdCounter = 0;
 SharedRecursiveMutex::SharedRecursiveMutex()
 {
-	srmId = srmIdCounter++;
 }
 
 void SharedRecursiveMutex::lock()
