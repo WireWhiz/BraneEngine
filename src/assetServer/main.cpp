@@ -1,21 +1,10 @@
 // Asset server
-#include <iostream>
 #include <common/config/config.h>
-#include <json/json.h>
-#include <fstream>
-#include <string>
 #include <ecs/ecs.h>
 #include <fileManager/fileManager.h>
-#include "assetNetworking/assetServer.h"
-#include <assets/types/meshAsset.h>
-#include <assets/types/shaderAsset.h>
+#include "assetServer.h"
 #include <database/Database.h>
 #include <runtime/runtime.h>
-
-/*struct SentMesh : public NativeComponent<SentMesh>
-{
-	REGISTER_MEMBERS_0("Sent Mesh");
-};*/
 
 int main()
 {

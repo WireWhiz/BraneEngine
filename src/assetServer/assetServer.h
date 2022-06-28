@@ -4,9 +4,9 @@
 
 #ifndef BRANEENGINE_ASSETSERVER_H
 #define BRANEENGINE_ASSETSERVER_H
-#include <networking/networking.h>
-#include <assets/assetManager.h>
-#include "database/Database.h"
+#include "common/networking/networking.h"
+#include "common/assets/assetManager.h"
+#include "database/database.h"
 #include <list>
 
 struct IncrementalAssetSender

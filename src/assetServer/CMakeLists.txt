@@ -5,7 +5,7 @@ add_subdirectory(database)
 add_subdirectory(gltf)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/assetServer)
-add_executable(AssetServer main.cpp assetProcessing/asssetBuilder.cpp assetProcessing/asssetBuilder.h assetNetworking/assetServer.cpp assetNetworking/assetServer.h)
+add_executable(AssetServer main.cpp assetProcessing/asssetBuilder.cpp assetProcessing/asssetBuilder.h assetServer.cpp assetServer.h)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(AssetServer PRIVATE runtime config networking ecs utility fileManager database gltf)
 target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEFS} ASIO_STANDALONE)
