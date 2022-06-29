@@ -3,7 +3,7 @@
 //
 
 #include "renderWindow.h"
-#include "../editorUI.h"
+#include <ui/gui.h>
 #include "graphics/graphics.h"
 #include "graphics/meshRenderer.h"
 #include "networking/networking.h"
@@ -12,7 +12,7 @@
 #include "ecs/core/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
 
-RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
+RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 	auto& am = *Runtime::getModule<AssetManager>();
 	auto& nm = *Runtime::getModule<NetworkManager>();
@@ -81,7 +81,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 		}
 	});
 
-	ComponentSet headRootComponents;
+	/*ComponentSet headRootComponents;
 	headRootComponents.add(AssemblyRoot::def()->id);
 	headRootComponents.add(TransformComponent::def()->id);
 	EntityID testHead = em.createEntity(headRootComponents);
@@ -93,9 +93,7 @@ RenderWindow::RenderWindow(EditorUI& ui) : EditorWindow(ui)
 
 	TransformComponent tc{};
 	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
-	em.setEntityComponent(testHead, tc.toVirtual());
-
-
+	em.setEntityComponent(testHead, tc.toVirtual());*/
 }
 
 RenderWindow::~RenderWindow()

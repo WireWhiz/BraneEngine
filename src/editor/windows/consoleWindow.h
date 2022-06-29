@@ -5,12 +5,12 @@
 #ifndef BRANEENGINE_CONSOLEWINDOW_H
 #define BRANEENGINE_CONSOLEWINDOW_H
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
 
-class ConsoleWindow : public EditorWindow
+class ConsoleWindow : public GUIWindow
 {
 public:
-	ConsoleWindow(EditorUI& ui);
+	ConsoleWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 

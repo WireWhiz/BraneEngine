@@ -5,11 +5,11 @@
 #ifndef BRANEENGINE_MEMORYMANAGERWINDOW_H
 #define BRANEENGINE_MEMORYMANAGERWINDOW_H
 
-#include "../editorWindow.h"
-class MemoryManagerWindow : public EditorWindow
+#include "ui/guiWindow.h"
+class MemoryManagerWindow : public GUIWindow
 {
 public:
-	MemoryManagerWindow(EditorUI& ui);
+	MemoryManagerWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 

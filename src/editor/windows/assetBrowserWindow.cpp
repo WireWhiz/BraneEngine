@@ -3,13 +3,14 @@
 //
 
 #include "assetBrowserWindow.h"
-#include "../editorUI.h"
+#include <ui/gui.h>
 #include <stack>
-#include <utility/hex.h>
+#include "common/utility/hex.h"
+#include "../editor.h"
 
-AssetBrowserWindow::AssetBrowserWindow(EditorUI& ui) : EditorWindow(ui)
+AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
-	ui.server()->sendRequest(net::Request("directoryTree")).then([this](ISerializedData sData){
+	Runtime::getModule<Editor>()->server()->sendRequest(net::Request("directoryTree")).then([this](ISerializedData sData){
 		_root = deserializeDirectory(sData);
 		setDirectory(_root.get());
 	});
@@ -97,7 +98,7 @@ void AssetBrowserWindow::setDirectory(Directory* dir)
 	updateStrPath();
 	net::Request req("directoryAssets");
 	req.body() << _currentDir->id;
-	_ui.server()->sendRequest(req).then([this, dir](ISerializedData sData){
+	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this, dir](ISerializedData sData){
 		std::vector<AssetData> assets;
 		uint32_t count;
 		sData >> count;

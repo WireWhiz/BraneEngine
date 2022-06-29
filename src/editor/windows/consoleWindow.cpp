@@ -4,7 +4,7 @@
 
 #include "consoleWindow.h"
 
-ConsoleWindow::ConsoleWindow(EditorUI& ui) : EditorWindow(ui)
+ConsoleWindow::ConsoleWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 
 }

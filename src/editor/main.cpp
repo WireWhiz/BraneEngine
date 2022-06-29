@@ -8,9 +8,8 @@
 #include "assets/assetManager.h"
 #include "fileManager/fileManager.h"
 #include "networking/networking.h"
-#include "ui/editorUI.h"
-
-
+#include "ui/gui.h"
+#include "editor.h"
 
 int main(int argc, char** argv)
 {
@@ -28,7 +27,8 @@ int main(int argc, char** argv)
 	Runtime::addModule<AssetManager>();
 	Runtime::addModule<EntityManager>();
 	Runtime::addModule<graphics::VulkanRuntime>();
-	Runtime::addModule<EditorUI>();
+	Runtime::addModule<GUI>();
+	Runtime::addModule<Editor>();
 
 	Runtime::run();
 	Runtime::cleanup();

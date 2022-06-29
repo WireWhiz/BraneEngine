@@ -2,20 +2,14 @@
 // Created by eli on 4/26/2022.
 //
 
-#include "editorUI.h"
-#include "windows/loginWindow.h"
-#include "editor/ui/windows/assetDataWindow.h"
-#include "editor/ui/windows/consoleWindow.h"
-#include "editor/ui/windows/entitiesWindow.h"
-#include "editor/ui/windows/renderWindow.h"
-#include "editor/ui/windows/assetBrowserWindow.h"
+#include "gui.h"
 #include "graphics/graphics.h"
 
-#include <runtime/runtime.h>
+#include "common/runtime/runtime.h"
 
 #include "IconsFontAwesome6.h"
 
-EditorUI::EditorUI()
+GUI::GUI()
 {
 	Runtime::timeline().addBlockBefore("editorUI", "draw");
 	Runtime::timeline().addTask("drawEditorUI", [&]{
@@ -43,30 +37,14 @@ EditorUI::EditorUI()
 	_renderer->setTargetAsSwapChain(false);
 
 	setupImGui(*vkr);
-
-	addEventListener("loginSuccessful", std::function([this](LoginEvent* evt){
-		_server = evt->server();
-		for(auto window = _windows.begin(); window != _windows.end(); window++)
-		{
-			if(dynamic_cast<LoginWindow*>(window->get()))
-			{
-				_windows.erase(window);
-				break;
-			}
-		}
-		addMainWindows();
-		_redockQueued = true;
-	}));
-
-	_windows.push_back(std::make_unique<LoginWindow>(*this));
 }
 
-const char* EditorUI::name()
+const char* GUI::name()
 {
 	return "editorUI";
 }
 
-void EditorUI::drawUI()
+void GUI::drawUI()
 {
 	mainMenu();
 
@@ -80,11 +58,6 @@ void EditorUI::drawUI()
 	{
 		ImGui::PopStyleVar(3);
 		ImGui::DockSpace(ImGui::GetID("DockingRoot"),{0,0}, ImGuiDockNodeFlags_None);
-
-		if(_redockQueued){
-			defaultDocking();
-			_redockQueued = false;
-		}
 	}
 	ImGui::End();
 
@@ -97,7 +70,7 @@ void EditorUI::drawUI()
 	callEvents();
 }
 
-void EditorUI::mainMenu()
+void GUI::mainMenu()
 {
 	if(ImGui::BeginMainMenuBar())
 	{
@@ -117,55 +90,14 @@ void EditorUI::mainMenu()
 	}
 }
 
-void EditorUI::defaultDocking()
-{
-	ImGuiID root = ImGui::GetID("DockingRoot");
-	ImGui::DockBuilderRemoveNode(root);
-	root = ImGui::DockBuilderAddNode(root, ImGuiDockNodeFlags_DockSpace |  ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
-	ImGui::DockBuilderSetNodeSize(root, ImGui::GetCurrentContext()->CurrentViewport->WorkSize);
-
-	ImGuiID assetDataWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Right, .2f, nullptr, &root);
-	ImGuiID consoleWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Down, .2f, nullptr, &root);
-	ImGuiID entitiesWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Left, .2f, nullptr, &root);
-
-	ImGui::DockBuilderDockWindow("Asset Data", assetDataWindow);
-	ImGui::DockBuilderDockWindow("Console", consoleWindow);
-	ImGui::DockBuilderDockWindow("Asset Browser", consoleWindow);
-	ImGui::DockBuilderDockWindow("Entities", entitiesWindow);
-	ImGui::DockBuilderDockWindow("Render", root);
-
-	ImGui::DockBuilderFinish(root);
-}
-
-void EditorUI::addMainWindows()
-{
-	_windows.push_back(std::make_unique<AssetDataWindow>(*this));
-	_windows.push_back(std::make_unique<AssetBrowserWindow>(*this));
-	_windows.push_back(std::make_unique<ConsoleWindow>(*this));
-	_windows.push_back(std::make_unique<EntitiesWindow>(*this));
-	_windows.push_back(std::make_unique<RenderWindow>(*this));
-}
-
-void EditorUI::removeWindow(EditorWindow* window)
-{
-	for(auto i = _windows.begin(); i != _windows.end(); i++)
-	{
-		if(i->get() == window)
-		{
-			_windows.erase(i);
-			return;
-		}
-	}
-}
-
-void EditorUI::sendEvent(std::unique_ptr<EditorEvent>&& event)
+void GUI::sendEvent(std::unique_ptr<GUIEvent>&& event)
 {
 	_queueLock.lock();
 	_queuedEvents.push_back(std::move(event));
 	_queueLock.unlock();
 }
 
-void EditorUI::callEvents()
+void GUI::callEvents()
 {
 	//Avoid mutex locks by moving event queue into local queue
 	_queueLock.lock();
@@ -185,18 +117,13 @@ void EditorUI::callEvents()
 	}
 }
 
-net::Connection* EditorUI::server() const
-{
-	return _server;
-}
-
-EditorUI::~EditorUI()
+GUI::~GUI()
 {
 	cleanupImGui();
 }
 
 
-void EditorUI::setupImGui(graphics::VulkanRuntime& runtime)
+void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -328,7 +255,7 @@ void EditorUI::setupImGui(graphics::VulkanRuntime& runtime)
 	commandBuffer.submit(graphics::device->graphicsQueue());
 }
 
-void EditorUI::cleanupImGui()
+void GUI::cleanupImGui()
 {
 	vkDeviceWaitIdle(graphics::device->get());
 	ImGui_ImplVulkan_Shutdown();
@@ -337,14 +264,19 @@ void EditorUI::cleanupImGui()
 	vkDestroyDescriptorPool(graphics::device->get(), _imGuiDescriptorPool, nullptr);
 }
 
-VkDescriptorPool EditorUI::descriptorPool()
+VkDescriptorPool GUI::descriptorPool()
 {
 	return _imGuiDescriptorPool;
 }
 
-void EditorUI::stop()
+void GUI::stop()
 {
 	_windows.resize(0);
+}
+
+void GUI::removeWindow(GUIWindowID window)
+{
+	_windows.erase(_windows.begin() + window);
 }
 
 

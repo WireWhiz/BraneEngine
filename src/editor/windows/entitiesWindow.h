@@ -5,12 +5,12 @@
 #ifndef BRANEENGINE_ENTITIESWINDOW_H
 #define BRANEENGINE_ENTITIESWINDOW_H
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
 
-class EntitiesWindow : public EditorWindow
+class EntitiesWindow : public GUIWindow
 {
 public:
-	EntitiesWindow(EditorUI& ui);
+	EntitiesWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 

@@ -4,7 +4,7 @@
 
 #include "assetDataWindow.h"
 
-AssetDataWindow::AssetDataWindow(EditorUI& ui) : EditorWindow(ui)
+AssetDataWindow::AssetDataWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 
 }

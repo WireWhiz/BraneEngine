@@ -5,23 +5,23 @@
 #ifndef BRANEENGINE_LOGINWINDOW_H
 #define BRANEENGINE_LOGINWINDOW_H
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
+#include <ui/guiEvent.h>
 #include <string>
 #include <atomic>
-#include "../editorEvent.h"
 
 namespace net{
 	class Connection;
 }
 
-class LoginEvent : public EditorEvent{
+class LoginEvent : public GUIEvent{
 	net::Connection* _server;
 public:
 	LoginEvent(const std::string& name, net::Connection* server);
 	inline net::Connection* server() const {return _server;}
 };
 
-class LoginWindow : public EditorWindow
+class LoginWindow : public GUIWindow
 {
 	std::atomic_bool _loggedIn;
 	std::string _serverAddress;
@@ -31,7 +31,7 @@ class LoginWindow : public EditorWindow
 	std::string _feedbackMessage;
 	bool _saveUsername;
 public:
-	LoginWindow(EditorUI& ui);
+	LoginWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 

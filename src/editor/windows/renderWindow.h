@@ -5,13 +5,13 @@
 #ifndef BRANEENGINE_RENDERWINDOW_H
 #define BRANEENGINE_RENDERWINDOW_H
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
 #include "graphics/renderTarget.h"
 #include "graphics/meshRenderer.h"
-#include <backends/imgui_impl_vulkan.h>
-#include <vulkan/vulkan.h>
+#include "backends/imgui_impl_vulkan.h"
+#include "vulkan/vulkan.h"
 
-class RenderWindow : public EditorWindow
+class RenderWindow : public GUIWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
 	graphics::MeshRenderer* _renderer;
@@ -27,7 +27,7 @@ class RenderWindow : public EditorWindow
 	glm::vec3 position = {0,0,0};
 	glm::vec2 rotation = {24,-45};
 public:
-	RenderWindow(EditorUI& ui);
+	RenderWindow(GUI& ui, GUIWindowID id);
 	~RenderWindow();
 	void update() override;
 	void draw() override;

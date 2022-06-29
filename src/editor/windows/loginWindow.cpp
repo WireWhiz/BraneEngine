@@ -3,11 +3,11 @@
 //
 
 #include "loginWindow.h"
-#include <misc/cpp/imgui_stdlib.h>
+#include "misc/cpp/imgui_stdlib.h"
 #include <iostream>
-#include <config/config.h>
-#include <networking/networking.h>
-#include "../editorUI.h"
+#include "common/config/config.h"
+#include "common/networking/networking.h"
+#include <ui/gui.h>
 
 void LoginWindow::draw()
 {
@@ -71,14 +71,14 @@ void LoginWindow::draw()
 	ImGui::End();
 }
 
-LoginWindow::LoginWindow(EditorUI& ui) : EditorWindow(ui)
+LoginWindow::LoginWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 	_serverAddress = Config::json()["network"]["asset_server"].asString();
 	_port = Config::json()["network"]["tcp_port"].asString();
 	_username = Config::json()["user"]["name"].asString();
 }
 
-LoginEvent::LoginEvent(const std::string& name, net::Connection* server) : EditorEvent(name)
+LoginEvent::LoginEvent(const std::string& name, net::Connection* server) : GUIEvent(name)
 {
 	_server = server;
 }

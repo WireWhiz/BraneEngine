@@ -6,11 +6,11 @@
 #define BRANEENGINE_ASSETBROWSERWINDOW_H
 
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
 #include "networking/networking.h"
 #include <string>
 
-class AssetBrowserWindow : public EditorWindow
+class AssetBrowserWindow : public GUIWindow
 {
 	std::string _strPath = "/";
 
@@ -47,7 +47,7 @@ class AssetBrowserWindow : public EditorWindow
 	void updateStrPath();
 	void setDirectory(Directory* dir);
 public:
-	AssetBrowserWindow(EditorUI& ui);
+	AssetBrowserWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 

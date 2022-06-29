@@ -4,7 +4,7 @@
 
 #include "entitiesWindow.h"
 
-EntitiesWindow::EntitiesWindow(EditorUI& ui) : EditorWindow(ui)
+EntitiesWindow::EntitiesWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 
 }

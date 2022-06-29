@@ -5,12 +5,12 @@
 #ifndef BRANEENGINE_ASSETDATAWINDOW_H
 #define BRANEENGINE_ASSETDATAWINDOW_H
 
-#include "../editorWindow.h"
+#include <ui/guiWindow.h>
 
-class AssetDataWindow : public EditorWindow
+class AssetDataWindow : public GUIWindow
 {
 public:
-	AssetDataWindow(EditorUI& ui);
+	AssetDataWindow(GUI& ui, GUIWindowID id);
 	void draw() override;
 };
 
