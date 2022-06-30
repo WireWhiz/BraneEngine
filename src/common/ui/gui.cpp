@@ -11,13 +11,13 @@
 
 GUI::GUI()
 {
-	Runtime::timeline().addBlockBefore("editorUI", "draw");
-	Runtime::timeline().addTask("drawEditorUI", [&]{
+	Runtime::timeline().addBlockBefore("gui", "draw");
+	Runtime::timeline().addTask("updateUI", [&]{
 		for(auto& w : _windows)
 		{
 			w->update();
 		}
-	}, "editorUI");
+	}, "gui");
 
 	graphics::VulkanRuntime* vkr = Runtime::getModule<graphics::VulkanRuntime>();
 
@@ -58,16 +58,16 @@ void GUI::drawUI()
 	{
 		ImGui::PopStyleVar(3);
 		ImGui::DockSpace(ImGui::GetID("DockingRoot"),{0,0}, ImGuiDockNodeFlags_None);
+
+		//Events are called in here to allow for docking to be influenced
+		callEvents();
 	}
 	ImGui::End();
-
 
 	for(auto& w : _windows)
 	{
 		w->draw();
 	}
-
-	callEvents();
 }
 
 void GUI::mainMenu()
