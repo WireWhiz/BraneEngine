@@ -5,3 +5,6 @@
 
 # Mission Statement
 To create a framework for a creator focused metaverse, by creating an engine and server framwork that caters to what creators need to build AAA quailty immersive worlds.
+
+# Get involved 
+If you want to help, please join the discord server: https://discord.gg/T3Td7PMDFX
