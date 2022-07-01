@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <chrono>
 #include "ecs/core/entity.h"
-#include "ecs/nativeTypes/transform.h"
+#include "systems/transforms.h"
 #include <utility/staticIndexVector.h>
 #include <runtime/module.h>
 #include <runtime/runtime.h>

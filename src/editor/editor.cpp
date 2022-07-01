@@ -49,6 +49,10 @@ void Editor::addMainWindows()
 	ImGui::DockBuilderDockWindow("Entities", entitiesWindow);
 	ImGui::DockBuilderDockWindow("Render", root);
 
+	//Attempt at recreating the (for some reason commented out) ImGuiDockNodeFlags_NoCentralNode
+	ImGui::DockBuilderGetNode(root)->MergedFlags ^= ImGuiDockNodeFlags_CentralNode;
+	ImGui::DockBuilderGetNode(root)->UpdateMergedFlags();
+
 	ImGui::DockBuilderFinish(root);
 
 	_ui->addWindow<AssetDataWindow>();

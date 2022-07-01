@@ -4,9 +4,8 @@
 
 #include "assembly.h"
 #include "assetManager.h"
-#include "types/scriptAsset.h"
+#include "systems/transforms.h"
 #include <glm/glm.hpp>
-#include <ecs/nativeTypes/transform.h>
 #include <ecs/nativeTypes/meshRenderer.h>
 
 void Assembly::WorldEntity::serialize(OSerializedData& message)
@@ -162,13 +161,13 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 	{
 		WorldEntity& entity = entities[i];
 		entityMap[i] = em.createEntity(entity.runtimeComponentIDs());
-		if(!em.entityHasComponent(entityMap[i], LocalTransformComponent::def()->id))
+		if(!em.entityHasComponent(entityMap[i], LocalTransform::def()->id))
 		{
-			LocalTransformComponent ltc{};
+			LocalTransform ltc{};
 			ltc.parent = rootID;
 			ltc.value = glm::mat4(1);
 			entityMap.push_back(rootID);
-			em.addComponent(entityMap[i], LocalTransformComponent::def()->id);
+			em.addComponent(entityMap[i], LocalTransform::def()->id);
 			em.setEntityComponent(entityMap[i], ltc.toVirtual());
 		}
 	}
@@ -179,7 +178,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 		EntityID id = entityMap[i];
 		for(auto component : entity.components)
 		{
-			if(component.description() == LocalTransformComponent::def())
+			if(component.description() == LocalTransform::def())
 			{
 				EntityID parent = component.readVar<EntityID>(1);
 				parent = entityMap[parent];

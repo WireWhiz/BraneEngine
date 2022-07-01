@@ -17,7 +17,7 @@ target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
-target_link_libraries(BraneEditor PRIVATE ecs networking config graphics assets runtime editorWindows)
+target_link_libraries(BraneEditor PRIVATE ecs networking config graphics assets runtime editorWindows systems)
 
 configure_file(config.json ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json COPYONLY)
 

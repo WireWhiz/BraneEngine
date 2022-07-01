@@ -3,7 +3,7 @@
 //
 
 #include "asssetBuilder.h"
-#include <ecs/nativeTypes/transform.h>
+#include <systems/transforms.h>
 #include <ecs/nativeTypes/meshRenderer.h>
 
 #include <glm/glm.hpp>
@@ -75,7 +75,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 			}
 			transform = translation * rotation * scale;
 		}
-		VirtualComponent tc(TransformComponent::def());
+		VirtualComponent tc(Transform::def());
 		tc.setVar(0, transform);
 		entity.components.push_back(tc);
 
@@ -104,7 +104,7 @@ std::vector<std::unique_ptr<Asset>> AssetBuilder::buildAssembly(const std::strin
 				Assembly::WorldEntity& childEnt = entities[child.asUInt()];
 				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
-				VirtualComponent tc(LocalTransformComponent::def());
+				VirtualComponent tc(LocalTransform::def());
 				tc.setVar(0, localTransform);
 				tc.setVar(1, (EntityID)pIndex);
 				childEnt.components.push_back(tc);

@@ -1,7 +1,7 @@
 #pragma once
 #include <ecs/core/component.h>
 #include <ecs/core/structMembers.h>
-#include <ecs/nativeTypes/transform.h>
+#include <systems/transforms.h>
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "mesh.h"
 #include "material.h"

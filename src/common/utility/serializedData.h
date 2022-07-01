@@ -10,6 +10,7 @@
 #include <json/json.h>
 #include <fstream>
 #include <cassert>
+#include <utility/inlineArray.h>
 
 class SerializationError : virtual public std::runtime_error
 {
@@ -83,6 +84,27 @@ public:
 			std::memcpy(data.data(), &msg.data[msg._ittr], size);
 
 		msg._ittr += size;
+
+		return msg;
+	}
+
+	template <typename T, size_t Count>
+	friend ISerializedData& operator >> (ISerializedData& msg, const InlineArray<T, Count>& data)
+	{
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
+
+		uint32_t arrLength;
+		msg >> arrLength;
+		size_t index = msg.data.size();
+		msg.data.resize(index + arrLength);
+		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
+		for (uint32_t i = 0; i < arrLength; ++i)
+		{
+			T d;
+			msg >> d;
+			data.push_back(d);
+		}
 
 		return msg;
 	}
@@ -218,6 +240,25 @@ public:
 		if(arrLength > 0)
 			std::memcpy(&msg.data[index], data.data(), arrLength);
 
+
+		return msg;
+	}
+
+	template <typename T, size_t Count>
+	friend OSerializedData& operator << (OSerializedData& msg, const InlineArray<T, Count>& data)
+	{
+		if constexpr(!std::is_trivially_copyable<T>::value)
+			throw SerializationError(typeid(T));
+
+		uint32_t arrLength = data.size();
+		msg << arrLength;
+		size_t index = msg.data.size();
+		msg.data.resize(index + arrLength);
+		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
+		for (uint32_t i = 0; i < data.size(); ++i)
+		{
+			msg << data[i];
+		}
 
 		return msg;
 	}

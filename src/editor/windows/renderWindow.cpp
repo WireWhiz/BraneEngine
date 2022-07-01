@@ -8,7 +8,6 @@
 #include "graphics/meshRenderer.h"
 #include "networking/networking.h"
 #include "assets/assetManager.h"
-#include "ecs/nativeSystems/nativeSystems.h"
 #include "ecs/core/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
 
@@ -47,8 +46,6 @@ RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 	_renderer = vkr->createRenderer<graphics::MeshRenderer>(vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr->swapChain();
-
-	systems::addTransformSystem(em, Runtime::timeline());
 
 	auto* mat = new graphics::Material();
 	mat->setVertex(vkr->loadShader(0));

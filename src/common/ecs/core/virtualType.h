@@ -5,7 +5,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <byte.h>
 #include <utility/serializedData.h>
-#include <json/json.h>
+#include <utility/inlineArray.h>
 
 #ifndef EntityID
 typedef uint32_t EntityID;
@@ -39,9 +39,8 @@ void setVirtual(const byte* var, T value)
 	*(T*)var = value;
 }
 
-class VirtualType
+namespace VirtualType
 {
-public:
 	enum Type{
 		virtualUnknown = 0,
 		virtualBool,
@@ -54,50 +53,50 @@ public:
 		virtualAssetID,
 		virtualVec3,
 		virtualVec4,
+		virtualQuat,
 		virtualMat4,
-		virtualFloatVector,
-		virtualIntVector,
-		virtualUIntVector
+		virtualFloatArray,
+		virtualIntArray,
+		virtualUIntArray
 	};
-public:
 	template<typename T>
-	static Type type();
-	static std::string typeToString(Type type);
-	static Type stringToType(const std::string& type);
-	static void serialize(Type type, OSerializedData& data, const byte* source);
-	static void deserialize(Type type, ISerializedData& data, byte* source);
-	static size_t size(Type type);
-	static void construct(Type type, byte* var);
-	static void deconstruct(Type type, byte* var);
-	static void copy(Type type, byte* dest, const byte* source);
-	static void move(Type type, byte* dest, const byte* source);
+	Type type();
+	std::string typeToString(Type type);
+	Type stringToType(const std::string& type);
+	void serialize(Type type, OSerializedData& data, const byte* source);
+	void deserialize(Type type, ISerializedData& data, byte* source);
+	size_t size(Type type);
+	void construct(Type type, byte* var);
+	void deconstruct(Type type, byte* var);
+	void copy(Type type, byte* dest, const byte* source);
+	void move(Type type, byte* dest, const byte* source);
 	template<typename T>
-	static void serialize(OSerializedData& data, const byte* source)
+	void serialize(OSerializedData& data, const byte* source)
 	{
 		data << *getVirtual<T>(source);
 	}
 	template<typename T>
-	static void deserialize(ISerializedData& data, byte* source)
+	void deserialize(ISerializedData& data, byte* source)
 	{
 		data >> *getVirtual<T>(source);
 	}
 	template<typename T>
-	static void construct(byte* var)
+	void construct(byte* var)
 	{
 		new(var) T();
 	}
 	template<typename T>
-	static void deconstruct(byte* var)
+	void deconstruct(byte* var)
 	{
 		((T*)var)->~T();
 	}
 	template<typename T>
-	static void copy(byte* dest, const byte* source)
+	void copy(byte* dest, const byte* source)
 	{
 		*((T*)dest) = *((T*)source);
 	}
 	template<typename T>
-	static void move(byte* dest, const byte* source)
+	void move(byte* dest, const byte* source)
 	{
 		*((T*)dest) = std::move(*((T*)source));
 	}
@@ -126,16 +125,19 @@ VirtualType::Type VirtualType::type()
 		return Type::virtualVec3;
 	if constexpr(std::is_same<T, glm::vec4>().value)
 		return Type::virtualVec4;
+	if constexpr(std::is_same<T, glm::quat>().value)
+		return Type::virtualQuat;
 	if constexpr(std::is_same<T, glm::mat4>().value)
 		return Type::virtualMat4;
-	if constexpr(std::is_same<T, std::vector<float>>().value)
-		return Type::virtualFloatVector;
-	if constexpr(std::is_same<T, std::vector<int32_t>>().value)
-		return Type::virtualIntVector;
-	if constexpr(std::is_same<T, std::vector<uint32_t>>().value)
-		return Type::virtualUIntVector;
+	if constexpr(std::is_same<T, inlineFloatArray>().value)
+		return Type::virtualFloatArray;
+	if constexpr(std::is_same<T, inlineIntArray>().value)
+		return Type::virtualIntArray;
+	if constexpr(std::is_same<T, inlineUIntArray>().value)
+		return Type::virtualUIntArray;
 
 	std::cerr << "Tried to find type of: [" << typeid(T).name() << "] and failed"<< std::endl;
+	assert(false);
 	return Type::virtualUnknown;
 }
 

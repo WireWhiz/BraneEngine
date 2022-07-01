@@ -58,6 +58,17 @@ public:
 		return (*_externalData)[index];
 	}
 
+	const T& operator[](size_t index) const
+	{
+		assert(index < _size);
+		if(index < Count)
+			return _localData[index];
+
+		assert(_externalData);
+		index -= Count;
+		return (*_externalData)[index];
+	}
+
 	void push_back(const T& item)
 	{
 		if(_size < Count)
@@ -86,6 +97,23 @@ public:
 		++_size;
 	}
 
+	void erase(size_t index)
+	{
+		assert(index < _size);
+		for(size_t i = index; i < _size - 1; i++)
+		{
+			(*this)[i] = (*this)[i+1];
+		}
+		if(index >= Count)
+			_externalData->resize(_externalData->size() - 1);
+		--_size;
+	}
+
+	size_t size() const
+	{
+		return _size;
+	}
+
 	class iterator{
 		InlineArray<T, Count>& _ref;
 		size_t _index;
@@ -101,11 +129,11 @@ public:
 		}
 		bool operator!=(const iterator& o) const
 		{
-			return _index != o.index;
+			return _index != o._index;
 		}
 		bool operator==(const iterator& o) const
 		{
-			return _index == o.index;
+			return _index == o._index;
 		}
 		T& operator*()
 		{

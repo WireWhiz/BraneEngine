@@ -4,8 +4,8 @@
 #include "structMembers.h"
 #include <vector>
 #include <string>
-#include <assert.h>
-#include <stdlib.h>
+#include <cassert>
+#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <iterator>

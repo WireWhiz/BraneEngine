@@ -1,11 +1,9 @@
 #include "assetManager.h"
-#include "ecs/ecs.h"
 #include <utility/serializedData.h>
-#include "networking/message.h"
-#include "ecs/nativeTypes/transform.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "ecs/core/component.h"
+#include "systems/transforms.h"
 
 AssetManager::AssetManager()
 {
@@ -118,9 +116,10 @@ void AssetManager::start()
 {
 	EntityManager& em = *Runtime::getModule<EntityManager>();
 	addNativeComponent<EntityIDComponent>(em);
-	addNativeComponent<TransformComponent>(em);
-	addNativeComponent<LocalTransformComponent>(em);
-	addNativeComponent<ChildrenComponent>(em);
+	addNativeComponent<Transform>(em);
+	addNativeComponent<LocalTransform>(em);
+	addNativeComponent<Children>(em);
+	addNativeComponent<TRS>(em);
 	addNativeComponent<MeshRendererComponent>(em);
 	addNativeComponent<AssemblyRoot>(em);
 	startAssetLoaderSystem();
