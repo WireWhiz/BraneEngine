@@ -12,36 +12,20 @@
 
 class AssetBrowserWindow : public GUIWindow
 {
-	std::string _strPath = "/";
+	std::string _strPath = "";
 
 	struct Directory
 	{
+		bool loaded = false;
 		std::string name;
-		int64_t id;
-		Directory* parent;
+		Directory* parent = nullptr;
+		std::vector<std::string> files;
 		std::vector<std::unique_ptr<Directory>> children;
 	};
 
-	struct AssetData
-	{
-		int64_t id;
-		std::string name;
-		std::string hexIDString;
-		std::string type;
-		int64_t directoryID;
-	};
-
-	struct DirectoryContents
-	{
-		std::vector<Directory*> directories;
-		std::vector<AssetData*> assets;
-	};
-
-	std::unique_ptr<Directory> _root;
-	std::vector<AssetData> _directoryContents;
+	Directory _root;
 
 	Directory* _currentDir = nullptr;
-	std::unique_ptr<Directory> deserializeDirectory(ISerializedData& sData, Directory* parent = nullptr);
 	void displayDirectories();
 	void displayDirectoriesRecursive(Directory* dir);
 	void updateStrPath();

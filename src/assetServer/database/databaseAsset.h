@@ -11,46 +11,20 @@
 
 class Database;
 
-class AssetPermission
+enum class AssetPermissionLevel
 {
-
-public:
-	enum class Level
-	{
-		none = 0,
-		view = 1,
-		edit = 2,
-		owner = 3
-	};
-
-private:
-	uint32_t _assetID;
-	uint32_t _userID;
-	Level _level;
-	Database& _db;
-
-public:
-	AssetPermission(uint32_t assetID, uint32_t userID, Database& db);
-	Level level();
-	void setLevel(Level level);
+	none = 0,
+	view = 1,
+	edit = 2,
+	owner = 3
 };
 
-class AssetInfo
+struct AssetInfo
 {
-	Database& _db;
-	bool _exists;
-
-
-
-public:
-	AssetID id;
-	uint32_t folderID;
+	uint32_t id;
+	std::string filename;
 	std::string name;
 	AssetType type;
-	AssetInfo(Database& db);
-	AssetInfo(AssetID id, Database& db);
-	void save();
-	void del();
 };
 
 

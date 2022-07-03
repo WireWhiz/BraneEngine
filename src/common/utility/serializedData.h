@@ -71,6 +71,18 @@ public:
 			throw std::runtime_error("invalid array length in serialized data");
 	}
 
+	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<std::string>& strings)
+	{
+		uint32_t numStrings;
+		msg >> numStrings;
+		strings.resize(numStrings);
+		for (uint32_t i = 0; i < numStrings; ++i)
+		{
+			msg >> strings[i];
+		}
+		return msg;
+	}
+
 	template <typename T>
 	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<T>& data)
 	{
@@ -285,6 +297,16 @@ public:
 	{
 		msg << id.string();
 
+		return msg;
+	}
+
+	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<std::string>& strings)
+	{
+		msg << (uint32_t)strings.size();
+		for (uint32_t i = 0; i < strings.size(); ++i)
+		{
+			msg << strings[i];
+		}
 		return msg;
 	}
 

@@ -10,6 +10,11 @@
 #include <tuple>
 #include <string>
 
+typedef int32_t sqlINT;
+typedef int64_t sqlINT64;
+typedef double sqlFLOAT;
+typedef std::string sqlTEXT;
+
 template<typename... Args>
 class PreppedSQLCall
 {
@@ -28,7 +33,7 @@ class PreppedSQLCall
 	}
 
 	template<typename... Types>
-	void bindArgs(int index, int32_t arg, Types... args)
+	void bindArgs(int index, sqlINT arg, Types... args)
 	{
 		checkBindArg(sqlite3_bind_int(stmt, index, arg));
 		if constexpr(sizeof...(Types))
@@ -36,7 +41,7 @@ class PreppedSQLCall
 	}
 
 	template<typename... Types>
-	void bindArgs(int index, int64_t arg, Types... args)
+	void bindArgs(int index, sqlINT64 arg, Types... args)
 	{
 		checkBindArg(sqlite3_bind_int64(stmt, index, arg));
 		if constexpr(sizeof...(Types))
@@ -44,7 +49,7 @@ class PreppedSQLCall
 	}
 
 	template<typename... Types>
-	void bindArgs(int index, double arg, Types... args)
+	void bindArgs(int index, sqlFLOAT arg, Types... args)
 	{
 		checkBindArg(sqlite3_bind_double(stmt, index, arg));
 		if constexpr(sizeof...(Types))
@@ -52,7 +57,7 @@ class PreppedSQLCall
 	}
 
 	template<typename... Types>
-	void bindArgs(int index, const std::string& arg, Types... args)
+	void bindArgs(int index, const sqlTEXT& arg, Types... args)
 	{
 		checkBindArg(sqlite3_bind_text(stmt, index, arg.data(), arg.size(), SQLITE_TRANSIENT));
 		if constexpr(sizeof...(Types))
@@ -74,22 +79,22 @@ class PreppedSQLCall
 			getColumns<index + 1, Types...>(columns);
 	}
 
-	void getColumn(int32_t & value, int index)
+	void getColumn(sqlINT& value, int index)
 	{
 		value = sqlite3_column_int(stmt, index);
 	}
 
-	void getColumn(int64_t& value, int index)
+	void getColumn(sqlINT64& value, int index)
 	{
 		value = sqlite3_column_int64(stmt, index);
 	}
 
-	void getColumn(double& value, int index)
+	void getColumn(sqlFLOAT& value, int index)
 	{
 		value = sqlite3_column_double(stmt, index);
 	}
 
-	void getColumn(std::string& value, int index)
+	void getColumn(sqlTEXT& value, int index)
 	{
 		const char* data = (const char*)sqlite3_column_text(stmt, index);
 		size_t size = sqlite3_column_bytes(stmt, index);
@@ -97,6 +102,12 @@ class PreppedSQLCall
 	}
 
 public:
+
+	~PreppedSQLCall()
+	{
+		if(stmt)
+			sqlite3_finalize(stmt);
+	}
 
 	void initialize(const std::string& sql, sqlite3* db)
 	{
@@ -107,14 +118,25 @@ public:
 		}
 	}
 
-	~PreppedSQLCall()
+	void run(const Args... args)
 	{
-		if(stmt)
-			sqlite3_finalize(stmt);
+		assert(stmt);
+		int result = SQLITE_ROW;
+		while(result == SQLITE_ROW)
+			result = sqlite3_step(stmt);
+		if(result != SQLITE_DONE)
+			throw std::runtime_error("Prepared SQL statement failed with return value: " + std::to_string(result));
+		sqlite3_reset(stmt);
+	}
+
+	template<typename Runnable>
+	void run(const Args... args, Runnable r)
+	{
+		run(args..., std::function(r));
 	}
 
 	template<typename... Columns>
-	void run(Args... args, std::function<void(Columns... )> f)
+	void run(const Args... args, std::function<void(Columns... )> f)
 	{
 		assert(stmt);
 		bindArgs(args...);

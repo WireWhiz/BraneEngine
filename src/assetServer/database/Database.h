@@ -16,33 +16,16 @@
 
 class Database : public Module
 {
-public:
-	struct Directory{
-		int id;
-		std::string name;
-		int parent;
-		std::vector<Directory> children;
-		void serialize(OSerializedData& sData);
-	};
-
-	struct Asset{
-		int assetID;
-		std::string name;
-		std::string type;
-		int directoryID;
-	};
-
-	struct DirectoryContents{
-		std::vector<Directory> directories;
-		std::vector<Asset> assets;
-	};
-
-private:
 	sqlite3* _db;
-	PreppedSQLCall<const std::string&> _loginCall;
-	PreppedSQLCall<const std::string&> _userIDCall;
-	PreppedSQLCall<int> _directoryChildren;
-	PreppedSQLCall<int> _directoryAssets;
+	PreppedSQLCall<sqlTEXT> _loginCall;
+	PreppedSQLCall<sqlTEXT> _userIDCall;
+
+	PreppedSQLCall<sqlINT> _getAssetInfo;
+	PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
+	PreppedSQLCall<sqlINT> _deleteAsset;
+	PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
+	PreppedSQLCall<sqlINT, sqlINT, sqlINT> _updateAssetPermission;
+	PreppedSQLCall<sqlINT, sqlINT> _deleteAssetPermission;
 
 	static int sqliteCallback(void *callback, int argc, char **argv, char **azColName);
 
@@ -50,7 +33,6 @@ private:
 	std::string hashPassword(const std::string& password, const std::string& salt);
 
 	std::unordered_map<size_t, std::string> _permissions;
-	void populateDirectoryChildren(Directory& dir);
 public:
 	struct sqlColumn
 	{
@@ -61,20 +43,19 @@ public:
 	Database();
 	~Database();
 	void rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f);
-	bool stringSafe(const std::string& str);
 
 	bool authenticate(const std::string& username, const std::string& password);
 	int64_t getUserID(const std::string& username);
 	std::unordered_set<std::string> userPermissions(int64_t userID);
 
-	AssetInfo loadAssetData(const AssetID& id);
-	AssetPermission assetPermission(const uint32_t assetID, const uint32_t userID);
+	AssetInfo getAssetInfo(uint32_t id);
+	void setAssetInfo(const AssetInfo& info);
+	void deleteAssetInfo(uint32_t id);
+	AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);
+	void setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level);
 	std::string assetName(AssetID& id);
 
 	std::vector<AssetInfo> listUserAssets(const uint32_t& userID);
-
-	Directory directoryTree();
-	std::vector<Database::Asset> directoryAssets(int directoryID);
 
 	static const char* name();
 };

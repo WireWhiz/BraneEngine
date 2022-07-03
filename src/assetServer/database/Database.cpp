@@ -22,10 +22,19 @@ Database::Database()
 		sqlite3_close(_db);
 		throw std::runtime_error("Can't open database");
 	}
-	_loginCall.initialize("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
+	_loginCall.initialize("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users "
+						  "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
-	_directoryChildren.initialize("SELECT * FROM AssetDirectories WHERE ParentFolder = ?1;", _db);
-	_directoryAssets.initialize("SELECT * FROM Assets WHERE DirectoryID = ?1;", _db);
+
+	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Filename FROM Assets WHERE AssetID = ?1", _db);
+	_updateAssetInfo.initialize("INSERT INTO Assets (AssetID, Name, Type, Filename) VALUES (?1, ?2, ?3, ?4) "
+								" ON CONFLICT(AssetID) DO UPDATE SET AssetID = ?1, Name = ?2, Type = ?3, Filename = ?4", _db);
+	_deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
+
+	_getAssetPermission.initialize("SELECT Level FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
+	_updateAssetPermission.initialize("INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
+	                      " ON CONFLICT DO UPDATE SET Level = ?3 WHERE AssetID = ?1 AND UserID = ?2", _db);
+	_deleteAssetPermission.initialize("DELETE FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
 
 	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
 	{
@@ -61,16 +70,6 @@ void Database::rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f)
 	}
 }
 
-bool Database::stringSafe(const std::string& str)
-{
-	for (int i = 0; i < str.size(); ++i)
-	{
-		if(str[i] == '"' || str[i] == '\'')
-			return false;
-	}
-	return true;
-}
-
 int64_t Database::getUserID(const std::string& username)
 {
 	int64_t userID;
@@ -93,14 +92,38 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 	return pems;
 }
 
-AssetInfo Database::loadAssetData(const AssetID& id)
+AssetInfo Database::getAssetInfo(uint32_t id)
 {
-	return AssetInfo(id, *this);
+	AssetInfo asset{};
+	_getAssetInfo.run(static_cast<sqlINT>(id), [&asset](sqlINT assetID, sqlTEXT name, sqlTEXT type, sqlTEXT filename){
+		asset.id = assetID;
+		asset.name = std::move(name);
+		asset.type.set(type);
+		asset.filename = std::move(filename);
+	});
+	return asset;
 }
 
-AssetPermission Database::assetPermission(const uint32_t assetID, const uint32_t userID)
+void Database::setAssetInfo(const AssetInfo& assetInfo)
 {
-	return AssetPermission(assetID, userID, *this);
+	_updateAssetInfo.run(static_cast<sqlINT>(assetInfo.id), assetInfo.name, assetInfo.type.string(), assetInfo.filename);
+}
+
+AssetPermissionLevel Database::getAssetPermission(uint32_t assetID, uint32_t userID)
+{
+	AssetPermissionLevel level = AssetPermissionLevel::none;
+	_getAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID), [&level](sqlINT Level){
+		level = (AssetPermissionLevel)Level;
+	});
+	return level;
+}
+
+void Database::setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level)
+{
+	if(level != AssetPermissionLevel::none)
+		_updateAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID), static_cast<sqlINT>(level));
+	else
+		_deleteAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID));
 }
 
 std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
@@ -108,14 +131,12 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 	std::string sqlCall ="SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = AssetPermissions.AssetID WHERE AssetPermissions.UserID = " + std::to_string(userID);
 	std::vector<AssetInfo> assets;
 	rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
-		AssetInfo ad(*this);
-		AssetID aid;
-		aid.id = std::stoi(columns[0].value);
-		ad.id = aid;
-		ad.folderID = std::stoi(columns[1].value);
-		ad.name = columns[2].value;
-		ad.type.set(columns[3].value);
-		assets.push_back(ad);
+		AssetInfo ai;
+		ai.id = std::stoi(columns[0].value);
+		ai.name = columns[1].value;
+		ai.type.set(columns[2].value);
+		ai.filename = columns[3].value;
+		assets.push_back(ai);
 	});
 	return assets;
 }
@@ -146,10 +167,10 @@ bool Database::authenticate(const std::string& username, const std::string& pass
 {
 	std::string passwordHashTarget;
 	std::string salt;
-	_loginCall.run("WireWhiz", std::function([&passwordHashTarget, &salt](std::string h, std::string s){
+	_loginCall.run("WireWhiz", [&passwordHashTarget, &salt](std::string h, std::string s){
 		passwordHashTarget = h;
 		salt = s;
-	}));
+	});
 	std::string hashedPassword = hashPassword(password, salt);
 	return hashedPassword == passwordHashTarget;
 }
@@ -188,40 +209,3 @@ std::string Database::randHex(size_t length)
 	return output.str();
 }
 
-Database::Directory Database::directoryTree()
-{
-	Directory tree;
-	tree.id = 0;
-	tree.name = "root";
-	tree.parent = -1;
-	populateDirectoryChildren(tree);
-
-	return std::move(tree);
-}
-
-void Database::populateDirectoryChildren(Database::Directory& dir)
-{
-	_directoryChildren.run(dir.id, std::function([&dir](int FolderID, std::string Name, int ParentFolder){
-		dir.children.push_back(Directory{FolderID, std::move(Name), ParentFolder});
-	}));
-	for(auto& child : dir.children)
-		populateDirectoryChildren(child);
-}
-
-std::vector<Database::Asset> Database::directoryAssets(int directoryID)
-{
-	std::vector<Database::Asset> assets;
-	_directoryAssets.run(directoryID, std::function([&assets](int AssetID, std::string Name, std::string Type, int DirectoryID){
-		assets.push_back({AssetID, std::move(Name), std::move(Type), DirectoryID});
-	}));
-	return assets;
-}
-
-
-void Database::Directory::serialize(OSerializedData& sData)
-{
-	sData << (uint64_t)id << name << (uint16_t)children.size();
-	for(auto& child : children){
-		child.serialize(sData);
-	}
-}

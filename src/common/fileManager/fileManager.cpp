@@ -1,13 +1,13 @@
 #include "fileManager.h"
 #include <fstream>
 #include <utility/serializedData.h>
+#include <config/config.h>
 
-void FileManager::writeAsset(Asset* asset)
+void FileManager::writeAsset(Asset* asset, const std::string& filename)
 {
 	MarkedSerializedData data;
 	asset->toFile(data);
 
-	std::string filename = asset->id.path();
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());
 
@@ -63,11 +63,11 @@ void FileManager::writeFile(const std::string& filename, Json::Value& data)
 	f.close();
 }
 
-AsyncData<Asset*> FileManager::async_readUnknownAsset(const AssetID& id)
+AsyncData<Asset*> FileManager::async_readUnknownAsset(const std::string& filename)
 {
 	AsyncData<Asset*> asset;
-	ThreadPool::enqueue([this, id, asset]{
-		asset.setData(readUnknownAsset(id));
+	ThreadPool::enqueue([this, filename, asset]{
+		asset.setData(readUnknownAsset(filename));
 	});
 	return asset;
 }
@@ -80,4 +80,21 @@ const char* FileManager::name()
 FileManager::FileManager()
 {
 
+}
+
+FileManager::DirectoryContents FileManager::getDirectoryContents(const std::string& p)
+{
+	std::filesystem::path path{p};
+	DirectoryContents contents;
+	for(auto& file : std::filesystem::directory_iterator(path))
+	{
+		if(file.is_directory())
+			contents.directories.push_back(file.path().filename().string());
+		if(file.is_regular_file())
+			contents.directories.push_back(file.path().filename().string());
+	}
+	std::sort(contents.directories.begin(), contents.directories.end());
+	std::sort(contents.files.begin(), contents.files.end());
+
+	return contents;
 }

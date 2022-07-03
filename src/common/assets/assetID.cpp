@@ -23,7 +23,7 @@ void AssetID::parseString(const std::string& id)
 		}
 	}
 	serverAddress = strings[0];
-	this->id = fromHex<uint64_t>(strings[1]);
+	this->id = fromHex<uint32_t>(strings[1]);
 }
 
 std::string AssetID::string() const
@@ -46,11 +46,6 @@ std::ostream& operator<<(std::ostream& os, const AssetID& id)
 	os << id.string();
 	return os;
 }
-#include <config/config.h>
-std::string AssetID::path() const
-{
-	return Config::json()["data"]["asset_path"].asString() + "/" + toHex(id) + ".asset";
-}
 
 uint32_t AssetID::size()
 {
@@ -60,7 +55,7 @@ uint32_t AssetID::size()
 	return size;
 }
 
-AssetID::AssetID(const std::string& serverAddress, uint64_t id)
+AssetID::AssetID(const std::string& serverAddress, uint32_t id)
 {
 	this->serverAddress = serverAddress;
 	this->id = id;

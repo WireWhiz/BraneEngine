@@ -8,9 +8,19 @@
 #include "utility/threadPool.h"
 #include <runtime/module.h>
 
+
+
 class FileManager : public Module
 {
 public:
+	struct DirectoryContents
+	{
+		std::vector<std::string> directories;
+		std::vector<std::string> files;
+	};
+
+	DirectoryContents getDirectoryContents(const std::string& path);
+
 	FileManager();
 	template <typename T>
 	bool readFile(const std::string& filename, std::vector<T>& data)
@@ -28,9 +38,9 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(const AssetID& id)
+	T* readAsset(const std::string& filename)
 	{
-		std::ifstream f(id.path(), std::ios::binary);
+		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
 			return nullptr;
 		MarkedSerializedData sData(f);
@@ -40,9 +50,9 @@ public:
 		return asset;
 	}
 
-	Asset* readUnknownAsset(const AssetID& id)
+	Asset* readUnknownAsset(const std::string& filename)
 	{
-		std::ifstream f(id.path(), std::ios::binary);
+		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
 			return nullptr;
 		MarkedSerializedData sData(f);
@@ -51,16 +61,16 @@ public:
 	}
 
 	template<typename T>
-	AsyncData<T*> async_readAsset(const AssetID& id)
+	AsyncData<T*> async_readAsset(const std::string& filename)
 	{
 		AsyncData<T*> asset;
-		ThreadPool::enqueue([this, &id, asset]{
-			asset.setData(readAsset<T>(id));
+		ThreadPool::enqueue([this, filename, asset]{
+			asset.setData(readAsset<T>(filename));
 		});
 		return asset;
 	}
 
-	AsyncData<Asset*> async_readUnknownAsset(const AssetID& id);
+	AsyncData<Asset*> async_readUnknownAsset(const std::string& filename);
 
 
 
@@ -82,7 +92,7 @@ public:
 	void writeFile(const std::string& filename, std::string& data);
 	void writeFile(const std::string& filename, Json::Value& data);
 
-	void writeAsset(Asset* asset);
+	void writeAsset(Asset* asset, const std::string& filename);
 
 	static const char* name();
 };

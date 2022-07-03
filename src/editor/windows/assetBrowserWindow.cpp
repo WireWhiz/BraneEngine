@@ -10,10 +10,8 @@
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
-	Runtime::getModule<Editor>()->server()->sendRequest(net::Request("directoryTree")).then([this](ISerializedData sData){
-		_root = deserializeDirectory(sData);
-		setDirectory(_root.get());
-	});
+	_root.name = "root";
+	setDirectory(&_root);
 }
 
 void AssetBrowserWindow::draw()
@@ -23,14 +21,16 @@ void AssetBrowserWindow::draw()
 		ImGui::TextDisabled("%s",_strPath.c_str());
 		ImGui::Separator();
 
-		if(_root && ImGui::BeginTable("window split", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail()))
+		if(ImGui::BeginTable("window split", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail()))
 		{
 			ImGui::TableNextColumn();
 			displayDirectories();
 			ImGui::TableNextColumn();
 			if(!_currentDir)
 				ImGui::Text("No directory selected");
-			else if(_directoryContents.empty() && _currentDir->children.empty())
+			else if(!_currentDir->loaded)
+				ImGui::Text("Loading...");
+			else if(_currentDir->children.empty() && _currentDir->files.empty())
 				ImGui::Text("No Assets");
 			else
 			{
@@ -43,10 +43,10 @@ void AssetBrowserWindow::draw()
 					{
 						setDirectory(dir.get());
 					}
-				for(auto& asset : _directoryContents)
-					if(ImGui::ButtonEx(std::string(ICON_FA_FILE " " + asset.name).c_str(),{ImGui::GetContentRegionAvail().x,0}))
+				for(auto& file : _currentDir->files)
+					if(ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file).c_str(),{ImGui::GetContentRegionAvail().x,0}))
 					{
-
+						//TODO: Be able to click files
 					}
 				ImGui::PopStyleVar(1);
 				ImGui::PopStyleColor(2);
@@ -55,15 +55,13 @@ void AssetBrowserWindow::draw()
 
 			ImGui::EndTable();
 		}
-		else
-			ImGui::Text("Loading directory tree...");
 	}
 	ImGui::End();
 }
 
 void AssetBrowserWindow::displayDirectories()
 {
-	displayDirectoriesRecursive(_root.get());
+	displayDirectoriesRecursive(&_root);
 }
 
 void AssetBrowserWindow::displayDirectoriesRecursive(AssetBrowserWindow::Directory* dir)
@@ -96,46 +94,40 @@ void AssetBrowserWindow::setDirectory(Directory* dir)
 		return;
 	_currentDir = dir;
 	updateStrPath();
-	net::Request req("directoryAssets");
-	req.body() << _currentDir->id;
-	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this, dir](ISerializedData sData){
-		std::vector<AssetData> assets;
-		uint32_t count;
-		sData >> count;
-		for (uint32_t i = 0; i < count; ++i)
-		{
-			AssetData asset;
-			sData >> asset.id >> asset.name >> asset.type >> asset.directoryID;
-			asset.hexIDString = toHex((uint64_t)asset.id);
-			assets.push_back(std::move(asset));
-		}
-		_directoryContents = std::move(assets);
-	});
+	if(!dir->loaded)
+	{
+		net::Request req("directoryContents");
+		req.body() << _strPath;
+		Runtime::getModule<Editor>()->server()->sendRequest(req).then([this, dir](ISerializedData sData){
+			std::vector<std::string> directories;
+			bool success;
+			sData >> success >> directories >> dir->files;
+			if(!success)
+				return; //TODO show could not load error here instead
+			for(auto& d : directories)
+			{
+				auto newDir = std::make_unique<Directory>();
+				newDir->name = d;
+				newDir->parent = dir;
+				dir->children.push_back(std::move(newDir));
+			}
+
+			dir->loaded = true;
+		});
+	}
 }
 
 void AssetBrowserWindow::updateStrPath()
 {
 	_strPath = "/";
 	std::stack<Directory*> dirNames;
-	for(Directory* dir = _currentDir; dir != nullptr; dir = dir->parent)
+	for(Directory* dir = _currentDir; dir != &_root; dir = dir->parent)
 		dirNames.push(dir);
 	while(!dirNames.empty())
 	{
 		_strPath += dirNames.top()->name + "/";
 		dirNames.pop();
 	}
-}
-
-std::unique_ptr<AssetBrowserWindow::Directory> AssetBrowserWindow::deserializeDirectory(ISerializedData& sData, Directory* parent)
-{
-	std::unique_ptr<AssetBrowserWindow::Directory> dir = std::make_unique<Directory>();
-	sData >> dir->id >> dir->name;
-	uint16_t children;
-	sData >> children;
-	for (uint16_t i = 0; i < children; ++i)
-		dir->children.push_back(deserializeDirectory(sData, dir.get()));
-	dir->parent = parent;
-	return std::move(dir);
 }
 
 

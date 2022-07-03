@@ -120,28 +120,20 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
-	_nm.addRequestListener("directoryTree", [this](net::RequestResponse& res){
+	_nm.addRequestListener("directoryContents", [this](net::RequestResponse& res){
 		auto ctx = getContext(res.sender());
 		if(!validatePermissions(ctx, {"edit assets"}))
 		    return;
-		Database::Directory tree = _db.directoryTree();
-		tree.serialize(res.res());
-		res.send();
-	});
-
-	_nm.addRequestListener("directoryAssets", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
-		if(!validatePermissions(ctx, {"edit assets"}))
+		std::string dirPath;
+		res.body() >> dirPath;
+		if(dirPath.find('.') != std::string::npos)
+		{
+			res.res() << false;
+			res.send();
 			return;
-		int64_t dirID;
-		res.body() >> dirID;
-
-		std::vector<Database::Asset> assets = _db.directoryAssets(dirID);
-		res.res() << (uint32_t)assets.size();
-		for(auto& asset : assets)
-			res.res() << (int64_t)asset.assetID << asset.name << asset.type << (int64_t)asset.directoryID;
-
-
+		}
+		auto contents = _fm.getDirectoryContents(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
+		res.res() << true << contents.directories << contents.files;
 		res.send();
 	});
 
@@ -182,12 +174,18 @@ const char* AssetServer::name()
 AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	_fm.async_readUnknownAsset(id).then([this, asset, id](Asset* data){
-		if(data)
-			asset.setData(data);
-		else
-			asset.setError("Could not read asset: " + std::to_string(id.id));
-	});
+	auto info = _db.getAssetInfo(id.id);
+	if(info.filename.empty())
+		asset.setError("Asset not found");
+	else
+	{
+		_fm.async_readUnknownAsset(info.filename).then([this, asset, id](Asset* data){
+			if(data)
+				asset.setData(data);
+			else
+				asset.setError("Could not read asset: " + std::to_string(id.id));
+		});
+	}
 
 	return asset;
 }
