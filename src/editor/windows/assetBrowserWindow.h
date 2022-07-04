@@ -24,12 +24,17 @@ class AssetBrowserWindow : public GUIWindow
 	};
 
 	Directory _root;
-
 	Directory* _currentDir = nullptr;
+
+	std::string _newDirName;
+
 	void displayDirectories();
 	void displayDirectoriesRecursive(Directory* dir);
 	void updateStrPath();
+	void reloadCurrentDirectory();
 	void setDirectory(Directory* dir);
+	void createDirectory();
+	void deleteFile(const std::string& path);
 public:
 	AssetBrowserWindow(GUI& ui, GUIWindowID id);
 	void draw() override;

@@ -36,6 +36,7 @@ class AssetServer : public Module
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
 	ConnectionContext& getContext(net::Connection* connection);
 	bool validatePermissions(ConnectionContext& ctx, const std::vector<std::string>& permissions);
+	bool checkAssetPath(const std::string& path);
 public:
 	AssetServer();
 	~AssetServer();

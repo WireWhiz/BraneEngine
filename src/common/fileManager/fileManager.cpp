@@ -91,10 +91,25 @@ FileManager::DirectoryContents FileManager::getDirectoryContents(const std::stri
 		if(file.is_directory())
 			contents.directories.push_back(file.path().filename().string());
 		if(file.is_regular_file())
-			contents.directories.push_back(file.path().filename().string());
+			contents.files.push_back(file.path().filename().string());
 	}
 	std::sort(contents.directories.begin(), contents.directories.end());
 	std::sort(contents.files.begin(), contents.files.end());
 
 	return contents;
+}
+
+void FileManager::createDirectory(const std::string& path)
+{
+	std::filesystem::create_directories(path);
+}
+
+bool FileManager::deleteFile(const std::string& path)
+{
+	return std::filesystem::remove_all(path);
+}
+
+void FileManager::moveFile(const std::string& source, const std::string& destination)
+{
+	std::filesystem::rename(source, destination);
 }

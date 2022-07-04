@@ -10,6 +10,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "default install path" FORCE)
+endif()
+
 # Library Complie Definitions
 add_compile_definitions(GLM_FORCE_RADIANS
                 GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -26,18 +30,10 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 
 endif()
 
-if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
-    message("debug mode")
-    list(APPEND COMMON_DEFS DEBUG)
-    if(win32)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS_CUI /ENTRY:mainCRTStartup" /MDd_StaticDebug)
-    endif(win32)
-else ()
-    message("shipping mode")
-    if(win32)
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-    endif(win32)
-endif ()
+
+if(win32)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+endif(win32)
 
 set(ICON_FILE ${CMAKE_CURRENT_SOURCE_DIR}/media/brane.res)
 

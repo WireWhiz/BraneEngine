@@ -20,6 +20,9 @@ public:
 	};
 
 	DirectoryContents getDirectoryContents(const std::string& path);
+	void createDirectory(const std::string& path);
+	bool deleteFile(const std::string& path);
+	void moveFile(const std::string& source, const std::string& destination);
 
 	FileManager();
 	template <typename T>

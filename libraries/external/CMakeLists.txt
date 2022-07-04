@@ -1,6 +1,1 @@
-if(WIN32)
-    add_subdirectory(repos/acme-lw-win32)
-elseif(UNIX)
-    add_subdirectory(repos/acme-lw-linux)
-endif()
 add_subdirectory(repos)

@@ -126,7 +126,7 @@ _db(*Runtime::getModule<Database>())
 		    return;
 		std::string dirPath;
 		res.body() >> dirPath;
-		if(dirPath.find('.') != std::string::npos)
+		if(!checkAssetPath(dirPath))
 		{
 			res.res() << false;
 			res.send();
@@ -134,6 +134,67 @@ _db(*Runtime::getModule<Database>())
 		}
 		auto contents = _fm.getDirectoryContents(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
 		res.res() << true << contents.directories << contents.files;
+		res.send();
+	});
+
+	_nm.addRequestListener("createDirectory", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+			return;
+		std::string dirPath;
+		res.body() >> dirPath;
+		if(!checkAssetPath(dirPath))
+		{
+			res.res() << false;
+			res.send();
+			return;
+		}
+		_fm.createDirectory(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
+		res.res() << true;
+		res.send();
+	});
+
+	_nm.addRequestListener("moveFile", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+			return;
+		std::string dirSrc, dirDest;
+		res.body() >> dirSrc >> dirDest;
+		if(!checkAssetPath(dirSrc) || !checkAssetPath(dirDest))
+		{
+			res.res() << false;
+			res.send();
+			return;
+		}
+		_fm.moveFile(Config::json()["data"]["asset_path"].asString() + "/" + dirSrc, Config::json()["data"]["asset_path"].asString() + "/" + dirDest);
+		res.res() << true;
+		res.send();
+	});
+
+	_nm.addRequestListener("deleteFile", [this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+			return;
+		std::string dirPath;
+		res.body() >> dirPath;
+		if(!checkAssetPath(dirPath))
+		{
+			res.res() << false;
+			res.send();
+			return;
+		}
+		bool notRoot = false;
+		for (char c : dirPath)
+		{
+			if(std::isalpha(c) || std::isdigit(c))
+			{
+				notRoot = true;
+				break;
+			}
+		}
+		if(notRoot)
+			_fm.deleteFile(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
+		res.res() << notRoot;
 		res.send();
 	});
 
@@ -211,6 +272,11 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
 			return false;
 	}
 	return true;
+}
+
+bool AssetServer::checkAssetPath(const std::string& path)
+{
+	return path.find('.') == std::string::npos;
 }
 
 

@@ -4,10 +4,9 @@
 #include "networking/networking.h"
 #include "graphics/graphics.h"
 #include "assets/assembly.h"
-#include "ecs/nativeTypes/transform.h"
+#include "systems/transforms.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "ecs/nativeTypes/assetComponents.h"
-#include "ecs/nativeSystems/nativeSystems.h"
 #include "assets/assetManager.h"
 
 #include <utility/threadPool.h>
@@ -28,12 +27,11 @@ _nm(*Runtime::getModule<NetworkManager>())
 	EntityManager& em = *Runtime::getModule<EntityManager>();
 	graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
 
-	systems::addTransformSystem(em, Runtime::timeline());
 	addAssetPreprocessors(_am, vkr);
 
 	ComponentSet headRootComponents;
 	headRootComponents.add(AssemblyRoot::def()->id);
-	headRootComponents.add(TransformComponent::def()->id);
+	headRootComponents.add(Transform::def()->id);
 	EntityID testHead = em.createEntity(headRootComponents);
 
 	AssemblyRoot testHeadRoot{};
@@ -41,7 +39,7 @@ _nm(*Runtime::getModule<NetworkManager>())
 
 	em.setEntityComponent(testHead, testHeadRoot.toVirtual());
 
-	TransformComponent tc{};
+	Transform tc{};
 	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
 	em.setEntityComponent(testHead, tc.toVirtual());
 
@@ -100,7 +98,7 @@ AsyncData<Asset*> Client::fetchAssetCallback(const AssetID& id, bool incremental
 		}
 		if (incremental)
 		{
-			_nm.async_requestAssetIncremental(id, _am).then([this, asset, id](Asset* data){
+			_nm.async_requestAssetIncremental(id).then([this, asset, id](Asset* data){
 				asset.setData(data);
 
 			});
@@ -108,7 +106,7 @@ AsyncData<Asset*> Client::fetchAssetCallback(const AssetID& id, bool incremental
 		else
 		{
 			AsyncData<Asset*> assetToSave;
-			_nm.async_requestAsset(id, _am).then([this, asset, id](Asset* data){
+			_nm.async_requestAsset(id).then([this, asset, id](Asset* data){
 				asset.setData(data);
 			});
 		}

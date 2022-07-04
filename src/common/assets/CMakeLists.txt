@@ -6,8 +6,7 @@ add_library(assets STATIC
     "assetManager.cpp"
     assetType.h
     assetType.cpp
-  
    "asset.h" "asset.cpp" chunk.cpp chunk.h assembly.cpp assembly.h ../systems/transforms.cpp ../systems/transforms.h)
 
-target_link_libraries(assets PUBLIC asset_type fileManager ecs systems)
+target_link_libraries(assets PUBLIC asset_type fileManager ecs systems ssl)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

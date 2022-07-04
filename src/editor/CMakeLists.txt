@@ -1,7 +1,6 @@
 
+add_subdirectory(windows)
 
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Editor)
-message(${ICON_FILE})
 if(WIN32)
     add_executable(BraneEditor WIN32
             main.cpp
@@ -19,10 +18,19 @@ target_include_directories(BraneEditor PRIVATE
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneEditor PRIVATE ecs networking config graphics assets runtime editorWindows systems)
 
-configure_file(config.json ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/config.json COPYONLY)
+set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/braneEditor)
 
-FILE(COPY fa-solid-900.ttf DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-FILE(COPY ${PROJECT_SOURCE_DIR}/media/branelogo.png DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-FILE(COPY shaders DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(TARGETS BraneEditor
+        RUNTIME
+        DESTINATION ${INSTALL_DIR}
+        COMPONENT Editor)
+install(FILES config.json fa-solid-900.ttf ${PROJECT_SOURCE_DIR}/media/branelogo.png
+        DESTINATION ${INSTALL_DIR}
+        COMPONENT Editor)
+install(DIRECTORY shaders DESTINATION ${INSTALL_DIR}
+        COMPONENT Editor)
 
-add_subdirectory(windows)
+add_custom_command(TARGET BraneEditor POST_BUILD
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND cmake --install . --component Editor --prefix ${CMAKE_BINARY_DIR}
+        COMMENT "Installing Editor...")
