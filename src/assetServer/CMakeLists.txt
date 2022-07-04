@@ -1,6 +1,6 @@
 #src/assetServer
 
-add_subdirectory(bin)
+#add_subdirectory(bin)
 add_subdirectory(database)
 add_subdirectory(gltf)
 

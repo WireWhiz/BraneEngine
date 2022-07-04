@@ -1,1 +1,0 @@
-file(COPY libcurl-x64.dll DESTINATION ${CMAKE_BINARY_DIR}/assetServer)
