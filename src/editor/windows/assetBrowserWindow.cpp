@@ -27,75 +27,9 @@ void AssetBrowserWindow::draw()
 			ImGui::TableNextColumn();
 			displayDirectories();
 			ImGui::TableNextColumn();
-			if(!_currentDir)
-				ImGui::Text("No directory selected");
-			else if(!_currentDir->loaded)
-				ImGui::Text("Loading...");
-			else if(_currentDir->children.empty() && _currentDir->files.empty())
-				ImGui::Text("No Assets");
-			else
-			{
-				ImGui::BeginChild("Directory Contents", {0,0}, false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.4f,0.4f,0.5f, 1});
-				ImGui::PushStyleColor(ImGuiCol_Button, {0.1f,0.1f,0.1f, 1});
-				for(auto& dir : _currentDir->children)
-				{
-					ImGui::PushID(dir->name.c_str());
-					if(ImGui::ButtonEx(std::string(ICON_FA_FOLDER " " + dir->name).c_str(), {ImGui::GetContentRegionAvail().x,0}))
-					{
-						setDirectory(dir.get());
-					}
-
-					if(ImGui::IsItemClicked(ImGuiMouseButton_Right))
-						ImGui::OpenPopup("directoryActions");
-
-					if(ImGui::BeginPopup("directoryActions"))
-					{
-						if(ImGui::Selectable("Delete"))
-						{
-							//Todo: confirmation dialog
-							deleteFile(_strPath + "/" + dir->name);
-						}
-						ImGui::EndPopup();
-					}
-					ImGui::PopID();
-				}
-				for(auto& file : _currentDir->files)
-					if(ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file).c_str(),{ImGui::GetContentRegionAvail().x,0}))
-					{
-						//TODO: Be able to click files
-					}
-				ImGui::PopStyleVar(1);
-				ImGui::PopStyleColor(2);
-				ImGui::EndChild();
-			}
-			assert(_currentDir);
-
-			ImGuiID newDirectoryPopup = ImGui::GetID("newDirectory");
-			if(ImGui::BeginPopupEx(newDirectoryPopup, ImGuiPopupFlags_None))
-			{
-				ImGui::Text("Create Directory:");
-				ImGui::InputText("name", &_newDirName);
-				if(ImGui::Button("create"))
-				{
-					ImGui::CloseCurrentPopup();
-					createDirectory();
-				}
-				ImGui::EndPopup();
-			}
-
-			if(ImGui::BeginPopupContextWindow("directoryActions"))
-			{
-
-				if(ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
-				{
-					_newDirName = "";
-					ImGui::OpenPopup(newDirectoryPopup);
-				}
-
-				ImGui::EndPopup();
-			}
+			ImGui::BeginChild("Directory Contents", {0,0}, false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
+			displayFiles();
+			ImGui::EndChild();
 			ImGui::EndTable();
 		}
 	}
@@ -234,6 +168,84 @@ void AssetBrowserWindow::deleteFile(const std::string& path)
 			return; //TODO show could not delete directory
 		reloadCurrentDirectory();
 	});
+}
+
+void AssetBrowserWindow::displayFiles()
+{
+	bool fileHovered = false;
+
+	if(!_currentDir)
+		ImGui::Text("No directory selected");
+	else if(!_currentDir->loaded)
+		ImGui::Text("Loading...");
+	else if(_currentDir->children.empty() && _currentDir->files.empty())
+		ImGui::Text("No Assets");
+	else
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.4f,0.4f,0.5f, 1});
+		ImGui::PushStyleColor(ImGuiCol_Button, {0.1f,0.1f,0.1f, 1});
+		for(auto& dir : _currentDir->children)
+		{
+			ImGui::PushID(dir->name.c_str());
+			if(ImGui::ButtonEx(std::string(ICON_FA_FOLDER " " + dir->name).c_str(), {ImGui::GetContentRegionAvail().x,0}))
+			{
+				setDirectory(dir.get());
+			}
+			fileHovered |= ImGui::IsItemHovered();
+
+			if(ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+				ImGui::OpenPopup("directoryActions");
+
+			if(ImGui::BeginPopup("directoryActions"))
+			{
+				if(ImGui::Selectable("Delete"))
+				{
+					//Todo: confirmation dialog
+					deleteFile(_strPath + "/" + dir->name);
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::PopID();
+		}
+		for(auto& file : _currentDir->files)
+		{
+			if(ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file).c_str(),{ImGui::GetContentRegionAvail().x,0}))
+			{
+				//TODO: Be able to click files
+			}
+			fileHovered |= ImGui::IsItemHovered();
+		}
+
+		ImGui::PopStyleVar(1);
+		ImGui::PopStyleColor(2);
+	}
+	assert(_currentDir);
+
+	ImGuiID newDirectoryPopup = ImGui::GetID("newDirectory");
+	if(ImGui::BeginPopupEx(newDirectoryPopup, ImGuiPopupFlags_None))
+	{
+		ImGui::Text("Create Directory:");
+		ImGui::InputText("name", &_newDirName);
+		if(ImGui::Button("create"))
+		{
+			ImGui::CloseCurrentPopup();
+			createDirectory();
+		}
+		ImGui::EndPopup();
+	}
+
+	if(!fileHovered && ImGui::BeginPopupContextWindow("directoryActions"))
+	{
+
+		if(ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
+		{
+			_newDirName = "";
+			ImGui::OpenPopup(newDirectoryPopup);
+		}
+
+		ImGui::EndPopup();
+	}
 }
 
 

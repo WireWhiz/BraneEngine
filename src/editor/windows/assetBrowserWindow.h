@@ -30,6 +30,7 @@ class AssetBrowserWindow : public GUIWindow
 
 	void displayDirectories();
 	void displayDirectoriesRecursive(Directory* dir);
+	void displayFiles();
 	void updateStrPath();
 	void reloadCurrentDirectory();
 	void setDirectory(Directory* dir);
