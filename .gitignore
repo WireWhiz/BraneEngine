@@ -381,3 +381,4 @@ FodyWeavers.xsd
 
 .idea/
 /vsproj/
+/libraries/external/repos/gtest/googletest/generated/
