@@ -23,11 +23,13 @@ void LoginWindow::draw()
 		ImGui::Text("Login:");
 		ImGui::InputText("username", &_username);
 		ImGui::InputText("password", &_password, ImGuiInputTextFlags_Password);
+		bool enterPressed = ImGui::IsKeyReleased(ImGuiKey_Enter) && ImGui::IsItemFocused();
+
 		ImGui::Separator();
 
 		ImGui::Checkbox("Save username", &_saveUsername);
 
-		if(ImGui::Button("Submit"))
+		if(ImGui::Button("Submit") || enterPressed)
 		{
 			NetworkManager* nm = Runtime::getModule<NetworkManager>();
 			nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success){
