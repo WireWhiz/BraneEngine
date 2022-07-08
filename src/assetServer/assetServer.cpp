@@ -154,7 +154,7 @@ _db(*Runtime::getModule<Database>())
 		res.send();
 	});
 
-	_nm.addRequestListener("moveFile", [this](net::RequestResponse& res){
+	_nm.addRequestListener("moveDirectory", [this](net::RequestResponse& res){
 		auto ctx = getContext(res.sender());
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;

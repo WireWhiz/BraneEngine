@@ -17,6 +17,6 @@
   },
   "data" : {
     "database_path" : "database/data.db",
-    "asset_path" : "assets/"
+    "asset_path" : "assets"
   }
 }

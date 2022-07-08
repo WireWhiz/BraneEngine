@@ -17,12 +17,17 @@ class AssetBrowserWindow : public GUIWindow
 	struct Directory
 	{
 		bool loaded = false;
+		bool open = false;
 		std::string name;
 		Directory* parent = nullptr;
 		std::vector<std::string> files;
 		std::vector<std::unique_ptr<Directory>> children;
+		std::string path() const;
+		bool hasParent(Directory* dir) const;
+		void setParentsOpen();
 	};
 
+	std::mutex _directoryLock;
 	Directory _root;
 	Directory* _currentDir = nullptr;
 
@@ -34,8 +39,10 @@ class AssetBrowserWindow : public GUIWindow
 	void updateStrPath();
 	void reloadCurrentDirectory();
 	void setDirectory(Directory* dir);
+	void fetchDirectory(Directory* dir);
 	void createDirectory();
 	void deleteFile(const std::string& path);
+	void moveDirectory(Directory* target, Directory* destination);
 public:
 	AssetBrowserWindow(GUI& ui, GUIWindowID id);
 	void draw() override;

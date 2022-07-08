@@ -1,7 +1,9 @@
 #include "fileManager.h"
+#include "gtest/internal/gtest-port.h"
 #include <fstream>
 #include <utility/serializedData.h>
 #include <config/config.h>
+#include <utility/strCaseCompare.h>
 
 void FileManager::writeAsset(Asset* asset, const std::string& filename)
 {
@@ -93,8 +95,8 @@ FileManager::DirectoryContents FileManager::getDirectoryContents(const std::stri
 		if(file.is_regular_file())
 			contents.files.push_back(file.path().filename().string());
 	}
-	std::sort(contents.directories.begin(), contents.directories.end());
-	std::sort(contents.files.begin(), contents.files.end());
+	std::sort(contents.directories.begin(), contents.directories.end(), strCaseCompare<std::string>);
+	std::sort(contents.files.begin(), contents.files.end(), strCaseCompare<std::string>);
 
 	return contents;
 }
