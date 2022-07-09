@@ -11,6 +11,7 @@
 #include <memory>
 
 #include <utility/serializedData.h>
+#include <utility/asyncData.h>
 #include "connection.h"
 #include "config/config.h"
 #include "networkError.h"

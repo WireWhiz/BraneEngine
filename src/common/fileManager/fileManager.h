@@ -4,6 +4,7 @@
 #include <json/json.h>
 #include <filesystem>
 #include <utility/serializedData.h>
+#include <utility/asyncData.h>
 #include <assets/asset.h>
 #include "utility/threadPool.h"
 #include <runtime/module.h>

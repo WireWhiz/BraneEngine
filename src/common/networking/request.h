@@ -9,6 +9,7 @@
 #include <utility/threadPool.h>
 #include "message.h"
 #include "connection.h"
+#include <utility/asyncData.h>
 
 namespace net{
 	class Connection;

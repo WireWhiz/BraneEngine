@@ -10,7 +10,8 @@
 #include <memory>
 #include "networkError.h"
 #include "config/config.h"
-#include "utility/asyncQueue.h"
+#include <utility/asyncQueue.h>
+#include <utility/asyncData.h>
 #include <utility/serializedData.h>
 #include <ecs/ecs.h>
 #include <shared_mutex>
