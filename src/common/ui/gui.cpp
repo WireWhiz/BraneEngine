@@ -139,7 +139,7 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	config.MergeMode = true;
 	config.GlyphMinAdvanceX = 13.0f;
 	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, 15.0f, &config, icon_ranges);
+	io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, 10.0f, &config, icon_ranges);
 
 	// Setup ImGui style TODO move this to config.json
 	ImVec4* colors = ImGui::GetStyle().Colors;
