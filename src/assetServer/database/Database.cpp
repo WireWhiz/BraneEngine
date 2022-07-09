@@ -22,7 +22,7 @@ Database::Database()
 		sqlite3_close(_db);
 		throw std::runtime_error("Can't open database");
 	}
-	_loginCall.initialize("SELECT Logins.Password, Logins.Salt, Logins.UserID FROM Users "
+	_loginCall.initialize("SELECT Logins.Password, Logins.Salt FROM Users "
 						  "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
@@ -167,11 +167,14 @@ bool Database::authenticate(const std::string& username, const std::string& pass
 {
 	std::string passwordHashTarget;
 	std::string salt;
-	_loginCall.run("WireWhiz", [&passwordHashTarget, &salt](std::string h, std::string s){
+	_loginCall.run(username, [&passwordHashTarget, &salt](std::string h, std::string s){
 		passwordHashTarget = h;
 		salt = s;
 	});
+	if(passwordHashTarget.empty())
+		return false;
 	std::string hashedPassword = hashPassword(password, salt);
+
 	return hashedPassword == passwordHashTarget;
 }
 

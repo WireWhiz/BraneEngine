@@ -266,6 +266,8 @@ AssetServer::ConnectionContext& AssetServer::getContext(net::Connection* connect
 
 bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const std::vector<std::string>& permissions)
 {
+	if(ctx.userID == 1)
+		return true; //Admin has all permissions;
 	for(auto p : permissions)
 	{
 		if(!ctx.permissions.count(p))
