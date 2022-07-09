@@ -19,21 +19,10 @@ GUI::GUI()
 		}
 	}, "gui");
 
-	graphics::VulkanRuntime* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+	auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
 
 
-	_renderer = vkr->createRenderer<graphics::CustomRenderer>();
-	_renderer->setRenderCallback([this](VkCommandBuffer cmdBuffer){
-
-		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
-		drawUI();
-		ImGui_ImplVulkan_NewFrame();
-		ImGui::Render();
-		ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
-		ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
-
-	});
+	_renderer = vkr->createRenderer<GUIRenderer>(this);
 	_renderer->setTargetAsSwapChain(false);
 
 	setupImGui(*vkr);

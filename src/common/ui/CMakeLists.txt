@@ -9,5 +9,5 @@ add_library(ui STATIC
         ../../editor/windows/renderWindow.cpp
         ../../editor/windows/assetBrowserWindow.cpp
         ../../editor/windows/memoryManagerWindow.cpp
-        ../../editor/windows/memoryManagerWindow.h)
+        ../../editor/windows/memoryManagerWindow.h guiRenderer.cpp guiRenderer.h)
 target_link_libraries(ui PUBLIC imgui runtime)

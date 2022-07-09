@@ -17,12 +17,12 @@
 #include <deque>
 #include <unordered_map>
 #include <functional>
-#include "common/graphics/renderer.h"
-
+#include "guiRenderer.h"
 
 class GUI : public Module
 {
-	graphics::CustomRenderer* _renderer;
+	GUIRenderer* _renderer;
+	friend class GUIRenderer;
 	VkDescriptorPool _imGuiDescriptorPool;
 
 	std::vector<std::unique_ptr<GUIWindow>> _windows;
