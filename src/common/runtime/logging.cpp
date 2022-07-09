@@ -25,7 +25,7 @@ namespace Logging
 		const time_t now = time(0);
 		tm ltm;
 		localtime_s(&ltm, &now);
-		std::string date = std::to_string(ltm.tm_year) + "_" + std::to_string(ltm.tm_mon) + "_" + std::to_string(ltm.tm_mday) + "_" + std::to_string(now);
+		std::string date = std::to_string(ltm.tm_year + 1900) + "_" + std::to_string(ltm.tm_mon + 1) + "_" + std::to_string(ltm.tm_mday) + "_" + std::to_string(now);
 		return "log_" + date + ".txt";
 	}
 
