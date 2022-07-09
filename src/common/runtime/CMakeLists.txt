@@ -5,4 +5,6 @@ add_library(runtime STATIC
         module.cpp
         module.h
         timeline.cpp
-        timeline.h)
+        timeline.h
+        logging.cpp)
+target_link_libraries(runtime PUBLIC config)

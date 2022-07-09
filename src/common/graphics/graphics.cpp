@@ -421,12 +421,11 @@ namespace graphics
         if (messageSeverity != VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT)
         {
             if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
-                std::cerr << "Vulkan [Warning]: ";
+                Runtime::warn("Vulkan: " + std::string(pCallbackData->pMessage));
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-                std::cerr << "Vulkan [Error]: ";
+	            Runtime::error("Vulkan: " + std::string(pCallbackData->pMessage));
             else
-                std::cerr << "Vulkan [Unknown]: ";
-            std::cerr  << pCallbackData->pMessage << std::endl;
+                Runtime::log("Vulkan: "  + std::string(pCallbackData->pMessage));
 #if DEBUG
 			if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 				throw std::runtime_error("Vulkan debug error");

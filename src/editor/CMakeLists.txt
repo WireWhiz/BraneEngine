@@ -1,7 +1,7 @@
 
 add_subdirectory(windows)
 
-if(WIN32)
+if(WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL Release)
     add_executable(BraneEditor WIN32
             main.cpp
             ${PROJECT_SOURCE_DIR}/media/brane.rc

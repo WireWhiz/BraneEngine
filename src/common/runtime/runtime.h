@@ -7,8 +7,10 @@
 
 #include <unordered_map>
 #include <string>
-#include "timeline.h"
 #include <atomic>
+
+#include "logging.h"
+#include "timeline.h"
 
 class Module;
 
@@ -33,8 +35,11 @@ namespace Runtime
 		return (T*)getModule(T::name());
 	}
 
-
 	Timeline& timeline();
+
+	void log(const std::string& message);
+	void warn(const std::string& message);
+	void error(const std::string& message);
 
 	void run();
 	void stop();

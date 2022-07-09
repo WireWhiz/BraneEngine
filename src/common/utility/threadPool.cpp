@@ -1,4 +1,5 @@
 #include "threadPool.h"
+#include <runtime/runtime.h>
 
 std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
@@ -62,8 +63,9 @@ void ThreadPool::init(size_t minThreads)
 		{
 			_threads.emplace_back(threadRuntime);
 		}
+		Runtime::log("Started up thread pool with " + std::to_string(threadCount) + " threads");
 	}
-	
+
 }
 
 void ThreadPool::cleanup()

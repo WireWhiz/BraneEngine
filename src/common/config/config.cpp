@@ -25,7 +25,6 @@ void Config::loadConfig()
 		std::cerr << "Error reading configuration file: " << e.what() << std::endl;
 	}
 	configFile.close();
-	std::cout << "loaded config.json\n";
 }
 
 void Config::save()
@@ -45,5 +44,4 @@ void Config::save()
 		std::cerr << "Error saving configuration file: " << e.what() << std::endl;
 	}
 	configFile.close();
-	std::cout << "saved config.json\n";
 }

@@ -21,6 +21,19 @@ namespace Runtime
 		return _timeline;
 	}
 
+	void log(const std::string& message)
+	{
+		Logging::pushLog(message, Logging::LogLevel::log);
+	}
+	void warn(const std::string& message)
+	{
+		Logging::pushLog(message, Logging::LogLevel::warning);
+	}
+	void error(const std::string& message)
+	{
+		Logging::pushLog(message, Logging::LogLevel::error);
+	}
+
 	void run()
 	{
 		for (auto& m : _modules)
@@ -59,6 +72,7 @@ namespace Runtime
 
 	void init()
 	{
+		Logging::init();
 		ThreadPool::init(4);
 	}
 
@@ -66,5 +80,6 @@ namespace Runtime
 	{
 		stop();
 		ThreadPool::cleanup();
+		Logging::cleanup();
 	}
 }
