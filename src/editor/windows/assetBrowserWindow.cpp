@@ -52,16 +52,15 @@ void AssetBrowserWindow::displayDirectoriesRecursive(AssetBrowserWindow::Directo
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	if(dir->children.empty())
 		flags |= ImGuiTreeNodeFlags_Leaf;
-	if(dir->open)
-		ImGui::SetNextItemOpen(dir->open, ImGuiCond_Always);
-	bool nodeOpen = ImGui::TreeNodeEx(dir->name.c_str(), flags);
+	ImGui::SetNextItemOpen(dir->open, ImGuiCond_Always);
+	bool nodeOpen = ImGui::TreeNodeEx((((dir->open && !dir->children.empty()) ? ICON_FA_FOLDER_OPEN : ICON_FA_FOLDER) + dir->name).c_str(), flags);
 	dir->open = nodeOpen;
 
 	if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
 		setDirectory(dir);
 	}
-	if (dir != &_root && ImGui::BeginDragDropSource())
+	if(dir != &_root && ImGui::BeginDragDropSource())
 	{
 		std::string path = dir->path();
 		ImGui::SetDragDropPayload("directory", &dir, sizeof(Directory*));
@@ -69,7 +68,7 @@ void AssetBrowserWindow::displayDirectoriesRecursive(AssetBrowserWindow::Directo
 		ImGui::EndDragDropSource();
 	}
 
-	if (ImGui::BeginDragDropTarget())
+	if(ImGui::BeginDragDropTarget())
 	{
 		if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
 		{
