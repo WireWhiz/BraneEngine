@@ -60,6 +60,7 @@ void Editor::addMainWindows()
 	_ui->addWindow<ConsoleWindow>();
 	_ui->addWindow<EntitiesWindow>();
 	_ui->addWindow<RenderWindow>();
+	Runtime::log("Main layout loaded");
 }
 
 net::Connection* Editor::server() const

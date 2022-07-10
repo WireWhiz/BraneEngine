@@ -3,7 +3,6 @@
 add_library(networking STATIC 
 	"networking.cpp"
 	"connection.cpp"
-    "networkError.cpp"
     "message.h"
     "request.cpp")
  target_link_libraries(networking PUBLIC ssl include_dir)

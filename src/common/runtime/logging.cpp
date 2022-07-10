@@ -54,7 +54,15 @@ namespace Logging
 		std::string fStr = newLog.toString();
 		_logFile << fStr << std::endl;
 		for(auto& f : _logListeners)
-			f(newLog);
+		{
+			try{
+				f(newLog);
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << "Log callback threw error!" << std::endl;
+			}
+		}
 		if(printToConsole)
 		{
 			switch(level)

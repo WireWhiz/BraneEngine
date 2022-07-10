@@ -9,7 +9,7 @@
 #include "../editor.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
-#include <Utility/strCaseCompare.h>
+#include <utility/strCaseCompare.h>
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {

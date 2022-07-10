@@ -11,12 +11,11 @@ NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ss
 
 NetworkManager::~NetworkManager()
 {
-	stop();
 }
 
 void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 {
-	std::cout << "Connecting to asset server: " << ip << ":" << port << std::endl;
+	Runtime::log("connecting to asset server: " + ip + ":" + std::to_string(port));
 	auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
 
 	auto tcpEndpoints = _tcpResolver.resolve(ip, std::to_string(port));
@@ -42,7 +41,7 @@ void NetworkManager::async_connectToAssetServer(const std::string& address, uint
 	}
 	_serverLock.unlock_shared();
 
-    std::cout << "connecting to: " << address << ":" << port << std::endl;
+    Runtime::log("connecting to asset server: " + address + ":" + std::to_string(port));
 	_tcpResolver.async_resolve(asio::ip::tcp::resolver::query(address, std::to_string(port), asio::ip::tcp::resolver::query::canonical_name), [this, address, callback](const asio::error_code ec, auto endpoints){
 		if(!ec)
 		{
@@ -75,13 +74,13 @@ void NetworkManager::start()
 	_threadHandle = ThreadPool::addStaticThread([this](){
 		while(_running)
             _context.run();
-		std::cout << "exiting networking thread\n";
+		Runtime::log("exiting networking thread");
 	});
 }
 
 void NetworkManager::stop()
 {
-	std::cout << "Shutting down networking... ";
+	Runtime::log("Shutting down networking");
 	for(auto& connection : _servers)
 		connection.second->disconnect();
 	_running = false;
@@ -90,8 +89,6 @@ void NetworkManager::stop()
 	    _threadHandle->finish();
 
 	_servers.clear();
-
-	std::cout << "done" << std::endl;
 }
 
 void NetworkManager::configureServer()
@@ -110,7 +107,7 @@ void NetworkManager::configureServer()
 		}
 		catch (const std::exception& e)
 		{
-			std::cerr << "Couldn't read file: " << e.what() << std::endl;
+			Runtime::error("Couldn't read file: " + std::string(e.what()));
 		}
 	}
 }
@@ -125,7 +122,7 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 	net::Connection* server = _servers[id.serverAddress].get();
 	_serverLock.unlock_shared();
 
-	std::cout << "async requesting: " << id.string() << std::endl;
+	Runtime::log("async requesting: " + id.string());
 
 	// Set up a listener for the asset response
 	net::Request req("asset");
@@ -146,7 +143,7 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 	net::Connection* server = _servers[id.serverAddress].get();
 	_serverLock.unlock_shared();
 
-	std::cout << "async requesting incremental: " << id.string() << std::endl;
+	Runtime::log("async requesting incremental: " + id.string());
 	uint32_t streamID = _streamIDCounter++;
 	net::Request req("incrementalAsset");
 	req.body() << id << streamID;
@@ -207,20 +204,20 @@ void NetworkManager::ingestData(net::Connection* connection)
 					{
 						std::scoped_lock l(_requestLock);
 						if(!_requestListeners.count(response.name())){
-							std::cout << "Unknown request received: " << response.name() << std::endl;
+							Runtime::warn("Unknown request received: " + response.name());
 							break;
 						}
 						_requestListeners[response.name()](response);
 					}
 				}
 				catch(std::exception& e){
-					std::cerr << "Error with received request: " << e.what() << std::endl;
+					Runtime::error("Error with received request: " + std::string(e.what()));
 				}
 
 				break;
 			}
 			default:
-				std::cerr << "Received message of unknown type: " << (int)message->header.type << std::endl;
+				Runtime::warn("Received message of unknown type: " + std::to_string((int)message->header.type));
 				break;
 		}
 	}

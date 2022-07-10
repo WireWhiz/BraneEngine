@@ -14,7 +14,6 @@
 #include <utility/asyncData.h>
 #include "connection.h"
 #include "config/config.h"
-#include "networkError.h"
 #include <shared_mutex>
 #include "request.h"
 
@@ -64,7 +63,7 @@ class NetworkManager : public Module
 			}
 			else
 			{
-				std::cout << "Connection Error: " << ec.message() << std::endl;
+				Runtime::error("Connection Error: " + std::string(ec.message()));
 			}
 			delete socket;
 			async_acceptConnections<socket_t>(acceptor, callback);

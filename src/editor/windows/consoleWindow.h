@@ -6,9 +6,17 @@
 #define BRANEENGINE_CONSOLEWINDOW_H
 
 #include <ui/guiWindow.h>
+#include <string>
+#include <runtime/logging.h>
 
 class ConsoleWindow : public GUIWindow
 {
+	struct CachedLog
+	{
+		std::string text = "";
+		Logging::LogLevel level = Logging::LogLevel::log;
+	};
+	std::vector<CachedLog> _messages;
 public:
 	ConsoleWindow(GUI& ui, GUIWindowID id);
 	void draw() override;

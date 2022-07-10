@@ -8,7 +8,6 @@
 #include "message.h"
 #include <cstdint>
 #include <memory>
-#include "networkError.h"
 #include "config/config.h"
 #include <utility/asyncQueue.h>
 #include <utility/asyncData.h>
@@ -85,11 +84,11 @@ namespace net
 				{
 					if(*exists)
 					{
-						std::cerr << "[" << _address << "] Header Parse Fail: " << ec.message() << std::endl;
+						Runtime::error("[" + _address + "] Header Parse Fail: " + ec.message());
 						disconnect();
 					}
 					else
-						std::cout << "Socket destroyed" << std::endl;
+						Runtime::warn("Socket destroyed");
 				}
 
 			});
@@ -112,7 +111,7 @@ namespace net
 							{
 								std::scoped_lock l(_responseLock);
 								if(!_responseListeners.count(id)){
-									std::cerr << "Unknown response received: " << id << std::endl;
+									Runtime::error("Unknown response received: " + std::to_string(id));
 									break;
 								}
 								data = std::move(_responseListeners[id]); // We can't call this from inside the lock, since callback can also request assets, and that also requires a lock
@@ -143,7 +142,7 @@ namespace net
 			                    });
 							}
 							else
-								std::cerr << "Unknown stream id (receiving data): " << id << std::endl;
+								Runtime::error("Unknown stream id (receiving data): " + std::to_string(id));
 
 							_streamLock.unlock_shared();
 							break;
@@ -160,7 +159,7 @@ namespace net
 
 								_streamListeners.erase(id);
 							} else
-								std::cerr << "Unknown stream id (attempting to end): " << id << std::endl;
+								Runtime::error("Unknown stream id (attempting to end): " + std::to_string(id));
 							_streamLock.unlock();
 							break;
 						}
@@ -174,11 +173,11 @@ namespace net
 				{
 					if(*exists)
 					{
-						std::cerr << "[" << _address << "] Read Message Body Fail: " << ec.message() << std::endl;
+						Runtime::error("[" + _address + "] Read Message Body Fail: " + ec.message());
 						disconnect();
 					}
 					else
-						std::cout << "Socket destroyed" << std::endl;
+						Runtime::log("Socket destroyed");
 				}
 			});
 		}
@@ -194,7 +193,7 @@ namespace net
 				}
 				else
 				{
-					std::cerr << "[" << _address << "] Write header fail: " << ec.message() << std::endl;
+					Runtime::error("[" + _address + "] Write header fail: " + ec.message());
 					disconnect();
 				}
 			});
@@ -214,7 +213,7 @@ namespace net
 				}
 				else
 				{
-					std::cerr << "[" << _address << "] Write body fail: " << ec.message() << std::endl;
+					Runtime::error("[" + _address + "] Write body fail: " + ec.message());
 					disconnect();
 				}
 			});

@@ -14,10 +14,10 @@ namespace Logging
 {
 	enum class LogLevel
 	{
-		error,
-		warning,
-		log,
-		verbose
+		error = 0,
+		warning = 1,
+		log = 2,
+		verbose = 3
 	};
 
 	enum class LogColor

@@ -15,6 +15,8 @@ void GUIRenderer::render(VkCommandBuffer cmdBuffer)
 	ImGui_ImplVulkan_NewFrame();
 	ImGui::Render();
 	ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
+	ImGui::UpdatePlatformWindows();
+	ImGui::RenderPlatformWindowsDefault();
 	ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
 	endRenderPass(cmdBuffer);
 }
