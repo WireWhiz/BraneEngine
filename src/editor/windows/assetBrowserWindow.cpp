@@ -23,6 +23,14 @@ void AssetBrowserWindow::draw()
 	if(ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::TextDisabled("/%s",_strPath.c_str());
+
+		if(_currentDir != &_root)
+		{
+			ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 10);
+			if(ImGui::Selectable(ICON_FA_ARROW_LEFT))
+				setDirectory(_currentDir->parent);
+		};
+
 		ImGui::Separator();
 
 		if(ImGui::BeginTable("window split", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_BordersInnerV, ImGui::GetContentRegionAvail()))
@@ -127,11 +135,14 @@ void AssetBrowserWindow::deleteFile(const std::string& path)
 {
 	net::Request req("deleteFile");
 	req.body() << path;
-	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this](ISerializedData sData){
+	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this, path](ISerializedData sData){
 		bool success;
 		sData >> success;
 		if(!success)
 			return; //TODO show could not delete directory
+
+		if(path == _currentDir->path())
+			setDirectory(_currentDir->parent);
 		reloadCurrentDirectory();
 	});
 }
