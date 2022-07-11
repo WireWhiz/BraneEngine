@@ -15,6 +15,7 @@ _db(*Runtime::getModule<Database>())
 	_nm.configureServer();
 
 	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
+	std::filesystem::create_directory(Config::json()["data"]["asset_path"].asString());
 
 	if(!Config::json()["network"]["use_ssl"].asBool())
 	{

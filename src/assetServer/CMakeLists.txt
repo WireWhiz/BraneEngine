@@ -18,11 +18,9 @@ install(TARGETS AssetServer
 install(FILES config.json
         DESTINATION ${INSTALL_DIR}
         COMPONENT AssetServer)
-install(FILES database/data.db
+install(FILES database/dataTemplate.db
         DESTINATION ${INSTALL_DIR}/database
-        COMPONENT AssetServer)
-install(DIRECTORY assets
-        DESTINATION ${INSTALL_DIR}
+        RENAME data.db
         COMPONENT AssetServer)
 
 add_custom_command(TARGET AssetServer POST_BUILD
