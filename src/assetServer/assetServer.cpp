@@ -4,6 +4,8 @@
 
 #include "assetServer.h"
 #include "common/utility/threadPool.h"
+#include "gltf/gltfLoader.h"
+#include "assetProcessing/assetBuilder.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),
@@ -121,10 +123,66 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
+	_nm.addRequestListener("processAsset",[this](net::RequestResponse& res){
+		auto ctx = getContext(res.sender());
+		if(!validatePermissions(ctx, {"edit assets"}))
+			return;
+		std::string assetFilename;   //Name of raw file
+		std::string assetName;       //desired asset name
+		std::string assetPath;       //desired asset path
+		std::string assetData; //file data
+		res.body() >> assetFilename >> assetName >> assetPath >> assetData;
+
+		if(!checkAssetPath(assetPath))
+		{
+			res.res() << false;
+			res.send();
+			return;
+		}
+		assetPath = Config::json()["data"]["asset_path"].asString() + "/" + assetPath;
+
+		std::string suffix = assetFilename.substr(assetFilename.find_last_of('.'));
+		if(suffix == ".glb")
+		{
+			gltfLoader loader;
+			loader.loadGlbFromString(assetData);
+			auto assembly = AssetBuilder::buildAssembly(assetName, loader);
+
+			//Save meshes
+			for(auto& mesh : assembly.meshes)
+			{
+				std::string meshFilename = assetPath + "/" + assetName + "_meshes/" + mesh->name + ".mesh";
+				AssetInfo info{0, meshFilename, assetName, AssetType::mesh};
+				_db.insertAssetInfo(info);
+				mesh->id.serverAddress = Config::json()["network"]["domain"].asString();
+				mesh->id.id = info.id;
+				assembly.assembly->meshes.push_back(mesh->id);
+				_fm.writeAsset(mesh.get(), meshFilename);
+			}
+
+			//Save assembly
+			std::string assemblyFilename = assetPath + "/" + assetName + ".assembly";
+			AssetInfo info{0, assemblyFilename, assetName, AssetType::assembly};
+			_db.insertAssetInfo(info);
+			assembly.assembly->id.serverAddress = Config::json()["network"]["domain"].asString();
+			assembly.assembly->id.id = info.id;
+			_fm.writeAsset(assembly.assembly.get(), assemblyFilename);
+		}
+		res.res() << true;
+		res.send();
+	});
+
+	addDirectoryRequestListeners();
+	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
+}
+
+
+void AssetServer::addDirectoryRequestListeners()
+{
 	_nm.addRequestListener("directoryContents", [this](net::RequestResponse& res){
 		auto ctx = getContext(res.sender());
 		if(!validatePermissions(ctx, {"edit assets"}))
-		    return;
+			return;
 		std::string dirPath;
 		res.body() >> dirPath;
 		if(!checkAssetPath(dirPath))
@@ -198,8 +256,6 @@ _db(*Runtime::getModule<Database>())
 		res.res() << notRoot;
 		res.send();
 	});
-
-	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
 }
 
 void AssetServer::processMessages()
@@ -281,5 +337,6 @@ bool AssetServer::checkAssetPath(const std::string& path)
 {
 	return path.find('.') == std::string::npos;
 }
+
 
 

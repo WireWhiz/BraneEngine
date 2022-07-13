@@ -31,7 +31,9 @@ class AssetBrowserWindow : public GUIWindow
 	Directory _root;
 	Directory* _currentDir = nullptr;
 
-	std::string _newDirName;
+	//gui popup context variables
+	std::string _name;
+	std::string _filePath;
 
 	void displayDirectories();
 	void displayDirectoriesRecursive(Directory* dir);
@@ -43,6 +45,7 @@ class AssetBrowserWindow : public GUIWindow
 	void createDirectory();
 	void deleteFile(const std::string& path);
 	void moveDirectory(Directory* target, Directory* destination);
+	void importAsset();
 public:
 	AssetBrowserWindow(GUI& ui, GUIWindowID id);
 	void draw() override;

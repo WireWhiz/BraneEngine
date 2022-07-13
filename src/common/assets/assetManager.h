@@ -20,6 +20,7 @@ public:
 private:
 	std::mutex assetLock;
 	std::unordered_map<AssetID, std::unique_ptr<Asset>> _assets;
+	size_t nativeComponentID = 0;
 
 	AsyncQueue<std::pair<Assembly*, EntityID>> _stagedAssemblies;
 	std::unordered_map<AssetType::Type, std::vector<std::function<void(Asset* asset)>>> _assetPreprocessors;
@@ -139,11 +140,12 @@ public:
 	template<typename T>
 	inline void addNativeComponent(EntityManager& em)
 	{
-		static size_t nativeComponentID = 0;
 		ComponentDescription* description = T::constructDescription();
-		ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), AssetID("native", nativeComponentID));
+		AssetID id = AssetID("native", nativeComponentID++);
+		ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), id);
 		asset->componentID = em.components().registerComponent(description);
 		_assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
+		description->asset = asset;
 	}
 
 	void startAssetLoaderSystem();

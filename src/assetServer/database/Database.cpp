@@ -27,8 +27,9 @@ Database::Database()
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
 	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Filename FROM Assets WHERE AssetID = ?1", _db);
-	_updateAssetInfo.initialize("INSERT INTO Assets (AssetID, Name, Type, Filename) VALUES (?1, ?2, ?3, ?4) "
-								" ON CONFLICT(AssetID) DO UPDATE SET AssetID = ?1, Name = ?2, Type = ?3, Filename = ?4", _db);
+	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Filename = ?4 WHERE AssetID = ?1", _db);
+	_insertAssetInfo.initialize("INSERT INTO Assets (Name, Type, Filename) VALUES (?1, ?2, ?3);"
+								"SELECT seq FROM sqlite_sequence WHERE name=Assets", _db);
 	_deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
 
 	_getAssetPermission.initialize("SELECT Level FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
@@ -92,6 +93,13 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 	return pems;
 }
 
+void Database::insertAssetInfo(AssetInfo& assetInfo)
+{
+	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.string(), assetInfo.filename, [&assetInfo](sqlINT64 id){
+		assetInfo.id = id;
+	});
+}
+
 AssetInfo Database::getAssetInfo(uint32_t id)
 {
 	AssetInfo asset{};
@@ -104,9 +112,9 @@ AssetInfo Database::getAssetInfo(uint32_t id)
 	return asset;
 }
 
-void Database::setAssetInfo(const AssetInfo& assetInfo)
+void Database::insertAssetInfo(const AssetInfo& info)
 {
-	_updateAssetInfo.run(static_cast<sqlINT>(assetInfo.id), assetInfo.name, assetInfo.type.string(), assetInfo.filename);
+	_updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.string(), info.filename);
 }
 
 AssetPermissionLevel Database::getAssetPermission(uint32_t assetID, uint32_t userID)
@@ -211,4 +219,6 @@ std::string Database::randHex(size_t length)
 	}
 	return output.str();
 }
+
+
 

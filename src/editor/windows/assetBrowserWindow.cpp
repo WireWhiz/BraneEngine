@@ -10,6 +10,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <algorithm>
 #include <utility/strCaseCompare.h>
+#include <fileManager/fileManager.h>
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
@@ -115,13 +116,16 @@ void AssetBrowserWindow::updateStrPath()
 void AssetBrowserWindow::createDirectory()
 {
 	net::Request req("createDirectory");
-	std::string dirPath = _strPath + "/" + _newDirName;
+	std::string dirPath = _strPath + "/" + _name;
 	req.body() << dirPath;
 	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this](ISerializedData sData){
 		bool success;
 		sData >> success;
 		if(!success)
-			return; //TODO show could not create directory
+		{
+			Runtime::error("Could not create directory");
+			return;
+		}
 		reloadCurrentDirectory();
 	});
 }
@@ -139,7 +143,10 @@ void AssetBrowserWindow::deleteFile(const std::string& path)
 		bool success;
 		sData >> success;
 		if(!success)
-			return; //TODO show could not delete directory
+		{
+			Runtime::error("Could not delete file: " + path);
+			return;
+		}
 
 		if(path == _currentDir->path())
 			setDirectory(_currentDir->parent);
@@ -223,11 +230,25 @@ void AssetBrowserWindow::displayFiles()
 	if (ImGui::BeginPopupEx(newDirectoryPopup, ImGuiPopupFlags_None))
 	{
 		ImGui::Text("Create Directory:");
-		ImGui::InputText("name", &_newDirName);
+		ImGui::InputText("##name", &_name);
 		if (ImGui::Button("create"))
 		{
 			ImGui::CloseCurrentPopup();
 			createDirectory();
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGuiID importAssetPopup = ImGui::GetID("importAsset");
+	if(ImGui::BeginPopupEx(importAssetPopup, ImGuiPopupFlags_None))
+	{
+		ImGui::Text("Create Asset");
+		ImGui::Text("Source file: %s", _filePath.c_str());
+		ImGui::InputText("name", &_name);
+		if (ImGui::Button("create"))
+		{
+			ImGui::CloseCurrentPopup();
+			importAsset();
 		}
 		ImGui::EndPopup();
 	}
@@ -237,8 +258,15 @@ void AssetBrowserWindow::displayFiles()
 
 		if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
 		{
-			_newDirName = "";
+			_name = "new directory";
 			ImGui::OpenPopup(newDirectoryPopup);
+		}
+		if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Import Asset"))
+		{
+			_filePath = FileManager::requestLocalFilePath("Import Asset", {"*.glb","*.png"});
+			_name = "new asset";
+			if(!_filePath.empty())
+				ImGui::OpenPopup(importAssetPopup);
 		}
 
 		ImGui::EndPopup();
@@ -255,7 +283,10 @@ void AssetBrowserWindow::fetchDirectory(AssetBrowserWindow::Directory* dir)
 		bool success;
 		sData >> success;
 		if(!success)
-			return; //TODO show could not load error here instead
+		{
+			Runtime::error("Could not fetch contents of: " + dir->path());
+			return;
+		}
 		std::scoped_lock l(_directoryLock);
 		auto oldChildren = std::move(dir->children);
 		dir->children.resize(0);
@@ -303,7 +334,10 @@ void AssetBrowserWindow::moveDirectory(Directory* target, Directory* destination
         bool success;
         sData >> success;
         if (!success)
-            return; //TODO show could not move file error here instead
+        {
+			Runtime::error("Could not move file");
+	        return;
+        }
 		std::scoped_lock l(_directoryLock);
 		auto& children = target->parent->children;
 		std::unique_ptr<Directory> movedDir;
@@ -321,6 +355,35 @@ void AssetBrowserWindow::moveDirectory(Directory* target, Directory* destination
 		std::sort(destination->children.begin(), destination->children.end(), [](auto& a, auto& b){
 			return strCaseCompare(a->name, b->name);
 		});
+    });
+}
+
+void AssetBrowserWindow::importAsset()
+{
+	assert(_currentDir);
+	net::Request req("processAsset");
+	auto lastSlash = std::max(_filePath.find_last_of('/'), _filePath.find_last_of('\\'));
+	if(lastSlash == std::string::npos)
+		lastSlash = 0;
+	std::string assetFilename = _filePath.substr(lastSlash);
+	std::string assetPath = _currentDir->path();
+
+	std::string assetData;
+	FileManager::readFile(_filePath, assetData);
+
+	req.body() << assetFilename << _name << assetPath << assetData;
+
+	Directory* dir = _currentDir;
+	Runtime::getModule<Editor>()->server()->sendRequest(req).then([this, dir](ISerializedData sData)
+    {
+        bool success;
+        sData >> success;
+        if (!success)
+        {
+			Runtime::error("Could not import asset");
+			return;
+		}
+	    fetchDirectory(dir);
     });
 }
 

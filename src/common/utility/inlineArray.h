@@ -21,7 +21,7 @@ public:
 	{
 		for (size_t i = 0; i < Count; ++i)
 		{
-			_localData[i] = o._localData;
+			_localData[i] = o._localData[i];
 		}
 		_size = o._size;
 		_externalData = nullptr;
@@ -32,16 +32,42 @@ public:
 		}
 
 	}
-	InlineArray& operator==(InlineArray&& o) noexcept
+	void operator=(const InlineArray& o) noexcept
 	{
 		for (size_t i = 0; i < Count; ++i)
 		{
-			_localData[i] = std::move(o._localData);
+			_localData[i] = o._localData[i];
+		}
+		_size = o._size;
+		_externalData = nullptr;
+		if(o._externalData)
+		{
+			_externalData = new std::vector<T>(o._externalData->size());
+			std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
+		}
+	}
+	InlineArray(const InlineArray&& o) noexcept
+	{
+		for (size_t i = 0; i < Count; ++i)
+		{
+			_localData[i] = std::move(o._localData[i]);
 		}
 		_externalData = o._externalData;
-		_size = o._size;
 		o._externalData = nullptr;
+		_size = o._size;
+
 	}
+	void operator=(InlineArray&& o) noexcept
+	{
+		for (size_t i = 0; i < Count; ++i)
+		{
+			_localData[i] = std::move(o._localData[i]);
+		}
+		_externalData = o._externalData;
+		o._externalData = nullptr;
+		_size = o._size;
+	}
+
 	~InlineArray()
 	{
 		if(_externalData)

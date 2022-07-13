@@ -33,17 +33,20 @@ class AssetServer : public Module
 
 	std::unordered_map<net::Connection*, ConnectionContext> _connectionCtx;
 	std::list<IncrementalAssetSender> _senders;
+
+	void addDirectoryRequestListeners();
+
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
 	ConnectionContext& getContext(net::Connection* connection);
 	bool validatePermissions(ConnectionContext& ctx, const std::vector<std::string>& permissions);
 	bool checkAssetPath(const std::string& path);
+
 public:
 	AssetServer();
 	~AssetServer();
 	void processMessages();
 
 	static const char* name();
-
 };
 
 

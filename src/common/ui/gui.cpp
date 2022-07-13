@@ -35,7 +35,8 @@ const char* GUI::name()
 
 void GUI::drawUI()
 {
-	mainMenu();
+	if(_drawMenu)
+		_drawMenu();
 
 	ImGui::SetNextWindowPos(ImGui::GetCurrentContext()->CurrentViewport->WorkPos);
 	ImGui::SetNextWindowSize(ImGui::GetCurrentContext()->CurrentViewport->WorkSize);
@@ -56,26 +57,6 @@ void GUI::drawUI()
 	for(auto& w : _windows)
 	{
 		w->draw();
-	}
-}
-
-void GUI::mainMenu()
-{
-	if(ImGui::BeginMainMenuBar())
-	{
-		if(ImGui::BeginMenu("File"))
-		{
-			ImGui::EndMenu();
-		}
-		if(ImGui::BeginMenu("Window"))
-		{
-			if(ImGui::MenuItem("Reset Docking"))
-			{
-
-			}
-			ImGui::EndMenu();
-		}
-		ImGui::EndMainMenuBar();
 	}
 }
 
@@ -267,6 +248,11 @@ void GUI::stop()
 void GUI::removeWindow(GUIWindowID window)
 {
 	_windows.erase(_windows.begin() + window);
+}
+
+void GUI::setMainMenuCallback(std::function<void()> drawMenu)
+{
+	_drawMenu = drawMenu;
 }
 
 

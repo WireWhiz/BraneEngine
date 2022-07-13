@@ -8,38 +8,66 @@
 #include <glm/glm.hpp>
 #include <ecs/nativeTypes/meshRenderer.h>
 
-void Assembly::WorldEntity::serialize(OSerializedData& message)
+void Assembly::WorldEntity::serialize(OSerializedData& message, Assembly& assembly)
 {
-	message << ids;
 	message << (uint32_t)components.size();
-	for (int i = 0; i < components.size(); ++i)
+	for (size_t i = 0; i < components.size(); ++i)
 	{
+		uint32_t componentIDIndex = 0;
+		for(auto& id : assembly.components)
+		{
+			if(id == components[i].description()->asset->id)
+				break;
+			++componentIDIndex;
+		}
+		if(componentIDIndex == assembly.components.size())
+		{
+			Runtime::error("Component: " + components[i].description()->asset->id.string() + " not found in asset components");
+			throw std::runtime_error("Component assetID not listed in asset components");
+		}
+
+		message << componentIDIndex;
 		components[i].description()->serialize(message, components[i].data());
 	}
 }
 
 void Assembly::WorldEntity::deserialize(ISerializedData& message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
 {
-	message >> ids;
 	uint32_t size;
 	message.readSafeArraySize(size);
 	components.reserve(size);
 	for (uint32_t i = 0; i < size; ++i)
 	{
-		const ComponentDescription* description = cm.getComponent(am.getAsset<ComponentAsset>(assembly.components[ids[i]])->componentID);
+		uint32_t componentIDIndex;
+		message >> componentIDIndex;
+		const ComponentDescription* description = cm.getComponent(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
 		VirtualComponent component(description);
 		description->deserialize(message, component.data());
 		components.push_back(std::move(component));
 	}
 }
 
-void Assembly::WorldEntity::writeToFile(MarkedSerializedData& sData)
+void Assembly::WorldEntity::writeToFile(MarkedSerializedData& sData, Assembly& assembly)
 {
-	sData.writeAttribute("component ids", ids);
 	sData.enterScope("components");
 	for (int i = 0; i < components.size(); ++i)
 	{
 		sData.startIndex();
+
+		uint32_t componentIDIndex = 0;
+		for(auto& id : assembly.components)
+		{
+			if(id == components[i].description()->asset->id)
+				break;
+			++componentIDIndex;
+		}
+		if(componentIDIndex == assembly.components.size())
+		{
+			Runtime::error("Component: " + components[i].description()->asset->id.string() + " not found in asset components");
+			throw std::runtime_error("Component assetID not listed in asset components");
+		}
+		sData.writeAttribute("assetID", componentIDIndex);
+
 		OSerializedData oData;
 		components[i].description()->serialize(oData, components[i].data());
 		sData.writeAttribute("value", oData.data);
@@ -50,15 +78,15 @@ void Assembly::WorldEntity::writeToFile(MarkedSerializedData& sData)
 }
 void Assembly::WorldEntity::readFromFile(MarkedSerializedData& sData, Assembly& assembly, ComponentManager& cm, AssetManager& am)
 {
-	sData.readAttribute("component ids", ids);
 	sData.enterScope("components");
 	uint32_t size = sData.scopeSize();
 	components.reserve(size);
 	for (uint32_t i = 0; i < size; ++i)
 	{
 		sData.enterScope(i);
-
-		const ComponentDescription* description = cm.getComponent(am.getAsset<ComponentAsset>(assembly.components[ids[i]])->componentID);
+		uint32_t componentIDIndex;
+		sData.readAttribute("assetID", componentIDIndex);
+		const ComponentDescription* description = cm.getComponent(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
 
 		VirtualComponent component(description);
 		ISerializedData iData;
@@ -88,11 +116,12 @@ void Assembly::toFile(MarkedSerializedData& sData)
 	sData.writeAttribute("scripts", scripts);
 	sData.writeAttribute("meshes", meshes);
 	sData.writeAttribute("textures", textures);
+	sData.writeAttribute("components", components);
 	sData.enterScope("entities");
 	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
 		sData.startIndex();
-		entities[i].writeToFile(sData);
+		entities[i].writeToFile(sData, *this);
 		sData.pushIndex();
 	}
 	sData.exitScope();
@@ -107,7 +136,7 @@ void Assembly::fromFile(MarkedSerializedData& sData)
 	sData.readAttribute("scripts", scripts);
 	sData.readAttribute("meshes", meshes);
 	sData.readAttribute("textures", textures);
-
+	sData.readAttribute("components", components);
 	sData.enterScope("entities");
 
 	uint32_t count = sData.scopeSize();
@@ -128,7 +157,7 @@ void Assembly::serialize(OSerializedData& message)
 	message << (uint32_t)entities.size();
 	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
-		entities[i].serialize(message);
+		entities[i].serialize(message, *this);
 	}
 }
 

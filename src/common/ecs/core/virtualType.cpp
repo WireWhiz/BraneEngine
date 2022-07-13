@@ -18,9 +18,9 @@ namespace VirtualType
 				{virtualVec3,       "vec3"},
 				{virtualQuat,       "quaternion"},
 				{virtualMat4,       "mat4"},
-				{virtualFloatArray, "floatVector"},
-				{virtualIntArray,   "intVector"},
-				{virtualUIntArray,  "uintVector"},
+				{virtualFloatArray, "floatArray"},
+				{virtualIntArray,   "intArray"},
+				{virtualUIntArray,  "uintArray"},
 		};
 		assert(_toStringMap.count(type));
 		return _toStringMap.at(type);
@@ -41,9 +41,9 @@ namespace VirtualType
 				{"vec3",        virtualVec3},
 				{"quaternion",  virtualQuat},
 				{"mat4",        virtualMat4},
-				{"floatVector", virtualFloatArray},
-				{"intVector",   virtualIntArray},
-				{"uintVector",  virtualUIntArray},
+				{"floatArray", virtualFloatArray},
+				{"intArray",   virtualIntArray},
+				{"uintArray",  virtualUIntArray},
 
 		};
 		assert(_toStringMap.count(type));
@@ -187,13 +187,13 @@ namespace VirtualType
 				deconstruct<glm::mat4>(var);
 				return;
 			case virtualFloatArray:
-				deconstruct<std::vector<float>>(var);
+				deconstruct<inlineFloatArray>(var);
 				return;
 			case virtualIntArray:
-				deconstruct<std::vector<int32_t>>(var);
+				deconstruct<inlineIntArray>(var);
 				return;
 			case virtualUIntArray:
-				deconstruct<std::vector<uint32_t>>(var);
+				deconstruct<inlineUIntArray>(var);
 				return;
 		}
 	}
@@ -240,18 +240,18 @@ namespace VirtualType
 				copy<glm::mat4>(dest, source);
 				return;
 			case virtualFloatArray:
-				copy<std::vector<float>>(dest, source);
+				copy<inlineFloatArray>(dest, source);
 				return;
 			case virtualIntArray:
-				copy<std::vector<int32_t>>(dest, source);
+				copy<inlineIntArray>(dest, source);
 				return;
 			case virtualUIntArray:
-				copy<std::vector<uint32_t>>(dest, source);
+				copy<inlineUIntArray>(dest, source);
 				return;
 		}
 	}
 
-	void move(Type type, byte* dest, const byte* source)
+	void move(Type type, byte* dest, byte* source)
 	{
 		assert(type != virtualUnknown);
 		switch (type)

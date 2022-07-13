@@ -5,6 +5,7 @@
 ComponentDescription::ComponentDescription(const ComponentAsset* asset) : ComponentDescription(asset->members())
 {
 	name = asset->name;
+	this->asset = asset;
 }
 
 ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members)

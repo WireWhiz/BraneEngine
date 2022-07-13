@@ -22,6 +22,7 @@ class Database : public Module
 
 	PreppedSQLCall<sqlINT> _getAssetInfo;
 	PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
+	PreppedSQLCall<sqlTEXT, sqlTEXT, sqlTEXT> _insertAssetInfo;
 	PreppedSQLCall<sqlINT> _deleteAsset;
 	PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
 	PreppedSQLCall<sqlINT, sqlINT, sqlINT> _updateAssetPermission;
@@ -49,7 +50,8 @@ public:
 	std::unordered_set<std::string> userPermissions(int64_t userID);
 
 	AssetInfo getAssetInfo(uint32_t id);
-	void setAssetInfo(const AssetInfo& info);
+	void insertAssetInfo(const AssetInfo& info);
+	void insertAssetInfo(AssetInfo& info);
 	void deleteAssetInfo(uint32_t id);
 	AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);
 	void setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level);

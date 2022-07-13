@@ -69,7 +69,7 @@ namespace VirtualType
 	void construct(Type type, byte* var);
 	void deconstruct(Type type, byte* var);
 	void copy(Type type, byte* dest, const byte* source);
-	void move(Type type, byte* dest, const byte* source);
+	void move(Type type, byte* dest, byte* source);
 	template<typename T>
 	void serialize(OSerializedData& data, const byte* source)
 	{
@@ -96,7 +96,7 @@ namespace VirtualType
 		*((T*)dest) = *((T*)source);
 	}
 	template<typename T>
-	void move(byte* dest, const byte* source)
+	void move(byte* dest, byte* source)
 	{
 		*((T*)dest) = std::move(*((T*)source));
 	}

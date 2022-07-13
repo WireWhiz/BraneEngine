@@ -17,11 +17,6 @@ ComponentAsset::~ComponentAsset()
 {
 }
 
-size_t ComponentAsset::size() const
-{
-	return _size;
-}
-
 const std::vector<VirtualType::Type>& ComponentAsset::members() const
 {
 	return _members;

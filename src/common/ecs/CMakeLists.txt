@@ -1,13 +1,13 @@
 # src/common/ecs
 
 add_library(ecs STATIC
+        core/virtualType.h
+        core/virtualType.cpp
         core/archetype.cpp
         core/chunk.cpp
         core/component.cpp
         core/componentSet.cpp
-        core/entity.cpp
-        core/virtualType.h
-        core/virtualType.cpp)
+        core/entity.cpp)
 target_link_libraries(ecs PUBLIC runtime assets utility)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

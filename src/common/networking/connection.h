@@ -227,7 +227,7 @@ namespace net
 		}
 		void send(std::shared_ptr<OMessage> msg) override
 		{
-			assert(msg->body.size() <= 65535); //unsigned int 16 max value
+			assert(msg->body.size() <= 4294967295); //unsigned int 32 max value
 			msg->header.size = msg->body.size();
 
 			std::shared_ptr<bool> exists = _exists;

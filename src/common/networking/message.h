@@ -14,10 +14,10 @@ namespace net
 		endStream   = 4
 	};
 
-	struct alignas(2) MessageHeader
+	struct alignas(4) MessageHeader
 	{
-		alignas(2) MessageType type;
-		alignas(2) uint16_t size = 0;
+		MessageType type;
+		uint32_t size = 0;
 	};
 
 	struct OMessage

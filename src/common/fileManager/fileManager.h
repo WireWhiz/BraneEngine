@@ -25,6 +25,8 @@ public:
 	bool deleteFile(const std::string& path);
 	void moveFile(const std::string& source, const std::string& destination);
 
+	static std::string requestLocalFilePath(const std::string& title, const std::vector<const char*>& filters);
+
 	FileManager();
 	template <typename T>
 	bool readFile(const std::string& filename, std::vector<T>& data)
@@ -78,8 +80,8 @@ public:
 
 
 
-	bool readFile(const std::string& filename, std::string& data);
-	bool readFile(const std::string& filename, Json::Value& data);
+	static bool readFile(const std::string& filename, std::string& data);
+	static bool readFile(const std::string& filename, Json::Value& data);
 	template<typename T>
 	void writeFile(const std::string& filename, const std::vector<T>& data)
 	{

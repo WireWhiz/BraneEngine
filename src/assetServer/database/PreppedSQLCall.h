@@ -27,56 +27,56 @@ class PreppedSQLCall
 	}
 
 	template<typename... Types>
-	void bindArgs(Types... args)
+	void bindArgs(const Types... args)
 	{
-		bindArgs(1, args...);
+		bindArg(1, args...);
 	}
 
 	template<typename... Types>
-	void bindArgs(int index, sqlINT arg, Types... args)
-	{
-		checkBindArg(sqlite3_bind_int(stmt, index, arg));
-		if constexpr(sizeof...(Types))
-			bindArgs(index + 1, &args...);
-	}
-
-	template<typename... Types>
-	void bindArgs(int index, sqlINT64 arg, Types... args)
-	{
-		checkBindArg(sqlite3_bind_int64(stmt, index, arg));
-		if constexpr(sizeof...(Types))
-			bindArgs(index + 1, &args...);
-	}
-
-	template<typename... Types>
-	void bindArgs(int index, sqlFLOAT arg, Types... args)
-	{
-		checkBindArg(sqlite3_bind_double(stmt, index, arg));
-		if constexpr(sizeof...(Types))
-			bindArgs(index + 1, &args...);
-	}
-
-	template<typename... Types>
-	void bindArgs(int index, const sqlTEXT& arg, Types... args)
+	void bindArg(int index, const sqlTEXT& arg, Types... args)
 	{
 		checkBindArg(sqlite3_bind_text(stmt, index, arg.data(), arg.size(), SQLITE_TRANSIENT));
 		if constexpr(sizeof...(Types))
-			bindArgs(index + 1, &args...);
+			bindArg(index + 1, args...);
+	}
+
+	template<typename... Types>
+	void bindArg(int index, sqlINT arg, Types... args)
+	{
+		checkBindArg(sqlite3_bind_int(stmt, index, arg));
+		if constexpr(sizeof...(Types))
+			bindArg(index + 1, args...);
+	}
+
+	template<typename... Types>
+	void bindArg(int index, sqlINT64 arg, Types... args)
+	{
+		checkBindArg(sqlite3_bind_int64(stmt, index, arg));
+		if constexpr(sizeof...(Types))
+			bindArg(index + 1, args...);
+	}
+
+	template<typename... Types>
+	void bindArg(int index, sqlFLOAT arg, Types... args)
+	{
+		checkBindArg(sqlite3_bind_double(stmt, index, arg));
+		if constexpr(sizeof...(Types))
+			bindArg(index + 1, args...);
 	}
 
 	template<typename... Types>
 	void getColumns(std::tuple<Types...>& columns)
 	{
-		getColumns<0, Types...>(columns);
+		getColumn<0, Types...>(columns);
 	}
 
 	template<size_t index, typename... Types>
-	void getColumns(std::tuple<Types...>& columns)
+	void getColumn(std::tuple<Types...>& columns)
 	{
 		getColumn(std::get<index>(columns), index);
 
 		if constexpr(index + 1 < sizeof...(Types))
-			getColumns<index + 1, Types...>(columns);
+			getColumn<index + 1, Types...>(columns);
 	}
 
 	void getColumn(sqlINT& value, int index)

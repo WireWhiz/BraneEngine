@@ -10,6 +10,7 @@
 #include "windows/entitiesWindow.h"
 #include "windows/renderWindow.h"
 #include "windows/assetBrowserWindow.h"
+#include <fileManager/fileManager.h>
 
 
 void Editor::start()
@@ -22,6 +23,7 @@ void Editor::start()
 		_server = evt->server();
 		_ui->removeWindow(loginWindow);
 		addMainWindows();
+		_ui->setMainMenuCallback([this](){drawMenu();});
 	}));
 
 
@@ -66,4 +68,27 @@ void Editor::addMainWindows()
 net::Connection* Editor::server() const
 {
 	return _server;
+}
+
+void Editor::importAsset()
+{
+	std::string path = FileManager::requestLocalFilePath("Import Asset", {"*.gltf","*.glb","*.png"});
+	Runtime::log("Attempting to import: " + path);
+}
+
+void Editor::drawMenu()
+{
+	if(ImGui::BeginMainMenuBar())
+	{
+		if(ImGui::BeginMenu("File"))
+		{
+
+			ImGui::EndMenu();
+		}
+		if(ImGui::BeginMenu("Window"))
+		{
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
 }

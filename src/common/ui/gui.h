@@ -27,7 +27,7 @@ class GUI : public Module
 
 	std::vector<std::unique_ptr<GUIWindow>> _windows;
 	void drawUI();
-	void mainMenu();
+	std::function<void()> _drawMenu;
 
 	std::mutex _queueLock;
 	std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
@@ -49,6 +49,7 @@ public:
 		return static_cast<WindowT*>(_windows[id].get());
 	}
 	void removeWindow(GUIWindowID window);
+	void setMainMenuCallback(std::function<void()> drawMenu);
 
 	void sendEvent(std::unique_ptr<GUIEvent>&& name);
 	template<typename T>

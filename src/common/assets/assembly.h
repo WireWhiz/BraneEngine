@@ -19,11 +19,10 @@ public:
 	struct WorldEntity
 	{
 		std::vector<VirtualComponent> components;
-		std::vector<ComponentID> ids;
 		std::vector<ComponentID> runtimeComponentIDs();
-		void serialize(OSerializedData& message);
+		void serialize(OSerializedData& message, Assembly& assembly);
 		void deserialize(ISerializedData& message, Assembly& assembly, ComponentManager& cm, AssetManager& am);
-		void writeToFile(MarkedSerializedData& sData);
+		void writeToFile(MarkedSerializedData& sData, Assembly& assembly);
 		void readFromFile(MarkedSerializedData& sData, Assembly& assembly, ComponentManager& cm, AssetManager& am);
 	};
 

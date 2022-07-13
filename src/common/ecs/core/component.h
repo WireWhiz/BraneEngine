@@ -35,6 +35,7 @@ class ComponentDescription
 public:
 	ComponentID id;
 	std::string name;
+	const ComponentAsset* asset;
 
 	ComponentDescription(const ComponentAsset* asset);
 	ComponentDescription(const std::vector<VirtualType::Type>& members);
@@ -64,16 +65,22 @@ public:
 	template<class T>
 	T* getVar(size_t index) const
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		return getVirtual<T>(&_data[_description->members()[index].offset]);
 	}
 	template<class T>
 	void setVar(size_t index, T value)
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		*(T*)&_data[_description->members()[index].offset] = value;
 	}
 	template<class T>
 	T readVar(size_t index) const
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		return *(T*)&_data[_description->members()[index].offset];
 	}
 	byte* data() const;
@@ -91,16 +98,22 @@ public:
 	template<class T>
 	T* getVar(size_t index) const
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		return getVirtual<T>(&_data[_description->members()[index].offset]);
 	}
 	template<class T>
 	void setVar(size_t index, T value)
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		*(T*)&_data[_description->members()[index].offset] = value;
 	}
 	template<class T>
 	T readVar(size_t index) const
 	{
+		assert(index < _description->members().size());
+		assert(_description->members()[index].offset + sizeof(T) <= _description->size());
 		return *(T*)&_data[_description->members()[index].offset];
 	}
 	byte* data() const;

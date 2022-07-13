@@ -4,6 +4,7 @@
 #include <utility/serializedData.h>
 #include <config/config.h>
 #include <utility/strCaseCompare.h>
+#include <tinyfiledialogs.h>
 
 void FileManager::writeAsset(Asset* asset, const std::string& filename)
 {
@@ -114,4 +115,12 @@ bool FileManager::deleteFile(const std::string& path)
 void FileManager::moveFile(const std::string& source, const std::string& destination)
 {
 	std::filesystem::rename(source, destination);
+}
+
+std::string FileManager::requestLocalFilePath(const std::string& title, const std::vector<const char*>& filters)
+{
+	char* path = tinyfd_openFileDialog(title.c_str(), NULL, filters.size(), filters.data(), NULL, 0);
+	if(!path)
+		return "";
+	return std::string(path);
 }

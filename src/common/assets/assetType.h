@@ -28,6 +28,7 @@ private:
 
 public:
 	AssetType();
+	AssetType(Type type);
 	static Type fromString(const std::string& type);
 	static const std::string& toString(Type type);
 	
