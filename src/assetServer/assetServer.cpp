@@ -139,7 +139,7 @@ _db(*Runtime::getModule<Database>())
 			res.send();
 			return;
 		}
-		assetPath = Config::json()["data"]["asset_path"].asString() + "/" + assetPath;
+		std::string assetDirectory = Config::json()["data"]["asset_path"].asString();
 
 		std::string suffix = assetFilename.substr(assetFilename.find_last_of('.'));
 		if(suffix == ".glb")
@@ -151,22 +151,23 @@ _db(*Runtime::getModule<Database>())
 			//Save meshes
 			for(auto& mesh : assembly.meshes)
 			{
-				std::string meshFilename = assetPath + "/" + assetName + "_meshes/" + mesh->name + ".mesh";
-				AssetInfo info{0, meshFilename, assetName, AssetType::mesh};
+				std::string meshFilename = assetPath + assetName + "_meshes/" + mesh->name + ".mesh";
+
+				AssetInfo info{0, meshFilename, mesh->name, AssetType::mesh};
 				_db.insertAssetInfo(info);
 				mesh->id.serverAddress = Config::json()["network"]["domain"].asString();
 				mesh->id.id = info.id;
 				assembly.assembly->meshes.push_back(mesh->id);
-				_fm.writeAsset(mesh.get(), meshFilename);
+				_fm.writeAsset(mesh.get(), assetDirectory + "/" + meshFilename);
 			}
 
 			//Save assembly
-			std::string assemblyFilename = assetPath + "/" + assetName + ".assembly";
+			std::string assemblyFilename = assetPath + assetName + ".assembly";
 			AssetInfo info{0, assemblyFilename, assetName, AssetType::assembly};
 			_db.insertAssetInfo(info);
 			assembly.assembly->id.serverAddress = Config::json()["network"]["domain"].asString();
 			assembly.assembly->id.id = info.id;
-			_fm.writeAsset(assembly.assembly.get(), assemblyFilename);
+			_fm.writeAsset(assembly.assembly.get(), assetDirectory + "/" +assemblyFilename);
 		}
 		res.res() << true;
 		res.send();
@@ -192,7 +193,19 @@ void AssetServer::addDirectoryRequestListeners()
 			return;
 		}
 		auto contents = _fm.getDirectoryContents(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
-		res.res() << true << contents.directories << contents.files;
+		res.res() << true << contents.directories << static_cast<uint16_t>(contents.files.size());
+		for(auto& f : contents.files)
+		{
+			res.res() << f;
+			AssetID id;
+			bool isAsset = _db.fileToAssetID(dirPath + f, id);
+			res.res() << isAsset;
+			if(isAsset)
+			{
+				id.serverAddress = Config::json()["network"]["domain"].asString();
+				res.res() << id;
+			}
+		}
 		res.send();
 	});
 

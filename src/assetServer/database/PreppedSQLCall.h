@@ -121,6 +121,7 @@ public:
 	void run(const Args... args)
 	{
 		assert(stmt);
+		bindArgs(args...);
 		int result = SQLITE_ROW;
 		while(result == SQLITE_ROW)
 			result = sqlite3_step(stmt);

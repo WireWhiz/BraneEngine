@@ -214,11 +214,16 @@ void AssetBrowserWindow::displayFiles()
 		}
 		for (auto& file: _currentDir->files)
 		{
-			if (ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file).c_str(), {ImGui::GetContentRegionAvail().x, 0}))
+			if (ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file.name).c_str(), {ImGui::GetContentRegionAvail().x, 0}))
 			{
 				//TODO: Be able to click files
 			}
-			fileHovered |= ImGui::IsItemHovered();
+			if(ImGui::IsItemHovered())
+			{
+				fileHovered = true;
+				if(file.isAsset)
+					ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.
+			}
 		}
 
 		ImGui::PopStyleVar(1);
@@ -289,11 +294,10 @@ void AssetBrowserWindow::fetchDirectory(AssetBrowserWindow::Directory* dir)
 		}
 		std::scoped_lock l(_directoryLock);
 		auto oldChildren = std::move(dir->children);
-		dir->children.resize(0);
 		dir->files.resize(0);
 
 		std::vector<std::string> directories;
-		sData >> directories >> dir->files;
+		sData >> directories;
 		for(auto& d : directories)
 		{
 			bool exists = false;
@@ -314,6 +318,16 @@ void AssetBrowserWindow::fetchDirectory(AssetBrowserWindow::Directory* dir)
 				fetchDirectory(newDir.get());
 				dir->children.push_back(std::move(newDir));
 			}
+		}
+		uint16_t fileCount;
+		sData >> fileCount;
+		for(size_t i = 0; i < fileCount; i++)
+		{
+			File file;
+			sData >> file.name >> file.isAsset;
+			if(file.isAsset)
+				sData >> file.assetID;
+			dir->files.push_back(std::move(file));
 		}
 
 		dir->loaded = true;

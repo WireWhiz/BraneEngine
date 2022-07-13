@@ -14,13 +14,21 @@ class AssetBrowserWindow : public GUIWindow
 {
 	std::string _strPath = "";
 
+	struct File
+	{
+		std::string name;
+
+		bool isAsset = false;
+		AssetID assetID;
+	};
+
 	struct Directory
 	{
 		bool loaded = false;
 		bool open = false;
 		std::string name;
 		Directory* parent = nullptr;
-		std::vector<std::string> files;
+		std::vector<File> files;
 		std::vector<std::unique_ptr<Directory>> children;
 		std::string path() const;
 		bool hasParent(Directory* dir) const;

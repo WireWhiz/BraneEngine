@@ -17,12 +17,14 @@
 class Database : public Module
 {
 	sqlite3* _db;
+	PreppedSQLCall<sqlTEXT> _getLastInserted;
 	PreppedSQLCall<sqlTEXT> _loginCall;
 	PreppedSQLCall<sqlTEXT> _userIDCall;
 
 	PreppedSQLCall<sqlINT> _getAssetInfo;
 	PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
 	PreppedSQLCall<sqlTEXT, sqlTEXT, sqlTEXT> _insertAssetInfo;
+	PreppedSQLCall<sqlTEXT> _fileToAssetID;
 	PreppedSQLCall<sqlINT> _deleteAsset;
 	PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
 	PreppedSQLCall<sqlINT, sqlINT, sqlINT> _updateAssetPermission;
@@ -53,6 +55,7 @@ public:
 	void insertAssetInfo(const AssetInfo& info);
 	void insertAssetInfo(AssetInfo& info);
 	void deleteAssetInfo(uint32_t id);
+	bool fileToAssetID(const std::string& path, AssetID& id);
 	AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);
 	void setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level);
 	std::string assetName(AssetID& id);

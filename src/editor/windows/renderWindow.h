@@ -10,6 +10,15 @@
 #include "graphics/meshRenderer.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "vulkan/vulkan.h"
+#include "ui/guiEvent.h"
+
+class SetEntityFocusEvent : public GUIEvent
+{
+	EntityID _focus;
+public:
+	SetEntityFocusEvent(const std::string& name, EntityID focus);
+	EntityID focus() const;
+};
 
 class RenderWindow : public GUIWindow
 {

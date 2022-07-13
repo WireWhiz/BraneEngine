@@ -18,9 +18,12 @@ install(TARGETS AssetServer
 install(FILES config.json
         DESTINATION ${INSTALL_DIR}
         COMPONENT AssetServer)
-install(FILES database/dataTemplate.db
-        DESTINATION ${INSTALL_DIR}/database
-        RENAME data.db
+install(CODE "
+if(NOT EXISTS ${INSTALL_DIR}/database)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/database/data.db
+        DESTINATION ${INSTALL_DIR}/database)
+endif()
+        "
         COMPONENT AssetServer)
 
 add_custom_command(TARGET AssetServer POST_BUILD

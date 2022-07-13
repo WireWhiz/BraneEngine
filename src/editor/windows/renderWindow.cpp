@@ -11,6 +11,16 @@
 #include "ecs/core/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
 
+SetEntityFocusEvent::SetEntityFocusEvent(const std::string& name, EntityID focus) : GUIEvent(name), _focus{focus}
+{
+
+}
+
+EntityID SetEntityFocusEvent::focus() const
+{
+	return _focus;
+}
+
 RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 	auto& am = *Runtime::getModule<AssetManager>();
@@ -177,11 +187,8 @@ void RenderWindow::lookAt(glm::vec3 pos)
 	rotation = {glm::degrees(pitch) - 90, glm::degrees(yaw)};
 }
 
+
 glm::quat RenderWindow::rotationQuat() const
 {
 	return glm::angleAxis(glm::radians(rotation.y), glm::vec3(0.0f,1.0f,0.0f)) * glm::angleAxis(glm::radians(rotation.x), glm::vec3(1.0f,0.0f,0.0f));
 }
-
-
-
-

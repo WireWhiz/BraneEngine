@@ -22,15 +22,16 @@ Database::Database()
 		sqlite3_close(_db);
 		throw std::runtime_error("Can't open database");
 	}
+	_getLastInserted.initialize("SELECT seq FROM sqlite_sequence WHERE name = ?1", _db);
 	_loginCall.initialize("SELECT Logins.Password, Logins.Salt FROM Users "
 						  "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
 	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Filename FROM Assets WHERE AssetID = ?1", _db);
 	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Filename = ?4 WHERE AssetID = ?1", _db);
-	_insertAssetInfo.initialize("INSERT INTO Assets (Name, Type, Filename) VALUES (?1, ?2, ?3);"
-								"SELECT seq FROM sqlite_sequence WHERE name=Assets", _db);
+	_insertAssetInfo.initialize("INSERT INTO Assets (Name, Type, Filename) VALUES (?1, ?2, ?3);", _db);
 	_deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
+	_fileToAssetID.initialize("SELECT AssetID FROM Assets WHERE Filename = ?1", _db);
 
 	_getAssetPermission.initialize("SELECT Level FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
 	_updateAssetPermission.initialize("INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
@@ -95,7 +96,8 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 
 void Database::insertAssetInfo(AssetInfo& assetInfo)
 {
-	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.string(), assetInfo.filename, [&assetInfo](sqlINT64 id){
+	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.string(), assetInfo.filename);
+	_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
 		assetInfo.id = id;
 	});
 }
@@ -218,6 +220,16 @@ std::string Database::randHex(size_t length)
 		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
 	}
 	return output.str();
+}
+
+bool Database::fileToAssetID(const std::string& path, AssetID& id)
+{
+	bool found = false;
+	_fileToAssetID.run(path, [&found, &id](sqlINT idInt){
+		id.id = idInt;
+		found = true;
+	});
+	return found;
 }
 
 
