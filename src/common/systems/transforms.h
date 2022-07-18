@@ -6,19 +6,19 @@
 #define BRANEENGINE_TRANSFORMS_H
 
 #include <runtime/module.h>
-#include <ecs/core/component.h>
 #include <ecs/core/entity.h>
 
 class Transform : public NativeComponent<Transform>
 {
-	REGISTER_MEMBERS_1("Transform", value);
+	REGISTER_MEMBERS_2("Transform", value, "value", dirty, "dirty");
 public:
 	glm::mat4 value;
+	bool dirty = true;
 };
 
 class LocalTransform : public NativeComponent<LocalTransform>
 {
-	REGISTER_MEMBERS_2("Local Transform", value, parent);
+	REGISTER_MEMBERS_2("Local Transform", value, "value", parent, "parent id");
 public:
 	glm::mat4 value;
 	EntityID parent;
@@ -26,17 +26,18 @@ public:
 
 class TRS : public NativeComponent<TRS>
 {
-	REGISTER_MEMBERS_3("TRS", translation, rotation, scale);
+	REGISTER_MEMBERS_4("TRS", translation, "translation", rotation, "rotation", scale, "scale", dirty, "dirty");
 public:
 	glm::vec3 translation;//local translation
 	glm::quat rotation;   //local rotation
 	glm::vec3 scale;      //local scale
-	bool dirty;
+	bool dirty = true;
+	glm::mat4 toMat() const;
 };
 
 class Children : public NativeComponent<Children>
 {
-	REGISTER_MEMBERS_1("Children", children);
+	REGISTER_MEMBERS_1("Children", children, "children");
 public:
 	inlineUIntArray children;
 };
@@ -45,16 +46,20 @@ class Transforms : public Module
 {
 	EntityManager* _em;
 	void updateTRSFromMatrix(EntityID entity, glm::mat4 value);
-	void updateChildTransforms(EntityID entity, glm::mat4 parentTransform);
 public:
-	void setParent(EntityID entity, EntityID parent);
+	static void setParent(EntityID entity, EntityID parent, EntityManager& em);
 	void removeParent(EntityID entity);
-	void setGlobalTransform(EntityID entity, glm::mat4 value);
-	void setLocalTransform(EntityID entity, glm::mat4 value);
-	void setTRS(EntityID entity, glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
+	void destroyRecursive(EntityID entity, bool updateParentChildren = true);
+	static glm::mat4 getParentTransform(EntityID parent, EntityManager& em);
 	void start() override;
 
 	static const char* name();
+};
+
+class TransformSystem : public System
+{
+public:
+	void run(EntityManager& _em) override;
 };
 
 

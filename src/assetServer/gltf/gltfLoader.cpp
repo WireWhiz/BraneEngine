@@ -166,7 +166,7 @@ std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
 	uint32_t offset = bufferView["byteOffset"].asUInt();
 
 	std::vector<uint16_t> buffer(count);
-	for (int i = 0; i < count; ++i)
+	for (uint32_t i = 0; i < count; ++i)
 	{
 		buffer[i] = *(uint16_t*)&_bin[offset + stride * i];
 	}
@@ -188,7 +188,7 @@ std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
 	uint32_t offset = bufferView["byteOffset"].asUInt();
 
 	std::vector<glm::vec2> buffer(count);
-	for (int i = 0; i < count; ++i)
+	for (uint32_t i = 0; i < count; ++i)
 	{
 		float* ittr = (float*)&_bin[offset + stride * i];
 		buffer[i].x = ittr[0];
@@ -213,7 +213,7 @@ std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
 	uint32_t offset = bufferView["byteOffset"].asUInt();
 
 	std::vector<glm::vec3> buffer(count);
-	for (int i = 0; i < count; ++i)
+	for (uint32_t i = 0; i < count; ++i)
 	{
 		float* ittr = (float*)&_bin[offset + stride * i];
 		buffer[i].x = ittr[0];
@@ -237,7 +237,7 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 		for(auto& primitive : meshData["primitives"])
 		{
             auto positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
-            size_t pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()), positions.size());
+            size_t pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
             mesh->addAttribute(pIndex, "POSITION", positions);
 
 

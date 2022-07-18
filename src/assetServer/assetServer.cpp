@@ -310,7 +310,7 @@ AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool increm
 		asset.setError("Asset not found");
 	else
 	{
-		_fm.async_readUnknownAsset(info.filename).then([this, asset, id](Asset* data){
+		_fm.async_readUnknownAsset(Config::json()["data"]["asset_path"].asString() + "/" + info.filename).then([this, asset, id](Asset* data){
 			if(data)
 				asset.setData(data);
 			else

@@ -9,14 +9,18 @@ class ComponentAsset : public Asset
 {
 private:
 	std::vector<VirtualType::Type> _members;
+	std::vector<std::string> _memberNames;
 public:
 	ComponentID componentID;
 
 	ComponentAsset();
 	ComponentAsset(const ComponentAsset&) = delete;
-	ComponentAsset(const std::vector<VirtualType::Type>& members, AssetID id);
+	ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID id);
 	~ComponentAsset();
-	[[nodiscard]] const std::vector<VirtualType::Type>& members() const;
+	const std::vector<VirtualType::Type>& members() const;
+	const std::vector<std::string>& memberNames() const;
+	std::vector<VirtualType::Type>& members();
+	std::vector<std::string>& memberNames();
 
 	void toFile(MarkedSerializedData& sData) override;
 	void fromFile(MarkedSerializedData& sData) override;

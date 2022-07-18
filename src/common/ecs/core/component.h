@@ -1,7 +1,7 @@
 #pragma once
 #include <assets/types/componentAsset.h>
 #include "virtualType.h"
-#include "structMembers.h"
+
 #include <vector>
 #include <string>
 #include <cassert>
@@ -35,20 +35,23 @@ class ComponentDescription
 public:
 	ComponentID id;
 	std::string name;
-	const ComponentAsset* asset;
+	const ComponentAsset* asset = nullptr;
 
 	ComponentDescription(const ComponentAsset* asset);
 	ComponentDescription(const std::vector<VirtualType::Type>& members);
+	ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets);
 	ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size);
 	void construct(byte* component) const;
 	void deconstruct(byte* component) const;
-	void serialize(OSerializedData sData, byte* component) const;
-	void deserialize(ISerializedData sData, byte* component) const;
+	void serialize(OSerializedData& sData, byte* component) const;
+	void deserialize(ISerializedData& sData, byte* component) const;
 	void copy(byte* src, byte* dest) const;
 	void move(byte* src, byte* dest) const;
 	const std::vector<Member>& members() const;
 	size_t size() const;
 };
+
+class VirtualComponentView;
 
 class VirtualComponent
 {
@@ -57,6 +60,7 @@ protected:
 	const ComponentDescription* _description;
 public:
 	VirtualComponent(const VirtualComponent& source);
+	VirtualComponent(const VirtualComponentView& source);
 	VirtualComponent(VirtualComponent&& source);
 	VirtualComponent(const ComponentDescription* definition);
 	VirtualComponent(const ComponentDescription* definition, const byte* data);
@@ -120,55 +124,3 @@ public:
 	const ComponentDescription* description() const;
 };
 
-template <class T>
-class NativeComponent
-{
-public:
-	static ComponentDescription* constructDescription()
-	{
-		if(_description != nullptr)
-			return _description;
-		AssetID id;
-		std::vector<VirtualType::Type> members = T::getMemberTypes();
-		std::vector<size_t> offsets = T::getMemberOffsets();
-		_description = new ComponentDescription(members, offsets, sizeof(T));
-		_description->name =  T::getComponentName();
-		return _description;
-	}
-protected:
-	typedef T ComponentType;
-	static ComponentDescription* _description;
-public:
-	NativeComponent() = default;
-	VirtualComponentView toVirtual()
-	{
-		return VirtualComponentView(_description, (byte*)this);
-	}
-	static T* fromVirtual(byte* data)
-	{
-		return (T*)data;
-	}
-	static const T* fromVirtual(const byte* data)
-	{
-		return (const T*)data;
-	}
-	static ComponentDescription* def()
-	{
-		return _description;
-	}
-};
-
-
-template <class T> ComponentDescription* NativeComponent<T>::_description = nullptr;
-
-class ComponentManager {
-	staticIndexVector<std::unique_ptr<ComponentDescription>> _components;
-	std::unordered_set<uint16_t> _externalComponents;
-public:
-	~ComponentManager();
-	ComponentID createComponent(ComponentAsset* component);
-	ComponentID createComponent(const std::vector<VirtualType::Type>& component, const std::string& name);
-	ComponentID registerComponent(ComponentDescription* componentDescription);
-	const ComponentDescription* getComponent(ComponentID id);
-	void eraseComponent(ComponentID id);
-};

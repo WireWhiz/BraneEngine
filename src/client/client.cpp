@@ -37,11 +37,11 @@ _nm(*Runtime::getModule<NetworkManager>())
 	AssemblyRoot testHeadRoot{};
 	testHeadRoot.id = AssetID("localhost/0000000000000F5F");
 
-	em.setEntityComponent(testHead, testHeadRoot.toVirtual());
+	em.setComponent(testHead, testHeadRoot.toVirtual());
 
 	Transform tc{};
 	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
-	em.setEntityComponent(testHead, tc.toVirtual());
+	em.setComponent(testHead, tc.toVirtual());
 
 	auto* mat = new graphics::Material();
 	mat->setVertex(vkr.loadShader(0));

@@ -3,7 +3,7 @@ add_library(ui STATIC
         guiWindow.cpp
         guiEvent.cpp
         ../../editor/windows/loginWindow.cpp
-        ../../editor/windows/assetDataWindow.cpp
+        ../../editor/windows/dataWindow.cpp
         ../../editor/windows/consoleWindow.cpp
         ../../editor/windows/entitiesWindow.cpp
         ../../editor/windows/renderWindow.cpp

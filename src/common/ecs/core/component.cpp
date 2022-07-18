@@ -8,14 +8,16 @@ ComponentDescription::ComponentDescription(const ComponentAsset* asset) : Compon
 	this->asset = asset;
 }
 
-ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members)
+ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members) : ComponentDescription(members,generateOffsets(members))
 {
-	// _size is also calculated in generate offsets
-	auto offsets = generateOffsets(members);
-	new(this) ComponentDescription(members, offsets, _size);
 }
 
-ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size)  : _size(size)
+ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size) : ComponentDescription(members, offsets)
+{
+	_size = size;
+}
+
+ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets)
 {
 	_members.resize(members.size());
 	for(size_t i = 0; i < members.size(); i++)
@@ -61,7 +63,7 @@ void ComponentDescription::deconstruct(byte* component) const
 	}
 }
 
-void ComponentDescription::serialize(OSerializedData sData, byte* component) const
+void ComponentDescription::serialize(OSerializedData& sData, byte* component) const
 {
 	for(auto& m : _members)
 	{
@@ -69,7 +71,7 @@ void ComponentDescription::serialize(OSerializedData sData, byte* component) con
 	}
 }
 
-void ComponentDescription::deserialize(ISerializedData sData, byte* component) const
+void ComponentDescription::deserialize(ISerializedData& sData, byte* component) const
 {
 	for(auto& m : _members)
 	{
@@ -111,6 +113,16 @@ VirtualComponent::VirtualComponent(const VirtualComponent& source)
 	{
 		VirtualType::construct(member.type, _data + member.offset);
 		VirtualType::copy(member.type, _data + member.offset, source._data + member.offset);
+	}
+}
+VirtualComponent::VirtualComponent(const VirtualComponentView& source)
+{
+	_description = source.description();
+	_data = new byte[_description->size()];
+	for (auto& member : _description->members())
+	{
+		VirtualType::construct(member.type, _data + member.offset);
+		VirtualType::copy(member.type, _data + member.offset, source.data() + member.offset);
 	}
 }
 
@@ -179,48 +191,6 @@ byte* VirtualComponent::data() const
 const ComponentDescription* VirtualComponent::description() const
 {
 	return _description;
-}
-
-ComponentID ComponentManager::createComponent(ComponentAsset* component)
-{
-	ComponentID id = createComponent(component->members(), component->name);
-	component->componentID = id;
-	return id;
-}
-
-ComponentID ComponentManager::createComponent(const std::vector<VirtualType::Type>& component, const std::string& name)
-{
-	ComponentID id = _components.push(std::make_unique<ComponentDescription>(component));
-	_components[id]->id = id;
-	_components[id]->name = id;
-	return id;
-}
-
-const ComponentDescription* ComponentManager::getComponent(ComponentID id)
-{
-	return _components[id].get();
-}
-
-void ComponentManager::eraseComponent(ComponentID id)
-{
-	if(_externalComponents.count(id))
-		_components[id].release();
-	_components.remove(id);
-}
-
-ComponentID ComponentManager::registerComponent(ComponentDescription* componentDescription)
-{
-	ComponentID id = _components.push(std::unique_ptr<ComponentDescription>(componentDescription));
-	_components[id]->id = id;
-	componentDescription->id = id;
-	_externalComponents.insert(id);
-	return id;
-}
-
-ComponentManager::~ComponentManager()
-{
-	for(auto c : _externalComponents)
-		_components[c].release();
 }
 
 VirtualComponentView::VirtualComponentView(const VirtualComponent& source) : VirtualComponentView(source.description(), source.data())

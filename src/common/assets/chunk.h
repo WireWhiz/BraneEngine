@@ -12,7 +12,7 @@ class WorldChunk : public Assembly
 {
 public:
 	std::vector<AssetID> dependencies; // Any systems in dependencies will be automatically loaded
-	std::vector<WorldEntity> data;
+	std::vector<EntityAsset> data;
 };
 
 

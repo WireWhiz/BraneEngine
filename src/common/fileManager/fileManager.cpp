@@ -119,7 +119,7 @@ void FileManager::moveFile(const std::string& source, const std::string& destina
 
 std::string FileManager::requestLocalFilePath(const std::string& title, const std::vector<const char*>& filters)
 {
-	char* path = tinyfd_openFileDialog(title.c_str(), NULL, filters.size(), filters.data(), NULL, 0);
+	char* path = tinyfd_openFileDialog(title.c_str(), NULL, static_cast<int>(filters.size()), filters.data(), NULL, 0);
 	if(!path)
 		return "";
 	return std::string(path);

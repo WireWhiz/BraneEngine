@@ -32,7 +32,7 @@ class Database : public Module
 
 	static int sqliteCallback(void *callback, int argc, char **argv, char **azColName);
 
-	std::string randHex(size_t length);
+	static std::string randHex(size_t length);
 	std::string hashPassword(const std::string& password, const std::string& salt);
 
 	std::unordered_map<size_t, std::string> _permissions;

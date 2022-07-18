@@ -229,8 +229,8 @@ size_t MeshAsset::addPrimitive(const std::vector<uint16_t>& indices, uint32_t ve
 {
     size_t index = _data.size();
     Primitive p{};
-    p.indexOffset = index;
-    p.indexCount = indices.size();
+    p.indexOffset = static_cast<uint32_t>(index);
+    p.indexCount = static_cast<uint32_t>(indices.size());
     p.vertexCount = vertexCount;
     _primitives.push_back(p);
 

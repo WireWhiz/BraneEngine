@@ -45,7 +45,7 @@ namespace graphics
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildPipelineLayout(SwapChain* swapChain);
 		void initialize(size_t swapChainSize);
-		const ComponentDescription* component() const;
+		ComponentDescription* component() const;
 		VkPipeline pipeline(Renderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();

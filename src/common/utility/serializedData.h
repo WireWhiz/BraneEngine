@@ -101,15 +101,13 @@ public:
 	}
 
 	template <typename T, size_t Count>
-	friend ISerializedData& operator >> (ISerializedData& msg, const InlineArray<T, Count>& data)
+	friend ISerializedData& operator >> (ISerializedData& msg, InlineArray<T, Count>& data)
 	{
 		if constexpr(!std::is_trivially_copyable<T>::value)
 			throw SerializationError(typeid(T));
 
 		uint32_t arrLength;
 		msg >> arrLength;
-		size_t index = msg.data.size();
-		msg.data.resize(index + arrLength);
 		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
 		for (uint32_t i = 0; i < arrLength; ++i)
 		{
@@ -245,7 +243,7 @@ public:
 		if constexpr(!std::is_trivially_copyable<T>::value)
 			throw SerializationError(typeid(T));
 
-		uint32_t arrLength = data.size() * sizeof(T);
+		uint32_t arrLength = static_cast<uint32_t>(data.size() * sizeof(T));
 		msg << arrLength;
 		size_t index = msg.data.size();
 		msg.data.resize(index + arrLength);
@@ -262,12 +260,10 @@ public:
 		if constexpr(!std::is_trivially_copyable<T>::value)
 			throw SerializationError(typeid(T));
 
-		uint32_t arrLength = data.size();
+		uint32_t arrLength = static_cast<uint32_t>(data.size());
 		msg << arrLength;
-		size_t index = msg.data.size();
-		msg.data.resize(index + arrLength);
 		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
-		for (uint32_t i = 0; i < data.size(); ++i)
+		for (uint32_t i = 0; i < arrLength; ++i)
 		{
 			msg << data[i];
 		}
@@ -362,6 +358,11 @@ public:
 	{
 		static_assert(std::is_trivially_copyable<T>::value);
 		assert(!(*currentScope).isMember(name));
+		if constexpr(std::is_arithmetic<T>())
+		{
+			(*currentScope)[name] = value;
+			return;
+		}
 
 		size_t index = data.size();
 		size_t size = sizeof(value);
@@ -389,19 +390,19 @@ public:
 		(*currentScope)[name]["size"] = size;
 	}
 
-	void writeAttribute(const std::string& name, const std::string& value)
+	template<>
+	void writeAttribute(const std::string& name, const std::vector<std::string>& value)
 	{
 		assert(!(*currentScope).isMember(name));
 
-		size_t index = data.size();
-		size_t size = value.size();
-		data.resize(index + size);
-		if(size != 0)
-			std::memcpy(&data[index], value.data(), size);
+		for(auto& s : value)
+			(*currentScope)[name].append(s);
+	}
 
-
-		(*currentScope)[name]["index"] = index;
-		(*currentScope)[name]["size"] = size;
+	void writeAttribute(const std::string& name, const std::string& value)
+	{
+		assert(!(*currentScope).isMember(name));
+		(*currentScope)[name] = value;
 	}
 
 	void writeAttribute(const std::string& name, const AssetID& value)
@@ -437,6 +438,17 @@ public:
 		if(!(*currentScope).isMember(name))
 			throw std::runtime_error(name + " was not found");
 
+		if constexpr(std::is_integral<T>())
+		{
+			value = (*currentScope)[name].asLargestInt();
+			return;
+		}
+		if constexpr(std::is_floating_point<T>())
+		{
+			value = (*currentScope)[name].asFloat();
+			return;
+		}
+
 		size_t index = (*currentScope)[name]["index"].asLargestUInt();
 		size_t size  = sizeof(T);
 		if(index + size > data.size())
@@ -462,19 +474,21 @@ public:
 			std::memcpy(value.data(), &data[index], size);
 	}
 
+	template<>
+	void readAttribute(const std::string& name, std::vector<std::string>& value)
+	{
+		assert(!(*currentScope).isMember(name));
+		value.reserve((*currentScope)[name].size());
+		for(auto& s : (*currentScope)[name])
+			value.push_back(s.asString());
+	}
+
 	void readAttribute(const std::string& name, std::string& value)
 	{
 		if(!(*currentScope).isMember(name))
 			throw std::runtime_error(name + " was not found");
 
-		size_t index = (*currentScope)[name]["index"].asLargestUInt();
-		size_t size  = (*currentScope)[name]["size"].asLargestUInt();
-		if(index + size > data.size())
-			throw std::runtime_error(name + " has invalid index or size");
-
-		value.resize(size);
-		if(size != 0)
-			std::memcpy(value.data(), &data[index], size);
+		value = (*currentScope)[name].asString();
 	}
 
 	void readAttribute(const std::string& name, AssetID& value)
@@ -505,9 +519,6 @@ public:
 			sIndex += size;
 			value[idIndex++].parseString(s);
 		}
-
-
-
 	}
 };
 

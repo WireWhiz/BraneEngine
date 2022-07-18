@@ -25,7 +25,7 @@ public:
     struct MeshSerializationContext : SerializationContext
     {
         size_t primitive;
-        size_t pos;
+        uint32_t pos;
         std::vector<bool> vertexSent;
     };
 

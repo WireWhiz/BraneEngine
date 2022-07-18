@@ -32,19 +32,25 @@ namespace graphics{
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
 			std::vector<RenderObject> meshes;
-			_em.forEach({Transform::def()->id, mat->component()->id}, [this, &meshes](byte** components){
-				MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
-				Mesh* mesh = _vkr.meshes()[mr->mesh].get();
-				for (int j = 0; j < mesh->primitiveCount(); ++j)
-				{
-					RenderObject ro{};
-					ro.mesh = mesh;
-					ro.primitive = j;
-					ro.transform = Transform::fromVirtual(components[0])->value;
-					//_renderCache[/*mr->materials[j]*/0].push_back(ro);
-					//TODO actually add in support for more than one material
-					meshes.push_back(ro);
-				}
+			_em.systems().runUnmanagedSystem("fetchMRD", [&](SystemContext* ctx){
+				ComponentFilter filter(ctx);
+				filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
+				filter.addComponent(MeshRendererComponent::def()->id, ComponentFilterFlags_Const);
+				filter.addComponent(mat->component()->id, ComponentFilterFlags_Const);
+				_em.getEntities(filter).forEachNative([this, &meshes](byte** components){
+					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
+					Mesh* mesh = _vkr.meshes()[mr->mesh].get();
+					for (int j = 0; j < mesh->primitiveCount(); ++j)
+					{
+						RenderObject ro{};
+						ro.mesh = mesh;
+						ro.primitive = j;
+						ro.transform = Transform::fromVirtual(components[0])->value;
+						//_renderCache[/*mr->materials[j]*/0].push_back(ro);
+						//TODO actually add in support for more than one material
+						meshes.push_back(ro);
+					}
+				});
 			});
 			for(auto& mesh : meshes)
 			{

@@ -17,10 +17,10 @@ add_library(imgui STATIC
         imgui/backends/imgui_impl_glfw.h
         imgui/misc/cpp/imgui_stdlib.cpp
         )
-
 target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui/)
 target_include_directories(imgui PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(imgui PUBLIC include_dir)
+
 add_library(external_include_dirs INTERFACE)
 
 add_subdirectory(asmjit)

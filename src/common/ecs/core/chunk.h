@@ -1,13 +1,46 @@
 #pragma once
+
+template <size_t>
+class ChunkBase;
+typedef ChunkBase<16384> Chunk;
+
 #include <array>
 #include <vector>
 #include "virtualType.h"
 #include <algorithm>
 #include <functional>
 #include <utility/sharedRecursiveMutex.h>
-
 #include "archetype.h"
+
 class Archetype;
+class ComponentDescription;
+class VirtualComponent;
+class VirtualComponentView;
+
+
+class ChunkComponentView
+{
+	const ComponentDescription* _description = nullptr;
+	byte* _data = nullptr;
+	size_t _maxSize = 0;
+	size_t _size = 0;
+	byte* dataIndex(size_t index) const;
+public:
+	uint32_t version;
+	ChunkComponentView() = default;
+	ChunkComponentView(byte* data, size_t maxSize, const ComponentDescription* def);
+	~ChunkComponentView();
+	VirtualComponentView operator[](size_t index) const;
+	void createComponent();
+	void erase(size_t index);
+	void setComponent(size_t index, VirtualComponentView component);
+	void setComponent(size_t index, VirtualComponent&& component);
+	byte* getComponentData(size_t index);
+
+	size_t size() const;
+	uint32_t compID() const;
+	const ComponentDescription* def();
+};
 
 template<size_t N>
 class ChunkBase
@@ -18,8 +51,7 @@ public:
 	size_t _size;
 	std::array<byte, N> _data;
 	Archetype* _archetype;
-	std::vector<size_t> _componentIndices;
-	SharedRecursiveMutex _lock;
+	std::vector<ChunkComponentView> _components;
 public:
 	ChunkBase()
 	{
@@ -34,156 +66,98 @@ public:
 	void setArchetype(Archetype* archetype)
 	{
 		clear();
-		_lock.lock();
 		_archetype = archetype;
 
 		if (archetype)
 		{
-			_componentIndices = std::vector<size_t>(_archetype->components().size());
-			for (size_t i = 0; i < _archetype->components().size(); i++)
+			_components = std::vector<ChunkComponentView>();
+			_components.reserve(_archetype->components().size());
+			byte* componentDataStart = _data.data();
+			for (auto& c : _archetype->componentDescriptions())
 			{
-				if (i != 0)
-					_componentIndices[i] = _componentIndices[i - 1] + _archetype->componentDescriptions()[i - 1]->size() * maxCapacity();
+				_components.emplace_back(componentDataStart, maxCapacity(), c);
+				componentDataStart += c->size() * maxCapacity();
 			}
 		}
-		_lock.unlock();
 	}
 
-	byte* getComponentData(const ComponentDescription* component, size_t entity)
+	const std::vector<ChunkComponentView>& components()
 	{
-
-		return &_data[_componentIndices[_archetype->components().index(component->id)] + entity * component->size()];
-	}
-	
-	byte* getComponentData(size_t component, size_t entity)
-	{
-
-		return &_data[_componentIndices[component] + entity * _archetype->componentDescriptions()[component]->size()];
+		return _components;
 	}
 
-	VirtualComponent getComponent(const ComponentDescription* component, size_t entity)
+	bool hasComponent(uint32_t id)
 	{
-		_lock.lock_shared();
-		VirtualComponent o = VirtualComponent(component, getComponentData(component, entity));
-		_lock.unlock_shared();
-		return o;
+		for(auto& cv : _components)
+			if(cv.compID() == id)
+				return true;
+		return false;
 	}
 
-	void setComponent(const VirtualComponent& component, size_t entity)
+	ChunkComponentView& getComponent(uint32_t id)
 	{
-		_lock.lock();
-		component.description()->copy(component.data(),getComponentData(_archetype->components().index(component.description()->id), entity));
-		_lock.unlock();
+		for(auto& cv : _components)
+			if(cv.compID() == id)
+				return cv;
+		throw std::runtime_error("Tried to access component not contained by chunk");
 	}
 
-	void setComponent(const VirtualComponentView& component, size_t entity)
+	bool tryGetComponent(uint32_t id, ChunkComponentView*& view)
 	{
-		_lock.lock();
-		component.description()->copy(component.data(), getComponentData(_archetype->components().index(component.description()->id), entity));
-		_lock.unlock();
+		for(auto& cv : _components)
+			if(cv.compID() == id)
+			{
+				view = &cv;
+				return true;
+			}
+		return false;
 	}
 
 	size_t createEntity()
 	{
-		_lock.lock();
 		assert(_size < maxCapacity());
-		size_t index = _size;
-		for (size_t c = 0; c < _archetype->componentDescriptions().size(); c++)
-		{
-			if(_archetype->componentDescriptions()[c]->size() != 0)
-				_archetype->componentDescriptions()[c]->construct(getComponentData(c, index));
-		}
-		++_size;
-		_lock.unlock();
-		return index;
+		for(auto& c : _components)
+			c.createComponent();
+		return _size++;
 	}
 
-	void copyComponenet(ChunkBase* source, size_t sIndex, size_t dIndex, const ComponentDescription* component)
+	void moveEntity(ChunkBase* dest, size_t sIndex, size_t dIndex)
 	{
-		_lock.lock();
-		source->_lock.lock();
-		assert(source->_archetype->components().contains(component->id));
-		assert(_archetype->components().contains(component->id));
-		assert(sIndex < source->_size);
-		assert(dIndex < _size);
-
-		size_t sourceCompIndex = source->_archetype->components().index(component->id);
-		size_t destCompIndex = _archetype->components().index(component->id);
-
-		assert(sIndex + source->_componentIndices[sourceCompIndex] + component->size() < N);
-		assert(dIndex + _componentIndices[destCompIndex] + component->size() < N);
-
-		size_t src = sIndex * component->size() + source->_componentIndices[sourceCompIndex];
-		size_t dest = dIndex * component->size() + _componentIndices[destCompIndex];
-
-		component->copy(&source->_data[src], &_data[dest]);
-		source->_lock.unlock();
-		_lock.unlock();
+		assert(sIndex < _size);
+		assert(dIndex < dest->_size);
+		for(auto& c : _components)
+		{
+			ChunkComponentView* oc = nullptr;
+			if(dest->tryGetComponent(c.compID(), oc))
+			{
+				c.def()->move(c[sIndex].data(), (*oc)[dIndex].data());
+				oc->version = std::max(oc->version, c.version);
+			}
+		}
 	}
 	
 	void removeEntity(size_t index)
 	{
-		_lock.lock();
-		assert(_size > 0);
 		assert(index < _size);
-
-		// Deconstruct the components of the removed entity
-		for (size_t c = 0; c < _archetype->components().size(); c++)
-		{
-			if (_archetype->componentDescriptions()[c]->size() != 0)
-				_archetype->componentDescriptions()[c]->deconstruct(getComponentData(c, index));
-		}
-
-		//Copy last index to the one that we are removing
-		if (index != _size - 1)
-		{
-			for (size_t i = 0; i < _archetype->components().size(); i++)
-			{
-				if (_archetype->componentDescriptions()[i]->size() != 0)
-					_archetype->componentDescriptions()[i]->move(getComponentData(i, _size - 1), getComponentData(i, index));
-			}
-		}
-
-		//Remove the last index
+		for(auto& c : _components)
+			c.erase(index);
 		--_size;
-		_lock.unlock();
 	}
 
 	void clear()
 	{
-		_lock.lock();
-		if (_archetype && _size > 0)
-		{
-			for (auto c : _archetype->componentDescriptions())
-			{
-				for (size_t i = 0; i < _size; i++)
-				{
-
-					c->deconstruct(getComponentData(c, i));
-				}
-			}
-		}
-		_data.fill(0);
+		_components.resize(0);
 		_size = 0;
-		_lock.unlock();
 	}
 
 	size_t size()
 	{
-		_lock.lock_shared();
-		size_t size = _size;
-		_lock.unlock_shared();
-		return size;
+		return _size;
 	}
 
 	size_t maxCapacity()
 	{
 		return N / _archetype->entitySize();
-	}
-
-	const std::vector<size_t>& componentIndices()
-	{
-		return _componentIndices;
 	}
 
 	byte* data()
@@ -195,28 +169,7 @@ public:
 	{
 		return N;
 	}
-
-	void lock()
-	{
-		_lock.lock();
-	}
-	void unlock()
-	{
-		_lock.unlock();
-	}
-	void lock_shared()
-	{
-		_lock.lock_shared();
-	}
-	void unlock_shared()
-	{
-		_lock.unlock_shared();
-	}
 };
-
-typedef ChunkBase<16384> Chunk;
-
-
 
 class ChunkPool
 {

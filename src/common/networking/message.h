@@ -31,19 +31,4 @@ namespace net
 		MessageHeader header;
 		ISerializedData body;
 	};
-
-	typedef uint32_t ConnectionID;
-	struct IMessageComponent : public NativeComponent<IMessageComponent>
-	{
-		REGISTER_MEMBERS_2("Input Message", owner, message);
-		ConnectionID owner;
-		IMessage message;
-	};
-
-	struct OMessageComponent : public NativeComponent<OMessageComponent>
-	{
-		REGISTER_MEMBERS_2("Output Message", owner, message);
-		ConnectionID owner;
-		OMessage message;
-	};
 }

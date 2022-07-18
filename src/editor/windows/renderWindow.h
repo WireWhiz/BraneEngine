@@ -12,14 +12,6 @@
 #include "vulkan/vulkan.h"
 #include "ui/guiEvent.h"
 
-class SetEntityFocusEvent : public GUIEvent
-{
-	EntityID _focus;
-public:
-	SetEntityFocusEvent(const std::string& name, EntityID focus);
-	EntityID focus() const;
-};
-
 class RenderWindow : public GUIWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
@@ -31,6 +23,8 @@ class RenderWindow : public GUIWindow
 	uint64_t _frameCount = 0;
 	bool _panning = false;
 	ImVec2 _lastMousePos;
+
+	EntityID _sceneRoot = -1;
 
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};

@@ -36,7 +36,7 @@ public:
 	void set(const std::string& type);
 	
 	[[nodiscard]] Type type() const;
-	[[nodiscard]] const std::string& string() const;
+	[[nodiscard]] const std::string& toString() const;
 
 	bool operator==(Type t) const;
 	bool operator!=(Type t) const;

@@ -29,8 +29,12 @@ void LoginWindow::draw()
 
 		ImGui::Checkbox("Save username", &_saveUsername);
 
-		if(ImGui::Button("Submit") || enterPressed)
+		bool disableButton = _loggingIn;
+		if (disableButton)
+			ImGui::BeginDisabled();
+		if((ImGui::Button("Submit") || enterPressed) && !_loggingIn && !_loggedIn)
 		{
+			_loggingIn = true;
 			NetworkManager* nm = Runtime::getModule<NetworkManager>();
 			nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success){
 				if(success)
@@ -46,6 +50,7 @@ void LoginWindow::draw()
 						sData >> result;
 						if(!result)
 						{
+							_loggingIn = false;
 							_feedbackMessage = "invalid username/password";
 							return;
 						}
@@ -63,11 +68,14 @@ void LoginWindow::draw()
 				}
 				else
 				{
+					_loggingIn = false;
 					_feedbackMessage = "Unable to connect to server";
 				}
 			});
 
 		}
+		if(disableButton)
+			ImGui::EndDisabled();
 		ImGui::Text("%s", _feedbackMessage.c_str());
 	}
 	ImGui::End();

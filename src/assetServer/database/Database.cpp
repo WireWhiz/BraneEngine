@@ -96,7 +96,7 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 
 void Database::insertAssetInfo(AssetInfo& assetInfo)
 {
-	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.string(), assetInfo.filename);
+	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.filename);
 	_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
 		assetInfo.id = id;
 	});
@@ -116,7 +116,7 @@ AssetInfo Database::getAssetInfo(uint32_t id)
 
 void Database::insertAssetInfo(const AssetInfo& info)
 {
-	_updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.string(), info.filename);
+	_updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.toString(), info.filename);
 }
 
 AssetPermissionLevel Database::getAssetPermission(uint32_t assetID, uint32_t userID)
@@ -213,7 +213,7 @@ std::string Database::hashPassword(const std::string& password, const std::strin
 std::string Database::randHex(size_t length)
 {
 	uint8_t* buffer = new uint8_t[length];
-	RAND_bytes(buffer, length);
+	RAND_bytes(buffer, static_cast<int>(length));
 	std::stringstream output;
 	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
 	{

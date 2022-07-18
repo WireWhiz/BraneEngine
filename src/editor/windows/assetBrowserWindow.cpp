@@ -8,9 +8,11 @@
 #include "common/utility/hex.h"
 #include "../editor.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include "editorEvents.h"
 #include <algorithm>
 #include <utility/strCaseCompare.h>
 #include <fileManager/fileManager.h>
+#include <assets/assetManager.h>
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
@@ -216,7 +218,29 @@ void AssetBrowserWindow::displayFiles()
 		{
 			if (ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file.name).c_str(), {ImGui::GetContentRegionAvail().x, 0}))
 			{
-				//TODO: Be able to click files
+				if(file.isAsset)
+				{
+					AssetManager& am = *Runtime::getModule<AssetManager>();
+					if(am.hasAsset(file.assetID))
+					{
+						Asset* asset = am.getAsset<Asset>(file.assetID);
+						am.fetchDependencies(asset, [this, asset]{
+							_ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+						});
+					}
+					else
+					{
+						am.fetchAsset(file.assetID).then([this, &am](Asset* asset){
+							am.fetchDependencies(asset, [this, asset, &am]{
+								if(dynamic_cast<Assembly*>(asset))
+									dynamic_cast<Assembly*>(asset)->initialize(
+											*Runtime::getModule<EntityManager>(),
+									        *Runtime::getModule<graphics::VulkanRuntime>(), am);
+								_ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+							});
+						});
+					}
+				}
 			}
 			if(ImGui::IsItemHovered())
 			{

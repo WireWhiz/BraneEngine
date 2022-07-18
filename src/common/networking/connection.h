@@ -228,7 +228,7 @@ namespace net
 		void send(std::shared_ptr<OMessage> msg) override
 		{
 			assert(msg->body.size() <= 4294967295); //unsigned int 32 max value
-			msg->header.size = msg->body.size();
+			msg->header.size = static_cast<uint32_t>(msg->body.size());
 
 			std::shared_ptr<bool> exists = _exists;
 			asio::post(_socket.get_executor(), [this, exists, msg]()
@@ -288,20 +288,5 @@ namespace net
 		{
 		}
 		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail);
-	};
-
-
-
-	struct NewConnectionComponent : public NativeComponent <NewConnectionComponent>
-	{
-		REGISTER_MEMBERS_0("New Connection");
-	};
-
-	struct ConnectionComponent : public NativeComponent<ConnectionComponent>
-	{
-		REGISTER_MEMBERS_2("Connection", id, connection);
-		ConnectionID id;
-		std::shared_ptr<Connection> connection;
-		
 	};
 }

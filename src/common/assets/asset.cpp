@@ -3,7 +3,7 @@
 
 void Asset::serialize(OSerializedData& sData)
 {
-	sData << id  << name << type.string();
+	sData << id  << name << type.toString();
 }
 
 void Asset::deserialize(ISerializedData& sData)
@@ -86,7 +86,7 @@ void Asset::toFile(MarkedSerializedData& sData)
 {
 	sData.writeAttribute("id", id.string());
 	sData.writeAttribute("name", name);
-	sData.writeAttribute("type", type.string());
+	sData.writeAttribute("type", type.toString());
 }
 
 void Asset::fromFile(MarkedSerializedData& sData)

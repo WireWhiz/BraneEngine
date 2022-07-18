@@ -9,33 +9,37 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+glm::mat4 TRS::toMat() const
+{
+	return glm::translate(glm::scale(glm::mat4_cast(rotation), scale), translation);
+}
+
 void Transforms::start()
 {
 	_em = Runtime::getModule<EntityManager>();
+	_em->systems().addSystem("transform", std::make_unique<TransformSystem>());
 }
 
-void Transforms::setParent(EntityID entity, EntityID parent)
+void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em)
 {
-	if(!_em->entityHasComponent(entity, LocalTransform::def()->id))
-		_em->addComponent(entity, LocalTransform::def()->id);
-	VirtualComponent localTransform = _em->getEntityComponent(entity, LocalTransform::def()->id);
-	localTransform.setVar(1, parent);
-	_em->setEntityComponent(entity, localTransform);
+	if(!em.hasComponent<LocalTransform>(entity))
+		em.addComponent<LocalTransform>(entity);
+	auto* localTransform = em.getComponent<LocalTransform>(entity);
+	localTransform->parent = parent;
 
-	if(!_em->entityHasComponent(parent, Children::def()->id))
-		_em->addComponent(entity, Children::def()->id);
+	if(!em.hasComponent<Children>(parent))
+		em.addComponent<Children>(parent);
 
-	VirtualComponent children = _em->getEntityComponent(parent, Children::def()->id);
-	children.getVar<inlineUIntArray>(0)->push_back(entity);
-	_em->setEntityComponent(parent, children);
+	Children* children = em.getComponent<Children>(parent);
+	children->children.push_back(entity);
 }
 
 void Transforms::removeParent(EntityID entity)
 {
-	EntityID parent = *_em->getEntityComponent(entity, LocalTransform::def()->id).getVar<EntityID>(1);
+	EntityID parent = *_em->getComponent(entity, LocalTransform::def()->id).getVar<EntityID>(1);
 	_em->removeComponent(entity, LocalTransform::def()->id);
 
-	VirtualComponent children = _em->getEntityComponent(parent, Children::def()->id);
+	VirtualComponent children = _em->getComponent(parent, Children::def()->id);
 	auto* carray = children.getVar<inlineUIntArray>(0);
 	if(carray->size() > 1)
 	{
@@ -47,7 +51,7 @@ void Transforms::removeParent(EntityID entity)
 				break;
 			}
 		}
-		_em->setEntityComponent(parent, children);
+		_em->setComponent(parent, children);
 	}
 	else
 		_em->removeComponent(parent, Children::def()->id);
@@ -60,91 +64,101 @@ void Transforms::updateTRSFromMatrix(EntityID entity, glm::mat4 value)
 	glm::vec3 skew;
 	glm::vec4 perspective;
 	glm::decompose(value, trs.scale, trs.rotation, trs.translation, skew, perspective);
-	_em->setEntityComponent(entity, trs.toVirtual());
+	_em->setComponent(entity, trs.toVirtual());
 }
 
-void Transforms::updateChildTransforms(EntityID entity, glm::mat4 parentTransform)
-{
-	VirtualComponent children = _em->getEntityComponent(entity, Children::def()->id);
-	for(EntityID child : *children.getVar<inlineUIntArray>(0)){
-		VirtualComponent localTransform = _em->getEntityComponent(child, LocalTransform::def()->id);
-		Transform worldTransform{};
-		worldTransform.value = parentTransform * *localTransform.getVar<glm::mat4>(0);
-		_em->setEntityComponent(child, worldTransform.toVirtual());
-
-		if(_em->entityHasComponent(child, Children::def()->id))
-			updateChildTransforms(entity, worldTransform.value);
-	}
-}
-
-void Transforms::setGlobalTransform(EntityID entity, glm::mat4 value)
-{
-	Transform t{};
-	t.value = value;
-	_em->setEntityComponent(entity, t.toVirtual());
-
-	if(_em->entityHasComponent(entity, LocalTransform::def()->id))
-	{
-		VirtualComponent localTransform = _em->getEntityComponent(entity, LocalTransform::def()->id);
-		VirtualComponent parentTransform = _em->getEntityComponent(*localTransform.getVar<EntityID>(1), Transform::def()->id);
-		glm::mat4 localTransformMatrix = glm::inverse(*parentTransform.getVar<glm::mat4>(0)) * value;
-		localTransform.setVar(0, localTransformMatrix);
-
-		if(_em->entityHasComponent(entity, TRS::def()->id))
-			updateTRSFromMatrix(entity, localTransformMatrix);
-	}
-	else if(_em->entityHasComponent(entity, TRS::def()->id))
-		updateTRSFromMatrix(entity, value);
-
-	if(_em->entityHasComponent(entity, Children::def()->id))
-		updateChildTransforms(entity, value);
-}
-
-void Transforms::setLocalTransform(EntityID entity, glm::mat4 value)
-{
-	if(_em->entityHasComponent(entity, LocalTransform::def()->id))
-	{
-		VirtualComponent localTransform = _em->getEntityComponent(entity, LocalTransform::def()->id);
-		localTransform.setVar(0, value);
-		VirtualComponent parentTransform = _em->getEntityComponent(entity, Transform::def()->id);
-		Transform worldTransform{};
-		worldTransform.value = *parentTransform.getVar<glm::mat4>(0) * value;
-		_em->setEntityComponent(entity, worldTransform.toVirtual());
-	}
-	else
-	{
-		VirtualComponent transform = _em->getEntityComponent(entity, Transform::def()->id);
-		transform.setVar(0, value);
-	}
-	if(_em->entityHasComponent(entity, TRS::def()->id))
-		updateTRSFromMatrix(entity, value);
-
-	if(_em->entityHasComponent(entity, Children::def()->id))
-		updateChildTransforms(entity, value);
-}
-
-void Transforms::setTRS(EntityID entity, glm::vec3 translation, glm::quat rotation, glm::vec3 scale)
-{
-	TRS trs;
-	trs.translation = translation;
-	trs.rotation = rotation;
-	trs.scale = scale;
-	_em->setEntityComponent(entity, trs.toVirtual());
-	glm::mat4 trsMatrix = glm::translate(glm::mat4_cast(rotation) * glm::scale(glm::mat4(1), scale), translation);
-	if(_em->entityHasComponent(entity, LocalTransform::def()->id))
-	{
-		VirtualComponent localTransform = _em->getEntityComponent(entity, LocalTransform::def()->id);
-		localTransform.setVar(0, trsMatrix);
-		VirtualComponent parentTransform = _em->getEntityComponent(entity, Transform::def()->id);
-		Transform transform{};
-		transform.value = *parentTransform.getVar<glm::mat4>(0) * trsMatrix;
-		_em->setEntityComponent(entity, transform.toVirtual());
-	}
-}
 
 const char* Transforms::name()
 {
 	return "transforms";
 }
 
+void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
+{
+	if(_em->hasComponent<Children>(entity))
+	{   auto* cc = _em->getComponent<Children>(entity);
+		for(auto child : cc->children)
+		{
+			destroyRecursive(child, false);
+		}
+	}
+	if(updateParentChildren && _em->hasComponent(entity, LocalTransform::def()->id)){
+		VirtualComponent lt = _em->getComponent(entity, LocalTransform::def()->id);
+		VirtualComponent cc = _em->getComponent(*lt.getVar<EntityID>(1), Children::def()->id);
+		inlineUIntArray& children = *cc.getVar<inlineUIntArray>(0);
+		for (int i = 0; i < children.size(); ++i)
+		{
+			if(children[i] == entity)
+			{
+				children.erase(i);
+				_em->setComponent(*lt.getVar<EntityID>(1), cc);
+				break;
+			}
+		}
+	}
+	_em->destroyEntity(entity);
+}
 
+glm::mat4 Transforms::getParentTransform(EntityID parent, EntityManager& em)
+{
+	if(!em.hasComponent<LocalTransform>(parent))
+		return em.getComponent<Transform>(parent)->value;
+	auto* gt = em.getComponent<Transform>(parent);
+	if(!gt->dirty)
+		return gt->value;
+	auto* lt = em.getComponent<LocalTransform>(parent);
+	glm::mat4 pt = getParentTransform(lt->parent, em);
+	gt->value = pt * lt->value;
+	gt->dirty = false;
+	return gt->value;
+}
+
+
+void TransformSystem::run(EntityManager& _em)
+{
+	//Update trs for TRS components on unparented entities
+	ComponentFilter globalTRS(&_ctx);
+	globalTRS.addComponent(TRS::def()->id, ComponentFilterFlags_Changed);
+	globalTRS.addComponent(Transform::def()->id);
+	globalTRS.addComponent(LocalTransform::def()->id, ComponentFilterFlags_Exclude);
+
+	_em.getEntities(globalTRS).forEachNative([](byte** components){
+		TRS* trs = TRS::fromVirtual(components[0]);
+		Transform* t = Transform::fromVirtual(components[1]);
+		if(!trs->dirty)
+			return;
+		t->value = trs->toMat();
+		trs->dirty = false;
+	});
+
+	//Update trs on parented entities
+	ComponentFilter localTRS(&_ctx);
+	localTRS.addComponent(TRS::def()->id, ComponentFilterFlags_Changed);
+	localTRS.addComponent(LocalTransform::def()->id);
+	localTRS.addComponent(Transform::def()->id);
+
+	_em.getEntities(localTRS).forEachNative([](byte** components){
+		TRS* trs = TRS::fromVirtual(components[0]);
+		LocalTransform* t = LocalTransform::fromVirtual(components[1]);
+		Transform* gt = Transform::fromVirtual(components[2]);
+		if(!trs->dirty)
+			return;
+		t->value = trs->toMat();
+		trs->dirty = false;
+		gt->dirty = true;
+	});
+
+	//Update transform for parented entities
+	ComponentFilter localTransforms(&_ctx);
+	localTransforms.addComponent(Transform::def()->id);
+	localTransforms.addComponent(LocalTransform::def()->id);
+
+	_em.getEntities(localTransforms).forEachNative([&_em](byte** components){
+		auto* gt = Transform::fromVirtual(components[0]);
+		auto* lt = LocalTransform::fromVirtual(components[1]);
+		glm::mat4 pt = Transforms::getParentTransform(lt->parent, _em);
+
+		gt->value = pt * lt->value;
+		gt->dirty = false;
+	});
+}

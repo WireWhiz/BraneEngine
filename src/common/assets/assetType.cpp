@@ -53,7 +53,7 @@ AssetType::Type AssetType::type() const
 	return _type;
 }
 
-const std::string& AssetType::string() const
+const std::string& AssetType::toString() const
 {
 	return toString(_type);
 }

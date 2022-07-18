@@ -345,7 +345,7 @@ namespace graphics
 		return &_descriptorSets[frame];
 	}
 
-	const ComponentDescription* Material::component() const
+	ComponentDescription* Material::component() const
 	{
 		return _component;
 	}

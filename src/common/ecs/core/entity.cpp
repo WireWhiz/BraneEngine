@@ -2,6 +2,7 @@
 
 EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
+	Runtime::timeline().addTask("systems", [this](){_systems.runSystems(*this);}, "main");
 }
 
 EntityManager::~EntityManager()
@@ -33,6 +34,7 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	eIndex.index = arch->createEntity();
 	eIndex.alive = true;
 	arch->setComponent(eIndex.index, id.toVirtual());
+	assert(eIndex.index < arch->size());
 	return id.id;
 }
 
@@ -47,6 +49,7 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 		id.id = (EntityID)_entities.push(EntityIndex());
 		_entities[id.id].archetype = arch;
 		_entities[id.id].index = arch->createEntity();
+		assert(_entities[id.id].index < arch->size());
 	}
 }
 
@@ -55,30 +58,10 @@ void EntityManager::destroyEntity(EntityID entity)
 	ASSERT_MAIN_THREAD();
 
 	assert(0 <= entity && entity < _entities.size());
-	_entities.remove(entity);
 	Archetype* archetype = getEntityArchetype(entity);
-	archetype->remove(_entities[entity].index);
+	archetype->removeEntity(_entities[entity].index);
+	_entities.remove(entity);
 
-}
-
-void EntityManager::forEach(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f)
-{
-	_archetypes.forEach(components, f);
-}
-
-void EntityManager::constForEach(const std::vector<ComponentID>& components, const std::function<void(const byte* [])>& f)
-{
-	_archetypes.constForEach(components, f);
-}
-
-std::shared_ptr<JobHandle> EntityManager::forEachParallel(const std::vector<ComponentID>& components, const std::function<void(byte* [])>& f, size_t entitiesPerThread)
-{
-	return _archetypes.forEachParallel(components, f, entitiesPerThread);
-}
-
-std::shared_ptr<JobHandle> EntityManager::constForEachParallel(const std::vector<ComponentID>& components, const std::function<void(const byte* [])>& f, size_t entitiesPerThread)
-{
-	return _archetypes.constForEachParallel(components, f, entitiesPerThread);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
@@ -95,25 +78,24 @@ bool EntityManager::hasArchetype(EntityID entity) const
 	return o;
 }
 
-bool EntityManager::entityHasComponent(EntityID entity, ComponentID component) const
+bool EntityManager::hasComponent(EntityID entity, ComponentID component) const
 {
 	return getEntityArchetype(entity)->hasComponent(component);
 }
 
-VirtualComponent EntityManager::getEntityComponent(EntityID entity, ComponentID component) const
+VirtualComponentView EntityManager::getComponent(EntityID entity, ComponentID component) const
 {
 	assert(getEntityArchetype(entity)->hasComponent(component));
-	VirtualComponent o = getEntityArchetype(entity)->getComponent(_entities[entity].index, component);
-	return o;
+	return getEntityArchetype(entity)->getComponent(_entities[entity].index, component);
 }
 
-void EntityManager::setEntityComponent(EntityID entity, const VirtualComponent& component)
+void EntityManager::setComponent(EntityID entity, const VirtualComponent& component)
 {
 	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
 }
 
-void EntityManager::setEntityComponent(EntityID entity, const VirtualComponentView& component)
+void EntityManager::setComponent(EntityID entity, const VirtualComponentView& component)
 {
 	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity].index, component);
@@ -127,6 +109,7 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	if (hasArchetype(entity))
 	{
 		Archetype* currentArchetype = getEntityArchetype(entity);
+		assert(_entities[entity].index < currentArchetype->size());
 		assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
 		// See if there's already an archetype we know about:
 		std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getAddEdge(component);
@@ -150,20 +133,25 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 		compDefs.add(component);
 		destArchetype = _archetypes.getArchetype(compDefs);
 	}
+	size_t newIndex;
 	size_t oldIndex = _entities[entity].index;
-	size_t newIndex = 0;
 	
 	// If this isn't an empty entity we need to copy and remove it
 	if (hasArchetype(entity))
 	{
 		Archetype* arch = getEntityArchetype(entity);
-		newIndex = destArchetype->copyEntity(arch, oldIndex);
-		arch->remove(oldIndex);
+		newIndex = arch->moveEntity(oldIndex, destArchetype);
+		//Check if move entity performed a swap.
+		if(oldIndex < arch->size())
+		{
+			EntityID swappedEntity = *arch->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
+			_entities[swappedEntity].index = oldIndex;
+		}
 	}
 	else
-	{
 		newIndex = destArchetype->createEntity();
-	}
+
+	assert(newIndex < destArchetype->size());
 	_entities[entity].index = newIndex;
 	_entities[entity].archetype = destArchetype;
 }
@@ -202,8 +190,14 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	size_t newIndex = 0;
 
 	if (destArchetype != nullptr)
-		newIndex = destArchetype->copyEntity(currentArchetype, oldIndex);
-	currentArchetype->remove(oldIndex);
+	{
+		newIndex = currentArchetype->moveEntity(oldIndex, destArchetype);
+		if(oldIndex < currentArchetype->size())
+		{
+			EntityID swappedEntity = *currentArchetype->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
+			_entities[swappedEntity].index = oldIndex;
+		}
+	}
 
 	_entities[entity].index = newIndex;
 	_entities[entity].archetype = destArchetype;
@@ -222,4 +216,19 @@ void EntityManager::stop()
 ComponentManager& EntityManager::components()
 {
 	return _components;
+}
+
+SystemManager& EntityManager::systems()
+{
+	return _systems;
+}
+
+ArchetypeManager& EntityManager::archetypes()
+{
+	return _archetypes;
+}
+
+EntitySet EntityManager::getEntities(ComponentFilter filter)
+{
+	return _archetypes.getEntities(std::move(filter));
 }

@@ -26,7 +26,7 @@ void AssetManager::updateAsset(Asset* asset)
 void AssetManager::startAssetLoaderSystem()
 {
 	EntityManager& em = *Runtime::getModule<EntityManager>();
-	Runtime::timeline().addTask("asset loader", [this, &em](){
+	/*Runtime::timeline().addTask("asset loader", [this, &em](){
 
 		//Start loading all unloaded assemblies TODO change it so that the state is stored through components and not a bool, so we're not always iterating over literally everything
 		em.forEach({EntityIDComponent::def()->id, AssemblyRoot::def()->id}, [&](byte** components){
@@ -52,7 +52,7 @@ void AssetManager::startAssetLoaderSystem()
 		}
 		_stagedAssemblies.clear();
 
-	}, "asset management");
+	}, "asset management");*/
 }
 
 void AssetManager::loadAssembly(AssetID assembly, EntityID rootID)
@@ -139,6 +139,51 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 		asset.setData(a);
 	});
 	return asset;
+}
+
+bool AssetManager::hasAsset(const AssetID& id)
+{
+	return _assets.count(id);
+}
+
+void AssetManager::fetchDependencies(Asset* asset, std::function<void()> callback)
+{
+	switch(asset->type.type())
+	{
+		case AssetType::assembly:
+		{
+			Assembly* a = static_cast<Assembly*>(asset);
+			auto unloaded = std::make_shared<size_t>();
+			auto callbackPtr = std::make_shared<std::function<void()>>(callback);
+			*unloaded = a->meshes.size();
+			for(auto& mesh : a->meshes)
+			{
+				MeshAsset* m = getAsset<MeshAsset>(mesh);
+				if(m)
+				{
+					--(*unloaded);
+					continue;
+				}
+
+				fetchAsset<MeshAsset>(AssetID(mesh)).then([unloaded, callbackPtr](MeshAsset* mesh)
+                {
+                    Runtime::log("Loaded: " + mesh->name);
+                    if(--(*unloaded) == 0)
+                        (*callbackPtr)();
+                }).onError([unloaded, mesh, callbackPtr](const std::string& message){
+			        Runtime::error("Unable to fetch: " + mesh.string());
+			        if(--(*unloaded) == 0)
+				        (*callbackPtr)();
+		        });
+			}
+			if(*unloaded == 0)
+				callback();
+		}
+			break;
+		default:
+			callback();
+			break;
+	}
 }
 
 

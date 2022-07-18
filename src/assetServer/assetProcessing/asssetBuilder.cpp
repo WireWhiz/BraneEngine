@@ -24,10 +24,10 @@ AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name
 		assets.meshes.push_back(std::unique_ptr<MeshAsset>(mesh));
 	}
 
-	std::vector<Assembly::WorldEntity> entities;
+	std::vector<Assembly::EntityAsset> entities;
 	for (Json::Value& node : loader.nodes())
 	{
-		Assembly::WorldEntity entity;
+		Assembly::EntityAsset entity;
 		glm::mat4 transform = glm::mat4(1);
 		if (node.isMember("matrix"))
 		{
@@ -107,7 +107,7 @@ AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name
 		{
 			for (auto& child: node["children"])
 			{
-				Assembly::WorldEntity& childEnt = entities[child.asUInt()];
+				Assembly::EntityAsset& childEnt = entities[child.asUInt()];
 				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
 				VirtualComponent tc(LocalTransform::def());
@@ -122,6 +122,7 @@ AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name
 	//Register component ids
 	assembly->components.push_back(Transform::def()->asset->id);
 	assembly->components.push_back(LocalTransform::def()->asset->id);
+	assembly->components.push_back(Children::def()->asset->id);
 	assembly->components.push_back(TRS::def()->asset->id);
 	assembly->components.push_back(MeshRendererComponent::def()->asset->id);
 

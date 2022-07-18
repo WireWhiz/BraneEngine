@@ -21,7 +21,7 @@ MarkedSerializedData::MarkedSerializedData(std::ifstream& file)
 		throw std::runtime_error("could not read marked serialized data file");
 
 	//read data
-	uint32_t dataLength = data.size();
+	uint32_t dataLength = static_cast<uint32_t>(data.size());
 	file.read((char*)&dataLength, sizeof(dataLength));
 	data.resize(dataLength);
 	file.read((char*)data.data(), (std::streamsize)data.size());
@@ -39,12 +39,12 @@ void MarkedSerializedData::writeToFile(std::ofstream& file)
 	Json::StreamWriterBuilder builder;
 	std::string jsonString = Json::writeString(builder, attributes);
 
-	uint32_t jsonLength = jsonString.size();
+	uint32_t jsonLength = static_cast<uint32_t>(jsonString.size());
 
 	file.write((char*)&jsonLength, sizeof(jsonLength));
 	file.write(jsonString.data(), (std::streamsize)jsonString.size());
 
-	uint32_t dataLength = data.size();
+	uint32_t dataLength = static_cast<uint32_t>(data.size());
 	file.write((char*)&dataLength, sizeof(dataLength));
 	file.write((char*)data.data(), (std::streamsize)data.size());
 }

@@ -98,7 +98,7 @@ TEST(ECS, ArchetypeTest)
 // Native component for testing
 class TestNativeComponent : public NativeComponent<TestNativeComponent>
 {
-	REGISTER_MEMBERS_3("TestNativeComponent", var1, var2, var3)
+	REGISTER_MEMBERS_3("TestNativeComponent", var1, "var1", var2, "var2", var3, "var3")
 public:
 	bool var1;
 	int64_t var2;
@@ -108,7 +108,7 @@ public:
 //Classes for native system test
 class TestNativeComponent2 : public NativeComponent<TestNativeComponent2>
 {
-	REGISTER_MEMBERS_1("TestNativeComponent2", var1)
+	REGISTER_MEMBERS_1("TestNativeComponent2", var1, "var1")
 public:
 	bool var1;
 };
@@ -207,29 +207,29 @@ TEST(ECS, EntityManagerTest)
 	// Add component, this creates first archetype
 	em.addComponent(entity, vcd1.id);
 	// Get component, make sure we can read and write to it
-	VirtualComponent comp = em.getEntityComponent(entity, vcd1.id);
+	VirtualComponent comp = em.getComponent(entity, vcd1.id);
 	comp.setVar<bool>(0, true);
 	EXPECT_EQ(true, comp.readVar<bool>(0));
-	em.setEntityComponent(entity, comp);
+	em.setComponent(entity, comp);
 
 	// Adds a second component, this creates a second archetype and copies the data over,
 	em.addComponent(entity, vcd2.id);
 
 	//  make sure the copied data is still valid
-	comp = em.getEntityComponent(entity, vcd1.id);
+	comp = em.getComponent(entity, vcd1.id);
 	EXPECT_EQ(true, comp.readVar<bool>(0));
 
 	// Get second component, make sure we can read and write
-	comp = em.getEntityComponent(entity, vcd2.id);
+	comp = em.getComponent(entity, vcd2.id);
 	comp.setVar<float>(0, 42);
 	EXPECT_EQ(42, comp.readVar<float>(0));
-	em.setEntityComponent(entity, comp);
+	em.setComponent(entity, comp);
 
 	// make sure this throws no errors
 	em.removeComponent(entity, vcd1.id);
 
 	// Make sure that we still have the second component and can still read from it after the copy
-	comp = em.getEntityComponent(entity, vcd2.id);
+	comp = em.getComponent(entity, vcd2.id);
 	EXPECT_EQ(42, comp.readVar<float>(0));
 
 	// just make sure these throw no errors
@@ -310,9 +310,9 @@ TEST(ECS, ForEachTest)
 		if (i > 49)
 		{
 			//Entites with two
-			VirtualComponent vc1 = em.getEntityComponent(i, TestNativeComponent::def()->id);
+			VirtualComponent vc1 = em.getComponent(i, TestNativeComponent::def()->id);
 			TestNativeComponent*  ts1 = TestNativeComponent::fromVirtual(vc1.data());
-			VirtualComponent vc2 = em.getEntityComponent(i, TestNativeComponent2::def()->id);
+			VirtualComponent vc2 = em.getComponent(i, TestNativeComponent2::def()->id);
 			TestNativeComponent2* ts2 = TestNativeComponent2::fromVirtual(vc2.data());
 			
 			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
@@ -325,7 +325,7 @@ TEST(ECS, ForEachTest)
 		else
 		{
 			//Entites with one
-			VirtualComponent vc1 = em.getEntityComponent(i, TestNativeComponent::def()->id);
+			VirtualComponent vc1 = em.getComponent(i, TestNativeComponent::def()->id);
 			TestNativeComponent* ts1 = TestNativeComponent::fromVirtual(vc1.data());
 			EXPECT_EQ(false, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(32, ts1->var2)    << "entity: " << i;
@@ -373,7 +373,7 @@ TEST(ECS, ForEachParellelTest)
 
 	for (size_t i = 0; i < instances; i++)
 	{
-		VirtualComponent c = em.getEntityComponent(i, counterComponent.id);
+		VirtualComponent c = em.getComponent(i, counterComponent.id);
 		EXPECT_EQ(*c.getVar<size_t>(0), 420) << "entitiy: " << i << std::endl;
 	}
 	Runtime::cleanup();
