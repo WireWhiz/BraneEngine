@@ -280,7 +280,8 @@ namespace graphics
     }
     VkResult SwapChain::acquireNextImage()
     {
-        return vkAcquireNextImageKHR(device->get(), _swapChain, UINT64_MAX, _imageAvailableSemaphores[nextFrame()], VK_NULL_HANDLE, &_currentFrame);
+        _currentSemaphore = (_currentSemaphore + 1) % _imageAvailableSemaphores.size();
+        return vkAcquireNextImageKHR(device->get(), _swapChain, UINT64_MAX, _imageAvailableSemaphores[_currentSemaphore], VK_NULL_HANDLE, &_currentFrame);
     }
 
     size_t SwapChain::size()
@@ -317,7 +318,7 @@ namespace graphics
 
 	VkSemaphore SwapChain::currentSemaphore()
 	{
-		return _imageAvailableSemaphores[_currentFrame];
+		return _imageAvailableSemaphores[_currentSemaphore];
 	}
 
 	VkImageView SwapChain::depthTexture()

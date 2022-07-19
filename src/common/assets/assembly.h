@@ -27,7 +27,7 @@ public:
 		void writeToFile(MarkedSerializedData& sData, Assembly& assembly);
 		void readFromFile(MarkedSerializedData& sData, Assembly& assembly, ComponentManager& cm, AssetManager& am);
 		bool hasComponent(const ComponentDescription* def) const;
-		VirtualComponent& getComponent(const ComponentDescription* def);
+		VirtualComponent* getComponent(const ComponentDescription* def);
 	};
 
 	Assembly();

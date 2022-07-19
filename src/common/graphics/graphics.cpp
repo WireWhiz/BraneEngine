@@ -9,14 +9,14 @@ namespace graphics
 {
     void VulkanRuntime::draw(EntityManager& em)
     {
-		if(_window->size().x == 0 ||  _window->size().y == 0)
+		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
 		{
 			return;
 		}
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
 
         VkResult result = _swapChain->acquireNextImage();
-        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             vkDeviceWaitIdle(_device->get());
             _swapChain->resize();
@@ -45,7 +45,7 @@ namespace graphics
 
         vkBeginCommandBuffer(drawBuffer, &beginInfo);
 
-	    for (size_t i = _renderers.size() - 1; i >= 0; --i)
+	    for (size_t i = _renderers.size() - 1; i < _renderers.size(); --i)
 	    {
 		    _renderers[i]->render(drawBuffer);
 	    }
@@ -70,7 +70,6 @@ namespace graphics
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         vkResetFences(_device->get(), 1, &_inFlightFences[_swapChain->currentFrame()]);
-        Runtime::log("Submitting frame");
         if (vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, _inFlightFences[_swapChain->currentFrame()]) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to submit draw command buffer!");

@@ -66,7 +66,7 @@ void EntitiesWindow::displayAssemblyEntities(Assembly* assembly, size_t entIndex
 	{
 		if (hasChildren)
 		{
-			auto* childrenComponent = Children::fromVirtual(entity.getComponent(Children::def()));
+			auto* childrenComponent = Children::fromVirtual(*entity.getComponent(Children::def()));
 			for(auto& childIndex : childrenComponent->children)
 			{
 				displayAssemblyEntities(assembly, childIndex);

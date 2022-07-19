@@ -27,6 +27,7 @@ namespace graphics
 		VkExtent2D _extent;
 		size_t _size;
 		uint32_t _currentFrame;
+        uint32_t _currentSemaphore;
 
 		void createSwapChain();
 		void createImageViews();

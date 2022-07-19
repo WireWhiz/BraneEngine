@@ -111,12 +111,13 @@ bool Assembly::EntityAsset::hasComponent(const ComponentDescription* def) const
 	return false;
 }
 
-VirtualComponent& Assembly::EntityAsset::getComponent(const ComponentDescription* def)
+VirtualComponent* Assembly::EntityAsset::getComponent(const ComponentDescription* def)
 {
 	assert(hasComponent(def));
 	for (auto& c : components)
 		if (c.description() == def)
-			return c;
+			return &c;
+    return nullptr;
 }
 
 std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
@@ -275,7 +276,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 		EntityID id = entityMap[i];
 		if(entity.hasComponent(LocalTransform::def()))
 		{
-			EntityID parent = entityMap[entity.getComponent(LocalTransform::def()).readVar<EntityID>(1)];
+			EntityID parent = entityMap[entity.getComponent(LocalTransform::def())->readVar<EntityID>(1)];
 			tm->setParent(id, parent, em);
 		}
 	}
