@@ -390,7 +390,6 @@ public:
 		(*currentScope)[name]["size"] = size;
 	}
 
-	template<>
 	void writeAttribute(const std::string& name, const std::vector<std::string>& value)
 	{
 		assert(!(*currentScope).isMember(name));
@@ -474,7 +473,6 @@ public:
 			std::memcpy(value.data(), &data[index], size);
 	}
 
-	template<>
 	void readAttribute(const std::string& name, std::vector<std::string>& value)
 	{
 		assert(!(*currentScope).isMember(name));

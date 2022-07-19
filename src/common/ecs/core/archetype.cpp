@@ -169,7 +169,7 @@ size_t Archetype::createEntity()
 	{
 		_chunks.resize(_chunks.size() + 1);
 		*_chunkAllocator >> _chunks[_chunks.size() - 1];
-		_chunks[_chunks.size() - 1]->setArchetype(this);
+		_chunks[_chunks.size() - 1]->setComponents(_componentDescriptions);
 	}
 
 	assert(chunk < _chunks.size());

@@ -16,7 +16,7 @@ void operator>>(ChunkPool& pool, std::unique_ptr<Chunk>& dest)
 void operator<<(ChunkPool& pool, std::unique_ptr<Chunk>& src)
 {
 	std::scoped_lock lock(pool._m);
-	src->setArchetype(nullptr);
+	src->clear();
 	pool._unused.emplace_back(std::move(src));
 }
 

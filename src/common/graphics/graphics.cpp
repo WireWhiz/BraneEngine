@@ -45,92 +45,11 @@ namespace graphics
 
         vkBeginCommandBuffer(drawBuffer, &beginInfo);
 
-	    for (int i = _renderers.size() - 1; i >= 0; --i)
+	    for (size_t i = _renderers.size() - 1; i >= 0; --i)
 	    {
 		    _renderers[i]->render(drawBuffer);
 	    }
 
-		/*
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = _swapChain->renderPass();
-        renderPassInfo.framebuffer = _swapChain->framebuffer(imageIndex);
-
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = _swapChain->extent();
-
-        std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = { {0.2f, 0.2f, 0.2f, 1.0f} };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-
-        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-        renderPassInfo.pClearValues = clearValues.data();
-
-        vkCmdBeginRenderPass(drawBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		//Update incremental asset derived objects:
-		_meshes.forEach([&](auto& mesh)
-		{
-			mesh->updateData();
-		});
-
-        //Draw models:
-        glm::mat4x4 cameraTransform = glm::lookAt(glm::vec3(1.0f, 2.0f, -6.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4x4  view = glm::perspective(glm::radians(45.0f), (float)_swapChain->extent().width / (float)_swapChain->extent().height, 0.1f, 500.0f);
-        view[1][1] *= -1;
-		Camera camera{cameraTransform, view};
-
-		const static NativeForEach forEachMeshRenderer( {MeshRendererComponent::def(), TransformComponent::def()},&em);
-
-		std::vector<std::vector<RenderObject>> _renderCache(_renderers.size());
-
-		em.forEach(forEachMeshRenderer.id(), [&](byte** components){
-			MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(0)]);
-			Mesh* mesh = _meshes[mr->mesh].get();
-			for (int j = 0; j < mesh->primitiveCount(); ++j)
-			{
-				RenderObject ro{};
-				ro.mesh = mesh;
-				ro.primitive = j;
-				ro.transform = TransformComponent::fromVirtual(components[forEachMeshRenderer.getComponentIndex(1)])->value;
-
-
-				_renderCache[0].push_back(ro);
-			}
-		});
-
-		size_t rendererIndex = 0;
-	    _renderers.forEach([&](std::unique_ptr<Renderer>& r)
-        {
-	        r->drawObjects(_renderCache[rendererIndex++], nullptr,
-	                       &camera, drawBuffer);
-        });
-
-        vkCmdEndRenderPass(drawBuffer);
-
-		//ImGui render pass
-	    VkClearValue imGuiClear[2] = {};
-		imGuiClear[0].color = { {1, 1, 1, 1.0f} };
-		imGuiClear[1].depthStencil = { 1.0f, 0 };;
-
-	    VkRenderPassBeginInfo info = {};
-	    info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	    info.renderPass = _swapChain->imGuiRenderPass();
-	    info.framebuffer = _swapChain->imGuiFramebuffer(imageIndex);
-	    info.renderArea.extent = _swapChain->extent();
-	    info.clearValueCount = 2;
-	    info.pClearValues = imGuiClear;
-
-		vkCmdBeginRenderPass(drawBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
-	    ImGui::Render();
-	    ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
-	    ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, drawBuffer);
-	    ImGui_ImplVulkan_NewFrame();
-	    ImGui_ImplGlfw_NewFrame();
-	    ImGui::NewFrame();
-
-	    vkCmdEndRenderPass(drawBuffer);
-		*/
         vkEndCommandBuffer(drawBuffer);
 
         VkSubmitInfo submitInfo{};
@@ -151,6 +70,7 @@ namespace graphics
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         vkResetFences(_device->get(), 1, &_inFlightFences[_swapChain->currentFrame()]);
+        Runtime::log("Submitting frame");
         if (vkQueueSubmit(_device->graphicsQueue(), 1, &submitInfo, _inFlightFences[_swapChain->currentFrame()]) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to submit draw command buffer!");
@@ -278,12 +198,13 @@ namespace graphics
         //
 
         //Create Instance
-        if (vkCreateInstance(&createInfo, nullptr, &_instance) != VK_SUCCESS)
+        VkResult res = vkCreateInstance(&createInfo, nullptr, &_instance);
+        if (res != VK_SUCCESS)
         {
+            Runtime::error("Could not create vulkan instance: " + std::to_string(res));
             throw std::runtime_error("failed to create vulkan instance!");
         }
-
-
+        Runtime::log("Created vulkan instance");
     }
 
     void VulkanRuntime::createSyncObjects()
@@ -426,7 +347,7 @@ namespace graphics
 	            Runtime::error("Vulkan: " + std::string(pCallbackData->pMessage));
             else
                 Runtime::log("Vulkan: "  + std::string(pCallbackData->pMessage));
-#if DEBUG
+#ifndef NDEBUG
 			if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
 				throw std::runtime_error("Vulkan debug error");
 #endif
@@ -441,7 +362,7 @@ namespace graphics
     VulkanRuntime::VulkanRuntime()
     {
         _window = new Window();
-#ifdef DEBUG
+#ifndef NDEBUG
         _validationLayersEnabled = true;
 #else
         _validationLayersEnabled = false;

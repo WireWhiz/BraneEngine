@@ -1,22 +1,9 @@
 #pragma once
 
-template <size_t>
-class ChunkBase;
-typedef ChunkBase<16384> Chunk;
-
 #include <array>
 #include <vector>
 #include "virtualType.h"
-#include <algorithm>
-#include <functional>
-#include <utility/sharedRecursiveMutex.h>
-#include "archetype.h"
-
-class Archetype;
-class ComponentDescription;
-class VirtualComponent;
-class VirtualComponentView;
-
+#include "component.h"
 
 class ChunkComponentView
 {
@@ -49,36 +36,34 @@ class ChunkBase
 public:
 #endif
 	size_t _size;
-	std::array<byte, N> _data;
-	Archetype* _archetype;
-	std::vector<ChunkComponentView> _components;
+    size_t _maxCapacity;
+    std::array<byte, N> _data;
+    std::vector<ChunkComponentView> _components;
 public:
 	ChunkBase()
 	{
 		_size = 0;
-		_archetype = nullptr;
 	}
 	ChunkBase(const ChunkBase&) = delete;
 	~ChunkBase()
 	{
 		clear();
 	}
-	void setArchetype(Archetype* archetype)
+	void setComponents(std::vector<const ComponentDescription*> components)
 	{
 		clear();
-		_archetype = archetype;
+        _components.reserve(components.size());
+        byte* componentDataStart = _data.data();
+        size_t entitySize = 0;
+        for (auto& c : components)
+            entitySize += c->size();
+        _maxCapacity = N / entitySize;
 
-		if (archetype)
-		{
-			_components = std::vector<ChunkComponentView>();
-			_components.reserve(_archetype->components().size());
-			byte* componentDataStart = _data.data();
-			for (auto& c : _archetype->componentDescriptions())
-			{
-				_components.emplace_back(componentDataStart, maxCapacity(), c);
-				componentDataStart += c->size() * maxCapacity();
-			}
-		}
+        for (auto& c : components)
+        {
+            _components.emplace_back(componentDataStart, _maxCapacity, c);
+            componentDataStart += c->size() * _maxCapacity;
+        }
 	}
 
 	const std::vector<ChunkComponentView>& components()
@@ -115,7 +100,7 @@ public:
 
 	size_t createEntity()
 	{
-		assert(_size < maxCapacity());
+		assert(_size < _maxCapacity);
 		for(auto& c : _components)
 			c.createComponent();
 		return _size++;
@@ -148,6 +133,7 @@ public:
 	{
 		_components.resize(0);
 		_size = 0;
+        _maxCapacity = 0;
 	}
 
 	size_t size()
@@ -157,7 +143,7 @@ public:
 
 	size_t maxCapacity()
 	{
-		return N / _archetype->entitySize();
+		return _maxCapacity;
 	}
 
 	byte* data()
@@ -170,6 +156,10 @@ public:
 		return N;
 	}
 };
+
+template <size_t>
+class ChunkBase;
+typedef ChunkBase<16384> Chunk;
 
 class ChunkPool
 {

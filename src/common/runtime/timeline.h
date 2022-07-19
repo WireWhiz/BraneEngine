@@ -11,6 +11,7 @@
 #include <functional>
 #include <memory>
 #include <utility/staticIndexVector.h>
+#include <string>
 
 class ScheduledTask
 {

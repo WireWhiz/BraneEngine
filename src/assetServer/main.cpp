@@ -3,7 +3,7 @@
 #include <ecs/ecs.h>
 #include <fileManager/fileManager.h>
 #include "assetServer.h"
-#include <database/Database.h>
+#include <database/database.h>
 #include <runtime/runtime.h>
 
 int main()

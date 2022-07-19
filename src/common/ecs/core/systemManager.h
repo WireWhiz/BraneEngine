@@ -7,6 +7,7 @@
 
 #include "system.h"
 #include <string>
+#include <memory>
 
 class SystemManager
 {

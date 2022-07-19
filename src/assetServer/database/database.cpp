@@ -2,7 +2,7 @@
 // Created by eli on 1/10/2022.
 //
 
-#include "Database.h"
+#include "database.h"
 #include "utility/hex.h"
 #include "openssl/rand.h"
 

@@ -37,7 +37,8 @@ namespace graphics
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        //glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         _window = glfwCreateWindow(800, 600, "Brane Engine", nullptr, nullptr);
         assert(_window != NULL);
 		GLFWmonitor* monitor = glfwGetPrimaryMonitor();

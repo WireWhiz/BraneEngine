@@ -7,6 +7,7 @@
 #include <fstream>
 #include <config/config.h>
 #include <filesystem>
+#include <string>
 
 #if WIN32
 #include <windows.h>
@@ -21,11 +22,21 @@ namespace Logging
 	HANDLE hConsole;
 #endif
 
+    tm ltm_global = tm();
+    tm& getLocalTime()
+    {
+        const time_t now = time(0);
+#if WIN32
+		localtime_s(&ltm_global, &now);
+#else
+        localtime_r(&now, &ltm_global);
+#endif
+        return ltm_global;
+    }
+
 	std::string generateLogName(){
-		const time_t now = time(0);
-		tm ltm;
-		localtime_s(&ltm, &now);
-		std::string date = std::to_string(ltm.tm_year + 1900) + "_" + std::to_string(ltm.tm_mon + 1) + "_" + std::to_string(ltm.tm_mday) + "_" + std::to_string(now);
+		tm& ltm = getLocalTime();
+		std::string date = std::to_string(ltm.tm_year + 1900) + "_" + std::to_string(ltm.tm_mon + 1) + "_" + std::to_string(ltm.tm_mday) + "_" + std::to_string(ltm.tm_min);
 		return "log_" + date + ".txt";
 	}
 
@@ -93,8 +104,7 @@ namespace Logging
 
 	std::string Log::toString() const
 	{
-		tm ltm;
-		localtime_s(&ltm, &time);
+		tm& ltm = getLocalTime();
 		std::string timeStr = std::to_string(ltm.tm_hour) + ":" + std::to_string(ltm.tm_min) + ":" + std::to_string(ltm.tm_sec);
 
 		std::string levelStr;
