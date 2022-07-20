@@ -9,3 +9,4 @@ add_library(editorWindows STATIC
         memoryManagerWindow.h
         editorEvents.cpp)
 target_link_libraries(editorWindows PUBLIC ui)
+target_compile_definitions(editorWindows PUBLIC CLIENT)

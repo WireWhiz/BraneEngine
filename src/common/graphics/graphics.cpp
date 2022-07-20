@@ -1,5 +1,4 @@
 #include "graphics.h"
-#include "imgui_internal.h"
 
 
 #define STB_IMAGE_IMPLEMENTATION

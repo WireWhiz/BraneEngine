@@ -17,6 +17,7 @@ namespace graphics{
 
 class Assembly : public Asset
 {
+    void initGraphics();
 public:
 	struct EntityAsset
 	{
@@ -41,7 +42,11 @@ public:
 	void serialize(OSerializedData& message) override;
 	void deserialize(ISerializedData& message) override;
 
+#ifdef CLIENT
 	void initialize(EntityManager& em, graphics::VulkanRuntime& vkr, AssetManager& am);
+#elif defined(SERVER)
+    void initialize(EntityManager& em, AssetManager& am);
+#endif
 	void inject(EntityManager& em, EntityID rootID);
 };
 

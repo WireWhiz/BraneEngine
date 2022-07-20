@@ -203,6 +203,7 @@ Assembly::Assembly()
 	type.set(AssetType::Type::assembly);
 }
 
+#ifdef CLIENT
 void Assembly::initialize(EntityManager& em, graphics::VulkanRuntime& vkr, AssetManager& am)
 {
 	//Temporarily use an example material
@@ -242,10 +243,30 @@ void Assembly::initialize(EntityManager& em, graphics::VulkanRuntime& vkr, Asset
 
 				//TODO: process materials here as well
 			}
-
 		}
 	}
 }
+#endif
+
+#ifdef SERVER
+void Assembly::initialize(EntityManager& em, AssetManager& am)
+{
+    for(auto& entity : entities)
+    {
+        for(auto& component : entity.components)
+        {
+            if(component.description() == Transform::def())
+            {
+                component.setVar(1, true);
+            }
+            else if(component.description() == TRS::def())
+            {
+                component.setVar(3, true);
+            }
+        }
+    }
+}
+#endif
 
 void Assembly::inject(EntityManager& em, EntityID rootID)
 {

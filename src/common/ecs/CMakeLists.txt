@@ -11,7 +11,7 @@ add_library(ecs STATIC
         core/systemManager.cpp
         core/archetypeManager.cpp
         core/componentManager.cpp)
-target_link_libraries(ecs PUBLIC runtime assets utility)
+target_link_libraries(ecs PUBLIC runtime utility)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(ecs_test STATIC

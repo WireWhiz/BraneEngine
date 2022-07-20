@@ -16,7 +16,7 @@ target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
-target_link_libraries(BraneEditor PRIVATE ecs networking config graphics assets runtime editorWindows systems fileManager)
+target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager)
 
 set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/braneEditor)
 

@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility/strCaseCompare.h>
 #include <fileManager/fileManager.h>
+#define CLIENT
 #include <assets/assetManager.h>
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
