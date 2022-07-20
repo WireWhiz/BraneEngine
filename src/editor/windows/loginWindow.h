@@ -23,8 +23,8 @@ public:
 
 class LoginWindow : public GUIWindow
 {
-	std::atomic_bool _loggedIn;
-	std::atomic_bool _loggingIn;
+	std::atomic_bool _loggedIn = false;
+	std::atomic_bool _loggingIn = false;
 	std::string _serverAddress;
 	std::string _port;
 	std::string _username;

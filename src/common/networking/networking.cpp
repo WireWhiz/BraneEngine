@@ -73,7 +73,10 @@ void NetworkManager::start()
 	_running = true;
 	_threadHandle = ThreadPool::addStaticThread([this](){
 		while(_running)
+        {
             _context.run();
+            _context.restart();
+        }
 		Runtime::log("exiting networking thread");
 	});
 }

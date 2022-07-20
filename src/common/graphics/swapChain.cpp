@@ -15,7 +15,7 @@ namespace graphics
         _imageFormat = surfaceFormat.format;
         _extent = chooseExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+        uint32_t imageCount = std::max<uint32_t>(swapChainSupport.capabilities.minImageCount, 2);
         if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
         {
             imageCount = swapChainSupport.capabilities.maxImageCount;

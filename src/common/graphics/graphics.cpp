@@ -132,14 +132,14 @@ namespace graphics
         _meshes.clear();
         
         delete _shaderManager;
-        delete _swapChain;
         
         for (size_t i = 0; i < _renderFinishedSemaphores.size(); i++)
         {
-            vkDestroySemaphore(_device->get(), _renderFinishedSemaphores[i], nullptr);
             vkDestroyFence(_device->get(), _inFlightFences[i], nullptr);
+            vkDestroySemaphore(_device->get(), _renderFinishedSemaphores[i], nullptr);
         }
 
+        delete _swapChain;
         delete _device;
 
         if (_validationLayersEnabled)
@@ -208,8 +208,8 @@ namespace graphics
 
     void VulkanRuntime::createSyncObjects()
     {
-        _renderFinishedSemaphores.resize(_swapChain->size());
-        _inFlightFences.resize(_swapChain->size());
+        _renderFinishedSemaphores.resize(_swapChain->size(), VK_NULL_HANDLE);
+        _inFlightFences.resize(_swapChain->size(), VK_NULL_HANDLE);
         _imagesInFlight.resize(_swapChain->size(), VK_NULL_HANDLE);
 
         VkSemaphoreCreateInfo semaphoreInfo{};

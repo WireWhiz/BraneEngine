@@ -39,6 +39,7 @@ public:
 	~GUI();
 
 	static const char* name();
+    void start() override;
 	void stop() override;
 
 	template<typename WindowT>

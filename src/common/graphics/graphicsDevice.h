@@ -50,7 +50,7 @@ namespace graphics
 			std::vector<VkPresentModeKHR> presentModes;
 		};
 	private:
-		bool _validationLayersEnabled;
+		bool _validationLayersEnabled = false;
 		QueueFamilyIndices _queueFamilyIndices;
 
 

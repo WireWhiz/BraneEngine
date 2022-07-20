@@ -61,7 +61,7 @@ namespace Logging
 
 	void pushLog(std::string message, LogLevel level)
 	{
-		Log newLog{message, level, time(0)};
+		Log newLog{std::move(message), level, time(0)};
 		std::string fStr = newLog.toString();
 		_logFile << fStr << std::endl;
 		for(auto& f : _logListeners)
@@ -99,7 +99,7 @@ namespace Logging
 
 	void addListener(std::function<void(const Log&)> callback)
 	{
-		_logListeners.push_back(callback);
+		_logListeners.push_back(std::move(callback));
 	}
 
 	std::string Log::toString() const

@@ -35,7 +35,7 @@ namespace graphics
 
 		std::vector<VkSemaphore> _renderFinishedSemaphores;
 
-		bool _validationLayersEnabled;
+		bool _validationLayersEnabled = false;
 		VkDebugUtilsMessengerEXT _debugMessenger;
 
 		std::vector<const char*> requiredExtensions();

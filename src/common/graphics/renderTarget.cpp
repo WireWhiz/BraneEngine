@@ -97,11 +97,13 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = alignedImageSize * _images.size();
 
+    VkDeviceSize depthTexOffset;
 	if(depthTexture)
 	{
 		VkMemoryRequirements depthReqs;
 		vkGetImageMemoryRequirements(device->get(), _depthTexture, &depthReqs);
-		allocInfo.allocationSize += depthReqs.size;
+		depthTexOffset = allocInfo.allocationSize + depthReqs.alignment - allocInfo.allocationSize % depthReqs.alignment;
+        allocInfo.allocationSize = depthTexOffset + depthReqs.size;
 		imageReqs.memoryTypeBits |= depthReqs.memoryTypeBits;
 	}
 	allocInfo.memoryTypeIndex = device->findMemoryType(imageReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
@@ -134,7 +136,7 @@ graphics::RenderTexture::RenderTexture(VkExtent2D size, bool depthTexture, graph
 
 	if(depthTexture)
 	{
-		vkBindImageMemory(device->get(), _depthTexture, _imageMemory, alignedImageSize * _images.size());
+		vkBindImageMemory(device->get(), _depthTexture, _imageMemory, depthTexOffset);
 
 		VkImageViewCreateInfo viewInfo{};
 		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

@@ -22,13 +22,7 @@ GUI::GUI()
 		}
 	}, "gui");
 
-	auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
 
-
-	_renderer = vkr->createRenderer<GUIRenderer>(this);
-	_renderer->setTargetAsSwapChain(false);
-
-	setupImGui(*vkr);
 }
 
 const char* GUI::name()
@@ -92,7 +86,6 @@ void GUI::callEvents()
 
 GUI::~GUI()
 {
-	cleanupImGui();
 }
 
 
@@ -232,10 +225,10 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 void GUI::cleanupImGui()
 {
 	vkDeviceWaitIdle(graphics::device->get());
+    vkDestroyDescriptorPool(graphics::device->get(), _imGuiDescriptorPool, nullptr);
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-	vkDestroyDescriptorPool(graphics::device->get(), _imGuiDescriptorPool, nullptr);
 }
 
 VkDescriptorPool GUI::descriptorPool()
@@ -246,6 +239,7 @@ VkDescriptorPool GUI::descriptorPool()
 void GUI::stop()
 {
 	_windows.resize(0);
+    cleanupImGui();
 }
 
 void GUI::removeWindow(GUIWindowID window)
@@ -256,6 +250,15 @@ void GUI::removeWindow(GUIWindowID window)
 void GUI::setMainMenuCallback(std::function<void()> drawMenu)
 {
 	_drawMenu = drawMenu;
+}
+
+void GUI::start() {
+    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+
+    _renderer = vkr->createRenderer<GUIRenderer>(this);
+    _renderer->setTargetAsSwapChain(false);
+
+    setupImGui(*vkr);
 }
 
 

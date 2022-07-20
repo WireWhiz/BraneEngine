@@ -127,7 +127,8 @@ namespace net
 	void ClientConnection<ssl_socket>::connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail)
 	{
 		std::shared_ptr<bool> exists = _exists;
-		asio::async_connect(_socket.lowest_layer(), endpoints, [this, exists, onConnect , onFail](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
+
+		asio::async_connect(_socket.lowest_layer(), endpoints,[this, exists, onConnect , onFail](std::error_code ec, asio::ip::tcp::endpoint endpoint) {
 			if (!ec && *exists)
 			{
 				_address = _socket.lowest_layer().remote_endpoint().address().to_string();

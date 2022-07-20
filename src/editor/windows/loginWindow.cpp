@@ -35,6 +35,7 @@ void LoginWindow::draw()
 		if((ImGui::Button("Submit") || enterPressed) && !_loggingIn && !_loggedIn)
 		{
 			_loggingIn = true;
+            _feedbackMessage = "Connecting...";
 			NetworkManager* nm = Runtime::getModule<NetworkManager>();
 			nm->async_connectToAssetServer(_serverAddress, std::stoi(_port), [this, nm](bool success){
 				if(success)

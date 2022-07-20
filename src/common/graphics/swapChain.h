@@ -25,9 +25,9 @@ namespace graphics
 		VkFormat _imageFormat;
 		VkFormat _depthImageFormat;
 		VkExtent2D _extent;
-		size_t _size;
-		uint32_t _currentFrame;
-        uint32_t _currentSemaphore;
+		size_t _size = 0;
+		uint32_t _currentFrame = 0;
+        uint32_t _currentSemaphore = 0;
 
 		void createSwapChain();
 		void createImageViews();
