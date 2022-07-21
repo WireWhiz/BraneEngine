@@ -22,7 +22,7 @@
 struct EntityID
 {
     uint32_t id = 0;
-    uint32_t version = 0;
+    uint32_t version = -1;
     operator uint32_t() const;
     EntityID& operator=(uint32_t);
 };

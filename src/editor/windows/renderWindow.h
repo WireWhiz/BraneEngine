@@ -24,7 +24,7 @@ class RenderWindow : public GUIWindow
 	bool _panning = false;
 	ImVec2 _lastMousePos;
 
-	EntityID _sceneRoot = -1;
+	EntityID _sceneRoot;
 
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};

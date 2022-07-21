@@ -1,4 +1,5 @@
 
+add_subdirectory(widgets)
 add_subdirectory(windows)
 add_subdirectory(gltf)
 

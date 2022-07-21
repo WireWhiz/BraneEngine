@@ -24,7 +24,7 @@ AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, 
 void AssetBrowserWindow::draw()
 {
 	std::scoped_lock l(_directoryLock);
-	if(ImGui::Begin("Asset Browser", nullptr, ImGuiWindowFlags_NoScrollbar))
+	if(ImGui::Begin("Asset Browser", &_open, ImGuiWindowFlags_NoScrollbar))
 	{
 		ImGui::TextDisabled("/%s",_strPath.c_str());
 

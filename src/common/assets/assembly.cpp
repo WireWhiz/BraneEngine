@@ -270,15 +270,14 @@ void Assembly::initialize(EntityManager& em, AssetManager& am)
 
 void Assembly::inject(EntityManager& em, EntityID rootID)
 {
-	std::vector<EntityID> entityMap(entities.size(),0);
-	auto* tm = Runtime::getModule<Transforms>();
+	std::vector<EntityID> entityMap(entities.size());
 	for (size_t i = 0; i < entities.size(); ++i)
 	{
 		EntityAsset& entity = entities[i];
 		entityMap[i] = em.createEntity(entity.runtimeComponentIDs());
 		if(!em.hasComponent(entityMap[i], LocalTransform::def()->id))
 		{
-			tm->setParent(entityMap[i], rootID, em);
+			Transforms::setParent(entityMap[i], rootID, em);
 		}
 	}
 
@@ -286,7 +285,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 	{
 		EntityAsset& entity = entities[i];
 		EntityID id = entityMap[i];
-		for(auto component : entity.components)
+		for(auto& component : entity.components)
 			em.setComponent(id, component);
 	}
 
@@ -298,7 +297,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 		if(entity.hasComponent(LocalTransform::def()))
 		{
 			EntityID parent = entityMap[entity.getComponent(LocalTransform::def())->readVar<EntityID>(1)];
-			tm->setParent(id, parent, em);
+			Transforms::setParent(id, parent, em);
 		}
 	}
 }

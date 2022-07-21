@@ -14,7 +14,7 @@ ConsoleWindow::ConsoleWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 
 void ConsoleWindow::draw()
 {
-	if(ImGui::Begin("Console", nullptr, ImGuiWindowFlags_None)){
+	if(ImGui::Begin("Console", &_open, ImGuiWindowFlags_None)){
 		ImGui::PushStyleColor(ImGuiCol_ChildBg, {0,0,0,1});
 		ImGui::BeginChild("messages");
 		const ImVec4 textColors[] = {

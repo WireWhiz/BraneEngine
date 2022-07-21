@@ -18,6 +18,7 @@ class GUIWindow
 	GUIWindowID _id;
 protected:
 	GUI& _ui;
+    bool _open = true;
 public:
 	GUIWindow(GUI& ui, GUIWindowID id);
 	virtual ~GUIWindow() = default;

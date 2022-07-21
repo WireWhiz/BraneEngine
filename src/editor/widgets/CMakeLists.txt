@@ -1,0 +1,3 @@
+add_library(editorWidgets STATIC assetBrowserWidget.cpp)
+target_link_libraries(editorWidgets PUBLIC ui)
+target_compile_definitions(editorWidgets  PUBLIC CLIENT)

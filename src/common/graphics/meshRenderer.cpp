@@ -28,7 +28,8 @@ namespace graphics{
 		glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
 		projection[1][1] *= -1;
  		glm::mat4 cameraMatrix = projection * transform;
-		_vkr.materials().forEach([this, cmdBuffer, cameraMatrix, transform](auto& mat){
+		for(auto& mat :  _vkr.materials())
+        {
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
 			std::vector<RenderObject> meshes;
@@ -88,8 +89,7 @@ namespace graphics{
 
 				vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh.mesh->indexCount(mesh.primitive)), 1, 0, 0, 0);
 			}
-
-		});
+		}
 		endRenderPass(cmdBuffer);
 	}
 

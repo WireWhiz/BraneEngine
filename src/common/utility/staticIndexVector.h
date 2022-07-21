@@ -106,13 +106,13 @@ public:
     public:
         iterator(staticIndexVector<T>& ref, size_t index) : _ref(ref), _index(index)
         {
-            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+            while(_index != _ref._data.size() && !_ref._data[_index].isUsed)
                 ++_index;
         };
         void operator++()
         {
             ++_index;
-            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+            while(_index != _ref._data.size() && !_ref._data[_index].isUsed)
                 ++_index;
         }
         void operator+(size_t index)
@@ -153,24 +153,24 @@ public:
     public:
         const_iterator(const staticIndexVector<T>& ref, size_t index) : _ref(ref), _index(index)
         {
-            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+            while(_index != _ref._data.size() && !_ref._data[_index].isUsed)
                 ++_index;
         };
         void operator++()
         {
             ++_index;
-            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+            while(_index != _ref._data.size() && !_ref._data[_index].isUsed)
                 ++_index;
         }
         void operator+(size_t index)
         {
             _index += index;
         }
-        bool operator!=(const iterator& o) const
+        bool operator!=(const const_iterator& o) const
         {
             return _index != o._index;
         }
-        bool operator==(const iterator& o) const
+        bool operator==(const const_iterator& o) const
         {
             return _index == o._index;
         }

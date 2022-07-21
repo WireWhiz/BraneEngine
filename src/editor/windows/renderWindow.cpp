@@ -26,7 +26,7 @@ RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 		auto* transformsManager = Runtime::getModule<Transforms>();
 		if(dynamic_cast<Assembly*>(event->asset()))
 		{
-			if(_sceneRoot != -1)
+			if(em.entityExists(_sceneRoot))
 				transformsManager->destroyRecursive(_sceneRoot);
 			_sceneRoot = em.createEntity(ComponentSet({Transform::def()->id}));
 			Transform t{};

@@ -39,7 +39,7 @@ class Children : public NativeComponent<Children>
 {
 	REGISTER_MEMBERS_1("Children", children, "children");
 public:
-	inlineUIntArray children;
+	inlineEntityIDArray children;
 };
 
 class Transforms : public Module
