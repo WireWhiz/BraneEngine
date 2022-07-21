@@ -7,7 +7,7 @@
 
 #include "assets/assembly.h"
 #include "assets/types/meshAsset.h"
-#include "../gltf/gltfLoader.h"
+#include "gltfLoader.h"
 
 class AssetBuilder
 {

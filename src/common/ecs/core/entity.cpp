@@ -1,5 +1,14 @@
 #include "entity.h"
 
+EntityID& EntityID::operator=(uint32_t value) {
+    id = value;
+    return *this;
+}
+
+EntityID::operator uint32_t() const{
+    return id;
+}
+
 EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
 	Runtime::timeline().addTask("systems", [this](){_systems.runSystems(*this);}, "main");
@@ -27,12 +36,12 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	components.add(EntityIDComponent::def()->id);
 	Archetype* arch = getArchetype(components);
 	EntityIDComponent id{};
-	id.id = (EntityID)_entities.push(EntityIndex());
+	id.id = EntityID{static_cast<uint32_t>(_entities.push(EntityIndex())), ++_globalEntityVersion};
 
 	EntityIndex& eIndex = _entities[id.id];
 	eIndex.archetype = arch;
 	eIndex.index = arch->createEntity();
-	eIndex.alive = true;
+	eIndex.version = _globalEntityVersion;
 	arch->setComponent(eIndex.index, id.toVirtual());
 	assert(eIndex.index < arch->size());
 	return id.id;
@@ -46,9 +55,10 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 	for (size_t i = 0; i < count; i++)
 	{
 		EntityIDComponent id{};
-		id.id = (EntityID)_entities.push(EntityIndex());
+		id.id = EntityID{static_cast<uint32_t>(_entities.push(EntityIndex())), ++_globalEntityVersion};
 		_entities[id.id].archetype = arch;
 		_entities[id.id].index = arch->createEntity();
+        _entities[id.id].version = _globalEntityVersion;
 		assert(_entities[id.id].index < arch->size());
 	}
 }
@@ -57,7 +67,7 @@ void EntityManager::destroyEntity(EntityID entity)
 {
 	ASSERT_MAIN_THREAD();
 
-	assert(0 <= entity && entity < _entities.size());
+	assert(entityExists(entity));
 	Archetype* archetype = getEntityArchetype(entity);
 	archetype->removeEntity(_entities[entity].index);
 	_entities.remove(entity);
@@ -66,14 +76,14 @@ void EntityManager::destroyEntity(EntityID entity)
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
 {
-	assert(entity < _entities.size());
+	assert(entityExists(entity));
 	Archetype* o = _entities[entity].archetype;
 	return o;
 }
 
 bool EntityManager::hasArchetype(EntityID entity) const
 {
-	assert(entity < _entities.size());
+	assert(entityExists(entity));
 	bool o = _entities[entity].archetype != nullptr;
 	return o;
 }
@@ -104,7 +114,7 @@ void EntityManager::setComponent(EntityID entity, const VirtualComponentView& co
 void EntityManager::addComponent(EntityID entity, ComponentID component)
 {
 	ASSERT_MAIN_THREAD();
-	assert(entity < _entities.size());
+    assert(entityExists(entity));
 	Archetype* destArchetype = nullptr;
 	if (hasArchetype(entity))
 	{
@@ -161,6 +171,7 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	ASSERT_MAIN_THREAD();
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
+    assert(entityExists(entity));
 	assert(hasArchetype(entity)); // Can't remove anything from an entity without any components
 	
 		
@@ -231,4 +242,9 @@ ArchetypeManager& EntityManager::archetypes()
 EntitySet EntityManager::getEntities(ComponentFilter filter)
 {
 	return _archetypes.getEntities(std::move(filter));
+}
+
+bool EntityManager::entityExists(EntityID entity) const
+{
+    return _entities.hasIndex(entity) && entity.version == _entities[entity].version;
 }

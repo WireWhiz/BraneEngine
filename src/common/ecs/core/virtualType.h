@@ -7,9 +7,7 @@
 #include <utility/serializedData.h>
 #include <utility/inlineArray.h>
 
-#ifndef EntityID
-typedef uint32_t EntityID;
-#endif
+class EntityID;
 
 template <class T>
 constexpr inline
@@ -44,6 +42,7 @@ namespace VirtualType
 	enum Type{
 		virtualUnknown = 0,
 		virtualBool,
+        virtualEntityID,
 		virtualInt,
 		virtualInt64,
 		virtualUInt,
@@ -57,7 +56,8 @@ namespace VirtualType
 		virtualMat4,
 		virtualFloatArray,
 		virtualIntArray,
-		virtualUIntArray
+		virtualUIntArray,
+        virtualEntityIDArray
 	};
 	template<typename T>
 	Type type();
@@ -107,6 +107,8 @@ VirtualType::Type VirtualType::type()
 {
 	if constexpr(std::is_same<T, bool>().value)
 		return Type::virtualBool;
+    if constexpr(std::is_same<T, EntityID>())
+        return Type::virtualEntityID;
 	if constexpr(std::is_same<T, int32_t>().value)
 		return Type::virtualInt;
 	if constexpr(std::is_same<T, uint32_t>().value)
@@ -135,6 +137,8 @@ VirtualType::Type VirtualType::type()
 		return Type::virtualIntArray;
 	if constexpr(std::is_same<T, inlineUIntArray>().value)
 		return Type::virtualUIntArray;
+    if constexpr(std::is_same<T, inlineEntityIDArray>().value)
+        return Type::virtualEntityIDArray;
 
 	std::cerr << "Tried to find type of: [" << typeid(T).name() << "] and failed"<< std::endl;
 	assert(false);

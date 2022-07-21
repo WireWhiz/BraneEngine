@@ -1,5 +1,6 @@
 
 add_subdirectory(windows)
+add_subdirectory(gltf)
 
 if(WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL Release)
     add_executable(BraneEditor WIN32

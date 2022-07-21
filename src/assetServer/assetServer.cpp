@@ -5,7 +5,7 @@
 #include "assetServer.h"
 #include "common/utility/threadPool.h"
 #include "gltf/gltfLoader.h"
-#include "assetProcessing/assetBuilder.h"
+#include "common/gltf/assetBuilder.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),

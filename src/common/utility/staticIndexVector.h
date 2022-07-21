@@ -13,8 +13,11 @@
 template<typename T>
 class staticIndexVector
 {
-	std::vector<T> _data;
-	std::vector<bool> _isUsed;
+    struct Element{
+        T object;
+        bool isUsed = false;
+    };
+	std::vector<Element> _data;
 	std::stack<size_t> _unused;
 	size_t _size = 0;
 
@@ -25,15 +28,14 @@ public:
 		if(!_unused.empty())
 		{
 			index = _unused.top();
-			_data[index] = element;
-			_isUsed[index] = true;
+			_data[index].object = element;
+			_data[index].isUsed = true;
 			_unused.pop();
 		}
 		else
 		{
 			index = _data.size();
-			_data.push_back(element);
-			_isUsed.push_back(true);
+			_data.push_back({element, true});
 		}
 		_size++;
 		return index;
@@ -45,15 +47,14 @@ public:
 		if(!_unused.empty())
 		{
 			index = _unused.top();
-			_data[index] = std::move(element);
-			_isUsed[index] = true;
+            _data[index].object = std::move(element);
+            _data[index].isUsed = true;
 			_unused.pop();
 		}
 		else
 		{
 			index = _data.size();
-			_data.push_back(std::move(element));
-			_isUsed.push_back(true);
+			_data.push_back({std::move(element), true});
 		}
 		_size++;
 		return index;
@@ -62,9 +63,16 @@ public:
 	void remove(size_t index)
 	{
 		_unused.push(index);
-		_isUsed[index] = false;
+		_data[index].isUsed = false;
 		_size--;
 	}
+
+    bool hasIndex(size_t index) const
+    {
+        if(index >= _data.size())
+            return false;
+        return  _data[index].isUsed;
+    }
 
 	size_t size() const
 	{
@@ -74,7 +82,6 @@ public:
 	void clear()
 	{
 		_size = 0;
-		_isUsed.clear();
 		while(!_unused.empty())
 			_unused.pop();
 		_data.clear();
@@ -82,33 +89,109 @@ public:
 
 	const T& operator [](size_t index) const
 	{
-		assert(_isUsed[index]);
-		return _data[index];
+		assert(index < _data.size() && _data[index].isUsed);
+		return _data[index].object;
 	}
 
 	T& operator [](size_t index)
 	{
-		assert(_isUsed[index]);
-		return _data[index];
+        assert(index < _data.size() && _data[index].isUsed);
+		return _data[index].object;
 	}
 
-	void forEach(const std::function<void(T&)> f)
-	{
-		for (size_t i = 0; i < _data.size(); ++i)
-		{
-			if(_isUsed[i])
-				f(_data[i]);
-		}
-	}
+    class iterator
+    {
+        staticIndexVector<T>& _ref;
+        size_t _index;
+    public:
+        iterator(staticIndexVector<T>& ref, size_t index) : _ref(ref), _index(index)
+        {
+            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+                ++_index;
+        };
+        void operator++()
+        {
+            ++_index;
+            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+                ++_index;
+        }
+        void operator+(size_t index)
+        {
+            _index += index;
+        }
+        bool operator!=(const iterator& o) const
+        {
+            return _index != o._index;
+        }
+        bool operator==(const iterator& o) const
+        {
+            return _index == o._index;
+        }
+        T& operator*() const
+        {
+            return _ref[_index];
+        };
 
-	void forEach(const std::function<void(const T&)> f) const
-	{
-		for (size_t i = 0; i < _data.size(); ++i)
-		{
-			if(_isUsed[i])
-				f(_data[i]);
-		}
-	}
+        using iterator_category = std::forward_iterator_tag;
+        using reference = T&;
+        using pointer = T*;
+    };
+
+	iterator begin()
+    {
+        return {*this, 0};
+    }
+    iterator end()
+    {
+        return {*this, _data.size()};
+    }
+
+    class const_iterator
+    {
+        const staticIndexVector<T>& _ref;
+        size_t _index;
+    public:
+        const_iterator(const staticIndexVector<T>& ref, size_t index) : _ref(ref), _index(index)
+        {
+            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+                ++_index;
+        };
+        void operator++()
+        {
+            ++_index;
+            while(index != _ref._data.size() && !_ref._data[_index].isUsed)
+                ++_index;
+        }
+        void operator+(size_t index)
+        {
+            _index += index;
+        }
+        bool operator!=(const iterator& o) const
+        {
+            return _index != o._index;
+        }
+        bool operator==(const iterator& o) const
+        {
+            return _index == o._index;
+        }
+        const T& operator*() const
+        {
+            return _ref[_index];
+        };
+
+        using iterator_category = std::forward_iterator_tag;
+        using reference = T&;
+        using pointer = T*;
+    };
+
+    const_iterator begin() const
+    {
+        return {*this, 0};
+    }
+    const_iterator end() const
+    {
+        return {*this, _data.size()};
+    }
 };
 
 #endif //BRANEENGINE_STATICINDEXVECTOR_H

@@ -7,6 +7,8 @@
 
 #include "component.h"
 #include "structMembers.h"
+#include "entity.h"
+
 
 template <class T>
 class NativeComponent
@@ -48,6 +50,8 @@ public:
 		return _description;
 	}
 };
+
+
 
 
 template <class T> ComponentDescription* NativeComponent<T>::_description = nullptr;

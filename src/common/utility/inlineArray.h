@@ -183,6 +183,8 @@ public:
 typedef InlineArray<uint32_t, 4> inlineUIntArray;
 typedef InlineArray<int32_t, 4> inlineIntArray;
 typedef InlineArray<float, 4> inlineFloatArray;
+class EntityID;
+typedef InlineArray<EntityID, 4> inlineEntityIDArray;
 
 
 #endif //BRANEENGINE_INLINEARRAY_H

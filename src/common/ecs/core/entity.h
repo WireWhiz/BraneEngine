@@ -19,9 +19,13 @@
 #include <runtime/runtime.h>
 #include <runtime/module.h>
 
-#ifndef EntityID
-typedef uint32_t EntityID;
-#endif
+struct EntityID
+{
+    uint32_t id = 0;
+    uint32_t version = 0;
+    operator uint32_t() const;
+    EntityID& operator=(uint32_t);
+};
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
@@ -34,7 +38,7 @@ struct EntityIndex
 {
 	Archetype* archetype;
 	size_t index;
-	bool alive;
+	uint32_t version;
 };
 
 
@@ -50,7 +54,7 @@ public:
 #else
 private:
 #endif
-	uint16_t _componentIDCount = 0;
+	uint32_t _globalEntityVersion = 0;
 	staticIndexVector<EntityIndex> _entities;
 
 	ComponentManager _components;
@@ -65,6 +69,7 @@ public:
 	EntityID createEntity(ComponentSet components);
 	void createEntities(const ComponentSet& components, size_t count);
 	void destroyEntity(EntityID entity);
+    bool entityExists(EntityID entity) const;
 	Archetype* getEntityArchetype(EntityID entity) const;
 	bool hasArchetype(EntityID entity) const;
 	bool hasComponent(EntityID entity, ComponentID component) const;

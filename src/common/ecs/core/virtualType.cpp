@@ -1,5 +1,6 @@
 #include "virtualType.h"
 #include <unordered_map>
+#include "entity.h"
 
 namespace VirtualType
 {
@@ -7,6 +8,7 @@ namespace VirtualType
 	{
 		static const std::unordered_map<Type, const std::string> _toStringMap = {
 				{virtualUnknown,    "unknown"},
+                {virtualEntityID,   "entityID"},
 				{virtualBool,       "bool"},
 				{virtualInt,        "int"},
 				{virtualInt64,      "int64"},
@@ -21,6 +23,7 @@ namespace VirtualType
 				{virtualFloatArray, "floatArray"},
 				{virtualIntArray,   "intArray"},
 				{virtualUIntArray,  "uintArray"},
+                {virtualEntityIDArray,"entityIDArray"}
 		};
 		assert(_toStringMap.count(type));
 		return _toStringMap.at(type);
@@ -57,6 +60,8 @@ namespace VirtualType
 		{
 			case virtualUnknown:
 				return 0;
+            case virtualEntityID:
+                return sizeof(EntityID);
 			case virtualBool:
 				return sizeof(bool);
 			case virtualInt:
@@ -87,6 +92,8 @@ namespace VirtualType
 				return sizeof(inlineIntArray);
 			case virtualUIntArray:
 				return sizeof(inlineUIntArray);
+            case virtualEntityIDArray:
+                return sizeof(inlineEntityIDArray);
 		}
 		assert(false && "unknown virtual type");
 		return 0;
@@ -100,6 +107,9 @@ namespace VirtualType
 			case virtualBool:
 				construct<bool>(var);
 				return;
+            case virtualEntityID:
+                construct<EntityID>(var);
+                return;
 			case virtualInt:
 				construct<int32_t>(var);
 				return;
@@ -142,6 +152,9 @@ namespace VirtualType
 			case virtualUIntArray:
 				construct<inlineUIntArray>(var);
 				return;
+            case virtualEntityIDArray:
+                construct<inlineEntityIDArray>(var);
+                return;
 		}
 	}
 
@@ -153,6 +166,9 @@ namespace VirtualType
 			case virtualBool:
 				deconstruct<bool>(var);
 				return;
+            case virtualEntityID:
+                deconstruct<EntityID>(var);
+                return;
 			case virtualInt:
 				deconstruct<int32_t>(var);
 				return;
@@ -195,6 +211,8 @@ namespace VirtualType
 			case virtualUIntArray:
 				deconstruct<inlineUIntArray>(var);
 				return;
+            case virtualEntityIDArray:
+                deconstruct<inlineEntityIDArray>(var);
 		}
 	}
 
@@ -206,6 +224,9 @@ namespace VirtualType
 			case virtualBool:
 				copy<bool>(dest, source);
 				return;
+            case virtualEntityID:
+                copy<EntityID>(dest, source);
+                return;
 			case virtualInt:
 				copy<int32_t>(dest, source);
 				return;
@@ -248,6 +269,8 @@ namespace VirtualType
 			case virtualUIntArray:
 				copy<inlineUIntArray>(dest, source);
 				return;
+            case virtualEntityIDArray:
+                copy<inlineEntityIDArray>(dest, source);
 		}
 	}
 
@@ -259,6 +282,9 @@ namespace VirtualType
 			case virtualBool:
 				move<bool>(dest, source);
 				return;
+            case virtualEntityID:
+                move<EntityID>(dest, source);
+                return;
 			case virtualInt:
 				move<int32_t>(dest, source);
 				return;
@@ -301,6 +327,9 @@ namespace VirtualType
 			case virtualUIntArray:
 				move<inlineUIntArray>(dest, source);
 				return;
+            case virtualEntityIDArray:
+                move<inlineEntityIDArray>(dest, source);
+                return;
 		}
 	}
 
@@ -312,6 +341,8 @@ namespace VirtualType
 			case virtualBool:
 				serialize<bool>(data, source);
 				return;
+            case virtualEntityID:
+                serialize<EntityID>(data, source);
 			case virtualInt:
 				serialize<int32_t>(data, source);
 				return;
@@ -354,6 +385,8 @@ namespace VirtualType
 			case virtualUIntArray:
 				serialize<inlineUIntArray>(data, source);
 				return;
+            case virtualEntityIDArray:
+                serialize<inlineEntityIDArray>(data, source);
 		}
 	}
 
@@ -364,6 +397,8 @@ namespace VirtualType
 		{
 			case virtualBool:
 				deserialize<bool>(data, source);
+            case virtualEntityID:
+                deserialize<EntityID>(data, source);
 				return;
 			case virtualInt:
 				deserialize<int32_t>(data, source);

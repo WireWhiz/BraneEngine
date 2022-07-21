@@ -6,10 +6,10 @@
 #define BRANEENGINE_GLTFLOADER_H
 #include <fstream>
 #include <string>
-#include <json/json.h>
+#include "json/json.h"
 #include <memory>
-#include <byte.h>
-#include <assets/types/meshAsset.h>
+#include "common/byte.h"
+#include "common/assets/types/meshAsset.h"
 
 class gltfLoader
 {
@@ -31,6 +31,7 @@ public:
     bool loadGlbFromString(const std::string& glb);
     bool loadGltfFromFile(const std::string& gltfFilename);
     bool loadGlbFromFile(const std::string& glbFilename);
+    std::string toGlbFile();
     void printInfo();
     void printPositions(int mesh, int primitive);
 	std::vector<uint16_t> readScalarBuffer(uint32_t accessor);

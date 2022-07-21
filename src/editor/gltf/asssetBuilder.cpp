@@ -3,12 +3,12 @@
 //
 
 #include "assetBuilder.h"
-#include <systems/transforms.h>
-#include <ecs/nativeTypes/meshRenderer.h>
+#include "common/systems/transforms.h"
+#include "common/ecs/nativeTypes/meshRenderer.h"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
 
 AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name, gltfLoader& loader)
 {
