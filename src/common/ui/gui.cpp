@@ -16,10 +16,15 @@ GUI::GUI()
 {
 	Runtime::timeline().addBlockBefore("gui", "draw");
 	Runtime::timeline().addTask("updateUI", [&]{
-		for(auto& w : _windows)
-		{
-			w->update();
-		}
+        while(!_removedWindows.empty())
+        {
+            _windows.erase(_windows.begin() + _removedWindows.top());
+            _removedWindows.pop();
+        }
+        for(auto& w : _windows)
+        {
+            w->update();
+        }
 	}, "gui");
 
 
@@ -45,6 +50,9 @@ void GUI::drawUI()
 	{
 		ImGui::PopStyleVar(3);
 		ImGui::DockSpace(ImGui::GetID("DockingRoot"),{0,0}, ImGuiDockNodeFlags_None);
+
+        if(_popup)
+            _popup->draw();
 
 		//Events are called in here to allow for docking to be influenced
 		callEvents();
@@ -97,7 +105,9 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	io.ConfigFlags   |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
 	io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
+#ifdef WIN32
 	io.ConfigFlags   |= ImGuiConfigFlags_ViewportsEnable;
+#endif
 	io.IniFilename = NULL;
 
 	io.Fonts->AddFontDefault();
@@ -244,7 +254,7 @@ void GUI::stop()
 
 void GUI::removeWindow(GUIWindowID window)
 {
-	_windows.erase(_windows.begin() + window);
+    _removedWindows.push(window);
 }
 
 void GUI::setMainMenuCallback(std::function<void()> drawMenu)
@@ -259,6 +269,16 @@ void GUI::start() {
     _renderer->setTargetAsSwapChain(false);
 
     setupImGui(*vkr);
+}
+
+void GUI::openPopup(std::unique_ptr<GUIPopup>&& popup)
+{
+    _popup = std::move(popup);
+}
+
+void GUI::closePopup()
+{
+    _popup = nullptr;
 }
 
 

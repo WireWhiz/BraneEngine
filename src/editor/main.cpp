@@ -11,6 +11,7 @@
 #include "systems/transforms.h"
 #include "ui/gui.h"
 #include "editor.h"
+#include "serverFilesystem.h"
 
 int main(int argc, char** argv)
 {
@@ -30,6 +31,7 @@ int main(int argc, char** argv)
 	Runtime::addModule<Transforms>();
 	Runtime::addModule<graphics::VulkanRuntime>();
 	Runtime::addModule<GUI>();
+    Runtime::addModule<ServerFilesystem>();
 	Runtime::addModule<Editor>();
 
 	Runtime::run();

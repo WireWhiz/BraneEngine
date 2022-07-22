@@ -1,3 +1,3 @@
-add_library(editorWidgets STATIC assetBrowserWidget.cpp)
+add_library(editorWidgets STATIC assetBrowserWidget.cpp virtualVariableWidgets.cpp virtualVariableWidgets.h)
 target_link_libraries(editorWidgets PUBLIC ui)
 target_compile_definitions(editorWidgets  PUBLIC CLIENT)

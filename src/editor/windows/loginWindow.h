@@ -14,12 +14,6 @@ namespace net{
 	class Connection;
 }
 
-class LoginEvent : public GUIEvent{
-	net::Connection* _server;
-public:
-	LoginEvent(const std::string& name, net::Connection* server);
-	inline net::Connection* server() const {return _server;}
-};
 
 class LoginWindow : public GUIWindow
 {

@@ -9,6 +9,7 @@
 
 class CreateAssetWindow : public GUIWindow
 {
+    void loadAssetFromFile(const std::string &filename);
 public:
     CreateAssetWindow(GUI& ui, GUIWindowID id);
     void draw() override;

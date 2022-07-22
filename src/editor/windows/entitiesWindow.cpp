@@ -3,7 +3,7 @@
 //
 
 #include "entitiesWindow.h"
-#include "editorEvents.h"
+#include "editor/editorEvents.h"
 #include "assets/assembly.h"
 #include "ui/gui.h"
 #include "ecs/core/entity.h"
@@ -11,7 +11,7 @@
 EntitiesWindow::EntitiesWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {
 	_em = Runtime::getModule<EntityManager>();
-	ui.addEventListener<FocusAssetEvent>("focus asset", [this](FocusAssetEvent* event){
+	ui.addEventListener<FocusAssetEvent>("focus asset", [this](const FocusAssetEvent* event){
 		_assembly = dynamic_cast<Assembly*>(event->asset());
 	});
 }

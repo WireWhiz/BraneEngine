@@ -2,14 +2,14 @@
 // Created by eli on 2/1/2022.
 //
 
-#ifndef BRANEENGINE_ASSETBUILDER_H
-#define BRANEENGINE_ASSETBUILDER_H
+#ifndef BRANEENGINE_ASSEMBLYBUILDER_H
+#define BRANEENGINE_ASSEMBLYBUILDER_H
 
 #include "assets/assembly.h"
 #include "assets/types/meshAsset.h"
 #include "gltfLoader.h"
 
-class AssetBuilder
+class AssemblyBuilder
 {
 public:
 	struct AssemblyAssets
@@ -23,4 +23,4 @@ public:
 
 
 
-#endif //BRANEENGINE_ASSETBUILDER_H
+#endif //BRANEENGINE_ASSEMBLYBUILDER_H

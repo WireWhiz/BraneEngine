@@ -10,6 +10,7 @@
 #include "windows/entitiesWindow.h"
 #include "windows/renderWindow.h"
 #include "windows/assetBrowserWindow.h"
+#include "editorEvents.h"
 #include <fileManager/fileManager.h>
 #include <assets/assetManager.h>
 
@@ -19,7 +20,7 @@ void Editor::start()
 	_ui = Runtime::getModule<GUI>();
 	GUIWindowID loginWindow = _ui->addWindow<LoginWindow>()->id();
 
-	_ui->addEventListener("loginSuccessful", std::function([this, loginWindow](LoginEvent* evt){
+	_ui->addEventListener("login", std::function([this, loginWindow](const LoginEvent* evt){
 		_server = evt->server();
 		_ui->removeWindow(loginWindow);
 		addMainWindows();

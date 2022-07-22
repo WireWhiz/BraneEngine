@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <functional>
 #include "guiRenderer.h"
+#include "guiPopup.h"
 
 class GUI : public Module
 {
@@ -26,12 +27,14 @@ class GUI : public Module
 	VkDescriptorPool _imGuiDescriptorPool;
 
 	std::vector<std::unique_ptr<GUIWindow>> _windows;
+    std::stack<GUIWindowID> _removedWindows;
+    std::unique_ptr<GUIPopup> _popup;
 	void drawUI();
 	std::function<void()> _drawMenu;
 
 	std::mutex _queueLock;
 	std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
-	std::unordered_map<std::string, std::vector<std::function<void(GUIEvent*)>>> _eventListeners;
+	std::unordered_map<std::string, std::vector<std::function<void(const GUIEvent*)>>> _eventListeners;
 
 	void callEvents();
 public:
@@ -52,16 +55,18 @@ public:
 	void removeWindow(GUIWindowID window);
 	void setMainMenuCallback(std::function<void()> drawMenu);
 
-	void sendEvent(std::unique_ptr<GUIEvent>&& name);
-	template<typename T>
-	void addEventListener(const std::string& name, std::function<void(T*)> callback)
+    void openPopup(std::unique_ptr<GUIPopup>&& popup);
+    void closePopup();
+    void sendEvent(std::unique_ptr<GUIEvent>&& name);
+    template<typename T>
+	void addEventListener(const std::string& name, std::function<void(const T*)> callback)
 	{
 		static_assert(std::is_base_of<GUIEvent, T>());
 		if constexpr(std::is_same<GUIEvent, T>())
 			_eventListeners[name].push_back(callback);
 		else
-			_eventListeners[name].push_back([callback](GUIEvent* event){
-				T* e = (T*)(event);
+			_eventListeners[name].push_back([callback](const GUIEvent* event){
+				const T* e = (const T*)(event);
 				callback(e);
 			});
 	}

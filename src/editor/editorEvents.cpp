@@ -4,6 +4,20 @@
 
 #include "editorEvents.h"
 
+LoginEvent::LoginEvent(net::Connection* server) : GUIEvent("login")
+{
+    _server = server;
+}
+
+DirectoryUpdateEvent::DirectoryUpdateEvent(ServerDirectory* dir) : GUIEvent("dir reload")
+{
+    _dir = dir;
+}
+ServerDirectory* DirectoryUpdateEvent::directory() const
+{
+    return _dir;
+}
+
 FocusAssetEvent::FocusAssetEvent(Asset* asset) : GUIEvent("focus asset")
 {
 	_asset = asset;

@@ -8,6 +8,7 @@
 #include "common/config/config.h"
 #include "common/networking/networking.h"
 #include <ui/gui.h>
+#include "../editorEvents.h"
 
 void LoginWindow::draw()
 {
@@ -63,7 +64,7 @@ void LoginWindow::draw()
 							Config::json()["user"]["name"] = _username;
 							Config::save();
 						}
-						_ui.sendEvent(std::make_unique<LoginEvent>("loginSuccessful", server));
+						_ui.sendEvent(std::make_unique<LoginEvent>(server));
 					});
 
 				}
@@ -87,9 +88,4 @@ LoginWindow::LoginWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 	_serverAddress = Config::json()["network"]["asset_server"].asString();
 	_port = Config::json()["network"]["tcp_port"].asString();
 	_username = Config::json()["user"]["name"].asString();
-}
-
-LoginEvent::LoginEvent(const std::string& name, net::Connection* server) : GUIEvent(name)
-{
-	_server = server;
 }

@@ -2,7 +2,7 @@
 // Created by eli on 2/1/2022.
 //
 
-#include "assetBuilder.h"
+#include "assemblyBuilder.h"
 #include "common/systems/transforms.h"
 #include "common/ecs/nativeTypes/meshRenderer.h"
 
@@ -10,7 +10,7 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name, gltfLoader& loader)
+AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string& name, gltfLoader& loader)
 {
 	AssemblyAssets assets;
 
@@ -110,10 +110,10 @@ AssetBuilder::AssemblyAssets AssetBuilder::buildAssembly(const std::string& name
 				Assembly::EntityAsset& childEnt = entities[child.asUInt()];
 				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
 
-				VirtualComponent tc(LocalTransform::def());
-				tc.setVar(0, localTransform);
-				tc.setVar(1, (EntityID)pIndex);
-				childEnt.components.push_back(tc);
+                LocalTransform tc{};
+                tc.value = localTransform;
+                tc.parent = pIndex;
+				childEnt.components.emplace_back(tc.toVirtual());
 			}
 		}
 		pIndex++;

@@ -10,7 +10,7 @@
 #include "assets/assetManager.h"
 #include "ecs/core/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
-#include "editorEvents.h"
+#include "editor/editorEvents.h"
 #include <systems/transforms.h>
 
 RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
@@ -22,7 +22,7 @@ RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 	_swapChain = vkr->swapChain();
 	_sceneRoot = -1;
 
-	ui.addEventListener<FocusAssetEvent>("focus asset", [this, &em](FocusAssetEvent* event){
+	ui.addEventListener<FocusAssetEvent>("focus asset", [this, &em](const FocusAssetEvent* event){
 		auto* transformsManager = Runtime::getModule<Transforms>();
 		if(dynamic_cast<Assembly*>(event->asset()))
 		{

@@ -25,8 +25,6 @@ class DataWindow : public GUIWindow
 	void displayAssetData();
 	void displayEntityData();
 	void displayEntityAssetData();
-	void displayVirtualComponentData(VirtualComponentView component);
-	void displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
 
 	void displayAssemblyData();
 	void displayMeshData();

@@ -4,8 +4,6 @@
 
 #include "assetServer.h"
 #include "common/utility/threadPool.h"
-#include "gltf/gltfLoader.h"
-#include "common/gltf/assetBuilder.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),
@@ -141,34 +139,7 @@ _db(*Runtime::getModule<Database>())
 		}
 		std::string assetDirectory = Config::json()["data"]["asset_path"].asString();
 
-		std::string suffix = assetFilename.substr(assetFilename.find_last_of('.'));
-		if(suffix == ".glb")
-		{
-			gltfLoader loader;
-			loader.loadGlbFromString(assetData);
-			auto assembly = AssetBuilder::buildAssembly(assetName, loader);
 
-			//Save meshes
-			for(auto& mesh : assembly.meshes)
-			{
-				std::string meshFilename = assetPath + assetName + "_meshes/" + mesh->name + ".mesh";
-
-				AssetInfo info{0, meshFilename, mesh->name, AssetType::mesh};
-				_db.insertAssetInfo(info);
-				mesh->id.serverAddress = Config::json()["network"]["domain"].asString();
-				mesh->id.id = info.id;
-				assembly.assembly->meshes.push_back(mesh->id);
-				_fm.writeAsset(mesh.get(), assetDirectory + "/" + meshFilename);
-			}
-
-			//Save assembly
-			std::string assemblyFilename = assetPath + assetName + ".assembly";
-			AssetInfo info{0, assemblyFilename, assetName, AssetType::assembly};
-			_db.insertAssetInfo(info);
-			assembly.assembly->id.serverAddress = Config::json()["network"]["domain"].asString();
-			assembly.assembly->id.id = info.id;
-			_fm.writeAsset(assembly.assembly.get(), assetDirectory + "/" +assemblyFilename);
-		}
 		res.res() << true;
 		res.send();
 	});
