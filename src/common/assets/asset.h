@@ -22,23 +22,20 @@ public:
 	AssetID id;
 	AssetType type;
 	LoadState loadState;
-	static Asset* readUnknown(MarkedSerializedData& sData);
-	static Asset* deserializeUnknown(ISerializedData& sData);
-	virtual void serialize(OSerializedData& sData);
-	virtual void deserialize(ISerializedData& sData);
-	virtual void toFile(MarkedSerializedData& sData);
-	virtual void fromFile(MarkedSerializedData& sData);
+	static Asset* deserializeUnknown(InputSerializer s);
+	virtual void serialize(OutputSerializer s);
+	virtual void deserialize(InputSerializer s);
 };
 
 class IncrementalAsset : public Asset
 {
 public:
     struct SerializationContext{};
-	static IncrementalAsset* deserializeUnknownHeader(ISerializedData& sData);
-	virtual void serializeHeader(OSerializedData& sData);
-	virtual void deserializeHeader(ISerializedData& sData);
-	virtual bool serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData);
-	virtual void deserializeIncrement(ISerializedData& sData) = 0;
+	static IncrementalAsset* deserializeUnknownHeader(InputSerializer s);
+	virtual void serializeHeader(OutputSerializer s);
+	virtual void deserializeHeader(InputSerializer s);
+	virtual bool serializeIncrement(OutputSerializer s, SerializationContext* iteratorData);
+	virtual void deserializeIncrement(InputSerializer s) = 0;
 	virtual std::unique_ptr<SerializationContext> createContext() const = 0;
 };
 

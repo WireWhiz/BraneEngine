@@ -1,6 +1,6 @@
 #include "networking.h"
 #include "assets/assetManager.h"
-#include "request.h"
+#include "runtime/runtime.h"
 #include <atomic>
 
 NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
@@ -127,11 +127,15 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 
 	Runtime::log("async requesting: " + id.string());
 
-	// Set up a listener for the asset response
-	net::Request req("asset");
-	req.body() << id;
+	SerializedData data;
+    OutputSerializer s(data);
+	s << id;
 
-	server->sendRequest(req).then([asset](ISerializedData&& sData){
+	server->sendRequest("asset", std::move(data), [asset](net::ResponseCode code, InputSerializer sData){
+        if(code != net::ResponseCode::success)
+        {
+            Runtime::error("Could not get incremental asset, server responded with code: " + std::to_string((uint8_t)code));
+        }
 		asset.setData(Asset::deserializeUnknown(sData));
 	});
 	return asset;
@@ -148,14 +152,20 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 
 	Runtime::log("async requesting incremental: " + id.string());
 	uint32_t streamID = _streamIDCounter++;
-	net::Request req("incrementalAsset");
-	req.body() << id << streamID;
+
+    SerializedData data;
+    OutputSerializer s(data);
+    s << id << streamID;
 
 	// Set up a listener for the asset response
-	server->sendRequest(req).then([this, asset, server, streamID](ISerializedData sData){
+	server->sendRequest("incrementalAsset", std::move(data), [this, asset, server, streamID](auto code, InputSerializer sData){
+        if(code != net::ResponseCode::success)
+        {
+            Runtime::error("Could not get incremental asset, server responded with code: " + std::to_string((uint8_t)code));
+        }
 		IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
 		asset.setData(assetPtr);
-		server->addStreamListener(streamID, [assetPtr](ISerializedData& sData){
+		server->addStreamListener(streamID, [assetPtr](InputSerializer sData){
 			assetPtr->deserializeIncrement(sData);
 		});
 	});
@@ -186,41 +196,55 @@ const char* NetworkManager::name()
 	return "networkManager";
 }
 
-void NetworkManager::addRequestListener(const std::string& name, std::function<void(net::RequestResponse&)> callback)
+void NetworkManager::addRequestListener(const std::string& name, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> callback)
 {
 	std::scoped_lock l(_requestLock);
 	assert(!_requestListeners.count(name));
-	_requestListeners.insert({name, callback});
+	_requestListeners.insert({name, std::move(callback)});
 }
 
 void NetworkManager::ingestData(net::Connection* connection)
 {
 	while(connection->messageAvailable())
 	{
-		std::shared_ptr<net::IMessage> message = connection->popMessage();
-		switch(message->header.type)
+		net::IMessage message = connection->popMessage();
+		switch(message.header.type)
 		{
 			case net::MessageType::request:
 			{
+                InputSerializer req(message.body);
+                net::OMessage response;
+                response.header.type = net::MessageType::response;
+                SerializedData resHeaderData;
+                SerializedData resBodyData;
+                OutputSerializer resHeaderS(resHeaderData);
+                OutputSerializer res(resBodyData);
 				try{
-					net::RequestResponse response(connection, message);
-					{
-						std::scoped_lock l(_requestLock);
-						if(!_requestListeners.count(response.name())){
-							Runtime::warn("Unknown request received: " + response.name());
-							break;
+                    std::string name;
+                    uint32_t id;
+                    req >> name >> id;
+                    resHeaderS << id;
+                    {
+                        std::scoped_lock l(_requestLock);
+                        auto listener = _requestListeners.find(name);
+                        if(listener == _requestListeners.end()){
+							Runtime::warn("Unknown request received: " + name);
 						}
-						_requestListeners[response.name()](response);
+                        listener->second(connection, req, res);
 					}
-				}
+                    resHeaderS << net::ResponseCode::success;
+                }
 				catch(std::exception& e){
 					Runtime::error("Error with received request: " + std::string(e.what()));
+                    resHeaderS << net::ResponseCode::serverError;
 				}
-
+                response.chunks.emplace_back(std::move(resHeaderData));
+                response.chunks.emplace_back(std::move(resBodyData));
+                connection->send(std::move(response));
 				break;
 			}
 			default:
-				Runtime::warn("Received message of unknown type: " + std::to_string((int)message->header.type));
+				Runtime::warn("Received message of unknown type: " + std::to_string((int)message.header.type));
 				break;
 		}
 	}

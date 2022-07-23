@@ -42,12 +42,18 @@ void LoginWindow::draw()
 				if(success)
 				{
 					_feedbackMessage = "Connected, logging in...";
-					net::Request req("login");
-
-					req.body() << _username << _password;
+					SerializedData req;
+                    OutputSerializer s(req);
+					s << _username << _password;
 
 					auto* server = nm->getServer(_serverAddress);
-					server->sendRequest(req).then([this, server](ISerializedData sData){
+					server->sendRequest("login", std::move(req), [this, server](net::ResponseCode code, InputSerializer sData){
+                        if(code != net::ResponseCode::success)
+                        {
+                            _loggingIn = false;
+                            _feedbackMessage = "request error: " + std::to_string((uint8_t)code);
+                            return;
+                        }
 						bool result;
 						sData >> result;
 						if(!result)

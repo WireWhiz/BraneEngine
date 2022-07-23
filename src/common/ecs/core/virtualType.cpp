@@ -333,7 +333,7 @@ namespace VirtualType
 		}
 	}
 
-	void serialize(Type type, OSerializedData& data, const byte* source)
+	void serialize(Type type, OutputSerializer data, const byte* source)
 	{
 		assert(type != virtualUnknown);
 		switch (type)
@@ -390,7 +390,7 @@ namespace VirtualType
 		}
 	}
 
-	void deserialize(Type type, ISerializedData& data, byte* source)
+	void deserialize(Type type, InputSerializer data, byte* source)
 	{
 		assert(type != virtualUnknown);
 		switch (type)

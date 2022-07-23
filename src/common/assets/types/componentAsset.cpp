@@ -24,30 +24,16 @@ const std::vector<VirtualType::Type>& ComponentAsset::members() const
 	return _members;
 }
 
-void ComponentAsset::serialize(OSerializedData& sdata)
+void ComponentAsset::serialize(OutputSerializer s)
 {
-	Asset::serialize(sdata);
-	sdata << _members << _memberNames;
+	Asset::serialize(s);
+	s << _members << _memberNames;
 }
 
-void ComponentAsset::deserialize(ISerializedData& sdata)
+void ComponentAsset::deserialize(InputSerializer s)
 {
-	Asset::deserialize(sdata);
-	sdata >> _members >> _memberNames;
-}
-
-void ComponentAsset::toFile(MarkedSerializedData& sData)
-{
-	Asset::toFile(sData);
-	sData.writeAttribute("members", _members);
-	sData.writeAttribute("memberNames", _memberNames);
-}
-
-void ComponentAsset::fromFile(MarkedSerializedData& sData)
-{
-	Asset::fromFile(sData);
-	sData.readAttribute("members", _members);
-	sData.readAttribute("memberNames", _memberNames);
+	Asset::deserialize(s);
+	s >> _members >> _memberNames;
 }
 
 const std::vector<std::string>& ComponentAsset::memberNames() const

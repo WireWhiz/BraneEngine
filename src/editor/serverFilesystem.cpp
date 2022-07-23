@@ -46,11 +46,13 @@ ServerDirectory* ServerFilesystem::root()
 
 void ServerFilesystem::createDirectory(ServerDirectory* parent, const std::string& name)
 {
-    net::Request req("createDirectory");
-    req.body() << (parent->path() + name);
-    _server->sendRequest(req).then([this, parent](ISerializedData sData){
-        bool success;
-        sData >> success;
+    SerializedData req;
+    OutputSerializer s(req);
+    s << (parent->path() + name);
+    _server->sendRequest("createDirectory", std::move(req), [this, parent](net::ResponseCode code, InputSerializer sData){
+        bool success = code == net::ResponseCode::success;
+        if(success)
+            sData >> success;
         if(!success)
         {
             Runtime::error("Could not create directory");
@@ -69,11 +71,13 @@ void ServerFilesystem::setServer(net::Connection* server)
 void ServerFilesystem::deleteFile(ServerDirectory* parent, const std::string& name)
 {
     assert(parent);
-    net::Request req("deleteFile");
-    req.body() << (parent->path() + name);
-    _server->sendRequest(req).then([this, parent, name](ISerializedData sData){
-        bool success;
-        sData >> success;
+    SerializedData req;
+    OutputSerializer s(req);
+    s << (parent->path() + name);
+    _server->sendRequest("deleteFile", std::move(req), [this, parent, name](auto code, auto sData){
+        bool success = code == net::ResponseCode::success;
+        if(success)
+            sData >> success;
         if(!success)
         {
             Runtime::error("Could not delete file: " + name);
@@ -85,13 +89,15 @@ void ServerFilesystem::deleteFile(ServerDirectory* parent, const std::string& na
 
 void ServerFilesystem::fetchDirectory(ServerDirectory* dir)
 {
-    net::Request req("directoryContents");
-    req.body() << dir->path();
+    SerializedData req;
+    OutputSerializer s(req);
+    s << dir->path();
 
-    _server->sendRequest(req).then([this, dir](ISerializedData sData){
+    _server->sendRequest("directoryContents", std::move(req), [this, dir](auto code, auto sData){
 
-        bool success;
-        sData >> success;
+        bool success = code == net::ResponseCode::success;
+        if(success)
+            sData >> success;
         if(!success)
         {
             Runtime::error("Could not fetch contents of: " + dir->path());
@@ -146,12 +152,14 @@ void ServerFilesystem::moveDirectory(ServerDirectory* target, ServerDirectory* d
         return;
     if(destination->hasParent(target)) //We can't move a parent folder into a child
         return;
-    net::Request req("moveDirectory");
-    req.body() << target->path() << (destination->path() + target->name);
+    SerializedData req;
+    OutputSerializer s(req);
+    s << target->path() << (destination->path() + target->name);
 
-    _server->sendRequest(req).then([this, target, destination](ISerializedData sData) {
-        bool success;
-        sData >> success;
+    _server->sendRequest("moveDirectory", std::move(req), [this, target, destination](auto code, auto sData) {
+        bool success = code == net::ResponseCode::success;
+        if(success)
+            sData >> success;
         if (!success)
         {
             Runtime::error("Could not move file");

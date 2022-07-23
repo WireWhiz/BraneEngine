@@ -63,7 +63,7 @@ void ComponentDescription::deconstruct(byte* component) const
 	}
 }
 
-void ComponentDescription::serialize(OSerializedData& sData, byte* component) const
+void ComponentDescription::serialize(OutputSerializer sData, byte* component) const
 {
 	for(auto& m : _members)
 	{
@@ -71,7 +71,7 @@ void ComponentDescription::serialize(OSerializedData& sData, byte* component) co
 	}
 }
 
-void ComponentDescription::deserialize(ISerializedData& sData, byte* component) const
+void ComponentDescription::deserialize(InputSerializer sData, byte* component) const
 {
 	for(auto& m : _members)
 	{

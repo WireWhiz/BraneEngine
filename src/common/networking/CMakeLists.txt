@@ -2,9 +2,7 @@
 
 add_library(networking STATIC 
 	"networking.cpp"
-	"connection.cpp"
-    "message.h"
-    "request.cpp")
+	"connection.cpp")
  target_link_libraries(networking PUBLIC ssl include_dir)
  target_compile_definitions(networking PUBLIC ASIO_STANDALONE)
 

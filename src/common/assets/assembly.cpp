@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 #include <ecs/nativeTypes/meshRenderer.h>
 
-void Assembly::EntityAsset::serialize(OSerializedData& message, Assembly& assembly)
+void Assembly::EntityAsset::serialize(OutputSerializer message, Assembly& assembly)
 {
 	message << static_cast<uint32_t>(components.size());
 	for (size_t i = 0; i < components.size(); ++i)
@@ -33,7 +33,7 @@ void Assembly::EntityAsset::serialize(OSerializedData& message, Assembly& assemb
 	}
 }
 
-void Assembly::EntityAsset::deserialize(ISerializedData& message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
+void Assembly::EntityAsset::deserialize(InputSerializer message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
 {
 	uint32_t size;
 	message.readSafeArraySize(size);
@@ -48,59 +48,6 @@ void Assembly::EntityAsset::deserialize(ISerializedData& message, Assembly& asse
 		description->deserialize(message, component.data());
 		components.push_back(std::move(component));
 	}
-}
-
-void Assembly::EntityAsset::writeToFile(MarkedSerializedData& sData, Assembly& assembly)
-{
-	sData.enterScope("components");
-	for (int i = 0; i < components.size(); ++i)
-	{
-		sData.startIndex();
-
-		uint32_t componentIDIndex = 0;
-		for(auto& id : assembly.components)
-		{
-			if(id == components[i].description()->asset->id)
-				break;
-			++componentIDIndex;
-		}
-		if(componentIDIndex >= assembly.components.size())
-		{
-			Runtime::error("Component: " + components[i].description()->asset->id.string() + " not found in asset components");
-			throw std::runtime_error("Component assetID not listed in asset components");
-		}
-		sData.writeAttribute("assetID", componentIDIndex);
-
-		OSerializedData oData;
-		components[i].description()->serialize(oData, components[i].data());
-		sData.writeAttribute("value", oData.data);
-
-		sData.pushIndex();
-	}
-	sData.exitScope();
-}
-void Assembly::EntityAsset::readFromFile(MarkedSerializedData& sData, Assembly& assembly, ComponentManager& cm, AssetManager& am)
-{
-	sData.enterScope("components");
-	uint32_t size = static_cast<uint32_t>(sData.scopeSize());
-	components.reserve(size);
-	for (uint32_t i = 0; i < size; ++i)
-	{
-		sData.enterScope(i);
-		uint32_t componentIDIndex;
-		sData.readAttribute("assetID", componentIDIndex);
-		const ComponentDescription* description = cm.getComponentDef(
-				am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
-
-		VirtualComponent component(description);
-		ISerializedData iData;
-		sData.readAttribute("value", iData.data);
-		description->deserialize(iData, component.data());
-		components.push_back(std::move(component));
-
-		sData.exitScope();
-	}
-	sData.exitScope();
 }
 
 bool Assembly::EntityAsset::hasComponent(const ComponentDescription* def) const
@@ -131,47 +78,7 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 	return componentIDs;
 }
 
-void Assembly::toFile(MarkedSerializedData& sData)
-{
-	Asset::toFile(sData);
-	sData.writeAttribute("scripts", scripts);
-	sData.writeAttribute("meshes", meshes);
-	sData.writeAttribute("textures", textures);
-	sData.writeAttribute("components", components);
-	sData.enterScope("entities");
-	for (uint32_t i = 0; i < entities.size(); ++i)
-	{
-		sData.startIndex();
-		entities[i].writeToFile(sData, *this);
-		sData.pushIndex();
-	}
-	sData.exitScope();
-}
-
-void Assembly::fromFile(MarkedSerializedData& sData)
-{
-	ComponentManager& cm = Runtime::getModule<EntityManager>()->components();
-	AssetManager& am = *Runtime::getModule<AssetManager>();
-
-	Asset::fromFile(sData);
-	sData.readAttribute("scripts", scripts);
-	sData.readAttribute("meshes", meshes);
-	sData.readAttribute("textures", textures);
-	sData.readAttribute("components", components);
-	sData.enterScope("entities");
-
-	uint32_t count = static_cast<uint32_t>(sData.scopeSize());
-	entities.resize(count);
-	for (uint32_t i = 0; i < entities.size(); ++i)
-	{
-		sData.enterScope(i);
-		entities[i].readFromFile(sData, *this, cm, am);
-		sData.exitScope();
-	}
-	sData.exitScope();
-}
-
-void Assembly::serialize(OSerializedData& message)
+void Assembly::serialize(OutputSerializer message)
 {
 	Asset::serialize(message);
 	message << components << scripts << meshes << textures;
@@ -182,7 +89,7 @@ void Assembly::serialize(OSerializedData& message)
 	}
 }
 
-void Assembly::deserialize(ISerializedData& message)
+void Assembly::deserialize(InputSerializer message)
 {
 	ComponentManager& cm = Runtime::getModule<EntityManager>()->components();
 	AssetManager& am = *Runtime::getModule<AssetManager>();

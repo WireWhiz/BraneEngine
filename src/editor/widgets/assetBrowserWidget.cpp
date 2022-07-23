@@ -222,14 +222,14 @@ void AssetBrowserWidget::displayFiles()
 }
 
 
-std::string AssetBrowserWidget::currentPath()
+ServerDirectory* AssetBrowserWidget::currentDirectory()
 {
-    return _currentDir->path();
+    return _currentDir;
 }
 
 void AssetBrowserWidget::displayFullBrowser()
 {
-    ImGui::TextDisabled("/%s", currentPath().c_str());
+    ImGui::TextDisabled("/%s", _currentDir->path().c_str());
 
     if(_currentDir != _fs.root())
     {
@@ -263,7 +263,7 @@ void CreateDirectoryPopup::drawBody()
     ImGui::Text("Create Directory:");
     if (ImGui::InputText("##name", &_dirName, ImGuiInputTextFlags_AutoSelectAll
         | ImGuiInputTextFlags_EnterReturnsTrue)
-        &&ImGui::Button("create"))
+        || ImGui::Button("create"))
     {
         ImGui::CloseCurrentPopup();
         _fs.createDirectory(_parent, _dirName);

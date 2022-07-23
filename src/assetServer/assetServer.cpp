@@ -3,7 +3,6 @@
 //
 
 #include "assetServer.h"
-#include "common/utility/threadPool.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),
@@ -32,45 +31,40 @@ _db(*Runtime::getModule<Database>())
 		});
 	}
 
-	_nm.addRequestListener("login", [this](net::RequestResponse& res){
-		auto& ctx = getContext(res.sender());
+	_nm.addRequestListener("login", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto& ctx = getContext(connection);
 		if(ctx.authenticated)
 		{
-			res.res() << true;
-			res.send();
+			res << true;
 			return;
 		}
-		ThreadPool::enqueue([this, res, &ctx]() mutable{
-			std::string username, password;
-			res.body() >> username >> password;
-			if(_db.authenticate(username, password))
-			{
-				res.res() << true;
-				ctx.authenticated = true;
-				ctx.username = username;
-				ctx.userID = _db.getUserID(username);
-				ctx.permissions = _db.userPermissions(ctx.userID);
-			}
-			else
-				res.res() << false;
-			res.send();
-		});
+        std::string username, password;
+        req >> username >> password;
+        if(_db.authenticate(username, password))
+        {
+            res << true;
+            ctx.authenticated = true;
+            ctx.username = username;
+            ctx.userID = _db.getUserID(username);
+            ctx.permissions = _db.userPermissions(ctx.userID);
+        }
+        else
+            res << false;
 
 	});
 
-	_nm.addRequestListener("asset", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("asset", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!ctx.authenticated)
 			return;
 		AssetID id;
-		res.body() >> id;
+		req >> id;
 		std::cout << "request for: " << id.string() << std::endl;
 
 		Asset* asset = _am.getAsset<Asset>(id);
 		auto f = [this, res](Asset* asset) mutable
 		{
-			asset->serialize(res.res());
-			res.send();
+			asset->serialize(res);
 		};
 
 		if(asset)
@@ -80,40 +74,36 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
-	_nm.addRequestListener("incrementalAsset", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("incrementalAsset", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!ctx.authenticated)
 			return;
 		AssetID id;
 		uint32_t streamID;
-		res.body() >> id >> streamID;
+		req >> id >> streamID;
 		std::cout << "request for: " << id.string() << std::endl;
 
 		Asset* asset = _am.getAsset<Asset>(id);
 
-		auto f = [this, res, streamID](Asset* asset) mutable
+		auto f = [this, res, connection, streamID](Asset* asset) mutable
 		{
 			auto* ia = dynamic_cast<IncrementalAsset*>(asset);
 			if(ia)
 			{
 				std::cout<< "Sending header for: " << ia->id << std::endl;
-				ia->serializeHeader(res.res());
-
-				res.send();
+				ia->serializeHeader(res);
 
 				IncrementalAssetSender assetSender{};
 				assetSender.iteratorData = ia->createContext();
 				assetSender.asset = ia;
 				assetSender.streamID = streamID;
-				assetSender.connection = res.sender();
+				assetSender.connection = connection;
 				_senders.push_back(std::move(assetSender));
 			}
 			else
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
 		};
 
-
-
 		if(asset)
 			f(asset);
 		else
@@ -121,27 +111,25 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
-	_nm.addRequestListener("processAsset",[this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("processAsset",[this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;
 		std::string assetFilename;   //Name of raw file
 		std::string assetName;       //desired asset name
 		std::string assetPath;       //desired asset path
 		std::string assetData; //file data
-		res.body() >> assetFilename >> assetName >> assetPath >> assetData;
+		req >> assetFilename >> assetName >> assetPath >> assetData;
 
 		if(!checkAssetPath(assetPath))
 		{
-			res.res() << false;
-			res.send();
+			res << false;
 			return;
 		}
 		std::string assetDirectory = Config::json()["data"]["asset_path"].asString();
 
 
-		res.res() << true;
-		res.send();
+		res << true;
 	});
 
 	addDirectoryRequestListeners();
@@ -151,79 +139,72 @@ _db(*Runtime::getModule<Database>())
 
 void AssetServer::addDirectoryRequestListeners()
 {
-	_nm.addRequestListener("directoryContents", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("directoryContents", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;
 		std::string dirPath;
-		res.body() >> dirPath;
+		req >> dirPath;
 		if(!checkAssetPath(dirPath))
 		{
-			res.res() << false;
-			res.send();
+			res << false;
 			return;
 		}
 		auto contents = _fm.getDirectoryContents(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
-		res.res() << true << contents.directories << static_cast<uint16_t>(contents.files.size());
+		res << true << contents.directories << static_cast<uint16_t>(contents.files.size());
 		for(auto& f : contents.files)
 		{
-			res.res() << f;
+			res << f;
 			AssetID id;
 			bool isAsset = _db.fileToAssetID(dirPath + f, id);
-			res.res() << isAsset;
+			res << isAsset;
 			if(isAsset)
 			{
 				id.serverAddress = Config::json()["network"]["domain"].asString();
-				res.res() << id;
+				res<< id;
 			}
 		}
-		res.send();
 	});
 
-	_nm.addRequestListener("createDirectory", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("createDirectory", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;
 		std::string dirPath;
-		res.body() >> dirPath;
+		req >> dirPath;
 		if(!checkAssetPath(dirPath))
 		{
-			res.res() << false;
-			res.send();
+			res << false;
 			return;
 		}
 		_fm.createDirectory(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
-		res.res() << true;
-		res.send();
+		res<< true;
 	});
 
-	_nm.addRequestListener("moveDirectory", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("moveDirectory", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;
 		std::string dirSrc, dirDest;
-		res.body() >> dirSrc >> dirDest;
+		req >> dirSrc >> dirDest;
 		if(!checkAssetPath(dirSrc) || !checkAssetPath(dirDest))
 		{
-			res.res() << false;
-			res.send();
+			res << false;
 			return;
 		}
 		_fm.moveFile(Config::json()["data"]["asset_path"].asString() + "/" + dirSrc, Config::json()["data"]["asset_path"].asString() + "/" + dirDest);
-		res.res() << true;
-		res.send();
+		res << true;
 	});
 
-	_nm.addRequestListener("deleteFile", [this](net::RequestResponse& res){
-		auto ctx = getContext(res.sender());
+	_nm.addRequestListener("deleteFile", [this](auto* connection, InputSerializer req, OutputSerializer res){
+		auto ctx = getContext(connection);
 		if(!validatePermissions(ctx, {"edit assets"}))
 			return;
 		std::string dirPath;
-		res.body() >> dirPath;
+		req >> dirPath;
 		if(!checkAssetPath(dirPath))
 		{
-			res.res() << false;
-			res.send();
+			res << false;
 			return;
 		}
 		bool notRoot = false;
@@ -237,8 +218,7 @@ void AssetServer::addDirectoryRequestListeners()
 		}
 		if(notRoot)
 			_fm.deleteFile(Config::json()["data"]["asset_path"].asString() + "/" + dirPath);
-		res.res() << notRoot;
-		res.send();
+		res << notRoot;
 	});
 }
 
@@ -249,11 +229,12 @@ void AssetServer::processMessages()
 	{
 		try
 		{
-			OSerializedData data;
-			bool moreData = sender.asset->serializeIncrement(data, sender.iteratorData.get());
+			SerializedData data;
+            OutputSerializer s(data);
+			bool moreData = sender.asset->serializeIncrement(s, sender.iteratorData.get());
 			sender.connection->sendStreamData(sender.streamID, std::move(data));
 			if(!moreData)
-				sender.connection->sendStreamEnd(sender.streamID);
+                sender.connection->endStream(sender.streamID);
 			return !moreData;
 		}
 		catch(const std::exception& e) {

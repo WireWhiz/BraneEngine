@@ -43,8 +43,8 @@ public:
 	ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size);
 	void construct(byte* component) const;
 	void deconstruct(byte* component) const;
-	void serialize(OSerializedData& sData, byte* component) const;
-	void deserialize(ISerializedData& sData, byte* component) const;
+	void serialize(OutputSerializer sData, byte* component) const;
+	void deserialize(InputSerializer sData, byte* component) const;
 	void copy(byte* src, byte* dest) const;
 	void move(byte* src, byte* dest) const;
 	const std::vector<Member>& members() const;

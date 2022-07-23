@@ -44,7 +44,7 @@ public:
     void displayDirectoryTree();
     void displayFiles();
     void displayFullBrowser();
-    std::string currentPath();
+    ServerDirectory* currentDirectory();
     void reloadCurrentDirectory();
     void setDirectory(ServerDirectory* dir);
 };

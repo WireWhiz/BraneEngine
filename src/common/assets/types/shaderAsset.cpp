@@ -7,14 +7,14 @@ ShaderAsset::ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spir
 	spirv = std::move(spirv);
 }
 
-void ShaderAsset::serialize(OSerializedData& message)
+void ShaderAsset::serialize(OutputSerializer message)
 {
 	Asset::serialize(message);
 	message << shaderType;
 	message << spirv;
 }
 
-void ShaderAsset::deserialize(ISerializedData& message)
+void ShaderAsset::deserialize(InputSerializer message)
 {
 	Asset::deserialize(message);
 	message >> shaderType;

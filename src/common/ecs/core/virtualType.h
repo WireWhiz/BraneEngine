@@ -63,20 +63,20 @@ namespace VirtualType
 	Type type();
 	std::string typeToString(Type type);
 	Type stringToType(const std::string& type);
-	void serialize(Type type, OSerializedData& data, const byte* source);
-	void deserialize(Type type, ISerializedData& data, byte* source);
+	void serialize(Type type, OutputSerializer data, const byte* source);
+	void deserialize(Type type, InputSerializer data, byte* source);
 	size_t size(Type type);
 	void construct(Type type, byte* var);
 	void deconstruct(Type type, byte* var);
 	void copy(Type type, byte* dest, const byte* source);
 	void move(Type type, byte* dest, byte* source);
 	template<typename T>
-	void serialize(OSerializedData& data, const byte* source)
+	void serialize(OutputSerializer data, const byte* source)
 	{
 		data << *getVirtual<T>(source);
 	}
 	template<typename T>
-	void deserialize(ISerializedData& data, byte* source)
+	void deserialize(InputSerializer data, byte* source)
 	{
 		data >> *getVirtual<T>(source);
 	}

@@ -55,16 +55,13 @@ public:
     uint32_t attributeOffset(size_t primitive, const std::string& name) const;
     uint32_t vertexCount(uint32_t primitive) const;
 
-
-	void toFile(MarkedSerializedData& sData) override;
-	void fromFile(MarkedSerializedData& sData) override;
-	void serialize(OSerializedData& message) override;
-	void deserialize(ISerializedData& message) override;
-	void serializeHeader(OSerializedData& sData) override;
-	void deserializeHeader(ISerializedData& sData) override;
+	void serialize(OutputSerializer s) override;
+	void deserialize(InputSerializer s) override;
+	void serializeHeader(OutputSerializer s) override;
+	void deserializeHeader(InputSerializer s) override;
     std::unique_ptr<SerializationContext> createContext() const override;
-	bool serializeIncrement(OSerializedData& sData, SerializationContext* iteratorData) override;
-	void deserializeIncrement(ISerializedData& sData) override;
+	bool serializeIncrement(OutputSerializer sData, SerializationContext* iteratorData) override;
+	void deserializeIncrement(InputSerializer sData) override;
 
 
 	size_t meshSize() const;

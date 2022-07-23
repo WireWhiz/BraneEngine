@@ -22,8 +22,6 @@ public:
 	std::vector<VirtualType::Type>& members();
 	std::vector<std::string>& memberNames();
 
-	void toFile(MarkedSerializedData& sData) override;
-	void fromFile(MarkedSerializedData& sData) override;
-	void serialize(OSerializedData& sdata) override;
-	void deserialize(ISerializedData& sdata) override;
+    void serialize(OutputSerializer s) override;
+    void deserialize(InputSerializer s) override;
 };

@@ -49,10 +49,13 @@ public:
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
 			return nullptr;
-		MarkedSerializedData sData(f);
+        SerializedData data;
+        readFile(filename, data.vector());
 		f.close();
+
+        InputSerializer s(data);
 		T* asset = new T();
-		asset->fromFile(sData);
+		asset->deserialize(s);
 		return asset;
 	}
 
@@ -61,9 +64,11 @@ public:
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
 			return nullptr;
-		MarkedSerializedData sData(f);
-		f.close();
-		return Asset::readUnknown(sData);
+        SerializedData data;
+        readFile(filename, data.vector());
+        f.close();
+        InputSerializer s(data);
+		return Asset::deserializeUnknown(s);
 	}
 
 	template<typename T>

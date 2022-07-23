@@ -15,7 +15,7 @@
 #include "connection.h"
 #include "config/config.h"
 #include <shared_mutex>
-#include "request.h"
+
 
 class NetworkManager : public Module
 {
@@ -37,7 +37,7 @@ class NetworkManager : public Module
 	std::atomic_bool _running;
 
 	std::mutex _requestLock;
-	std::unordered_map<std::string, std::function<void(net::RequestResponse&)>> _requestListeners;
+	std::unordered_map<std::string, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> > _requestListeners;
 
 	uint32_t _streamIDCounter = 1000;
 
@@ -71,7 +71,7 @@ class NetworkManager : public Module
 	}
 
 	void startSystems();
-	void ingestData(net::Connection* conneciton);
+	void ingestData(net::Connection* connection);
 public:
 	NetworkManager();
 	~NetworkManager();
@@ -93,7 +93,7 @@ public:
 	AsyncData<Asset*> async_requestAsset(const AssetID& id);
 	AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id);
 
-	void addRequestListener(const std::string& name, std::function<void(net::RequestResponse&)> callback);
+	void addRequestListener(const std::string& name, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> callback);
 
 	static const char* name();
 };

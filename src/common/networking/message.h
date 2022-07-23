@@ -23,12 +23,13 @@ namespace net
 	struct OMessage
 	{
 		MessageHeader header;
-		OSerializedData body;
+        //In cases where we need to append data to the front of message bodies, it's preferable that we don't need to do any O(n) copying, only move operations
+        std::vector<SerializedData> chunks;
 	};
 
 	struct IMessage
 	{
 		MessageHeader header;
-		ISerializedData body;
+        SerializedData body;
 	};
 }

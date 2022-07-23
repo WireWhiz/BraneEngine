@@ -35,6 +35,12 @@ public:
 		_queue.emplace_back(value);
 	}
 
+    void push_back(T&& value)
+    {
+        std::scoped_lock lock(_m);
+        _queue.emplace_back(std::move(value));
+    }
+
 	void push_front(const T& value)
 	{
 		std::scoped_lock lock(_m);
@@ -76,7 +82,7 @@ public:
 		assert(!_queue.empty());
 		T value = std::move(_queue.front());
 		_queue.pop_front();
-		return value;
+		return std::move(value);
 	}
 
 	T pop_back()
@@ -85,7 +91,7 @@ public:
 		assert(!_queue.empty());
 		T value = std::move(_queue.back());
 		_queue.pop_back();
-		return value;
+		return std::move(value);
 	}
 
 	void lock()

@@ -21,503 +21,343 @@ public:
 	}
 };
 
-class ISerializedData
+class SerializedData
 {
-	size_t _ittr;
+    std::vector<byte> _data;
 public:
-	ISerializedData(){
-		_ittr = 0;
-	}
-	std::vector<byte> data;
+    SerializedData() = default;
+    SerializedData(const SerializedData& s) = delete;
+    SerializedData(SerializedData&& s)
+    {
+        _data = std::move(s._data);
+    }
+    inline byte& operator[](size_t index)
+    {
+        return _data[index];
+    }
+    inline const byte& operator[](size_t index) const
+    {
+        return _data[index];
+    }
+    inline void clear()
+    {
+        _data.clear();
+    }
+    inline void resize(size_t newSize)
+    {
+        _data.resize(newSize);
+    }
+    inline size_t size() const
+    {
+        return _data.size();
+    }
+    inline byte* data()
+    {
+        return _data.data();
+    }
+    inline const byte* data() const
+    {
+        return _data.data();
+    }
+    inline std::vector<byte>& vector()
+    {
+        return _data;
+    }
+};
 
-	[[nodiscard]] size_t size() const
-	{
-		return data.size();
+class InputSerializer
+{
+    struct Context
+    {
+        size_t index = 0;
+        const SerializedData & data;
+        size_t count = 0;
+    };
+    Context* _ctx = nullptr;
+public:
+    InputSerializer(const SerializedData& data)
+    {
+        _ctx = new Context{0, data, 0};
 	}
+    InputSerializer(const InputSerializer& s)
+    {
+        _ctx = s._ctx;
+        ++_ctx->count;
+    }
+    ~InputSerializer()
+    {
+        --_ctx->count;
+        if(_ctx->count == 0)
+            delete _ctx;
+    }
 
-	friend std::ostream& operator << (std::ostream& os, const ISerializedData& msg)
+    const SerializedData& data() const
+    {
+        return _ctx->data;
+    }
+
+    friend std::ostream& operator << (std::ostream& os, const InputSerializer& s)
 	{
 		os << " Serialized Data: ";
-		for (int i = 0; i < msg.data.size(); ++i)
+		for (int i = 0; i < s._ctx->data.size(); ++i)
 		{
 			if(i % 80 == 0)
 				std::cout << "\n";
-			std::cout << msg.data[i];
+			std::cout << s._ctx->data[i];
 		}
 		std::cout << std::endl;
 		return os;
 	}
 
 	template <typename T>
-	friend ISerializedData& operator >> (ISerializedData& msg, T& data)
+	friend InputSerializer& operator >> (InputSerializer& s, T& object)
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
-		if (msg._ittr + sizeof(T) > msg.data.size())
+		static_assert(std::is_trivially_copyable<T>());
+		if (s._ctx->index + sizeof(T) > s._ctx->data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
 
-		std::memcpy(&data, msg.data.data() + msg._ittr, sizeof(T));
+		std::memcpy(&object, (void*)(s._ctx->data.data() + s._ctx->index), sizeof(T));
 
-		msg._ittr += sizeof(T);
+		s._ctx->index += sizeof(T);
 
-		return msg;
+		return s;
 	}
 
 	template<typename T>
 	void readSafeArraySize(T& index) // Call this instead of directly reading sizes to prevent buffer overruns
 	{
 		*this >> index;
-		if(index + _ittr > data.size())
+		if(index + _ctx->index > _ctx->data.size())
 			throw std::runtime_error("invalid array length in serialized data");
 	}
 
-	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<std::string>& strings)
+	friend InputSerializer& operator >> (InputSerializer& s, std::vector<std::string>& strings)
 	{
 		uint32_t numStrings;
-		msg >> numStrings;
+		s >> numStrings;
 		strings.resize(numStrings);
 		for (uint32_t i = 0; i < numStrings; ++i)
 		{
-			msg >> strings[i];
+			s >> strings[i];
 		}
-		return msg;
+		return s;
 	}
 
 	template <typename T>
-	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<T>& data)
+	friend InputSerializer& operator >> (InputSerializer& s, std::vector<T>& data)
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
+        static_assert(std::is_trivially_copyable<T>());
 		uint32_t size;
-		msg.readSafeArraySize(size);
+		s.readSafeArraySize(size);
 
 		data.resize(size / sizeof(T));
 		if(size > 0)
-			std::memcpy(data.data(), &msg.data[msg._ittr], size);
+			std::memcpy(data.data(), &s._ctx->data[s._ctx->index], size);
 
-		msg._ittr += size;
+		s._ctx->index += size;
 
-		return msg;
+		return s;
 	}
 
 	template <typename T, size_t Count>
-	friend ISerializedData& operator >> (ISerializedData& msg, InlineArray<T, Count>& data)
+	friend InputSerializer& operator >> (InputSerializer& s, InlineArray<T, Count>& data)
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
+		static_assert(std::is_trivially_copyable<T>());
 
 		uint32_t arrLength;
-		msg >> arrLength;
+		s >> arrLength;
 		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
 		for (uint32_t i = 0; i < arrLength; ++i)
 		{
 			T d;
-			msg >> d;
+			s >> d;
 			data.push_back(d);
 		}
 
-		return msg;
+		return s;
 	}
 
-	friend ISerializedData& operator >> (ISerializedData& msg, ISerializedData& data)
-	{
-		msg >> data.data;
-		return msg;
-	}
-
-	friend ISerializedData& operator >> (ISerializedData& msg, std::string& data)
+	friend InputSerializer& operator >> (InputSerializer& s, std::string& data)
 	{
 		uint32_t size;
-		msg.readSafeArraySize(size);
+		s.readSafeArraySize(size);
 
 		data.resize(size);
 		if(size > 0)
-			std::memcpy(data.data(), &msg.data[msg._ittr], size);
+			std::memcpy(data.data(), &s._ctx->data[s._ctx->index], size);
 
-		msg._ittr += size;
+		s._ctx->index += size;
 
-		return msg;
+		return s;
 	}
 
-	friend ISerializedData& operator >> (ISerializedData& msg, AssetID& id)
+    friend InputSerializer& operator >> (InputSerializer& s, std::string_view& data)
+    {
+        uint32_t size;
+        s.readSafeArraySize(size);
+
+        data = std::string_view(reinterpret_cast<const char*>(&s._ctx->data[s._ctx->index]), size);
+        s._ctx->index += size;
+        return s;
+    }
+
+	friend InputSerializer& operator >> (InputSerializer& s, AssetID& id)
 	{
 		std::string idString;
-		msg >> idString;
+		s >> idString;
 		id.parseString(idString);
 
-		return msg;
+		return s;
 	}
 
-	friend ISerializedData& operator >> (ISerializedData& msg, std::vector<AssetID>& ids)
+	friend InputSerializer& operator >> (InputSerializer& s, std::vector<AssetID>& ids)
 	{
 		uint32_t size;
-		msg.readSafeArraySize(size);
+		s.readSafeArraySize(size);
 		ids.resize(size);
 		for (uint32_t i = 0; i < size; ++i)
 		{
 			std::string idString;
-			msg >> idString;
+			s >> idString;
 			ids[i].parseString(idString);
 		}
 
 
-		return msg;
+		return s;
 	}
 
 
 
 	void read(void* dest, size_t size)
 	{
-		if (_ittr + size <= data.size())
+		if (_ctx->index + size <= _ctx->data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
 
-		std::memcpy(dest, &data[_ittr], size);
-		_ittr += size;
+		std::memcpy(dest, &_ctx->data[_ctx->index], size);
+        _ctx->index += size;
 
 	}
 
 	template<typename T>
 	T peek()
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
-		if (_ittr + sizeof(T) > data.size())
+        static_assert(std::is_trivially_copyable<T>());
+		if (_ctx->index + sizeof(T) > _ctx->data.size())
 			throw std::runtime_error("Tried to read past end of serialized data");
-		size_t ittrPos = _ittr;
+		size_t index = _ctx->index;
 		T o;
 		*this >> o;
-		_ittr = ittrPos;
+        _ctx->index = index;
 		return o;
-	}
-
-	[[nodiscard]] bool endOfData() const
-	{
-		return _ittr >= data.size();
 	}
 
 	void restart()
 	{
-		_ittr = 0;
+        _ctx->index = 0;
 	}
 };
 
-class OSerializedData
+class OutputSerializer
 {
+    SerializedData& _data;
 public:
-	std::vector<byte> data;
+    OutputSerializer(SerializedData& data) : _data(data){};
 
-	[[nodiscard]] size_t size() const
-	{
-		return data.size();
-	}
+    const SerializedData& data() const
+    {
+        return _data;
+    }
 
-	friend std::ostream& operator << (std::ostream& os, const OSerializedData& msg)
+	template <typename T>
+	friend OutputSerializer operator << (OutputSerializer s, const T& data)
 	{
-		os << " Serialized Data: ";
-		for (int i = 0; i < msg.data.size(); ++i)
-		{
-			if(i % 80 == 0)
-				std::cout << "\n";
-			std::cout << msg.data[i];
-		}
-		std::cout << std::endl;
-		return os;
+        static_assert(std::is_trivially_copyable<T>());
+
+		size_t index = s._data.size();
+		s._data.resize(index + sizeof(T));
+		std::memcpy(&s._data[index], &data, sizeof(T));
+
+		return s;
 	}
 
 	template <typename T>
-	friend OSerializedData& operator << (OSerializedData& msg, const T& data)
+	friend OutputSerializer operator << (OutputSerializer s, const std::vector<T>& data)
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
+        static_assert(std::is_trivially_copyable<T>());
 
-		size_t index = msg.data.size();
-		msg.data.resize(index + sizeof(T));
-		std::memcpy(&msg.data[index], &data, sizeof(T));
-
-		return msg;
-	}
-
-	template <typename T>
-	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<T>& data)
-	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
-
-		uint32_t arrLength = static_cast<uint32_t>(data.size() * sizeof(T));
-		msg << arrLength;
-		size_t index = msg.data.size();
-		msg.data.resize(index + arrLength);
+		auto arrLength = static_cast<uint32_t>(data.size() * sizeof(T));
+		s << arrLength;
+		size_t index = s._data.size();
+		s._data.resize(index + arrLength);
 		if(arrLength > 0)
-			std::memcpy(&msg.data[index], data.data(), arrLength);
+			std::memcpy(&s._data[index], data.data(), arrLength);
 
 
-		return msg;
+		return s;
 	}
 
 	template <typename T, size_t Count>
-	friend OSerializedData& operator << (OSerializedData& msg, const InlineArray<T, Count>& data)
+	friend OutputSerializer operator << (OutputSerializer s, const InlineArray<T, Count>& data)
 	{
-		if constexpr(!std::is_trivially_copyable<T>::value)
-			throw SerializationError(typeid(T));
+        static_assert(std::is_trivially_copyable<T>());
 
-		uint32_t arrLength = static_cast<uint32_t>(data.size());
-		msg << arrLength;
+		auto arrLength = static_cast<uint32_t>(data.size());
+		s << arrLength;
 		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
 		for (uint32_t i = 0; i < arrLength; ++i)
 		{
-			msg << data[i];
+			s << data[i];
 		}
 
-		return msg;
+		return s;
 	}
 
-	friend OSerializedData& operator << (OSerializedData& msg, const OSerializedData& data)
+	friend OutputSerializer operator << (OutputSerializer s, const std::string& data)
 	{
-		msg << data.data;
-		return msg;
-	}
-
-	friend OSerializedData& operator << (OSerializedData& msg, const std::string& data)
-	{
-		uint32_t arrLength = static_cast<uint32_t>(data.size());
-		msg << arrLength;
-		size_t index = msg.data.size();
-		msg.data.resize(index + arrLength);
+		auto arrLength = static_cast<uint32_t>(data.size());
+		s << arrLength;
+		size_t index = s._data.size();
+		s._data.resize(index + arrLength);
 		if(arrLength > 0)
-			std::memcpy(&msg.data[index], data.data(), data.size());
+			std::memcpy(&s._data[index], data.data(), data.size());
 
-		return msg;
+		return s;
 	}
 
-	friend OSerializedData& operator << (OSerializedData& msg, const AssetID& id)
+	friend OutputSerializer operator << (OutputSerializer s, const AssetID& id)
 	{
-		msg << id.string();
+		s << id.string();
 
-		return msg;
+		return s;
 	}
 
-	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<std::string>& strings)
+	friend OutputSerializer operator << (OutputSerializer s, const std::vector<std::string>& strings)
 	{
-		msg << (uint32_t)strings.size();
+		s << (uint32_t)strings.size();
 		for (uint32_t i = 0; i < strings.size(); ++i)
 		{
-			msg << strings[i];
+			s << strings[i];
 		}
-		return msg;
+		return s;
 	}
 
-	friend OSerializedData& operator << (OSerializedData& msg, const std::vector<AssetID>& ids)
+	friend OutputSerializer operator << (OutputSerializer s, const std::vector<AssetID>& ids)
 	{
-		msg << (uint32_t)ids.size();
+		s << (uint32_t)ids.size();
 		for (uint32_t i = 0; i < ids.size(); ++i)
 		{
-			msg << ids[i].string();
+			s << ids[i].string();
 		}
 
 
-		return msg;
+		return s;
 	}
 
 	void write(const void* src, size_t size)
-	{
-		size_t index = data.size();
-		data.resize(index + size);
-		std::memcpy(&data[index], src, size);
-	}
-
-	[[nodiscard]] ISerializedData toIMessage() const
-	{
-		ISerializedData o{};
-		o.data.resize(data.size());
-		std::memcpy(o.data.data(), data.data(), data.size());
-		return o;
+    {
+		size_t index = _data.size();
+		_data.resize(index + size);
+		std::memcpy(&_data[index], src, size);
 	}
 };
-
-//Indented for use in file serialization, thus static asserts and the like
-class MarkedSerializedData
-{
-	Json::Value attributes;
-	Json::Value* currentScope;
-	std::stack<Json::Value*> scopes;
-public:
-	std::vector<byte> data;
-	explicit MarkedSerializedData(std::ifstream& file);
-	MarkedSerializedData();
-	void writeToFile(std::ofstream& file);
-
-	void enterScope(const std::string& scope);
-	void enterScope(int index);
-	void exitScope();
-	void startIndex();
-	void pushIndex();
-	size_t scopeSize();
-
-	template<typename T>
-	void writeAttribute(const std::string& name, const T& value)
-	{
-		static_assert(std::is_trivially_copyable<T>::value);
-		assert(!(*currentScope).isMember(name));
-		if constexpr(std::is_arithmetic<T>())
-		{
-			(*currentScope)[name] = value;
-			return;
-		}
-
-		size_t index = data.size();
-		size_t size = sizeof(value);
-		data.resize(index + size);
-		std::memcpy(&data[index], &value, size);
-
-
-		(*currentScope)[name]["index"] = index;
-	}
-
-	template<typename T>
-	void writeAttribute(const std::string& name, const std::vector<T>& value)
-	{
-		static_assert(std::is_trivially_copyable<T>::value);
-		assert(!(*currentScope).isMember(name));
-
-		size_t index = data.size();
-		size_t size = value.size() * sizeof(T);
-		data.resize(index + size);
-		if(size != 0)
-			std::memcpy(&data[index], value.data(), size);
-
-
-		(*currentScope)[name]["index"] = index;
-		(*currentScope)[name]["size"] = size;
-	}
-
-	void writeAttribute(const std::string& name, const std::vector<std::string>& value)
-	{
-		assert(!(*currentScope).isMember(name));
-
-		for(auto& s : value)
-			(*currentScope)[name].append(s);
-	}
-
-	void writeAttribute(const std::string& name, const std::string& value)
-	{
-		assert(!(*currentScope).isMember(name));
-		(*currentScope)[name] = value;
-	}
-
-	void writeAttribute(const std::string& name, const AssetID& value)
-	{
-		assert(!(*currentScope).isMember(name));
-
-		writeAttribute(name, value.string());
-	}
-
-	void writeAttribute(const std::string& name, const std::vector<AssetID>& value)
-	{
-		assert(!(*currentScope).isMember(name));
-
-		std::vector<byte> data;
-		Json::Value idSizes;
-		for(auto& id : value)
-		{
-			size_t index = data.size();
-			std::string s = id.string();
-			data.resize(index + s.size());
-			std::memcpy(&data[index], s.data(), s.size());
-			idSizes.append(s.size());
-		}
-		writeAttribute(name, data);
-		(*currentScope)[name]["sizes"] = idSizes;
-
-	}
-	
-	template<typename T>
-	void readAttribute(const std::string& name, T& value)
-	{
-		static_assert(std::is_trivially_copyable<T>::value);
-		if(!(*currentScope).isMember(name))
-			throw std::runtime_error(name + " was not found");
-
-		if constexpr(std::is_integral<T>())
-		{
-			value = (*currentScope)[name].asLargestInt();
-			return;
-		}
-		if constexpr(std::is_floating_point<T>())
-		{
-			value = (*currentScope)[name].asFloat();
-			return;
-		}
-
-		size_t index = (*currentScope)[name]["index"].asLargestUInt();
-		size_t size  = sizeof(T);
-		if(index + size > data.size())
-			throw std::runtime_error(name + " has invalid index or size");
-		if(size != 0)
-			std::memcpy(&value, &data[index], size);
-	}
-
-	template<typename T>
-	void readAttribute(const std::string& name, std::vector<T>& value)
-	{
-		static_assert(std::is_trivially_copyable<T>::value);
-		if(!(*currentScope).isMember(name))
-			throw std::runtime_error(name + " was not found");
-
-		size_t index = (*currentScope)[name]["index"].asLargestUInt();
-		size_t size  = (*currentScope)[name]["size"].asLargestUInt();
-		if(index + size > data.size())
-			throw std::runtime_error(name + " has invalid index or size");
-
-		value.resize(size / sizeof(T));
-		if(size != 0)
-			std::memcpy(value.data(), &data[index], size);
-	}
-
-	void readAttribute(const std::string& name, std::vector<std::string>& value)
-	{
-		assert(!(*currentScope).isMember(name));
-		value.reserve((*currentScope)[name].size());
-		for(auto& s : (*currentScope)[name])
-			value.push_back(s.asString());
-	}
-
-	void readAttribute(const std::string& name, std::string& value)
-	{
-		if(!(*currentScope).isMember(name))
-			throw std::runtime_error(name + " was not found");
-
-		value = (*currentScope)[name].asString();
-	}
-
-	void readAttribute(const std::string& name, AssetID& value)
-	{
-		assert((*currentScope).isMember(name));
-
-		std::string id;
-		readAttribute(name, id);
-		value.parseString(id);
-	}
-
-	void readAttribute(const std::string& name, std::vector<AssetID>& value)
-	{
-		assert((*currentScope).isMember(name));
-
-		std::vector<byte> data;
-		readAttribute(name, data);
-		size_t sIndex = 0;
-		size_t idIndex = 0;
-		value.resize((*currentScope)[name]["sizes"].size());
-		for(auto& jsize : (*currentScope)[name]["sizes"])
-		{
-			size_t size = jsize.asUInt();
-			std::string s;
-			s.resize(size);
-			if(size != 0)
-				std::memcpy(s.data(), &data[sIndex], s.size());
-			sIndex += size;
-			value[idIndex++].parseString(s);
-		}
-	}
-};
-
 
