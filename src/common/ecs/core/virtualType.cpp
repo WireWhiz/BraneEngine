@@ -343,6 +343,7 @@ namespace VirtualType
 				return;
             case virtualEntityID:
                 serialize<EntityID>(data, source);
+                return;
 			case virtualInt:
 				serialize<int32_t>(data, source);
 				return;
@@ -377,7 +378,7 @@ namespace VirtualType
 				serialize<glm::mat4>(data, source);
 				return;
 			case virtualFloatArray:
-				serialize<inlineIntArray>(data, source);
+				serialize<inlineFloatArray>(data, source);
 				return;
 			case virtualIntArray:
 				serialize<inlineIntArray>(data, source);
@@ -387,6 +388,9 @@ namespace VirtualType
 				return;
             case virtualEntityIDArray:
                 serialize<inlineEntityIDArray>(data, source);
+                return;
+            default:
+                assert(false);
 		}
 	}
 
@@ -397,6 +401,7 @@ namespace VirtualType
 		{
 			case virtualBool:
 				deserialize<bool>(data, source);
+                return;
             case virtualEntityID:
                 deserialize<EntityID>(data, source);
 				return;
@@ -442,6 +447,11 @@ namespace VirtualType
 			case virtualUIntArray:
 				deserialize<inlineUIntArray>(data, source);
 				return;
+            case virtualEntityIDArray:
+                deserialize<inlineEntityIDArray>(data, source);
+                return;
+            default:
+                assert(false);
 		}
 	}
 }

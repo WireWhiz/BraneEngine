@@ -124,9 +124,11 @@ public:
 	void removeEntity(size_t index)
 	{
 		assert(index < _size);
-		for(auto& c : _components)
-			c.erase(index);
-		--_size;
+        --_size;
+		for(auto& c : _components){
+            c.erase(index);
+            assert(_size == c.size());
+        }
 	}
 
 	void clear()

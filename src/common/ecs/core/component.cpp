@@ -105,6 +105,14 @@ size_t ComponentDescription::size() const
 	return _size;
 }
 
+size_t ComponentDescription::serializationSize() const
+{
+    size_t ss = 0;
+    for(auto& m : _members)
+        ss += VirtualType::size(m.type);
+    return ss;
+}
+
 VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {
 	_description = source._description;

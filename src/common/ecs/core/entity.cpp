@@ -44,6 +44,11 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	eIndex.version = _globalEntityVersion;
 	arch->setComponent(eIndex.index, id.toVirtual());
 	assert(eIndex.index < arch->size());
+    for(auto& e : _entities)
+    {
+        assert(e.index < e.archetype->size());
+    }
+
 	return id.id;
 }
 
@@ -69,9 +74,22 @@ void EntityManager::destroyEntity(EntityID entity)
 
 	assert(entityExists(entity));
 	Archetype* archetype = getEntityArchetype(entity);
-	archetype->removeEntity(_entities[entity].index);
+    size_t index = _entities[entity].index;
+	archetype->removeEntity(index);
 	_entities.remove(entity);
 
+    //If we just moved an entity's data, update it's index;
+    if(index < archetype->size())
+    {
+        EntityID swappedEntity = *archetype->getComponent(index, EntityIDComponent::def()->id).getVar<EntityID>(0);
+        assert(_entities[swappedEntity].archetype == archetype);
+        _entities[swappedEntity].index = index;
+    }
+
+    for(auto& e : _entities)
+    {
+        assert(e.index < e.archetype->size());
+    }
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
@@ -119,8 +137,8 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	if (hasArchetype(entity))
 	{
 		Archetype* currentArchetype = getEntityArchetype(entity);
-		assert(_entities[entity].index < currentArchetype->size());
-		assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
+        assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
+        assert(_entities[entity].index < currentArchetype->size());
 		// See if there's already an archetype we know about:
 		std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getAddEdge(component);
 		if (ae != nullptr)
@@ -145,7 +163,7 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	}
 	size_t newIndex;
 	size_t oldIndex = _entities[entity].index;
-	
+    EntityID swappedEntity;
 	// If this isn't an empty entity we need to copy and remove it
 	if (hasArchetype(entity))
 	{
@@ -154,8 +172,9 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 		//Check if move entity performed a swap.
 		if(oldIndex < arch->size())
 		{
-			EntityID swappedEntity = *arch->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
-			_entities[swappedEntity].index = oldIndex;
+			swappedEntity = *arch->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
+			assert(arch == _entities[swappedEntity].archetype);
+            _entities[swappedEntity].index = oldIndex;
 		}
 	}
 	else
@@ -203,12 +222,14 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 	if (destArchetype != nullptr)
 	{
 		newIndex = currentArchetype->moveEntity(oldIndex, destArchetype);
-		if(oldIndex < currentArchetype->size())
-		{
-			EntityID swappedEntity = *currentArchetype->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
-			_entities[swappedEntity].index = oldIndex;
-		}
+        if(oldIndex < currentArchetype->size())
+        {
+            EntityID swappedEntity = *currentArchetype->getComponent(oldIndex, EntityIDComponent::def()->id).getVar<EntityID>(0);
+            assert(currentArchetype == _entities[swappedEntity.id].archetype);
+            _entities[swappedEntity].index = oldIndex;
+        }
 	}
+
 
 	_entities[entity].index = newIndex;
 	_entities[entity].archetype = destArchetype;

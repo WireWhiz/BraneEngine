@@ -49,6 +49,7 @@ public:
 	void move(byte* src, byte* dest) const;
 	const std::vector<Member>& members() const;
 	size_t size() const;
+    size_t serializationSize() const;
 };
 
 class VirtualComponentView;

@@ -56,7 +56,7 @@ void ChunkComponentView::erase(size_t index)
 	--_size;
 	if(_size > 0)
 		_description->move(dataIndex(_size), dataIndex(index));
-	_description->deconstruct(dataIndex(index));
+	_description->deconstruct(dataIndex(_size));
 }
 
 size_t ChunkComponentView::size() const

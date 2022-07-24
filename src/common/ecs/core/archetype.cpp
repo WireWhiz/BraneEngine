@@ -2,7 +2,6 @@
 
 #include "chunk.h"
 #include "entitySet.h"
-#include "componentManager.h"
 
 size_t Archetype::chunkIndex(size_t entity) const
 {
@@ -213,17 +212,16 @@ void Archetype::removeEntity(size_t index)
 	Chunk* chunk = getChunk(index);
 	Chunk* lastChunk = _chunks[_chunks.size() - 1].get();
 	size_t entityIndex = index - chunkIndex(index) * chunk->maxCapacity();
-	_size--;
-	assert(_size >= 0);
 
 	if(chunk == lastChunk)
-	{
 		chunk->removeEntity(entityIndex);
-		return;
-	}
-
-	lastChunk->moveEntity(chunk, lastChunk->size() - 1,entityIndex);
-	lastChunk->removeEntity(lastChunk->size() - 1);
+    else
+    {
+        lastChunk->moveEntity(chunk, lastChunk->size() - 1,entityIndex);
+        lastChunk->removeEntity(lastChunk->size() - 1);
+    }
+    --_size;
+    assert(lastChunk->size() % lastChunk->maxCapacity() == _size % lastChunk->maxCapacity());
 
 	if (lastChunk->size() == 0)
 	{
