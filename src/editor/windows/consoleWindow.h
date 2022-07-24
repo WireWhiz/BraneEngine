@@ -17,8 +17,10 @@ class ConsoleWindow : public GUIWindow
 		Logging::LogLevel level = Logging::LogLevel::log;
 	};
 	std::vector<CachedLog> _messages;
+    size_t _listenerIndex;
 public:
 	ConsoleWindow(GUI& ui, GUIWindowID id);
+    ~ConsoleWindow();
 	void draw() override;
 };
 

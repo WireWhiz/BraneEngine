@@ -15,7 +15,7 @@
 #define CLIENT
 #include <assets/assetManager.h>
 
-AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id), _browser(ui, AssetBrowserWidget::browse)
+AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id), _browser(ui, true)
 {
 
 }

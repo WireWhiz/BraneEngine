@@ -77,7 +77,7 @@ class InputSerializer
 public:
     InputSerializer(const SerializedData& data)
     {
-        _ctx = new Context{0, data, 0};
+        _ctx = new Context{0, data, 1};
 	}
     InputSerializer(const InputSerializer& s)
     {
@@ -165,7 +165,7 @@ public:
 		static_assert(std::is_trivially_copyable<T>());
 
 		uint32_t arrLength;
-		s >> arrLength;
+        s.readSafeArraySize(arrLength);
 		//TODO make InlineArray have SerializedData as a friend class and make this more efficient
 		for (uint32_t i = 0; i < arrLength; ++i)
 		{
@@ -251,10 +251,15 @@ public:
 		return o;
 	}
 
-	void restart()
-	{
-        _ctx->index = 0;
-	}
+	size_t getPos() const
+    {
+        return _ctx->index;
+    }
+    void setPos(size_t index)
+    {
+        assert(index <= _ctx->data.size());
+        _ctx->index = index;
+    }
 };
 
 class OutputSerializer

@@ -50,10 +50,7 @@ void ServerFilesystem::createDirectory(ServerDirectory* parent, const std::strin
     OutputSerializer s(req);
     s << (parent->path() + name);
     _server->sendRequest("createDirectory", std::move(req), [this, parent](net::ResponseCode code, InputSerializer sData){
-        bool success = code == net::ResponseCode::success;
-        if(success)
-            sData >> success;
-        if(!success)
+        if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not create directory");
             return;
@@ -75,10 +72,7 @@ void ServerFilesystem::deleteFile(ServerDirectory* parent, const std::string& na
     OutputSerializer s(req);
     s << (parent->path() + name);
     _server->sendRequest("deleteFile", std::move(req), [this, parent, name](auto code, auto sData){
-        bool success = code == net::ResponseCode::success;
-        if(success)
-            sData >> success;
-        if(!success)
+        if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not delete file: " + name);
             return;
@@ -94,11 +88,7 @@ void ServerFilesystem::fetchDirectory(ServerDirectory* dir)
     s << dir->path();
 
     _server->sendRequest("directoryContents", std::move(req), [this, dir](auto code, auto sData){
-
-        bool success = code == net::ResponseCode::success;
-        if(success)
-            sData >> success;
-        if(!success)
+        if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not fetch contents of: " + dir->path());
             return;
@@ -157,10 +147,7 @@ void ServerFilesystem::moveDirectory(ServerDirectory* target, ServerDirectory* d
     s << target->path() << (destination->path() + target->name);
 
     _server->sendRequest("moveDirectory", std::move(req), [this, target, destination](auto code, auto sData) {
-        bool success = code == net::ResponseCode::success;
-        if(success)
-            sData >> success;
-        if (!success)
+        if (code != net::ResponseCode::success)
         {
             Runtime::error("Could not move file");
             return;
@@ -195,4 +182,26 @@ void ServerFilesystem::start()
 void ServerFilesystem::deleteDirectory(ServerDirectory* directory)
 {
     deleteFile(directory->parent, directory->name);
+}
+
+AsyncData<AssetID> ServerFilesystem::saveAsset(ServerDirectory* destination, Asset* asset)
+{
+    SerializedData data;
+    OutputSerializer s(data);
+    s << destination->path();
+    asset->serialize(s);
+    AsyncData<AssetID> retID;
+    _server->sendRequest("saveAsset", std::move(data), [this, destination, retID](auto code, auto res){
+        if(code != net::ResponseCode::success)
+        {
+            Runtime::error("Could not save asset, server responded with code: " + std::to_string((uint8_t)code));
+            retID.setError("Could not save asset, server responded with code: " + std::to_string((uint8_t)code));
+            return;
+        }
+        fetchDirectory(destination);
+        AssetID id;
+        res >> id;
+        retID.setData(id);
+    });
+    return retID;
 }

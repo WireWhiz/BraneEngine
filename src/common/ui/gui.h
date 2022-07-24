@@ -26,15 +26,17 @@ class GUI : public Module
 	friend class GUIRenderer;
 	VkDescriptorPool _imGuiDescriptorPool;
 
+    std::vector<ImFont*> _fonts;
+
 	std::vector<std::unique_ptr<GUIWindow>> _windows;
     std::stack<GUIWindowID> _removedWindows;
     std::unique_ptr<GUIPopup> _popup;
-	void drawUI();
-	std::function<void()> _drawMenu;
-
+    void drawUI();
+    std::function<void()> _drawMenu;
 	std::mutex _queueLock;
-	std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
-	std::unordered_map<std::string, std::vector<std::function<void(const GUIEvent*)>>> _eventListeners;
+
+    std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
+    std::unordered_map<std::string, std::vector<std::function<void(const GUIEvent*)>>> _eventListeners;
 
 	void callEvents();
 public:
@@ -45,11 +47,11 @@ public:
     void start() override;
 	void stop() override;
 
-	template<typename WindowT>
-	WindowT* addWindow()
+	template<typename WindowT, typename... Args>
+	WindowT* addWindow(Args... args)
 	{
 		GUIWindowID id = _windows.size();
-		_windows.push_back(std::make_unique<WindowT>(*this, id));
+		_windows.push_back(std::make_unique<WindowT>(*this, id, args...));
 		return static_cast<WindowT*>(_windows[id].get());
 	}
 	void removeWindow(GUIWindowID window);
@@ -74,6 +76,8 @@ public:
 	VkDescriptorPool descriptorPool();
 	void setupImGui(graphics::VulkanRuntime& runtime);
 	void cleanupImGui();
+
+    const std::vector<ImFont*>& fonts() const;
 };
 
 

@@ -25,22 +25,17 @@ public:
 
 class AssetBrowserWidget
 {
-public:
-    enum Mode{
-        selectDirectory,
-        selectFile,
-        browse
-    };
 private:
     ServerDirectory* _currentDir = nullptr;
+    int _selectedFile = -1;
 
     ServerFilesystem& _fs;
     GUI& _ui;
-    Mode _mode;
+    bool _allowEdits;
 
     void displayDirectoriesRecursive(ServerDirectory* dir);
 public:
-    AssetBrowserWidget(GUI &ui, AssetBrowserWidget::Mode mode);
+    AssetBrowserWidget(GUI &ui, bool allowEdits);
     void displayDirectoryTree();
     void displayFiles();
     void displayFullBrowser();

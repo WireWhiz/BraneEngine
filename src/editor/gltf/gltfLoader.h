@@ -27,6 +27,7 @@ class gltfLoader
 
 public:
     ~gltfLoader();
+    bool loadFromFile(const std::string& filename);
     bool loadGltfFromString(const std::string& gltf, const std::string& bin);
     bool loadGlbFromString(const std::string& glb);
     bool loadGltfFromFile(const std::string& gltfFilename);

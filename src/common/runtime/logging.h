@@ -41,7 +41,8 @@ namespace Logging
 	void init();
 	void cleanup();
 	void pushLog(std::string message, LogLevel level);
-	void addListener(std::function<void(const Log&)> callback);
+	size_t addListener(std::function<void(const Log&)> callback);
+    void removeListener(size_t index);
 	void setColor(LogColor color);
 };
 

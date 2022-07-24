@@ -54,6 +54,7 @@ Asset* Asset::assetFromType(AssetType type)
 Asset* Asset::deserializeUnknown(InputSerializer s)
 {
 
+    size_t sPos = s.getPos();
 	std::string typeStr;
 	AssetID id;
 	std::string name;
@@ -61,7 +62,7 @@ Asset* Asset::deserializeUnknown(InputSerializer s)
 	AssetType type;
 	type.set(typeStr);
 	Asset* asset = assetFromType(type);
-	s.restart();
+	s.setPos(sPos);
 	if(!asset)
 		return nullptr;
 	asset->deserialize(s);
@@ -80,6 +81,7 @@ void IncrementalAsset::deserializeHeader(InputSerializer s)
 
 IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer s)
 {
+    size_t sPos = s.getPos();
 	std::string typeStr;
 	AssetID id;
 	std::string name;
@@ -97,7 +99,7 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer s)
 		default:
 			throw std::runtime_error("Tried to incrementally deserialize, non-incremental asset.");
 	}
-	s.restart();
+	s.setPos(sPos);
 	asset->deserializeHeader(s);
 	return asset;
 }

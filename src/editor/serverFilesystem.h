@@ -10,6 +10,7 @@
 #include "runtime/runtime.h"
 #include "assets/assetID.h"
 #include "networking/connection.h"
+#include <utility/asyncData.h>
 
 struct ServerFile
 {
@@ -43,6 +44,7 @@ public:
     ServerDirectory* root();
     void fetchDirectory(ServerDirectory* dir);
     void createDirectory(ServerDirectory* parent, const std::string& name);
+    AsyncData<AssetID> saveAsset(ServerDirectory* destination, Asset* asset);
     void deleteDirectory(ServerDirectory* directory);
     void deleteFile(ServerDirectory* parent, const std::string& name);
     void moveDirectory(ServerDirectory* target, ServerDirectory* destination);

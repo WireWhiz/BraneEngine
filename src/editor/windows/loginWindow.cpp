@@ -51,17 +51,12 @@ void LoginWindow::draw()
                         if(code != net::ResponseCode::success)
                         {
                             _loggingIn = false;
-                            _feedbackMessage = "request error: " + std::to_string((uint8_t)code);
+                            if(code == net::ResponseCode::denied)
+                                _feedbackMessage = "invalid username/password";
+                            else
+                                _feedbackMessage = "request error: " + std::to_string((uint8_t)code);
                             return;
                         }
-						bool result;
-						sData >> result;
-						if(!result)
-						{
-							_loggingIn = false;
-							_feedbackMessage = "invalid username/password";
-							return;
-						}
 
 						_feedbackMessage = "Logged in!";
 						_loggedIn = true;

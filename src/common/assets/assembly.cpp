@@ -12,8 +12,9 @@
 
 void Assembly::EntityAsset::serialize(OutputSerializer message, Assembly& assembly)
 {
-	message << static_cast<uint32_t>(components.size());
-	for (size_t i = 0; i < components.size(); ++i)
+    uint32_t size = static_cast<uint32_t>(components.size());
+	message << size;
+	for (size_t i = 0; i < size; ++i)
 	{
 		uint32_t componentIDIndex = 0;
 		for(auto& id : assembly.components)
@@ -28,7 +29,8 @@ void Assembly::EntityAsset::serialize(OutputSerializer message, Assembly& assemb
 			throw std::runtime_error("Component assetID not listed in asset components");
 		}
 
-		message << componentIDIndex;
+        uint32_t ssize = components[i].description()->serializationSize();
+		message << componentIDIndex << ssize;
 		components[i].description()->serialize(message, components[i].data());
 	}
 }
@@ -40,11 +42,19 @@ void Assembly::EntityAsset::deserialize(InputSerializer message, Assembly& assem
 	components.reserve(size);
 	for (uint32_t i = 0; i < size; ++i)
 	{
-		uint32_t componentIDIndex;
-		message >> componentIDIndex;
-		const ComponentDescription* description = cm.getComponentDef(
-				am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
-		VirtualComponent component(description);
+		uint32_t componentIDIndex, componentSize;
+		message >> componentIDIndex >> componentSize;
+        if(componentIDIndex >= assembly.components.size())
+            throw std::runtime_error("Component ID index invalid");
+		const ComponentDescription* description = cm.getComponentDef(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
+		if(componentSize != description->serializationSize())
+        {
+            Runtime::error("Component size " + std::to_string(componentSize) + " does not match size of component "
+            + description->name + " which is " + std::to_string(description->serializationSize()) + ".\n attempting to continue deserialization");
+            message.setPos(message.getPos() + componentSize);
+            continue;
+        }
+        VirtualComponent component(description);
 		description->deserialize(message, component.data());
 		components.push_back(std::move(component));
 	}

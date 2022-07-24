@@ -51,6 +51,7 @@ namespace net
 		std::shared_mutex _responseLock;
 		std::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
 		IMessage _tempIn;
+        std::function<void(Connection* connection, IMessage&& message)> _requestHandler;
 
 		std::vector<std::function<void()>> _onDisconnect;
 
@@ -68,6 +69,7 @@ namespace net
 		void eraseStreamListener(uint32_t id);
 		void sendRequest(const std::string& name, SerializedData&& data, const std::function<void(ResponseCode code, InputSerializer s)>& callback);
 		void onDisconnect(std::function<void()> f);
+        void onRequest(std::function<void(Connection* connection, IMessage&& message)> request);
 		bool messageAvailable();
 		IMessage popMessage();
 
@@ -113,6 +115,11 @@ namespace net
                 }
                 switch(_tempIn.header.type)
                 {
+                    case MessageType::request:
+                    {
+                        _requestHandler(this, std::move(_tempIn));
+                        break;
+                    }
                     case MessageType::response:
                     {
                         InputSerializer s(_tempIn.body);
@@ -139,17 +146,14 @@ namespace net
                         uint32_t id;
                         s >> id;
 
-                        std::function<void(InputSerializer s)> listener;
                         {
                             std::scoped_lock l(_streamLock);
                             if(!_streamListeners.count(id)){
                                 Runtime::error("Unknown stream data received: " + std::to_string(id));
                                 break;
                             }
-                            listener = std::move(_streamListeners[id]);
-                            _streamListeners.erase(id);
+                            _streamListeners.at(id)(s);
                         }
-                        listener(s);
                         break;
                     }
                     case MessageType::endStream:

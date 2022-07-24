@@ -15,12 +15,11 @@ class AssetBrowserWindow : public GUIWindow
 {
 	AssetBrowserWidget _browser;
 
-	//gui popup context variables
 	std::string _name;
 	std::string _filePath;
 
-
 	void importAsset();
+
 public:
 	AssetBrowserWindow(GUI& ui, GUIWindowID id);
 	void draw() override;

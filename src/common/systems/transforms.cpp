@@ -75,6 +75,7 @@ const char* Transforms::name()
 
 void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
 {
+    assert(_em->entityExists(entity));
 	if(_em->hasComponent<Children>(entity))
 	{   auto* cc = _em->getComponent<Children>(entity);
 		for(auto child : cc->children)

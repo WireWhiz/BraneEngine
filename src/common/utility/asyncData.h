@@ -9,6 +9,7 @@
 #include <functional>
 #include <string>
 #include <runtime/runtime.h>
+#include <array>
 
 template<typename T>
 class AsyncData
@@ -24,12 +25,12 @@ public:
 	{
 		_instance = std::make_shared<InternalData>();
 	}
-	AsyncData& then(std::function<void(T)> callback)
+	AsyncData& then(const std::function<void(T)>& callback)
 	{
 		if(_instance->_data)
 			callback(std::move(*_instance->_data));
 		else
-			_instance->_callback = std::move(callback);
+			_instance->_callback = callback;
 		return *this;
 	}
 	AsyncData& onError(std::function<void(const std::string& err)> callback)
@@ -67,56 +68,28 @@ public:
 };
 
 template<typename T>
-class AsyncDataArray
+class AsyncAction
 {
-	size_t _size;
 	std::atomic<size_t> _loaded_count;
-	std::function<void(bool success, const std::string& error)> _fullyLoaded;
-	std::function<void(size_t index, T data)> _indexLoaded;
+	std::vector<AsyncData<T>> _handles;
+    std::vector<T> _data;
+    std::function<void(std::vector<T>& data)> _onLoaded;
+    std::function<void(const std::string& error)> _onFail;
 public:
-	explicit AsyncDataArray(size_t size)
-	{
-		_size = size;
-		_loaded_count = 0;
-	}
-	void fullyLoaded(std::function<void(bool success, const std::string& error)> callback)
-	{
-		_fullyLoaded = std::move(callback);
-	}
-	void indexLoaded(std::function<void(size_t index, T data)> callback)
-	{
-		_indexLoaded = std::move(callback);
-	}
-	void setData(size_t index, T data)
-	{
-		assert(index < _size);
-		assert(_loaded_count < _size);
-		assert(_indexLoaded);
-		assert(_fullyLoaded);
-
-		_indexLoaded(index, data);
-		_loaded_count++;
-		if(_loaded_count == _size && _fullyLoaded)
-			_fullyLoaded(true, "");
-
-	}
-	void setError(const std::string& error)
-	{
-		if(_fullyLoaded)
-			_fullyLoaded(false, error);
-	}
-
-	AsyncData<T> operator[](size_t index)
-	{
-		AsyncData<T> o;
-		o.callback([this, index](T data, bool successful, const std::string& error){
-			if(successful)
-				setData(index, data);
-			else
-				setError(error);
-		});
-		return o;
-	}
+	AsyncAction(std::vector<AsyncData<T>>&& handles, std::function<void(std::vector<T>& data)> onLoaded, std::function<void(const std::string& error)> onFail) :
+                _handles(std::move(handles)), _onLoaded(std::move(onLoaded)), _onFail(std::move(onFail))
+    {
+        _data.resize(_handles.size());
+        _loaded_count = 0;
+        for (size_t i = 0; i < _handles.size(); ++i)
+        {
+            _handles[i].then([this, i](T data){
+                _data[i] = std::move(data);
+                if(++_loaded_count == _data.size())
+                    _onLoaded(_data);
+            }).onError(_onFail);
+        }
+    }
 };
 
 #endif //BRANEENGINE_ASYNCDATA_H

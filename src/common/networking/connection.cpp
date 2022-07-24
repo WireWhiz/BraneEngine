@@ -86,7 +86,12 @@ namespace net
 		_onDisconnect.push_back(std::move(f));
 	}
 
-	template<>
+    void Connection::onRequest(std::function<void(Connection*, IMessage&&)> request)
+    {
+        _requestHandler = std::move(request);
+    }
+
+    template<>
 	void ServerConnection<tcp_socket>::connectToClient()
 	{
 		_address = _socket.remote_endpoint().address().to_string();

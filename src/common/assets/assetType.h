@@ -10,15 +10,15 @@ class AssetType
 public:
 	enum Type
 	{
-		none,
-		component,
-		system,
-		mesh,
-		texture,
-		shader,
-		material,
-		assembly,
-		player
+		none = 0,
+		component = 1,
+		system = 2,
+		mesh = 3,
+		texture = 4,
+		shader = 5,
+		material = 6,
+		assembly = 7,
+		player = 9
 	};
 
 private:

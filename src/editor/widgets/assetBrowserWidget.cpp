@@ -12,10 +12,11 @@
 #include "assets/assetManager.h"
 #include "../editor.h"
 #include "editor/editorEvents.h"
+#include "../windows/createAssetWindow.h"
 
 #include <algorithm>
 
-AssetBrowserWidget::AssetBrowserWidget(GUI &ui, AssetBrowserWidget::Mode mode) : _ui(ui), _mode(mode), _fs(*Runtime::getModule<ServerFilesystem>())
+AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits), _fs(*Runtime::getModule<ServerFilesystem>())
 {
     setDirectory(_fs.root());
 }
@@ -38,19 +39,22 @@ void AssetBrowserWidget::displayDirectoriesRecursive(ServerDirectory* dir)
     {
         setDirectory(dir);
     }
-    if(dir != _fs.root() && ImGui::BeginDragDropSource())
+    if(_allowEdits)
     {
-        std::string path = dir->path();
-        ImGui::SetDragDropPayload("directory", &dir, sizeof(ServerDirectory*));
-        ImGui::Text("%s",dir->name.c_str());
-        ImGui::EndDragDropSource();
-    }
-
-    if(ImGui::BeginDragDropTarget())
-    {
-        if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
+        if (dir != _fs.root() && ImGui::BeginDragDropSource())
         {
-            _fs.moveDirectory(*(ServerDirectory**)p->Data, dir);
+            std::string path = dir->path();
+            ImGui::SetDragDropPayload("directory", &dir, sizeof(ServerDirectory*));
+            ImGui::Text("%s", dir->name.c_str());
+            ImGui::EndDragDropSource();
+        }
+
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
+            {
+                _fs.moveDirectory(*(ServerDirectory**) p->Data, dir);
+            }
         }
     }
     if(nodeOpen)
@@ -94,54 +98,53 @@ void AssetBrowserWidget::displayFiles()
     else
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.4f, 0.4f, 0.5f, 1});
-        ImGui::PushStyleColor(ImGuiCol_Button, {0.1f, 0.1f, 0.1f, 1});
         for (auto& dir: _currentDir->children)
         {
             ImGui::PushID(dir->name.c_str());
-            if (ImGui::ButtonEx(std::string(ICON_FA_FOLDER " " + dir->name).c_str(),
-                    {ImGui::GetContentRegionAvail().x, 0}))
+            if (ImGui::Selectable(std::string(ICON_FA_FOLDER " " + dir->name).c_str()))
             {
                 setDirectory(dir.get());
             }
             fileHovered |= ImGui::IsItemHovered();
-
-            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            if(_allowEdits)
             {
-                ImGui::OpenPopup("directoryActions");
-            }
-
-            if (ImGui::BeginPopup("directoryActions"))
-            {
-                if (ImGui::Selectable("Delete"))
+                if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
                 {
-                    //Todo: confirmation dialog
-                    _fs.deleteDirectory(dir.get());
+                    ImGui::OpenPopup("directoryActions");
                 }
-                ImGui::EndPopup();
-            }
 
-            if (ImGui::BeginDragDropSource())
-            {
-                std::string path = dir->path();
-                auto* dirPtr = dir.get();
-                ImGui::SetDragDropPayload("directory", &dirPtr, sizeof(ServerDirectory*));
-                ImGui::Text("%s",dir->name.c_str());
-                ImGui::EndDragDropSource();
-            }
-
-            if (ImGui::BeginDragDropTarget())
-            {
-                if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
+                if (ImGui::BeginPopup("directoryActions"))
                 {
-                    _fs.moveDirectory(*(ServerDirectory**)p->Data, dir.get());
+                    if (ImGui::Selectable("Delete"))
+                    {
+                        //Todo: confirmation dialog
+                        _fs.deleteDirectory(dir.get());
+                    }
+                    ImGui::EndPopup();
+                }
+
+                if (ImGui::BeginDragDropSource())
+                {
+                    std::string path = dir->path();
+                    auto* dirPtr = dir.get();
+                    ImGui::SetDragDropPayload("directory", &dirPtr, sizeof(ServerDirectory*));
+                    ImGui::Text("%s",dir->name.c_str());
+                    ImGui::EndDragDropSource();
+                }
+
+                if (ImGui::BeginDragDropTarget())
+                {
+                    if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
+                    {
+                        _fs.moveDirectory(*(ServerDirectory**)p->Data, dir.get());
+                    }
                 }
             }
             ImGui::PopID();
         }
         for (auto& file: _currentDir->files)
         {
-            if (ImGui::ButtonEx(std::string(ICON_FA_FILE " " + file.name).c_str(), {ImGui::GetContentRegionAvail().x, 0}))
+            if (ImGui::Selectable(std::string(ICON_FA_FILE " " + file.name).c_str()))
             {
                 if(file.isAsset)
                 {
@@ -174,50 +177,24 @@ void AssetBrowserWidget::displayFiles()
                     ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.
             }
         }
-
         ImGui::PopStyleVar(1);
-        ImGui::PopStyleColor(2);
     }
     assert(_currentDir);
-
-    ImGuiID newDirectoryPopup = ImGui::GetID("newDirectory");
-    if (ImGui::BeginPopupEx(newDirectoryPopup, ImGuiPopupFlags_None))
+    if(_allowEdits)
     {
 
-    }
-
-    ImGuiID importAssetPopup = ImGui::GetID("importAsset");
-    if(ImGui::BeginPopupEx(importAssetPopup, ImGuiPopupFlags_None))
-    {
-        ImGui::Text("Create Asset");
-        //ImGui::Text("Source file: %s", _filePath.c_str());
-        //ImGui::InputText("name", &_name);
-        if (ImGui::Button("create"))
+        if (!fileHovered && ImGui::BeginPopupContextWindow("directoryActions"))
         {
-            Runtime::warn("creation currently broken");
-            ImGui::CloseCurrentPopup();
+            if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
+            {
+                _ui.openPopup(std::make_unique<CreateDirectoryPopup>(_currentDir, _fs));
+            }
+            if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Import Asset"))
+            {
+                _ui.addWindow<CreateAssetWindow>(_currentDir);
+            }
+            ImGui::EndPopup();
         }
-        ImGui::EndPopup();
-    }
-
-    if (!fileHovered && ImGui::BeginPopupContextWindow("directoryActions"))
-    {
-
-        if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
-        {
-            _ui.openPopup(std::make_unique<CreateDirectoryPopup>(_currentDir, _fs));
-            ImGui::OpenPopup(newDirectoryPopup);
-        }
-        if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Import Asset"))
-        {
-            Runtime::warn("Asset Importing currently broken");
-            /*_filePath = FileManager::requestLocalFilePath("Import Asset", {"*.glb","*.png"});
-            _name = "new asset";
-            if(!_filePath.empty())
-                ImGui::OpenPopup(importAssetPopup);*/
-        }
-
-        ImGui::EndPopup();
     }
 }
 

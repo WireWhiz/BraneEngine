@@ -43,7 +43,10 @@ void DataWindow::displayAssetData()
 {
 	if(!_focusedAsset)
 		return;
+
+    ImGui::PushFont(_ui.fonts()[1]);
 	ImGui::Text("%s", _focusedAsset->name.c_str());
+    ImGui::PopFont();
 	ImGui::TextDisabled("%s", _focusedAsset->type.toString().c_str());
 	switch(_focusedAsset->type.type())
 	{

@@ -109,14 +109,16 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	io.ConfigFlags   |= ImGuiConfigFlags_ViewportsEnable;
 #endif
 	io.IniFilename = NULL;
-
-	io.Fonts->AddFontDefault();
+    _fonts.push_back(io.Fonts->AddFontFromFileTTF("fonts/default.ttf", 15.0f));
 
 	ImFontConfig config;
 	config.MergeMode = true;
 	config.GlyphMinAdvanceX = 13.0f;
 	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, 10.0f, &config, icon_ranges);
+	io.Fonts->AddFontFromFileTTF("fonts/" FONT_ICON_FILE_NAME_FAS, 11.0f, &config, icon_ranges);
+
+    _fonts.push_back(io.Fonts->AddFontFromFileTTF("fonts/header.ttf", 17.0f));
+    _fonts.push_back(io.Fonts->AddFontFromFileTTF("fonts/monospace.ttf", 13.0f));
 
 	// Setup ImGui style TODO move this to config.json
 	ImVec4* colors = ImGui::GetStyle().Colors;
@@ -279,6 +281,11 @@ void GUI::openPopup(std::unique_ptr<GUIPopup>&& popup)
 void GUI::closePopup()
 {
     _popup = nullptr;
+}
+
+const std::vector<ImFont*>& GUI::fonts() const
+{
+    return _fonts;
 }
 
 

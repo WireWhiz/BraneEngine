@@ -16,6 +16,21 @@
 #include "config/config.h"
 #include <shared_mutex>
 
+struct RequestCTX
+{
+    uint32_t id;
+    std::string name;
+    net::Connection* sender;
+    net::ResponseCode code = net::ResponseCode::success;
+    SerializedData requestData;
+    SerializedData responseData;
+    InputSerializer req;
+    OutputSerializer res;
+    RequestCTX(net::Connection* sender, SerializedData&& requestData);
+    RequestCTX(const RequestCTX&) = delete;
+    RequestCTX(RequestCTX&&);
+    ~RequestCTX();
+};
 
 class NetworkManager : public Module
 {
@@ -37,7 +52,7 @@ class NetworkManager : public Module
 	std::atomic_bool _running;
 
 	std::mutex _requestLock;
-	std::unordered_map<std::string, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> > _requestListeners;
+	std::unordered_map<std::string, std::function<void(RequestCTX& ctx)> > _requestListeners;
 
 	uint32_t _streamIDCounter = 1000;
 
@@ -55,7 +70,8 @@ class NetworkManager : public Module
 			if (!ec)
 			{
 				std::unique_ptr<net::Connection> connection = std::make_unique<net::ServerConnection<socket_t>>(std::move(*socket));
-				callback(connection);
+                connection->onRequest([this](auto c, auto m){handleResponse(c, std::move(m));});
+                callback(connection);
 				_clientLock.lock();
 				_clients.push_back(std::move(connection));
 				_clientLock.unlock();
@@ -72,6 +88,7 @@ class NetworkManager : public Module
 
 	void startSystems();
 	void ingestData(net::Connection* connection);
+    void handleResponse(net::Connection* connection, net::IMessage&& message);
 public:
 	NetworkManager();
 	~NetworkManager();
@@ -93,7 +110,7 @@ public:
 	AsyncData<Asset*> async_requestAsset(const AssetID& id);
 	AsyncData<IncrementalAsset*> async_requestAssetIncremental(const AssetID& id);
 
-	void addRequestListener(const std::string& name, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> callback);
+	void addRequestListener(const std::string& name, std::function<void(RequestCTX& ctx)> callback);
 
 	static const char* name();
 };

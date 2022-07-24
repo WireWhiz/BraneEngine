@@ -4,9 +4,12 @@
 
 #include <iostream>
 #include "gltfLoader.h"
+#include "runtime/runtime.h"
+#include <filesystem>
 
 bool gltfLoader::loadGltfFromFile(const std::string& gltfFilename)
 {
+    std::filesystem::path directory{gltfFilename};
     std::ifstream jsonFile(gltfFilename, std::ios::binary);
     if(!jsonFile.is_open())
         return false;
@@ -20,7 +23,7 @@ bool gltfLoader::loadGltfFromFile(const std::string& gltfFilename)
 
     jsonFile.close();
 
-	std::string binFilename = _json["buffers"][0]["uri"].asString();
+	std::string binFilename = directory.parent_path().string() + "/" + _json["buffers"][0]["uri"].asString();
 
     std::ifstream binFile = std::ifstream(binFilename, std::ios::binary | std::ios::ate); // File will be closed when this object is destroyed.
     if(!binFile.is_open())
@@ -203,8 +206,9 @@ std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
 std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
 {
 	Json::Value& accessor = _json["accessors"][accessorIndex];
-	if(accessor["componentType"].asUInt() != 5126 ||
-			accessor["type"].asString() != "VEC3")
+    std::string type = accessor["type"].asString();
+    //We can read vec4 values as vec 3 as the stride will account for the unread value.
+	if(accessor["componentType"].asUInt() != 5126 || !(type == "VEC3" || type == "VEC4"))
 		throw std::runtime_error("Mismatched accessor values for reading Vec3");
 
 	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
@@ -249,11 +253,12 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 
 			if(primitive["attributes"].isMember("TANGENT"))
 			{
+                //TODO account for tangents with bitangent sign stored as Vec4
 				auto v = readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
                 mesh->addAttribute(pIndex, "TANGENT", v);
 			}
 
-            //TODO  make it so that we automatically detext all texcoords
+            //TODO  make it so that we automatically detect all texcoords
 			if(primitive["attributes"].isMember("TEXCOORD_0"))
 			{
 				auto v = readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
@@ -278,6 +283,17 @@ Json::Value& gltfLoader::nodes()
 Json::Value& gltfLoader::json()
 {
 	return _json;
+}
+
+bool gltfLoader::loadFromFile(const std::string& filename)
+{
+    std::string postfix = filename.substr(filename.find_last_of('.'));
+    if(postfix == ".gltf")
+        return loadGltfFromFile(filename);
+    if(postfix == ".glb")
+        return loadGltfFromFile(filename);
+    Runtime::error("Unrecognised file postfix: " + postfix);
+    return false;
 }
 
 

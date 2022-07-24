@@ -46,6 +46,7 @@ void NetworkManager::async_connectToAssetServer(const std::string& address, uint
 		if(!ec)
 		{
 			auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
+            connection->onRequest([this](auto c, auto m){handleResponse(c, std::move(m));});
 			connection->connectToServer(endpoints, [this, address, callback, connection](){
 				_serverLock.lock();
 				_servers.insert({address, std::unique_ptr<net::Connection>(connection)});
@@ -134,7 +135,8 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 	server->sendRequest("asset", std::move(data), [asset](net::ResponseCode code, InputSerializer sData){
         if(code != net::ResponseCode::success)
         {
-            Runtime::error("Could not get incremental asset, server responded with code: " + std::to_string((uint8_t)code));
+            Runtime::error("Could not get asset, server responded with code: " + std::to_string((uint8_t)code));
+            return;
         }
 		asset.setData(Asset::deserializeUnknown(sData));
 	});
@@ -158,16 +160,17 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
     s << id << streamID;
 
 	// Set up a listener for the asset response
-	server->sendRequest("incrementalAsset", std::move(data), [this, asset, server, streamID](auto code, InputSerializer sData){
+	server->sendRequest("incrementalAsset", std::move(data), [asset, server, streamID](auto code, InputSerializer sData){
         if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not get incremental asset, server responded with code: " + std::to_string((uint8_t)code));
+            return;
         }
 		IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
+        server->addStreamListener(streamID, [assetPtr](InputSerializer sData){
+            assetPtr->deserializeIncrement(sData);
+        });
 		asset.setData(assetPtr);
-		server->addStreamListener(streamID, [assetPtr](InputSerializer sData){
-			assetPtr->deserializeIncrement(sData);
-		});
 	});
 	return asset;
 
@@ -196,7 +199,7 @@ const char* NetworkManager::name()
 	return "networkManager";
 }
 
-void NetworkManager::addRequestListener(const std::string& name, std::function<void(net::Connection* connection, InputSerializer req, OutputSerializer res)> callback)
+void NetworkManager::addRequestListener(const std::string& name, std::function<void(RequestCTX& ctx)> callback)
 {
 	std::scoped_lock l(_requestLock);
 	assert(!_requestListeners.count(name));
@@ -211,38 +214,8 @@ void NetworkManager::ingestData(net::Connection* connection)
 		switch(message.header.type)
 		{
 			case net::MessageType::request:
-			{
-                InputSerializer req(message.body);
-                net::OMessage response;
-                response.header.type = net::MessageType::response;
-                SerializedData resHeaderData;
-                SerializedData resBodyData;
-                OutputSerializer resHeaderS(resHeaderData);
-                OutputSerializer res(resBodyData);
-				try{
-                    std::string name;
-                    uint32_t id;
-                    req >> name >> id;
-                    resHeaderS << id;
-                    {
-                        std::scoped_lock l(_requestLock);
-                        auto listener = _requestListeners.find(name);
-                        if(listener == _requestListeners.end()){
-							Runtime::warn("Unknown request received: " + name);
-						}
-                        listener->second(connection, req, res);
-					}
-                    resHeaderS << net::ResponseCode::success;
-                }
-				catch(std::exception& e){
-					Runtime::error("Error with received request: " + std::string(e.what()));
-                    resHeaderS << net::ResponseCode::serverError;
-				}
-                response.chunks.emplace_back(std::move(resHeaderData));
-                response.chunks.emplace_back(std::move(resBodyData));
-                connection->send(std::move(response));
-				break;
-			}
+                handleResponse(connection, std::move(message));
+                break;
 			default:
 				Runtime::warn("Received message of unknown type: " + std::to_string((int)message.header.type));
 				break;
@@ -256,3 +229,62 @@ net::Connection* NetworkManager::getServer(const std::string& address) const
 		return nullptr;
 	return _servers.at(address).get();
 }
+
+void NetworkManager::handleResponse(net::Connection* connection, net::IMessage&& message)
+{
+    assert(net::MessageType::request == message.header.type);
+    RequestCTX ctx(connection, std::move(message.body));
+    try
+    {
+        {
+            std::scoped_lock l(_requestLock);
+            auto listener = _requestListeners.find(ctx.name);
+            if (listener == _requestListeners.end())
+            {
+                Runtime::warn("Unknown request received: " + ctx.name);
+                return;
+            }
+            listener->second(ctx);
+        }
+    }
+    catch (std::exception& e)
+    {
+        Runtime::error("Error with received request: " + std::string(e.what()));
+        ctx.code = net::ResponseCode::serverError;
+    }
+}
+
+RequestCTX::RequestCTX(net::Connection* s, SerializedData&& r) : sender(s), requestData(std::move(r)),
+                                                                req(requestData), res(responseData)
+{
+    req >> name >> id;
+}
+
+RequestCTX::RequestCTX(RequestCTX&& o) : requestData(std::move(o.requestData)),
+                                         responseData(std::move(o.responseData)),
+                                         req(requestData), res(responseData)
+{
+    req.setPos(o.req.getPos());
+    sender = o.sender;
+    o.sender = nullptr;
+    id = o.id;
+    name = std::move(o.name);
+    code = o.code;
+}
+
+RequestCTX::~RequestCTX()
+{
+    if(!sender)
+        return;
+    net::OMessage response;
+    response.header.type = net::MessageType::response;
+    SerializedData resHeader;
+    OutputSerializer resHeaderS(resHeader);
+
+    resHeaderS << id << code;
+    response.chunks.emplace_back(std::move(resHeader));
+    response.chunks.emplace_back(std::move(responseData));
+    sender->send(std::move(response));
+}
+
+

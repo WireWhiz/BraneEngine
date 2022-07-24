@@ -97,10 +97,17 @@ namespace Logging
 		}
 	}
 
-	void addListener(std::function<void(const Log&)> callback)
+	size_t addListener(std::function<void(const Log&)> callback)
 	{
+        size_t index = _logListeners.size();
 		_logListeners.push_back(std::move(callback));
+        return index;
 	}
+
+    void removeListener(size_t index)
+    {
+        _logListeners.erase(_logListeners.begin() + index);
+    }
 
 	std::string Log::toString() const
 	{

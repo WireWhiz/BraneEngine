@@ -30,10 +30,12 @@ install(TARGETS BraneEditor
         RUNTIME
         DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
-install(FILES config.json fa-solid-900.ttf ${PROJECT_SOURCE_DIR}/media/branelogo.png
+install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
         DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
 install(DIRECTORY shaders DESTINATION ${INSTALL_DIR}
+        COMPONENT Editor)
+install(DIRECTORY fonts DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
 
 add_custom_command(TARGET BraneEditor POST_BUILD

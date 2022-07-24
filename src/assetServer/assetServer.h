@@ -34,6 +34,7 @@ class AssetServer : public Module
 	std::unordered_map<net::Connection*, ConnectionContext> _connectionCtx;
 	std::list<IncrementalAssetSender> _senders;
 
+    std::string fullAssetPath(const std::string& postfix);
 	void addDirectoryRequestListeners();
 
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);

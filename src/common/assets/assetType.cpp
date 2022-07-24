@@ -27,7 +27,7 @@ const std::string& AssetType::toString(Type type)
 			{AssetType::texture,   "texture"  },
 			{AssetType::player,    "player"   },
 			{AssetType::shader,    "shader"   },
-			{AssetType::assembly, "assembly"  }
+			{AssetType::assembly,  "assembly" }
 	};
 	assert(_toStringMap.count(type));
 	return _toStringMap.at(type);
@@ -40,7 +40,6 @@ AssetType::AssetType()
 
 void AssetType::set(const std::string& type)
 {
-	
 	_type = fromString(type);
 }
 void AssetType::set(AssetType::Type type)
