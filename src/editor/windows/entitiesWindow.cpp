@@ -39,9 +39,12 @@ void EntitiesWindow::draw()
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
 				ComponentFilter filter(ctx);
 				filter.addComponent(EntityIDComponent::def()->id, ComponentFilterFlags_Const);
-				_em->getEntities(filter).forEachNative([](byte** components){
+				_em->getEntities(filter).forEachNative([this](byte** components){
 					auto* id = EntityIDComponent::fromVirtual(components[0]);
-					ImGui::Selectable(("Entity " + std::to_string(id->id)).c_str());
+					if(ImGui::Selectable(("Entity " + std::to_string(id->id)).c_str()))
+                    {
+                        _ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
+                    }
 				});
 				ImGui::PopStyleVar();
 				ImGui::Unindent(16);

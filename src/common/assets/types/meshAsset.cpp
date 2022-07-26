@@ -216,11 +216,13 @@ size_t MeshAsset::primitiveCount() const
 
 uint32_t MeshAsset::vertexCount(uint32_t primitive) const
 {
+    assert(primitive < _primitives.size());
     return _primitives[primitive].vertexCount;
 }
 
 uint32_t MeshAsset::indexCount(size_t primitive) const
 {
+    assert(primitive < _primitives.size());
     return _primitives[primitive].indexCount;
 }
 

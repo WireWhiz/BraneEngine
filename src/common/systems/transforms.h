@@ -12,7 +12,7 @@ class Transform : public NativeComponent<Transform>
 {
 	REGISTER_MEMBERS_2("Transform", value, "value", dirty, "dirty");
 public:
-	glm::mat4 value;
+	glm::mat4 value = glm::mat4(1);
 	bool dirty = true;
 };
 
@@ -20,7 +20,7 @@ class LocalTransform : public NativeComponent<LocalTransform>
 {
 	REGISTER_MEMBERS_2("Local Transform", value, "value", parent, "parent id");
 public:
-	glm::mat4 value;
+	glm::mat4 value = glm::mat4(1);
 	EntityID parent;
 };
 
@@ -28,9 +28,9 @@ class TRS : public NativeComponent<TRS>
 {
 	REGISTER_MEMBERS_4("TRS", translation, "translation", rotation, "rotation", scale, "scale", dirty, "dirty");
 public:
-	glm::vec3 translation;//local translation
-	glm::quat rotation;   //local rotation
-	glm::vec3 scale;      //local scale
+	glm::vec3 translation = {0,0,0};//local translation
+	glm::quat rotation = glm::quat(1,0,0,0);   //local rotation
+	glm::vec3 scale = {1, 1, 1};      //local scale
 	bool dirty = true;
 	glm::mat4 toMat() const;
 };

@@ -19,6 +19,10 @@ DataWindow::DataWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 	ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", [this](const FocusEntityAssetEvent* event){
 		_focusedAssetEntity = event->entity();
 	});
+    ui.addEventListener<FocusEntityEvent>("focus entity", [this](const FocusEntityEvent* event){
+        _focusedEntity = event->id();
+        _focusMode = FocusMode::entity;
+    });
 }
 
 void DataWindow::draw()
@@ -115,8 +119,30 @@ void DataWindow::displayMeshData()
 			tris += mesh->indexCount(i);
 	}
 	tris /= 3;
-	ImGui::Text("Vertices: %u", vertices);
-	ImGui::Text("Tris: %u", tris);
+	ImGui::Text("Total vertices: %u", vertices);
+	ImGui::Text("Total triangles: %u", tris);
+    for (size_t i = 0; i < mesh->primitiveCount(); ++i)
+    {
+        ImGui::Separator();
+        ImGui::PushID(i);
+        ImGui::PushFont(_ui.fonts()[1]);
+        ImGui::Text("Primitive %d", i);
+        ImGui::PopFont();
+        ImGui::Text("Vertices: %u", mesh->vertexCount(i));
+        ImGui::Text("Triangles: %u", mesh->indexCount(i) / 3);
+        if(ImGui::CollapsingHeader("Vertices"))
+        {
+            ImGui::Indent(16);
+            const byte* poses = &mesh->packedData()[mesh->attributeOffset(i, "POSITION")];
+            for(size_t j = 0; j < mesh->vertexCount(i); ++j)
+            {
+                ImGui::InputFloat3(std::to_string(j).c_str(), (float*)(poses + j * sizeof(float) * 3), "%.3f", ImGuiInputTextFlags_ReadOnly);
+            }
+            ImGui::Unindent(16);
+        }
+        ImGui::PopID();
+    }
+
 }
 
 void DataWindow::displayEntityAssetData()
@@ -135,6 +161,22 @@ void DataWindow::displayEntityAssetData()
 void DataWindow::displayEntityData()
 {
 
+    ImGui::Text("Entity ID: %u", _focusedEntity.id);
+    ImGui::TextDisabled("Version: %u", _focusedEntity.version);
+    ImGui::Separator();
+    auto* em = Runtime::getModule<EntityManager>();
+    if(!em->entityExists(_focusedEntity))
+    {
+        ImGui::TextColored({1,0,0,1}, "Entity Destroyed!");
+        return;
+    }
+
+    auto& components = em->getEntityArchetype(_focusedEntity)->components();
+    for (auto cid : components)
+    {
+        VirtualVariableWidgets::displayVirtualComponentData(em->getComponent(_focusedEntity, cid));
+        ImGui::Separator();
+    }
 }
 
 

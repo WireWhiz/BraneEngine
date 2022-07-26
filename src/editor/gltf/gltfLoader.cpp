@@ -166,7 +166,7 @@ std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
 	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
 	uint32_t count = accessor["count"].asUInt();
 	uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
-	uint32_t offset = bufferView["byteOffset"].asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
 	std::vector<uint16_t> buffer(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -188,7 +188,7 @@ std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
 	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
 	uint32_t count = accessor["count"].asUInt();
 	uint32_t stride = bufferView.get("byteStride", sizeof(float)*2).asUInt();
-	uint32_t offset = bufferView["byteOffset"].asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
 	std::vector<glm::vec2> buffer(count);
 	for (uint32_t i = 0; i < count; ++i)
@@ -214,7 +214,7 @@ std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
 	Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
 	uint32_t count = accessor["count"].asUInt();
 	uint32_t stride = bufferView.get("byteStride", sizeof(float)*3).asUInt();
-	uint32_t offset = bufferView["byteOffset"].asUInt();
+	uint32_t offset = bufferView["byteOffset"].asUInt()  + accessor["byteOffset"].asUInt();
 
 	std::vector<glm::vec3> buffer(count);
 	for (uint32_t i = 0; i < count; ++i)

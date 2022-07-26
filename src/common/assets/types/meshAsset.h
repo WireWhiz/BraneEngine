@@ -29,7 +29,7 @@ public:
         std::vector<bool> vertexSent;
     };
 
-	size_t pipelineID;
+	size_t pipelineID = -1;
 	bool meshUpdated;
 
 	MeshAsset();

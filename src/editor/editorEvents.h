@@ -35,6 +35,14 @@ public:
 	Asset* asset() const;
 };
 
+class FocusEntityEvent : public GUIEvent
+{
+    EntityID _id;
+public:
+    FocusEntityEvent(EntityID id);
+    EntityID id() const;
+};
+
 class FocusEntityAssetEvent : public GUIEvent
 {
 	size_t _index;

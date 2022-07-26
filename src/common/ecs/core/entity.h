@@ -67,6 +67,7 @@ public:
 	Archetype* getArchetype(const ComponentSet& components);
 	EntityID createEntity();
 	EntityID createEntity(ComponentSet components);
+    bool tryGetEntity(size_t index, EntityID& id) const;
 	void createEntities(const ComponentSet& components, size_t count);
 	void destroyEntity(EntityID entity);
     bool entityExists(EntityID entity) const;

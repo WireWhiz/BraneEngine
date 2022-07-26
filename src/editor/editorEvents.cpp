@@ -36,3 +36,13 @@ size_t FocusEntityAssetEvent::entity() const
 {
 	return _index;
 }
+
+FocusEntityEvent::FocusEntityEvent(EntityID id) : GUIEvent("focus entity")
+{
+    _id = id;
+}
+
+EntityID FocusEntityEvent::id() const
+{
+    return _id;
+}

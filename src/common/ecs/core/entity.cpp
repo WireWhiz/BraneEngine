@@ -11,7 +11,9 @@ EntityID::operator uint32_t() const{
 
 EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
-	Runtime::timeline().addTask("systems", [this](){_systems.runSystems(*this);}, "main");
+	Runtime::timeline().addTask("systems", [this](){
+        _systems.runSystems(*this);
+    }, "main");
 }
 
 EntityManager::~EntityManager()
@@ -268,4 +270,14 @@ EntitySet EntityManager::getEntities(ComponentFilter filter)
 bool EntityManager::entityExists(EntityID entity) const
 {
     return _entities.hasIndex(entity) && entity.version == _entities[entity].version;
+}
+
+bool EntityManager::tryGetEntity(size_t index, EntityID& id) const
+{
+    if(!_entities.hasIndex(index)){
+        return false;
+    }
+    id.id = index;
+    id.version = _entities[index].version;
+    return true;
 }

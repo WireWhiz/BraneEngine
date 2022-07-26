@@ -5,9 +5,11 @@
 #include "virtualVariableWidgets.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
+#include "ecs/core/entity.h"
 
 void VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView component)
 {
+    ImGui::PushID(component.description()->id);
     ImGui::Text("%s", component.description()->name.c_str());
     for(size_t i = 0; i < component.description()->members().size(); ++i)
     {
@@ -18,15 +20,30 @@ void VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView co
             ImGui::Spacing();
         }
     }
+    ImGui::PopID();
 }
 
 void VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualType::Type type, byte* data)
 {
     assert(name);
+    ImGui::PushID(name);
     switch(type)
     {
         case VirtualType::virtualUnknown:
             ImGui::Text("Can't edit virtual unknowns, how are you seeing this?");
+            break;
+        case VirtualType::virtualEntityID:
+        {
+
+            auto* id = (EntityID*)data;
+            ImGui::InputScalar(name, ImGuiDataType_U32, (void*) &id->id, NULL, NULL, "%u", 0);
+            if(ImGui::IsItemDeactivatedAfterEdit())
+            {
+                auto* em = Runtime::getModule<EntityManager>();
+                em->tryGetEntity(id->id, *id);
+            }
+            ImGui::TextDisabled("(version %u)", id->version);
+        }
             break;
         case VirtualType::virtualBool:
             ImGui::Checkbox(name, (bool*)data);
@@ -71,12 +88,10 @@ void VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualTyp
         case VirtualType::virtualMat4:
         {
             glm::mat4& mat = *(glm::mat4*)data;
-            ImGui::PushID(name);
-            ImGui::InputFloat4(name, &mat[0][0]);
+            ImGui::InputFloat4("##MatValue1", &mat[0][0]);
             ImGui::InputFloat4("##MatValue2", &mat[1][0]);
             ImGui::InputFloat4("##MatValue3", &mat[2][0]);
             ImGui::InputFloat4("##MatValue4", &mat[3][0]);
-            ImGui::PopID();
         }
             break;
         case VirtualType::virtualFloatArray:
@@ -110,4 +125,5 @@ void VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualTyp
         }
             break;
     }
+    ImGui::PopID();
 }

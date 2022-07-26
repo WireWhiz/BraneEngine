@@ -139,9 +139,11 @@ namespace VirtualType
 				return;
 			case virtualQuat:
 				construct<glm::quat>(var);
+                *getVirtual<glm::quat>(var) = glm::quat(1,0,0,0);//Explicitly initialize to identity
 				return;
 			case virtualMat4:
 				construct<glm::mat4>(var);
+                *getVirtual<glm::mat4>(var) = glm::mat4(1);//Explicitly initialize to identity
 				return;
 			case virtualFloatArray:
 				construct<inlineFloatArray>(var);

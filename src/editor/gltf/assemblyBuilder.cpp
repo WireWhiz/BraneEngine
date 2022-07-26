@@ -42,18 +42,18 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 		}
 		else
 		{
-			VirtualComponent trs(TRS::def());
+			TRS trs;
 			glm::mat4 translation(1);
 			glm::mat4 rotation(1);
 			glm::mat4 scale(1);
 			if (node.isMember("rotation"))
 			{
-				glm::quat value;
-				for (uint8_t i = 0; i < node["rotation"].size(); ++i)
-				{
-					value[i] = node["rotation"][i].asFloat();
-				}
-				trs.setVar(1, value);
+				glm::quat value = glm::quat();
+                value.w = node["rotation"][3].asFloat();
+                value.x = node["rotation"][0].asFloat();
+                value.y = node["rotation"][1].asFloat();
+                value.z = node["rotation"][2].asFloat();
+				trs.rotation = value;
 				rotation = glm::mat4_cast(value);
 			}
 			if (node.isMember("scale"))
@@ -63,7 +63,7 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 				{
 					value[i] = node["scale"][i].asFloat();
 				}
-				trs.setVar(2, value);
+				trs.scale = value;
 				scale = glm::scale(glm::mat4(1), value);
 			}
 			if (node.isMember("translation"))
@@ -73,14 +73,14 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 				{
 					value[i] = node["translation"][i].asFloat();
 				}
-				trs.setVar(0, value);
+				trs.translation = value;
 				translation = glm::translate(glm::mat4(1), value);
 			}
 			transform = translation * rotation * scale;
 			VirtualComponent tc(Transform::def());
 			tc.setVar(0, transform);
 			entity.components.push_back(tc);
-			entity.components.push_back(trs);
+			entity.components.emplace_back(trs.toVirtual());
 		}
 
 
