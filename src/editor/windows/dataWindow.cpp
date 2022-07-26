@@ -174,7 +174,8 @@ void DataWindow::displayEntityData()
     auto& components = em->getEntityArchetype(_focusedEntity)->components();
     for (auto cid : components)
     {
-        VirtualVariableWidgets::displayVirtualComponentData(em->getComponent(_focusedEntity, cid));
+        if(VirtualVariableWidgets::displayVirtualComponentData(em->getComponent(_focusedEntity, cid)))
+            em->markComponentChanged(_focusedEntity, cid);
         ImGui::Separator();
     }
 }

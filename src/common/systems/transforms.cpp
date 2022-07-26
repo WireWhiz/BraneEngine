@@ -11,7 +11,7 @@
 
 glm::mat4 TRS::toMat() const
 {
-	return glm::translate(glm::scale(glm::mat4_cast(rotation), scale), translation);
+	return glm::translate(glm::mat4(1), translation) * glm::mat4_cast(rotation) * glm::scale(glm::mat4(1), scale);
 }
 
 void Transforms::start()
@@ -126,10 +126,8 @@ void TransformSystem::run(EntityManager& _em)
 	_em.getEntities(globalTRS).forEachNative([](byte** components){
 		TRS* trs = TRS::fromVirtual(components[0]);
 		Transform* t = Transform::fromVirtual(components[1]);
-		if(!trs->dirty)
-			return;
 		t->value = trs->toMat();
-		trs->dirty = false;
+        t->dirty = true;
 	});
 
 	//Update trs on parented entities
@@ -142,10 +140,7 @@ void TransformSystem::run(EntityManager& _em)
 		TRS* trs = TRS::fromVirtual(components[0]);
 		LocalTransform* t = LocalTransform::fromVirtual(components[1]);
 		Transform* gt = Transform::fromVirtual(components[2]);
-		if(!trs->dirty)
-			return;
 		t->value = trs->toMat();
-		trs->dirty = false;
 		gt->dirty = true;
 	});
 

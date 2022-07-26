@@ -143,10 +143,6 @@ void Assembly::initialize(EntityManager& em, graphics::VulkanRuntime& vkr, Asset
 			{
 				component.setVar(1, true);
 			}
-			else if(component.description() == TRS::def())
-			{
-				component.setVar(3, true);
-			}
 			else  if(component.description() == MeshRendererComponent::def())
 			{
 				MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());

@@ -26,12 +26,11 @@ public:
 
 class TRS : public NativeComponent<TRS>
 {
-	REGISTER_MEMBERS_4("TRS", translation, "translation", rotation, "rotation", scale, "scale", dirty, "dirty");
+	REGISTER_MEMBERS_3("TRS", translation, "translation", rotation, "rotation", scale, "scale");
 public:
 	glm::vec3 translation = {0,0,0};//local translation
 	glm::quat rotation = glm::quat(1,0,0,0);   //local rotation
 	glm::vec3 scale = {1, 1, 1};      //local scale
-	bool dirty = true;
 	glm::mat4 toMat() const;
 };
 

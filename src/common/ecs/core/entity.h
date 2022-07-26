@@ -86,6 +86,7 @@ public:
 	void setComponent(EntityID entity, const VirtualComponentView& component);
 	template<class T>
 	void setComponent(EntityID entity, NativeComponent<T>& component) const { setComponent(entity, component.toVirtual());}
+    void markComponentChanged(EntityID entity, ComponentID component);
 	void removeComponent(EntityID entity, ComponentID component);
 	ComponentManager& components();
 	SystemManager& systems();

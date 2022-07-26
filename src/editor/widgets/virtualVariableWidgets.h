@@ -10,8 +10,8 @@
 class VirtualVariableWidgets
 {
 public:
-    static void displayVirtualComponentData(VirtualComponentView component);
-    static void displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
+    static bool displayVirtualComponentData(VirtualComponentView component);
+    static bool displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
 };
 
 

@@ -52,6 +52,7 @@ public:
 	bool hasComponents(const ComponentSet& comps) const;
 	bool hasComponents(const ComponentFilter& filter) const;
 	VirtualComponentView getComponent(size_t entity, ComponentID component) const;
+    void markComponentChanged(size_t entity, ComponentID component);
 	void setComponent(size_t entity, VirtualComponent&& component);
 	void setComponent(size_t entity, VirtualComponentView component);
 	bool isChildOf(const Archetype* parent, ComponentID& connectingComponent) const;
