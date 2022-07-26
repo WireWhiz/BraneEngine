@@ -30,6 +30,7 @@ Database::Database()
 	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Filename FROM Assets WHERE AssetID = ?1", _db);
 	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Filename = ?4 WHERE AssetID = ?1", _db);
 	_insertAssetInfo.initialize("INSERT INTO Assets (Name, Type, Filename) VALUES (?1, ?2, ?3);", _db);
+    _moveAssets.initialize("UPDATE Assets SET Filename = ?2 || SUBSTR(Filename, LENGTH(?1), LENGTH(Filename)) WHERE Filename LIKE (?1 || '%')", _db);
 	_deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
 	_fileToAssetID.initialize("SELECT AssetID FROM Assets WHERE Filename = ?1", _db);
 
@@ -230,6 +231,11 @@ bool Database::fileToAssetID(const std::string& path, AssetID& id)
 		found = true;
 	});
 	return found;
+}
+
+void Database::moveAssets(const std::string& oldDir, const std::string& newDir)
+{
+    _moveAssets.run(oldDir, newDir);
 }
 
 

@@ -98,23 +98,18 @@ net::Connection* Editor::server() const
 	return _server;
 }
 
-void Editor::importAsset()
-{
-	std::string path = FileManager::requestLocalFilePath("Import Asset", {"*.gltf","*.glb","*.png"});
-	Runtime::log("Attempting to import: " + path);
-}
-
 void Editor::drawMenu()
 {
 	if(ImGui::BeginMainMenuBar())
 	{
 		if(ImGui::BeginMenu("File"))
 		{
-
+            ImGui::Selectable("Create Asset");
 			ImGui::EndMenu();
 		}
 		if(ImGui::BeginMenu("Window"))
 		{
+
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();

@@ -219,6 +219,7 @@ void AssetServer::addDirectoryRequestListeners()
 			return;
 		}
 		_fm.moveFile(fullAssetPath(dirSrc), fullAssetPath(dirDest));
+        _db.moveAssets(dirSrc, dirDest);
 	});
 
 	_nm.addRequestListener("deleteFile", [this](auto& rc){

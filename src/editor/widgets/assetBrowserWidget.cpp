@@ -115,10 +115,14 @@ void AssetBrowserWidget::displayFiles()
 
                 if (ImGui::BeginPopup("directoryActions"))
                 {
-                    if (ImGui::Selectable("Delete"))
+                    if (ImGui::Selectable(ICON_FA_TRASH "Delete"))
                     {
                         //Todo: confirmation dialog
                         _fs.deleteDirectory(dir.get());
+                    }
+                    if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
+                    {
+                        _fs.fetchDirectory(_currentDir);
                     }
                     ImGui::EndPopup();
                 }
@@ -144,6 +148,7 @@ void AssetBrowserWidget::displayFiles()
         }
         for (auto& file: _currentDir->files)
         {
+            ImGui::PushID(file.name.c_str());
             if (ImGui::Selectable(std::string(ICON_FA_FILE " " + file.name).c_str()))
             {
                 if(file.isAsset)
@@ -176,6 +181,21 @@ void AssetBrowserWidget::displayFiles()
                 if(file.isAsset)
                     ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.
             }
+            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+            {
+                ImGui::OpenPopup("fileActions");
+            }
+
+            if (ImGui::BeginPopup("fileActions"))
+            {
+                ImGui::TextDisabled(ICON_FA_TRASH "Delete");
+                if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
+                {
+                    _fs.fetchDirectory(_currentDir);
+                }
+                ImGui::EndPopup();
+            }
+            ImGui::PopID();
         }
         ImGui::PopStyleVar(1);
     }
@@ -192,6 +212,10 @@ void AssetBrowserWidget::displayFiles()
             if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Import Asset"))
             {
                 _ui.addWindow<CreateAssetWindow>(_currentDir);
+            }
+            if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
+            {
+                _fs.fetchDirectory(_currentDir);
             }
             ImGui::EndPopup();
         }

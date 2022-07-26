@@ -14,7 +14,6 @@ class Editor : public Module
 	net::Connection* _server;
 	void addMainWindows();
 	void drawMenu();
-	void importAsset();
 public:
 	void start() override;
 	static const char* name();

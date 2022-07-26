@@ -16,6 +16,7 @@ class CreateAssetWindow : public GUIWindow
         ServerDirectory* directory;
         std::string status;
         virtual void update() = 0;
+        virtual ~AssetUploadContext() = default;
     };
     struct AssemblyUploadContext : public AssetUploadContext
     {

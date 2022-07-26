@@ -24,6 +24,7 @@ class Database : public Module
 	PreppedSQLCall<sqlINT> _getAssetInfo;
 	PreppedSQLCall<sqlINT, sqlTEXT, sqlTEXT, sqlTEXT> _updateAssetInfo;
 	PreppedSQLCall<sqlTEXT, sqlTEXT, sqlTEXT> _insertAssetInfo;
+    PreppedSQLCall<sqlTEXT, sqlTEXT> _moveAssets;
 	PreppedSQLCall<sqlTEXT> _fileToAssetID;
 	PreppedSQLCall<sqlINT> _deleteAsset;
 	PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
@@ -54,6 +55,7 @@ public:
 	AssetInfo getAssetInfo(uint32_t id);
 	void insertAssetInfo(const AssetInfo& info);
 	void insertAssetInfo(AssetInfo& info);
+    void moveAssets(const std::string& oldDir, const std::string& newDir);
 	void deleteAssetInfo(uint32_t id);
 	bool fileToAssetID(const std::string& path, AssetID& id);
 	AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);

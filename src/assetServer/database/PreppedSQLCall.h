@@ -35,7 +35,7 @@ class PreppedSQLCall
 	template<typename... Types>
 	void bindArg(int index, const sqlTEXT& arg, Types... args)
 	{
-		checkBindArg(sqlite3_bind_text(stmt, index, arg.data(), arg.size(), SQLITE_TRANSIENT));
+		checkBindArg(sqlite3_bind_text(stmt, index, arg.c_str(), arg.size(), SQLITE_TRANSIENT));
 		if constexpr(sizeof...(Types))
 			bindArg(index + 1, args...);
 	}
