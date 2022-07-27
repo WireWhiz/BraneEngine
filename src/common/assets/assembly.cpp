@@ -149,7 +149,6 @@ void Assembly::initialize(EntityManager& em, graphics::VulkanRuntime& vkr, Asset
 				auto* meshAsset = am.getAsset<MeshAsset>(AssetID(meshes[mr->mesh]));
 				if(meshAsset->pipelineID == -1){
 					vkr.addMesh(meshAsset);
-
 				}
 				mr->mesh = meshAsset->pipelineID;
 				entity.components.emplace_back(mat->component());
@@ -190,7 +189,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 		entityMap[i] = em.createEntity(entity.runtimeComponentIDs());
 		if(!em.hasComponent(entityMap[i], LocalTransform::def()->id))
 		{
-			Transforms::setParent(entityMap[i], rootID, em);
+            Transforms::setParent(entityMap[i], rootID, em);
 		}
 	}
 
@@ -207,10 +206,15 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
 	{
 		EntityAsset& entity = entities[i];
 		EntityID id = entityMap[i];
-		if(entity.hasComponent(LocalTransform::def()))
+		if(entity.hasComponent(Children::def()))
 		{
-			EntityID parent = entityMap[entity.getComponent(LocalTransform::def())->readVar<EntityID>(1)];
-			Transforms::setParent(id, parent, em);
+            auto* cc = em.getComponent<Children>(entityMap[i]);
+            auto children =  std::move(cc->children);
+            for(auto& child : children)
+            {
+                EntityID childID = entityMap[child];
+                Transforms::setParent(childID, id, em);
+            }
 		}
 	}
 }

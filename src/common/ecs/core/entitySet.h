@@ -15,8 +15,8 @@ enum ComponentFilterFlags_
 {
 	ComponentFilterFlags_None = 0,
 	ComponentFilterFlags_Const   = 1 << 0,
-	ComponentFilterFlags_Changed = 0 << 1,
-	ComponentFilterFlags_Exclude = 0 << 2
+	ComponentFilterFlags_Changed = 1 << 1,
+	ComponentFilterFlags_Exclude = 1 << 2
 };
 
 class ComponentFilter

@@ -29,9 +29,16 @@ struct EntityID
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {
-	REGISTER_MEMBERS_1("EntityIDComponent", id, "id")
+	REGISTER_MEMBERS_1("EntityID", id, "id")
 public:
 	EntityID id;
+};
+
+class EntityName : public NativeComponent<EntityName>
+{
+    REGISTER_MEMBERS_1("Name", name, "name")
+public:
+    std::string name;
 };
 
 struct EntityIndex

@@ -147,7 +147,7 @@ void TransformSystem::run(EntityManager& _em)
 	//Update transform for parented entities
 	ComponentFilter localTransforms(&_ctx);
 	localTransforms.addComponent(Transform::def()->id);
-	localTransforms.addComponent(LocalTransform::def()->id);
+	localTransforms.addComponent(LocalTransform::def()->id, ComponentFilterFlags_Const);
 
 	_em.getEntities(localTransforms).forEachNative([&_em](byte** components){
 		auto* gt = Transform::fromVirtual(components[0]);

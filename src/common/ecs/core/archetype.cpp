@@ -235,9 +235,9 @@ const std::vector<std::unique_ptr<Chunk>>& Archetype::chunks() const
 	return _chunks;
 }
 
-void Archetype::markComponentChanged(size_t entity, ComponentID component)
+void Archetype::setComponentVersion(size_t entity, ComponentID component, uint32_t version)
 {
-    getChunk(entity)->getComponent(component).version++;
+    getChunk(entity)->getComponent(component).version = version;
 }
 
 ArchetypeEdge::ArchetypeEdge(ComponentID component, Archetype* archetype)

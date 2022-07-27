@@ -13,7 +13,7 @@ void SystemManager::runSystems(EntityManager& em)
 		system.second->isRunning = false;
 	}
 	for(auto& system : _systems)
-		system.second->run(em, _globalVersion);
+		system.second->run(em, globalVersion);
 }
 
 void SystemManager::runUnmanagedSystem(const std::string& name, const std::function<void(SystemContext* data)>& f)
@@ -21,7 +21,7 @@ void SystemManager::runUnmanagedSystem(const std::string& name, const std::funct
 	if(!_unmanagedSystems.count(name))
 		_unmanagedSystems.insert({name, {0, 0}});
 	SystemContext* data = &_unmanagedSystems.at(name);
-	data->version = _globalVersion++;
+	data->version = globalVersion++;
 	f(data);
 	data->lastVersion = data->version;
 }

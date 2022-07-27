@@ -285,5 +285,5 @@ bool EntityManager::tryGetEntity(size_t index, EntityID& id) const
 void EntityManager::markComponentChanged(EntityID entity, ComponentID component)
 {
     assert(entityExists(entity));
-    getEntityArchetype(entity)->markComponentChanged(_entities[entity].index, component);
+    getEntityArchetype(entity)->setComponentVersion(_entities[entity].index, component, _systems.globalVersion++);
 }

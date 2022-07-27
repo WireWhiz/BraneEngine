@@ -28,9 +28,11 @@ bool ComponentFilter::checkChunk(Chunk* chunk) const
 {
 	for (auto& comp : _components)
 	{
+        if(comp.flags & ComponentFilterFlags_Exclude)
+            continue;
 		assert(chunk->hasComponent(comp.id));
 		auto& view = chunk->getComponent(comp.id);
-		if(comp.flags & ComponentFilterFlags_Changed && view.version == _system->lastVersion)
+		if(comp.flags & ComponentFilterFlags_Changed && (view.version <= _system->lastVersion))
 			return false;
 	}
 	return true;
@@ -41,9 +43,8 @@ bool ComponentFilter::checkArchetype(Archetype* arch) const
 	for(auto& c : _components)
 	{
 		bool hasComponent = arch->hasComponent(c.id);
-		if(!hasComponent && !(c.flags & ComponentFilterFlags_Exclude))
-			return false;
-		if(hasComponent && (c.flags & ComponentFilterFlags_Exclude))
+        bool exclude = c.flags & ComponentFilterFlags_Exclude;
+		if(hasComponent == exclude)
 			return false;
 	}
 	return true;
@@ -51,7 +52,6 @@ bool ComponentFilter::checkArchetype(Archetype* arch) const
 
 EntitySet::EntitySet(std::vector<ChunkComponentView*> components, ComponentFilter filter) : _components(std::move(components)), _filter(std::move(filter))
 {
-	assert(_components.size() % _filter.components().size() == 0);
 }
 
 void EntitySet::forEachNative(const std::function<void(byte** components)>& f)

@@ -46,15 +46,16 @@ public:
 			std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
 		}
 	}
-	InlineArray(const InlineArray&& o) noexcept
+	InlineArray(InlineArray&& o) noexcept
 	{
 		for (size_t i = 0; i < Count; ++i)
 		{
 			_localData[i] = std::move(o._localData[i]);
 		}
 		_externalData = o._externalData;
-		o._externalData = nullptr;
 		_size = o._size;
+        o._externalData = nullptr;
+        o._size = 0;
 
 	}
 	void operator=(InlineArray&& o) noexcept

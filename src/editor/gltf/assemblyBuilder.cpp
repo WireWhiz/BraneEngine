@@ -27,7 +27,15 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 	std::vector<Assembly::EntityAsset> entities;
 	for (Json::Value& node : loader.nodes())
 	{
-		Assembly::EntityAsset entity;
+        Assembly::EntityAsset entity;
+
+        if (node.isMember("name"))
+        {
+            EntityName nameComponent;
+            nameComponent.name = node["name"].asString();
+            entity.components.emplace_back(nameComponent.toVirtual());
+        }
+
 		glm::mat4 transform = glm::mat4(1);
 		if (node.isMember("matrix"))
 		{
@@ -105,21 +113,25 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 	{
 		if (node.isMember("children"))
 		{
+            Children cc;
 			for (auto& child: node["children"])
 			{
 				Assembly::EntityAsset& childEnt = entities[child.asUInt()];
-				glm::mat4  localTransform = childEnt.components[0].readVar<glm::mat4>(0);
+				glm::mat4  localTransform = childEnt.getComponent(Transform::def())->readVar<glm::mat4>(0);
 
                 LocalTransform tc{};
                 tc.value = localTransform;
                 tc.parent = pIndex;
 				childEnt.components.emplace_back(tc.toVirtual());
+                cc.children.push_back({child.asUInt(), 0});
 			}
+            entities[pIndex].components.emplace_back(cc.toVirtual());
 		}
 		pIndex++;
 	}
 
 	//Register component ids
+    assembly->components.push_back(EntityName::def()->asset->id);
 	assembly->components.push_back(Transform::def()->asset->id);
 	assembly->components.push_back(LocalTransform::def()->asset->id);
 	assembly->components.push_back(Children::def()->asset->id);

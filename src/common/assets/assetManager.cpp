@@ -116,6 +116,7 @@ void AssetManager::start()
 {
 	EntityManager& em = *Runtime::getModule<EntityManager>();
 	addNativeComponent<EntityIDComponent>(em);
+    addNativeComponent<EntityName>(em);
 	addNativeComponent<Transform>(em);
 	addNativeComponent<LocalTransform>(em);
 	addNativeComponent<Children>(em);
