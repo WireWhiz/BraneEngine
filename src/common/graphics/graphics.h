@@ -99,6 +99,8 @@ namespace graphics
 			return (T*)_renderers[_renderers.size() - 1].get();
 		}
 
+        void removeRenderer(Renderer* renderer);
+
 		Material* getMaterial(size_t id);
 
 		const staticIndexVector<std::unique_ptr<Mesh>>& meshes();

@@ -32,7 +32,7 @@ DataWindow::DataWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 
 void DataWindow::draw()
 {
-	if(ImGui::Begin("Data Inspector", nullptr, ImGuiWindowFlags_None)){
+	if(ImGui::Begin("Data Inspector", &_open, ImGuiWindowFlags_None)){
 		switch(_focusMode)
 		{
 			case FocusMode::asset:

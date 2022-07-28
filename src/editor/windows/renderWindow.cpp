@@ -73,7 +73,9 @@ RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 
 RenderWindow::~RenderWindow()
 {
-	vkDeviceWaitIdle(graphics::device->get());
+    graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
+    vkDeviceWaitIdle(graphics::device->get());
+    vkr.removeRenderer(_renderer);
 	if(_texture)
 		delete _texture;
 }
@@ -109,7 +111,7 @@ void RenderWindow::update()
 
 void RenderWindow::draw()
 {
-	if(ImGui::Begin("Render", nullptr, ImGuiWindowFlags_None)){
+	if(ImGui::Begin("Render", &_open, ImGuiWindowFlags_None)){
 		auto window = ImGui::GetContentRegionAvail();
 		_windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
 		if(_windowSize.width != 0 && _windowSize.height != 0)

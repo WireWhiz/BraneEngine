@@ -14,6 +14,7 @@ class GUIRenderer : public graphics::Renderer
 public:
 	GUIRenderer(graphics::SwapChain& swapChain, GUI* gui);
 	void render(VkCommandBuffer cmdBuffer) override;
+    void rebuild() override;
 };
 
 

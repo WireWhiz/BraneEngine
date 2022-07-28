@@ -19,7 +19,7 @@ EntitiesWindow::EntitiesWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 
 void EntitiesWindow::draw()
 {
-	if(ImGui::Begin("Entities", nullptr, ImGuiWindowFlags_None)){
+	if(ImGui::Begin("Entities", &_open, ImGuiWindowFlags_None)){
 		if(_assembly && ImGui::CollapsingHeader("Asset Entities"))
 		{
 			ImGui::Indent(16);

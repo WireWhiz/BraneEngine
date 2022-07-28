@@ -13,13 +13,20 @@ GUIWindow::GUIWindow(GUI& ui, GUIWindowID id) : _ui(ui), _id(id)
 
 void GUIWindow::update()
 {
-    if(!_open)
-    {
-        _ui.removeWindow(_id);
-    }
+
 }
 
 GUIWindowID GUIWindow::id() const
 {
 	return _id;
+}
+
+bool GUIWindow::isOpen() const
+{
+    return _open;
+}
+
+void GUIWindow::close()
+{
+    _open = false;
 }

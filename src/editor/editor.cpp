@@ -18,11 +18,11 @@
 void Editor::start()
 {
 	_ui = Runtime::getModule<GUI>();
-	GUIWindowID loginWindow = _ui->addWindow<LoginWindow>()->id();
+	auto* loginWindow = _ui->addWindow<LoginWindow>();
 
 	_ui->addEventListener("login", std::function([this, loginWindow](const LoginEvent* evt){
 		_server = evt->server();
-		_ui->removeWindow(loginWindow);
+        loginWindow->close();
 		addMainWindows();
 		_ui->setMainMenuCallback([this](){drawMenu();});
 	}));

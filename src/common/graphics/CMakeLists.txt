@@ -11,7 +11,7 @@ add_library(graphics STATIC
 	texture.cpp
 	window.cpp
 		renderTarget.cpp
-		renderTarget.h camera.cpp camera.h meshRenderer.cpp meshRenderer.h)
+		renderTarget.h camera.cpp camera.h meshRenderer.cpp meshRenderer.h graphicsBuffer.cpp)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
 target_link_libraries(graphics PUBLIC utility glslang SPIRV)
 target_compile_definitions(graphics PRIVATE ICON_IMAGE_PATH="branelogo.png")

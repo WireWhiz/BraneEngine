@@ -20,10 +20,13 @@ GUI::GUI()
 {
 	Runtime::timeline().addBlockBefore("gui", "draw");
 	Runtime::timeline().addTask("updateUI", [&]{
-        while(!_removedWindows.empty())
+        for(size_t i = 0; i < _windows.size(); ++i)
         {
-            _windows.erase(_windows.begin() + _removedWindows.top());
-            _removedWindows.pop();
+            if(!_windows[i]->isOpen())
+            {
+                _windows.erase(_windows.begin() + i);
+                --i;
+            }
         }
         for(auto& w : _windows)
         {
@@ -256,11 +259,6 @@ void GUI::stop()
 {
 	_windows.resize(0);
     cleanupImGui();
-}
-
-void GUI::removeWindow(GUIWindowID window)
-{
-    _removedWindows.push(window);
 }
 
 void GUI::setMainMenuCallback(std::function<void()> drawMenu)

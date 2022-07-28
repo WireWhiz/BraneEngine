@@ -456,5 +456,18 @@ namespace graphics
 		return _meshes;
 	}
 
+    void VulkanRuntime::removeRenderer(Renderer* renderer)
+    {
+        for(auto i = _renderers.begin(); i != _renderers.end(); i++)
+        {
+            if((*i).get() == renderer)
+            {
+                _renderers.erase(i);
+                return;
+            }
+        }
+        Runtime::error("Tried to remove nonexistent renderer");
+    }
+
 
 }

@@ -27,3 +27,8 @@ GUIRenderer::GUIRenderer(graphics::SwapChain& swapChain, GUI* gui) : graphics::R
 {
 	_gui = gui;
 }
+
+void GUIRenderer::rebuild()
+{
+    Renderer::rebuild();
+}

@@ -22,13 +22,10 @@ namespace graphics{
 	{
 		if(_renderPass == VK_NULL_HANDLE)
 			return;
-		startRenderPass(cmdBuffer);
 		if(_extent.width == 0 || _extent.height == 0)
-		{
-			endRenderPass(cmdBuffer);
-			return;
-		}
-		glm::mat4 transform = glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
+            return;
+        startRenderPass(cmdBuffer);
+        glm::mat4 transform = glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
 		glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
 		projection[1][1] *= -1;
  		glm::mat4 cameraMatrix = projection * transform;

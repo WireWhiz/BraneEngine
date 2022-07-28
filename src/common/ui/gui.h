@@ -29,7 +29,6 @@ class GUI : public Module
     std::vector<ImFont*> _fonts;
 
 	std::vector<std::unique_ptr<GUIWindow>> _windows;
-    std::stack<GUIWindowID> _removedWindows;
     std::unique_ptr<GUIPopup> _popup;
     void drawUI();
     std::function<void()> _drawMenu;
@@ -54,7 +53,6 @@ public:
 		_windows.push_back(std::make_unique<WindowT>(*this, id, args...));
 		return static_cast<WindowT*>(_windows[id].get());
 	}
-	void removeWindow(GUIWindowID window);
 	void setMainMenuCallback(std::function<void()> drawMenu);
 
     void openPopup(std::unique_ptr<GUIPopup>&& popup);

@@ -25,6 +25,8 @@ public:
 	virtual void draw() = 0;
 	virtual void update();
 	GUIWindowID id() const;
+    bool isOpen() const;
+    void close();
 };
 
 
