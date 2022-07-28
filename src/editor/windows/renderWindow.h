@@ -6,11 +6,16 @@
 #define BRANEENGINE_RENDERWINDOW_H
 
 #include <ui/guiWindow.h>
-#include "graphics/renderTarget.h"
-#include "graphics/meshRenderer.h"
-#include "backends/imgui_impl_vulkan.h"
 #include "vulkan/vulkan.h"
-#include "ui/guiEvent.h"
+#include "glm/gtx/quaternion.hpp"
+#include <vector>
+#include "ecs/entityID.h"
+
+namespace graphics{
+    class RenderTexture;
+    class MeshRenderer;
+    class SwapChain;
+}
 
 class RenderWindow : public GUIWindow
 {

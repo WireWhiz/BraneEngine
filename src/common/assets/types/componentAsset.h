@@ -1,10 +1,10 @@
 #pragma once
 #include <memory>
-#include <ecs/core/virtualType.h>
+#include "common/ecs/virtualType.h"
 #include <vector>
 #include "../asset.h"
 
-typedef uint16_t ComponentID;
+using ComponentID = uint16_t;
 class ComponentAsset : public Asset
 {
 private:
@@ -22,6 +22,6 @@ public:
 	std::vector<VirtualType::Type>& members();
 	std::vector<std::string>& memberNames();
 
-    void serialize(OutputSerializer s) override;
-    void deserialize(InputSerializer s) override;
+    void serialize(OutputSerializer& s) override;
+    void deserialize(InputSerializer& s) override;
 };

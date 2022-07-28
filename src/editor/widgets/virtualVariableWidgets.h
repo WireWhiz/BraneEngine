@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_VIRTUALVARIABLEWIDGETS_H
 #define BRANEENGINE_VIRTUALVARIABLEWIDGETS_H
 
-#include <ecs/core/component.h>
+#include "common/ecs/component.h"
 
 class VirtualVariableWidgets
 {

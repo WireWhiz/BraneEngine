@@ -5,11 +5,14 @@
 #ifndef BRANEENGINE_EDITOREVENTS_H
 #define BRANEENGINE_EDITOREVENTS_H
 
-#include "common/assets/asset.h"
+#include <cstdint>
 #include "common/ui/guiEvent.h"
-#include <cstddef>
-#include "networking/connection.h"
-#include "serverFilesystem.h"
+#include "ecs/entityID.h"
+namespace net {
+    class Connection;
+}
+class Asset;
+class ServerDirectory;
 
 class LoginEvent : public GUIEvent
 {

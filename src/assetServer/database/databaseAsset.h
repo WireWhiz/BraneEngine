@@ -5,10 +5,10 @@
 #ifndef BRANEENGINE_DATABASEASSET_H
 #define BRANEENGINE_DATABASEASSET_H
 
+#include <string>
+#include "assets/assetType.h"
 
-#include <assets/asset.h>
-#include "common/assets/assetType.h"
-
+class AssetType;
 class Database;
 
 enum class AssetPermissionLevel

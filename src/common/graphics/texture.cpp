@@ -1,4 +1,6 @@
 #include "texture.h"
+#include <stb/stb_image.h>
+#include "graphicsDevice.h"
 
 namespace graphics
 {

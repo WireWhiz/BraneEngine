@@ -3,6 +3,9 @@
 //
 
 #include "database.h"
+#include "config/config.h"
+#include "assets/assetID.h"
+
 #include "utility/hex.h"
 #include "openssl/rand.h"
 
@@ -12,6 +15,8 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 #include <iomanip>
+#include "sqlite3.h"
+
 
 Database::Database()
 {

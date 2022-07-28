@@ -28,7 +28,7 @@ namespace graphics
 
 	bool CompileGLSL(VkShaderStageFlagBits stage, const char* shaderCode, std::vector<unsigned int>& shaderCodeSpirV);
 
-	typedef uint64_t ShaderID;
+	using ShaderID = uint64_t;
 
 	class Shader
 	{

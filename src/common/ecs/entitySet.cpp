@@ -3,6 +3,8 @@
 //
 
 #include "entitySet.h"
+#include "system.h"
+#include "archetype.h"
 
 void ComponentFilter::addComponent(ComponentID id, ComponentFilterFlags flags)
 {

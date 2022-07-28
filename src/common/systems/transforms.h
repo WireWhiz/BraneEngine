@@ -6,7 +6,7 @@
 #define BRANEENGINE_TRANSFORMS_H
 
 #include <runtime/module.h>
-#include <ecs/core/entity.h>
+#include "common/ecs/entity.h"
 
 class Transform : public NativeComponent<Transform>
 {

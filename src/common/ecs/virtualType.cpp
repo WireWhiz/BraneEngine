@@ -1,11 +1,12 @@
 #include "virtualType.h"
 #include <unordered_map>
-#include "entity.h"
+#include "common/utility/serializedData.h"
 
 namespace VirtualType
 {
 	std::string typeToString(Type type)
 	{
+        //TODO: Change to switch block
 		static const std::unordered_map<Type, const std::string> _toStringMap = {
 				{virtualUnknown,    "unknown"},
                 {virtualEntityID,   "entityID"},

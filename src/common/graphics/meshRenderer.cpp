@@ -3,8 +3,12 @@
 //
 
 #include "meshRenderer.h"
+#include "ecs/nativeTypes/meshRenderer.h"
 #include "graphics.h"
 #include "systems/transforms.h"
+#include "ecs/entity.h"
+#include "material.h"
+#include "mesh.h"
 
 namespace graphics{
 

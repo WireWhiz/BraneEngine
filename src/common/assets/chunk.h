@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_CHUNK_H
 #define BRANEENGINE_CHUNK_H
 #include "asset.h"
-#include <ecs/core/component.h>
+#include "common/ecs/component.h"
 #include "assembly.h"
 
 class WorldChunk : public Assembly

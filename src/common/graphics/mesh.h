@@ -1,17 +1,18 @@
 #pragma once
 #include <GLFW/glfw3.h>
 
+#include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <array>
 #include <vector>
+#include <string>
 
-#include "graphicsBuffer.h"
-#include <common/ecs/core/component.h>
-#include <assets/types/meshAsset.h>
+class MeshAsset;
 
 namespace graphics
 {
 
+    class GraphicsBuffer;
 	struct MeshPushConstants
 	{
 		glm::mat4x4 render_matrix;
@@ -19,7 +20,7 @@ namespace graphics
 		glm::vec4 lightPosition;
 	};
 
-	typedef uint64_t MeshID;
+	using MeshID = uint32_t;
 	class Mesh
 	{
 	private:

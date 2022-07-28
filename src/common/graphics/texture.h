@@ -1,16 +1,14 @@
 #pragma once
-#include "graphicsDevice.h"
 #include "graphicsBuffer.h"
 
 #include <vulkan/vulkan.h>
-#include <stb/stb_image.h>
 
 #include <string>
 #include <array>
 
 namespace graphics
 {
-	typedef uint64_t TextureID;
+	using TextureID = uint32_t;
 	extern const std::array<const char*, 1> textureFileExtensions;
 	class Texture
 	{

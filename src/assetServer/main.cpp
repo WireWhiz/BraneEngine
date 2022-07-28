@@ -1,6 +1,6 @@
 // Asset server
 #include <common/config/config.h>
-#include <ecs/ecs.h>
+#include <ecs/entity.h>
 #include <fileManager/fileManager.h>
 #include "assetServer.h"
 #include <database/database.h>

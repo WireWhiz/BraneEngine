@@ -1,14 +1,5 @@
 #include "entity.h"
 
-EntityID& EntityID::operator=(uint32_t value) {
-    id = value;
-    return *this;
-}
-
-EntityID::operator uint32_t() const{
-    return id;
-}
-
 EntityManager::EntityManager() : _components(), _archetypes(_components)
 {
 	Runtime::timeline().addTask("systems", [this](){

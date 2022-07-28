@@ -2,6 +2,7 @@
 #include <vector>
 #include <glm/glm.hpp>
 #include "../asset.h"
+#include <cstring>
 
 class MeshAsset : public IncrementalAsset
 {
@@ -55,13 +56,13 @@ public:
     uint32_t attributeOffset(size_t primitive, const std::string& name) const;
     uint32_t vertexCount(uint32_t primitive) const;
 
-	void serialize(OutputSerializer s) override;
-	void deserialize(InputSerializer s) override;
-	void serializeHeader(OutputSerializer s) override;
-	void deserializeHeader(InputSerializer s) override;
+	void serialize(OutputSerializer& s) override;
+	void deserialize(InputSerializer& s) override;
+	void serializeHeader(OutputSerializer& s) override;
+	void deserializeHeader(InputSerializer& s) override;
     std::unique_ptr<SerializationContext> createContext() const override;
-	bool serializeIncrement(OutputSerializer sData, SerializationContext* iteratorData) override;
-	void deserializeIncrement(InputSerializer sData) override;
+	bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) override;
+	void deserializeIncrement(InputSerializer& sData) override;
 
 
 	size_t meshSize() const;

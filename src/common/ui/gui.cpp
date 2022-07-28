@@ -4,6 +4,10 @@
 
 #include "gui.h"
 #include "graphics/graphics.h"
+#include "graphics/graphicsDevice.h"
+#include "graphics/window.h"
+#include "graphics/graphicsBuffer.h"
+#include "graphics/swapChain.h"
 
 #include "common/runtime/runtime.h"
 

@@ -4,13 +4,15 @@
 
 #include "assembly.h"
 #include "assetManager.h"
-#include "ecs/core/componentManager.h"
+#include "common/ecs/componentManager.h"
 #include "systems/transforms.h"
 #include "graphics/graphics.h"
 #include <glm/glm.hpp>
 #include <ecs/nativeTypes/meshRenderer.h>
+#include "types/meshAsset.h"
+#include "graphics/material.h"
 
-void Assembly::EntityAsset::serialize(OutputSerializer message, Assembly& assembly)
+void Assembly::EntityAsset::serialize(OutputSerializer& message, Assembly& assembly)
 {
     uint32_t size = static_cast<uint32_t>(components.size());
 	message << size;
@@ -35,7 +37,7 @@ void Assembly::EntityAsset::serialize(OutputSerializer message, Assembly& assemb
 	}
 }
 
-void Assembly::EntityAsset::deserialize(InputSerializer message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
+void Assembly::EntityAsset::deserialize(InputSerializer& message, Assembly& assembly, ComponentManager& cm, AssetManager& am)
 {
 	uint32_t size;
 	message.readSafeArraySize(size);
@@ -88,7 +90,7 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 	return componentIDs;
 }
 
-void Assembly::serialize(OutputSerializer message)
+void Assembly::serialize(OutputSerializer& message)
 {
 	Asset::serialize(message);
 	message << components << scripts << meshes << textures;
@@ -99,7 +101,7 @@ void Assembly::serialize(OutputSerializer message)
 	}
 }
 
-void Assembly::deserialize(InputSerializer message)
+void Assembly::deserialize(InputSerializer& message)
 {
 	ComponentManager& cm = Runtime::getModule<EntityManager>()->components();
 	AssetManager& am = *Runtime::getModule<AssetManager>();

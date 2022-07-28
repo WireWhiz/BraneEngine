@@ -12,6 +12,8 @@
 #include "networking/connection.h"
 #include <utility/asyncData.h>
 
+class Asset;
+
 struct ServerFile
 {
     std::string name;

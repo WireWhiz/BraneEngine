@@ -8,10 +8,10 @@
 #include <string>
 #include <vector>
 #include <memory>
-
-#include "assets/assetID.h"
 #include "ui/gui.h"
-#include "editor/serverFilesystem.h"
+
+class ServerFilesystem;
+class ServerDirectory;
 
 class CreateDirectoryPopup : public GUIPopup
 {

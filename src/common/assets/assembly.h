@@ -6,11 +6,12 @@
 #define BRANEENGINE_ASSEMBLY_H
 
 #include "asset.h"
-#include "ecs/core/component.h"
 #include <json/json.h>
+#include "ecs/component.h"
 
 class EntityManager;
 class ComponentManager;
+class AssetManager;
 namespace graphics{
 	class VulkanRuntime;
 }
@@ -22,8 +23,8 @@ public:
 	{
 		std::vector<VirtualComponent> components;
 		std::vector<ComponentID> runtimeComponentIDs();
-		void serialize(OutputSerializer message, Assembly& assembly);
-		void deserialize(InputSerializer message, Assembly& assembly, ComponentManager& cm, AssetManager& am);
+		void serialize(OutputSerializer& message, Assembly& assembly);
+		void deserialize(InputSerializer& message, Assembly& assembly, ComponentManager& cm, AssetManager& am);
 		bool hasComponent(const ComponentDescription* def) const;
 		VirtualComponent* getComponent(const ComponentDescription* def);
 	};
@@ -34,8 +35,8 @@ public:
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
 	std::vector<AssetID> textures;
 	std::vector<EntityAsset> entities;
-	void serialize(OutputSerializer message) override;
-	void deserialize(InputSerializer message) override;
+	void serialize(OutputSerializer& message) override;
+	void deserialize(InputSerializer& message) override;
 
 #ifdef CLIENT
 	void initialize(EntityManager& em, graphics::VulkanRuntime& vkr, AssetManager& am);

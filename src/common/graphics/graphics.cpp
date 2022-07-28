@@ -1,8 +1,20 @@
 #include "graphics.h"
 
+#include "ecs/entity.h"
 
+#include "systems/transforms.h"
+#include <runtime/runtime.h>
+#include "assets/types/meshAsset.h"
+
+//Compile stb in this object
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+
+#include "window.h"
+#include "graphicsBuffer.h"
+#include "material.h"
+#include "renderer.h"
+#include "mesh.h"
 
 namespace graphics
 {

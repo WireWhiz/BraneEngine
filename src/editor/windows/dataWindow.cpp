@@ -7,7 +7,12 @@
 #include "../widgets/virtualVariableWidgets.h"
 #include <ui/gui.h>
 #include <assets/assembly.h>
+#include "assets/assetManager.h"
+#include "assets/types/meshAsset.h"
+#include <assets/assetID.h>
 #include <assets/assetManager.h>
+#include <assets/assembly.h>
+#include "common/ecs/entity.h"
 
 DataWindow::DataWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {

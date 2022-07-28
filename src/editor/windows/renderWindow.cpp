@@ -6,12 +6,17 @@
 #include <ui/gui.h>
 #include "graphics/graphics.h"
 #include "graphics/meshRenderer.h"
-#include "networking/networking.h"
+#include "graphics/material.h"
+#include "graphics/renderTarget.h"
+
+#include "ecs/nativeTypes/meshRenderer.h"
 #include "assets/assetManager.h"
-#include "ecs/core/component.h"
+#include "assets/types/meshAsset.h"
+#include "common/ecs/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include "editor/editorEvents.h"
 #include <systems/transforms.h>
+#include "backends/imgui_impl_vulkan.h"
 
 RenderWindow::RenderWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {

@@ -16,6 +16,10 @@
 #include "config/config.h"
 #include <shared_mutex>
 
+class JobHandle;
+class Asset;
+class IncrementalAsset;
+
 struct RequestCTX
 {
     uint32_t id;

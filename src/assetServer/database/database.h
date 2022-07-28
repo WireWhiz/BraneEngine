@@ -4,15 +4,16 @@
 
 #ifndef BRANEENGINE_DATABASE_H
 #define BRANEENGINE_DATABASE_H
-#include <sqlite/sqlite3.h>
-#include <config/config.h>
 #include <functional>
 #include <unordered_map>
 #include <unordered_set>
-#include "databaseAsset.h"
-#include "runtime/module.h"
-#include "PreppedSQLCall.h"
 
+#include "PreppedSQLCall.h"
+#include "databaseAsset.h"
+
+#include "runtime/module.h"
+
+class AssetID;
 
 class Database : public Module
 {
@@ -43,7 +44,7 @@ public:
 		char* name;
 		char* value;
 	};
-	typedef std::function<void(const std::vector<sqlColumn>& columns)> sqlCallbackFunction;
+	using sqlCallbackFunction =  std::function<void(const std::vector<sqlColumn>& columns)>;
 	Database();
 	~Database();
 	void rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f);

@@ -9,11 +9,13 @@
 #include <functional>
 #include <tuple>
 #include <string>
+#include <cassert>
+#include "runtime/runtime.h"
 
-typedef int32_t sqlINT;
-typedef int64_t sqlINT64;
-typedef double sqlFLOAT;
-typedef std::string sqlTEXT;
+using sqlINT = int32_t;
+using sqlINT64 = int64_t;
+using sqlFLOAT = double;
+using sqlTEXT = std::string;
 
 template<typename... Args>
 class PreppedSQLCall

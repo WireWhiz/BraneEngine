@@ -1,6 +1,6 @@
 #include "componentAsset.h"
-#include "ecs/core/component.h"
-
+#include "common/ecs/component.h"
+#include "utility/serializedData.h"
 
 ComponentAsset::ComponentAsset()
 {
@@ -24,13 +24,13 @@ const std::vector<VirtualType::Type>& ComponentAsset::members() const
 	return _members;
 }
 
-void ComponentAsset::serialize(OutputSerializer s)
+void ComponentAsset::serialize(OutputSerializer& s)
 {
 	Asset::serialize(s);
 	s << _members << _memberNames;
 }
 
-void ComponentAsset::deserialize(InputSerializer s)
+void ComponentAsset::deserialize(InputSerializer& s)
 {
 	Asset::deserialize(s);
 	s >> _members >> _memberNames;

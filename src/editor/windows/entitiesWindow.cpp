@@ -6,7 +6,8 @@
 #include "editor/editorEvents.h"
 #include "assets/assembly.h"
 #include "ui/gui.h"
-#include "ecs/core/entity.h"
+#include "ecs/entity.h"
+#include "systems/transforms.h"
 
 EntitiesWindow::EntitiesWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
 {

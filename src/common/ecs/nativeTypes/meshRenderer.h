@@ -3,9 +3,8 @@
 //
 
 #pragma once
-#include <ecs/core/component.h>
+#include "ecs/nativeComponent.h"
 #include <utility/inlineArray.h>
-
 
 class MeshRendererComponent : public NativeComponent<MeshRendererComponent>
 {

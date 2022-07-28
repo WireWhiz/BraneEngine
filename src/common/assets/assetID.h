@@ -2,8 +2,9 @@
 #include <string>
 #include <iostream>
 
-struct AssetID
+class AssetID
 {
+public:
 	AssetID() = default;
 	AssetID(const std::string& id);
 	AssetID(const std::string& serverAddress, uint32_t id);

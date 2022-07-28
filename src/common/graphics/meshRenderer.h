@@ -5,7 +5,9 @@
 #ifndef BRANEENGINE_MESHRENDERER_H
 #define BRANEENGINE_MESHRENDERER_H
 #include "renderer.h"
+#include "glm/gtx/quaternion.hpp"
 
+class EntityManager;
 namespace graphics{
 	class VulkanRuntime;
 	class MeshRenderer : public Renderer

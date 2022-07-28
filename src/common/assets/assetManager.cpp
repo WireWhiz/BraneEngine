@@ -1,9 +1,11 @@
 #include "assetManager.h"
+#include "ecs/nativeComponent.h"
 #include <utility/serializedData.h>
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "ecs/nativeTypes/assetComponents.h"
-#include "ecs/core/component.h"
 #include "systems/transforms.h"
+#include "ecs/entity.h"
+#include "assets/types/meshAsset.h"
 
 AssetManager::AssetManager()
 {
@@ -112,6 +114,19 @@ const char* AssetManager::name()
 	return "assetManager";
 }
 
+template<typename T>
+void AssetManager::addNativeComponent(EntityManager& em)
+{
+    static_assert(std::is_base_of<NativeComponent<T>, T>());
+    ComponentDescription* description = T::constructDescription();
+    AssetID id = AssetID("native", static_cast<uint32_t>(_nativeComponentID++));
+    ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), T::getMemberNames(), id);
+    asset->name = T::getComponentName();
+    asset->componentID = em.components().registerComponent(description);
+    _assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
+    description->asset = asset;
+}
+
 void AssetManager::start()
 {
 	EntityManager& em = *Runtime::getModule<EntityManager>();
@@ -122,7 +137,6 @@ void AssetManager::start()
 	addNativeComponent<Children>(em);
 	addNativeComponent<TRS>(em);
 	addNativeComponent<MeshRendererComponent>(em);
-	addNativeComponent<AssemblyRoot>(em);
 	startAssetLoaderSystem();
 }
 

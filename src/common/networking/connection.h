@@ -12,14 +12,13 @@
 #include <utility/asyncQueue.h>
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>
-#include <ecs/ecs.h>
 #include <shared_mutex>
 
 namespace net
 {
 
-	typedef asio::ip::tcp::socket tcp_socket;
-	typedef asio::ssl::stream<tcp_socket> ssl_socket;
+	using tcp_socket = asio::ip::tcp::socket;
+	using ssl_socket = asio::ssl::stream<tcp_socket>;
 
     enum class ResponseCode : uint8_t
     {

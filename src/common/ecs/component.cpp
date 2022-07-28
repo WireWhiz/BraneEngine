@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <cstring>
 
+#include "common/assets/types/componentAsset.h"
+#include "utility/serializedData.h"
+
 ComponentDescription::ComponentDescription(const ComponentAsset* asset) : ComponentDescription(asset->members())
 {
 	name = asset->name;
@@ -63,7 +66,7 @@ void ComponentDescription::deconstruct(byte* component) const
 	}
 }
 
-void ComponentDescription::serialize(OutputSerializer sData, byte* component) const
+void ComponentDescription::serialize(OutputSerializer& sData, byte* component) const
 {
 	for(auto& m : _members)
 	{
@@ -71,7 +74,7 @@ void ComponentDescription::serialize(OutputSerializer sData, byte* component) co
 	}
 }
 
-void ComponentDescription::deserialize(InputSerializer sData, byte* component) const
+void ComponentDescription::deserialize(InputSerializer& sData, byte* component) const
 {
 	for(auto& m : _members)
 	{

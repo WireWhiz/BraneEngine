@@ -4,13 +4,13 @@
 
 #include "swapChain.h"
 #include <vulkan/vulkan.h>
-#include <ecs/core/entity.h>
+#include "common/ecs/entity.h"
 #include "mesh.h"
 
 namespace graphics
 {
 	class Renderer;
-	typedef uint64_t MaterialID;
+	using MaterialID = uint64_t;
 	class Material
 	{
 		Shader* _geometryShader     = nullptr;

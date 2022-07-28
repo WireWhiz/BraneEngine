@@ -181,11 +181,11 @@ public:
 	}
 };
 
-typedef InlineArray<uint32_t, 4> inlineUIntArray;
-typedef InlineArray<int32_t, 4> inlineIntArray;
-typedef InlineArray<float, 4> inlineFloatArray;
+using inlineUIntArray = InlineArray<uint32_t, 4>;
+using inlineIntArray = InlineArray<int32_t, 4>;
+using inlineFloatArray = InlineArray<float, 4>;
 class EntityID;
-typedef InlineArray<EntityID, 4> inlineEntityIDArray;
+using inlineEntityIDArray = InlineArray<EntityID, 4>;
 
 
 #endif //BRANEENGINE_INLINEARRAY_H

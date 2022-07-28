@@ -5,16 +5,14 @@
 #include "assetBrowserWidget.h"
 #include "imgui.h"
 #include "ui/IconsFontAwesome6.h"
-#include "networking/networking.h"
 #include "utility/strCaseCompare.h"
 #include "fileManager/fileManager.h"
-#define CLIENT
 #include "assets/assetManager.h"
-#include "../editor.h"
 #include "editor/editorEvents.h"
-#include "../windows/createAssetWindow.h"
+#include "editor/windows/createAssetWindow.h"
+#include "editor/serverFilesystem.h"
+#include "ecs/entity.h"
 
-#include <algorithm>
 
 AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits), _fs(*Runtime::getModule<ServerFilesystem>())
 {

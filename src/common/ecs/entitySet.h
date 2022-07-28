@@ -6,14 +6,20 @@
 #define BRANEENGINE_ENTITYSET_H
 
 #include <cstdint>
-#include <vector>
+#include <vector>/*
 #include "archetype.h"
-#include "system.h"
+#include "system.h"*/
+#include "chunk.h"
+
+using ComponentID = uint16_t;
+class SystemContext;
+class ChunkComponentView;
+class Archetype;
 
 typedef uint8_t ComponentFilterFlags;
 enum ComponentFilterFlags_
 {
-	ComponentFilterFlags_None = 0,
+	ComponentFilterFlags_None    = 0,
 	ComponentFilterFlags_Const   = 1 << 0,
 	ComponentFilterFlags_Changed = 1 << 1,
 	ComponentFilterFlags_Exclude = 1 << 2
@@ -41,14 +47,6 @@ public:
 	bool checkChunk(Chunk* chunk) const;
 };
 
-template <size_t>
-class ChunkBase;
-#ifndef Chunk
-typedef ChunkBase<16384> Chunk;
-#endif
-class ChunkComponentView;
-
-class ArchetypeManager;
 class EntitySet
 {
 	ComponentFilter _filter;

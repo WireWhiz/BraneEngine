@@ -6,7 +6,7 @@
 #include "chunk.h"
 #include "systemManager.h"
 
-#include <utility/staticIndexVector.h>
+#include "common/utility/staticIndexVector.h"
 #include <stdexcept>
 #include <cstdint>
 #include <vector>
@@ -16,16 +16,7 @@
 #include <memory>
 #include <functional>
 #include <unordered_set>
-#include <runtime/runtime.h>
-#include <runtime/module.h>
-
-struct EntityID
-{
-    uint32_t id = 0;
-    uint32_t version = -1;
-    operator uint32_t() const;
-    EntityID& operator=(uint32_t);
-};
+#include "common/runtime/runtime.h"
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent>
 {

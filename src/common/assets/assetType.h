@@ -3,7 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <unordered_map>
-#include <assert.h>
+#include <cassert>
 
 class AssetType
 {

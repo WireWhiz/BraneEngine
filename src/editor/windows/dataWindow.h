@@ -6,10 +6,10 @@
 #define BRANEENGINE_DATAWINDOW_H
 
 #include <ui/guiWindow.h>
-#include <assets/assetID.h>
-#include <assets/assetManager.h>
-#include <assets/assembly.h>
-#include <ecs/core/entity.h>
+
+#include "ecs/entityID.h"
+
+class Asset;
 
 class DataWindow : public GUIWindow
 {

@@ -1,4 +1,4 @@
 #pragma once
 
 #include <cstdint>
-typedef uint8_t byte;
+using byte = uint8_t;

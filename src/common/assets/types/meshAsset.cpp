@@ -2,14 +2,14 @@
 
 #include <utility/serializedData.h>
 
-void MeshAsset::serialize(OutputSerializer s)
+void MeshAsset::serialize(OutputSerializer& s)
 {
 	Asset::serialize(s);
     serializeHeader(s);
     s << _data;
 }
 
-void MeshAsset::deserialize(InputSerializer s)
+void MeshAsset::deserialize(InputSerializer& s)
 {
 	Asset::deserialize(s);
     deserializeHeader(s);
@@ -27,7 +27,7 @@ size_t MeshAsset::meshSize() const
 {
 	return _data.size();
 }
-void MeshAsset::serializeHeader(OutputSerializer s)
+void MeshAsset::serializeHeader(OutputSerializer& s)
 {
 	IncrementalAsset::serializeHeader(s);
     s << (uint16_t)_primitives.size();
@@ -47,7 +47,7 @@ void MeshAsset::serializeHeader(OutputSerializer s)
     s << (uint32_t)_data.size();
 }
 
-void MeshAsset::deserializeHeader(InputSerializer s)
+void MeshAsset::deserializeHeader(InputSerializer& s)
 {
 	IncrementalAsset::deserializeHeader(s);
     uint16_t primitiveCount;
@@ -76,7 +76,7 @@ void MeshAsset::deserializeHeader(InputSerializer s)
 }
 
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
-bool MeshAsset::serializeIncrement(OutputSerializer s, SerializationContext* iteratorData)
+bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData)
 {
 	auto* itr = (MeshSerializationContext*)iteratorData;
 	auto& primitive = _primitives[itr->primitive];
@@ -123,7 +123,7 @@ bool MeshAsset::serializeIncrement(OutputSerializer s, SerializationContext* ite
 	return true;
 }
 
-void MeshAsset::deserializeIncrement(InputSerializer s)
+void MeshAsset::deserializeIncrement(InputSerializer& s)
 {
 	uint16_t pIndex;
 	s >> pIndex;

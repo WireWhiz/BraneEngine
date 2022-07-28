@@ -3,7 +3,7 @@
 //
 
 #include "componentManager.h"
-
+#include "assets/types/componentAsset.h"
 
 ComponentID ComponentManager::createComponent(ComponentAsset* component)
 {

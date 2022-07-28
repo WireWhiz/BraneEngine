@@ -161,7 +161,7 @@ public:
 
 template <size_t>
 class ChunkBase;
-typedef ChunkBase<16384> Chunk;
+using Chunk = ChunkBase<16384>;
 
 class ChunkPool
 {

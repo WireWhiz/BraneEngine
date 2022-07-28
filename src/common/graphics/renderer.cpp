@@ -1,4 +1,8 @@
 #include "renderer.h"
+#include <ecs/nativeTypes/meshRenderer.h>
+#include "swapChain.h"
+#include "graphicsDevice.h"
+#include "renderTarget.h"
 
 namespace graphics
 {

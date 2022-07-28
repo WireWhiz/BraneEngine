@@ -1,13 +1,15 @@
 #pragma once
-#include <cstdlib>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <byte.h>
-#include <utility/serializedData.h>
-#include <utility/inlineArray.h>
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtx/quaternion.hpp"
+#include "byte.h"
+#include "utility/inlineArray.h"
+#include "entityID.h"
+#include "runtime/runtime.h"
 
-class EntityID;
+class InputSerializer;
+class OutputSerializer;
+class AssetID;
 
 template <class T>
 constexpr inline
@@ -71,12 +73,12 @@ namespace VirtualType
 	void copy(Type type, byte* dest, const byte* source);
 	void move(Type type, byte* dest, byte* source);
 	template<typename T>
-	void serialize(OutputSerializer data, const byte* source)
+	void serialize(OutputSerializer& data, const byte* source)
 	{
 		data << *getVirtual<T>(source);
 	}
 	template<typename T>
-	void deserialize(InputSerializer data, byte* source)
+	void deserialize(InputSerializer& data, byte* source)
 	{
 		data >> *getVirtual<T>(source);
 	}
@@ -140,7 +142,7 @@ VirtualType::Type VirtualType::type()
     if constexpr(std::is_same<T, inlineEntityIDArray>().value)
         return Type::virtualEntityIDArray;
 
-	std::cerr << "Tried to find type of: [" << typeid(T).name() << "] and failed"<< std::endl;
+	Runtime::error("Tried to find type of: [" + (std::string)typeid(T).name() + "] and failed");
 	assert(false);
 	return Type::virtualUnknown;
 }

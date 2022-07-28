@@ -2,6 +2,7 @@
 #include "assets/assetManager.h"
 #include "runtime/runtime.h"
 #include <atomic>
+#include "assets/asset.h"
 
 NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
 {

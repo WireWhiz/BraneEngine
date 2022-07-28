@@ -1,12 +1,14 @@
 #include "asset.h"
+#include <utility/serializedData.h>
+#include "types/meshAsset.h"
+#include "types/componentAsset.h"
 
-
-void Asset::serialize(OutputSerializer s)
+void Asset::serialize(OutputSerializer& s)
 {
 	s << id << name << type.toString();
 }
 
-void Asset::deserialize(InputSerializer s)
+void Asset::deserialize(InputSerializer& s)
 {
 	std::string typeStr;
 	s >> id >> name >> typeStr;
@@ -51,7 +53,7 @@ Asset* Asset::assetFromType(AssetType type)
 	return nullptr;
 }
 
-Asset* Asset::deserializeUnknown(InputSerializer s)
+Asset* Asset::deserializeUnknown(InputSerializer& s)
 {
 
     size_t sPos = s.getPos();
@@ -69,17 +71,17 @@ Asset* Asset::deserializeUnknown(InputSerializer s)
 	return asset;
 }
 
-void IncrementalAsset::serializeHeader(OutputSerializer s)
+void IncrementalAsset::serializeHeader(OutputSerializer& s)
 {
 	Asset::serialize(s);
 }
 
-void IncrementalAsset::deserializeHeader(InputSerializer s)
+void IncrementalAsset::deserializeHeader(InputSerializer& s)
 {
 	Asset::deserialize(s);
 }
 
-IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer s)
+IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
 {
     size_t sPos = s.getPos();
 	std::string typeStr;
@@ -104,7 +106,7 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer s)
 	return asset;
 }
 
-bool IncrementalAsset::serializeIncrement(OutputSerializer s, SerializationContext* iteratorData)
+bool IncrementalAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData)
 {
 	return false; //Return false because there is no more data
 }

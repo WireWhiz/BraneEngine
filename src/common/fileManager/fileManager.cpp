@@ -10,7 +10,7 @@ void FileManager::writeAsset(Asset* asset, const std::string& filename)
 {
 	SerializedData data;
     OutputSerializer s(data);
-	asset->serialize(data);
+	asset->serialize(s);
 
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());

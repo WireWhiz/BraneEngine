@@ -1,17 +1,15 @@
 #pragma once
-#include <ecs/core/component.h>
-#include <ecs/core/structMembers.h>
-#include <systems/transforms.h>
-#include <ecs/nativeTypes/meshRenderer.h>
-#include "mesh.h"
-#include "material.h"
-#include "renderTarget.h"
-#include "camera.h"
+#include "vulkan/vulkan.hpp"
+#include "glm/mat4x4.hpp"
 
 namespace graphics
 {
+	using RendererID = uint32_t;
 
-	typedef uint32_t RendererID;
+    class Mesh;
+    class Material;
+    class RenderTexture;
+    class SwapChain;
 
 	struct RenderObject
 	{

@@ -7,6 +7,7 @@
 #include "editorEvents.h"
 #include "ui/gui.h"
 #include <algorithm>
+#include "assets/asset.h"
 
 std::string ServerDirectory::path() const
 {

@@ -5,7 +5,7 @@
 #include "virtualVariableWidgets.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "ecs/core/entity.h"
+#include "common/ecs/entity.h"
 
 bool VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView component)
 {

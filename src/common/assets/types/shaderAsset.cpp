@@ -1,4 +1,5 @@
 #include "shaderAsset.h"
+#include "utility/serializedData.h"
 
 ShaderAsset::ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spirv)
 {
@@ -7,14 +8,14 @@ ShaderAsset::ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spir
 	spirv = std::move(spirv);
 }
 
-void ShaderAsset::serialize(OutputSerializer message)
+void ShaderAsset::serialize(OutputSerializer& message)
 {
 	Asset::serialize(message);
 	message << shaderType;
 	message << spirv;
 }
 
-void ShaderAsset::deserialize(InputSerializer message)
+void ShaderAsset::deserialize(InputSerializer& message)
 {
 	Asset::deserialize(message);
 	message >> shaderType;

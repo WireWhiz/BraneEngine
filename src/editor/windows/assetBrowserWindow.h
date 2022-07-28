@@ -7,7 +7,6 @@
 
 
 #include <ui/guiWindow.h>
-#include "networking/networking.h"
 #include <string>
 #include "../widgets/assetBrowserWidget.h"
 

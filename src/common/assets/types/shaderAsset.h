@@ -1,6 +1,6 @@
 #pragma once
 #include "../asset.h"
-#include "utility/serializedData.h"
+#include <vector>
 
 enum class ShaderType
 {
@@ -18,6 +18,6 @@ public:
 	ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spirv);
 	ShaderAsset();
 
-	virtual void serialize(OutputSerializer message) override;
-	virtual void deserialize(InputSerializer message) override;
+	virtual void serialize(OutputSerializer& message) override;
+	virtual void deserialize(InputSerializer& message) override;
 };

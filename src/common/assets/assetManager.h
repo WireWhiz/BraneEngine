@@ -1,9 +1,7 @@
 #pragma once
-#include "types/assetTypes.h"
 #include "asset.h"
 #include "assembly.h"
 #include <unordered_set>
-#include <ecs/ecs.h>
 #include <fileManager/fileManager.h>
 #include <networking/networking.h>
 #include <thread>
@@ -15,12 +13,11 @@
 class AssetManager : public Module
 {
 public:
-	typedef std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)> FetchCallback;
+	using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
 
 private:
 	std::mutex assetLock;
 	std::unordered_map<AssetID, std::unique_ptr<Asset>> _assets;
-	size_t nativeComponentID = 0;
 
 	AsyncQueue<std::pair<Assembly*, EntityID>> _stagedAssemblies;
 	std::unordered_map<AssetType::Type, std::vector<std::function<void(Asset* asset)>>> _assetPreprocessors;
@@ -28,6 +25,10 @@ private:
 	FetchCallback _fetchCallback;
 
 	void loadAssembly(AssetID assembly, EntityID rootID);
+
+    size_t _nativeComponentID = 0;
+    template<typename T>
+    void addNativeComponent(EntityManager& em);
 public:
 	AssetManager();
 
@@ -56,18 +57,6 @@ public:
 	void addAsset(Asset* asset);
 	void updateAsset(Asset* asset);
 	bool hasAsset(const AssetID& id);
-
-	template<typename T>
-	inline void addNativeComponent(EntityManager& em)
-	{
-		ComponentDescription* description = T::constructDescription();
-		AssetID id = AssetID("native", static_cast<uint32_t>(nativeComponentID++));
-		ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), T::getMemberNames(), id);
-		asset->name = T::getComponentName();
-		asset->componentID = em.components().registerComponent(description);
-		_assets.insert({asset->id, std::unique_ptr<Asset>(asset)});
-		description->asset = asset;
-	}
 
 	void startAssetLoaderSystem();
 	void addAssetPreprocessor(AssetType::Type type, std::function<void(Asset* asset)> processor);

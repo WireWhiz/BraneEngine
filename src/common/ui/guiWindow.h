@@ -10,7 +10,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "IconsFontAwesome6.h"
 
-typedef size_t GUIWindowID;
+using GUIWindowID = size_t;
 
 class GUI;
 class GUIWindow

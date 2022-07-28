@@ -7,14 +7,13 @@
 
 #include "component.h"
 #include "structMembers.h"
-#include "entity.h"
 
 
 template <class T>
 class NativeComponent
 {
 protected:
-	typedef T ComponentType;
+	using ComponentType = T;
 	static ComponentDescription* _description;
 public:
 	static ComponentDescription* constructDescription()

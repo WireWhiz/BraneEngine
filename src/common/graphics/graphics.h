@@ -1,22 +1,28 @@
 #pragma once
 
-#include "window.h"
-#include "graphicsBuffer.h"
 #include "validationLayers.h"
-#include "material.h"
-#include "renderer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <chrono>
-#include "ecs/core/entity.h"
-#include "systems/transforms.h"
 #include <utility/staticIndexVector.h>
 #include <runtime/module.h>
-#include <runtime/runtime.h>
+#include <vulkan/vulkan.hpp>
+
+class EntityManager;
+class MeshAsset;
 
 namespace graphics
 {
+    class Window;
+    class GraphicsDevice;
+    class SwapChain;
+    class ShaderManager;
+    class Material;
+    class Renderer;
+    class Texture;
+    class Mesh;
+    class Shader;
 
 	class VulkanRuntime : public Module
 	{
