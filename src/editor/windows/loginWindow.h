@@ -25,9 +25,10 @@ class LoginWindow : public GUIWindow
 	std::string _password;
 	std::string _feedbackMessage;
 	bool _saveUsername;
+    void displayContent() override;
 public:
-	LoginWindow(GUI& ui);
-	void draw() override;
+    void draw() override;
+    LoginWindow(GUI& ui);
 };
 
 

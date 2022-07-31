@@ -12,6 +12,7 @@
 
 CreateAssetWindow::CreateAssetWindow(GUI &ui, ServerDirectory* startingDir) : GUIWindow(ui), _browser(ui, false)
 {
+    _name = "Create Asset";
     if(startingDir)
         _browser.setDirectory(startingDir);
 }
@@ -50,116 +51,110 @@ void CreateAssetWindow::loadAssetFromFile(const std::string &filename)
     }
 }
 
-void CreateAssetWindow::draw()
+void CreateAssetWindow::displayContent()
 {
-    ImGui::SetNextWindowSize({500, 800}, ImGuiCond_Once);
-    if(ImGui::Begin("Create Asset", &_open))
+    if(_uploadContext && !_uploadContext->done)
+        ImGui::BeginDisabled();
+    const std::array<const char*, 7> types = {"select type", "component","system", "mesh", "texture", "shader", "assembly"};
+    ImGui::InputText("Name", &_assetName, ImGuiInputTextFlags_AutoSelectAll);
+    if(ImGui::BeginCombo("Type", _assetType.toString().c_str()))
     {
-        if(_uploadContext && !_uploadContext->done)
-            ImGui::BeginDisabled();
-        const std::array<const char*, 7> types = {"select type", "component","system", "mesh", "texture", "shader", "assembly"};
-        ImGui::InputText("Name", &_assetName, ImGuiInputTextFlags_AutoSelectAll);
-        if(ImGui::BeginCombo("Type", _assetType.toString().c_str()))
+        for (size_t i = 1; i < types.size(); ++i)
         {
-            for (size_t i = 1; i < types.size(); ++i)
-            {
-                if(ImGui::Selectable(types[i]))
-                    _assetType.set(types[i]);
-            }
-            ImGui::EndCombo();
+            if(ImGui::Selectable(types[i]))
+                _assetType.set(types[i]);
         }
+        ImGui::EndCombo();
+    }
 
-        if(!_selectingDirectory)
-        {
-            if(ImGui::Button("change"))
-                _selectingDirectory = true;
+    if(!_selectingDirectory)
+    {
+        if(ImGui::Button("change"))
+            _selectingDirectory = true;
+        ImGui::SameLine();
+        ImGui::Text("Directory: %s", _browser.currentDirectory()->path().c_str());
+    }
+    else
+    {
+        ImGui::BeginChild("Directory View", {ImGui::GetWindowContentRegionWidth(), 500}, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
+        if(ImGui::Button("select"))
+            _selectingDirectory = false;
+        ImGui::SameLine();
+        _browser.displayFullBrowser();
+        ImGui::EndChild();
+    }
+    ImGui::Separator();
+    bool noCreate = _assetType == AssetType::Type::none || _selectingDirectory || (_uploadContext && !_uploadContext->done);
+    switch(_assetType.type())
+    {
+        case AssetType::assembly:
+            if(ImGui::Button("Select gltf"))
+                _importFile = FileManager::requestLocalFilePath("gltf", {"*.glb", "*.gltf"});
             ImGui::SameLine();
-            ImGui::Text("Directory: %s", _browser.currentDirectory()->path().c_str());
-        }
-        else
-        {
-            ImGui::BeginChild("Directory View", {ImGui::GetWindowContentRegionWidth(), 500}, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoScrollbar);
-            if(ImGui::Button("select"))
-                _selectingDirectory = false;
-            ImGui::SameLine();
-            _browser.displayFullBrowser();
-            ImGui::EndChild();
-        }
-        ImGui::Separator();
-        bool noCreate = _assetType == AssetType::Type::none || _selectingDirectory || (_uploadContext && !_uploadContext->done);
+            ImGui::Text("Import from file: %s", _importFile.c_str());
+            if(_importFile.empty())
+                noCreate = true;
+            break;
+        default:
+            noCreate = true;
+            ImGui::Text("Asset type %s not implemented", _assetType.toString().c_str());
+    }
+    ImGui::Separator();
+    if(_uploadContext && !_uploadContext->done)
+        ImGui::EndDisabled();
+    if(noCreate)
+        ImGui::BeginDisabled();
+    if(ImGui::Button("Create"))
+    {
+        auto* fs = Runtime::getModule<ServerFilesystem>();
         switch(_assetType.type())
         {
             case AssetType::assembly:
-                if(ImGui::Button("Select gltf"))
-                    _importFile = FileManager::requestLocalFilePath("gltf", {"*.glb", "*.gltf"});
-                ImGui::SameLine();
-                ImGui::Text("Import from file: %s", _importFile.c_str());
-                if(_importFile.empty())
-                    noCreate = true;
+            {
+                gltfLoader loader;
+                if(!loader.loadFromFile(_importFile))
+                {
+                    Runtime::error("Failed to read gltf file!");
+                    break;
+                }
+                AssemblyBuilder::AssemblyAssets assets;
+                try{
+                    assets = AssemblyBuilder::buildAssembly(_assetName, loader);
+                }
+                catch(const std::exception& e)
+                {
+                    Runtime::error("Failed to parse gltf file! " + std::string(e.what()));
+                    break;
+                }
+
+                _uploadContext = std::make_unique<AssemblyUploadContext>();
+                _uploadContext->directory = _browser.currentDirectory();
+                assets.assembly->meshes.resize(assets.meshes.size());
+                for(size_t i = 0; i < assets.meshes.size(); ++i)
+                {
+                    fs->saveAsset(_browser.currentDirectory(), assets.meshes[i].get()).then([this, i](AssetID id){
+                        ((AssemblyUploadContext*)_uploadContext.get())->assembly->meshes[i] = id.string();
+                        ((AssemblyUploadContext*)_uploadContext.get())->meshesUploaded++;
+                    });
+                }
+                ((AssemblyUploadContext*)_uploadContext.get())->assembly = std::move(assets.assembly);
                 break;
+            }
             default:
                 noCreate = true;
                 ImGui::Text("Asset type %s not implemented", _assetType.toString().c_str());
         }
-        ImGui::Separator();
-        if(_uploadContext && !_uploadContext->done)
-            ImGui::EndDisabled();
-        if(noCreate)
-            ImGui::BeginDisabled();
-        if(ImGui::Button("Create"))
-        {
-            auto* fs = Runtime::getModule<ServerFilesystem>();
-            switch(_assetType.type())
-            {
-                case AssetType::assembly:
-                {
-                    gltfLoader loader;
-                    if(!loader.loadFromFile(_importFile))
-                    {
-                        Runtime::error("Failed to read gltf file!");
-                        break;
-                    }
-                    AssemblyBuilder::AssemblyAssets assets;
-                    try{
-                        assets = AssemblyBuilder::buildAssembly(_assetName, loader);
-                    }
-                    catch(const std::exception& e)
-                    {
-                        Runtime::error("Failed to parse gltf file! " + std::string(e.what()));
-                        break;
-                    }
-
-                    _uploadContext = std::make_unique<AssemblyUploadContext>();
-                    _uploadContext->directory = _browser.currentDirectory();
-                    assets.assembly->meshes.resize(assets.meshes.size());
-                    for(size_t i = 0; i < assets.meshes.size(); ++i)
-                    {
-                        fs->saveAsset(_browser.currentDirectory(), assets.meshes[i].get()).then([this, i](AssetID id){
-                            ((AssemblyUploadContext*)_uploadContext.get())->assembly->meshes[i] = id.string();
-                            ((AssemblyUploadContext*)_uploadContext.get())->meshesUploaded++;
-                        });
-                    }
-                    ((AssemblyUploadContext*)_uploadContext.get())->assembly = std::move(assets.assembly);
-                    break;
-                }
-                default:
-                    noCreate = true;
-                    ImGui::Text("Asset type %s not implemented", _assetType.toString().c_str());
-            }
-        }
-        if(noCreate)
-            ImGui::EndDisabled();
-        if(_uploadContext)
-        {
-            _uploadContext->update();
-            if(!_uploadContext->done)
-                ImGui::Text("Upload status: %s", _uploadContext->status.c_str());
-            else
-                ImGui::Text("Upload completed");
-        }
-
     }
-    ImGui::End();
+    if(noCreate)
+        ImGui::EndDisabled();
+    if(_uploadContext)
+    {
+        _uploadContext->update();
+        if(!_uploadContext->done)
+            ImGui::Text("Upload status: %s", _uploadContext->status.c_str());
+        else
+            ImGui::Text("Upload completed");
+    }
 }
 
 void CreateAssetWindow::AssemblyUploadContext::update()

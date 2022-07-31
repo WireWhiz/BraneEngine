@@ -10,9 +10,9 @@ class EntityManager;
 class MemoryManagerWindow : public GUIWindow
 {
     EntityManager* _em;
+    void displayContent() override;
 public:
-	MemoryManagerWindow(GUI& ui);
-	void draw() override;
+    MemoryManagerWindow(GUI& ui);
 };
 
 

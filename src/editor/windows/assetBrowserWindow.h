@@ -13,13 +13,9 @@
 class AssetBrowserWindow : public GUIWindow
 {
 	AssetBrowserWidget _browser;
-
-	std::string _name;
-	std::string _filePath;
-
+    void displayContent() override;
 public:
-	AssetBrowserWindow(GUI& ui);
-	void draw() override;
+    AssetBrowserWindow(GUI& ui);
 };
 
 

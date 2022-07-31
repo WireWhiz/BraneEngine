@@ -16,9 +16,9 @@ class EntitiesWindow : public GUIWindow
     std::shared_ptr<AssetEditorContext> _assetCtx;
 	EntityManager* _em;
     void displayAssemblyEntities(Assembly* assembly, size_t entIndex);
+    void displayContent() override;
 public:
-	EntitiesWindow(GUI& ui);
-	void draw() override;
+    EntitiesWindow(GUI& ui);
 };
 
 

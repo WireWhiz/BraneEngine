@@ -32,11 +32,11 @@ class RenderWindow : public GUIWindow
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};
 	glm::vec2 rotation = {24,-45};
+    void displayContent() override;
 public:
-	RenderWindow(GUI& ui);
-	~RenderWindow();
-	void update() override;
-	void draw() override;
+    RenderWindow(GUI& ui);
+    ~RenderWindow();
+    void update() override;
 	void lookAt(glm::vec3 pos);
 	glm::quat rotationQuat() const;
 };

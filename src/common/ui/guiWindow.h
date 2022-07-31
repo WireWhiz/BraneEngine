@@ -9,20 +9,30 @@
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "IconsFontAwesome6.h"
+#include <unordered_map>
 
 class GUI;
 class GUIWindow
 {
-protected:
-	GUI& _ui;
+    static size_t _instanceCounter;
+    size_t _instance;
     bool _open = true;
+    bool _resetSize = false;
+protected:
+    GUI& _ui;
+    std::string _name;
+    ImGuiWindowFlags _flags = ImGuiWindowFlags_None;
+
+    virtual void displayContent() = 0;
 public:
 	GUIWindow(GUI& ui);
 	virtual ~GUIWindow() = default;
-	virtual void draw() = 0;
+	virtual void draw();
 	virtual void update();
     bool isOpen() const;
     void close();
+    std::string name() const;
+    void resizeDefault();
 };
 
 

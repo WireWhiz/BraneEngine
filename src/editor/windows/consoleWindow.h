@@ -18,10 +18,10 @@ class ConsoleWindow : public GUIWindow
 	};
 	std::vector<CachedLog> _messages;
     size_t _listenerIndex;
+    void displayContent() override;
 public:
-	ConsoleWindow(GUI& ui);
+    ConsoleWindow(GUI& ui);
     ~ConsoleWindow();
-	void draw() override;
 };
 
 

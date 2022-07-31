@@ -29,9 +29,9 @@ class DataWindow : public GUIWindow
 
 	void displayAssemblyData();
 	void displayMeshData();
+    void displayContent() override;
 public:
-	DataWindow(GUI& ui);
-	void draw() override;
+    DataWindow(GUI& ui);
 };
 
 

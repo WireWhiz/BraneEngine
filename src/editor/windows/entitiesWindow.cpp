@@ -12,30 +12,28 @@
 
 EntitiesWindow::EntitiesWindow(GUI& ui) : GUIWindow(ui)
 {
+    _name = "Entities";
 	_em = Runtime::getModule<EntityManager>();
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         _assetCtx = event->asset();
 	});
 }
 
-void EntitiesWindow::draw()
+void EntitiesWindow::displayContent()
 {
-	if(ImGui::Begin("Entities", &_open, ImGuiWindowFlags_None)){
-        ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
-        if(_assetCtx && dynamic_cast<Assembly*>(_assetCtx->asset()))
+    ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
+    if(_assetCtx && dynamic_cast<Assembly*>(_assetCtx->asset()))
+    {
+        auto* assembly = dynamic_cast<Assembly*>(_assetCtx->asset());
+        for (size_t i = 0; i < assembly->entities.size(); ++i)
         {
-            auto* assembly = dynamic_cast<Assembly*>(_assetCtx->asset());
-            for (size_t i = 0; i < assembly->entities.size(); ++i)
-            {
-                if(assembly->entities[i].hasComponent(LocalTransform::def()))
-                    continue;
-                displayAssemblyEntities(assembly, i);
-            }
+            if(assembly->entities[i].hasComponent(LocalTransform::def()))
+                continue;
+            displayAssemblyEntities(assembly, i);
         }
-        ImGui::PopStyleVar();
-        ImGui::Spacing();
-	}
-	ImGui::End();
+    }
+    ImGui::PopStyleVar();
+    ImGui::Spacing();
 }
 
 void EntitiesWindow::displayAssemblyEntities(Assembly* assembly, size_t entIndex)

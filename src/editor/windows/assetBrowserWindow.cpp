@@ -7,16 +7,13 @@
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui) : GUIWindow(ui), _browser(ui, true)
 {
-
+    _flags = ImGuiWindowFlags_NoScrollbar;
+    _name = "Asset Browser";
 }
 
-void AssetBrowserWindow::draw()
+void AssetBrowserWindow::displayContent()
 {
-	if(ImGui::Begin("Asset Browser", &_open, ImGuiWindowFlags_NoScrollbar))
-	{
-        _browser.displayFullBrowser();
-	}
-	ImGui::End();
+    _browser.displayFullBrowser();
 }
 
 

@@ -17,6 +17,7 @@
 
 DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
 {
+    _name = "Data Inspector";
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
 		_focusedAsset = event->asset();
 		_focusMode = FocusMode::asset;
@@ -31,22 +32,19 @@ DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
     });
 }
 
-void DataWindow::draw()
+void DataWindow::displayContent()
 {
-	if(ImGui::Begin("Data Inspector", &_open, ImGuiWindowFlags_None)){
-		switch(_focusMode)
-		{
-			case FocusMode::asset:
-				displayAssetData();
-				break;
-			case FocusMode::entity:
-				displayEntityData();
-				break;
-			default:
-				ImGui::TextDisabled("No data to display");
-		}
-	}
-	ImGui::End();
+    switch(_focusMode)
+    {
+        case FocusMode::asset:
+            displayAssetData();
+            break;
+        case FocusMode::entity:
+            displayEntityData();
+            break;
+        default:
+            ImGui::TextDisabled("No data to display");
+    }
 }
 
 void DataWindow::displayAssetData()

@@ -20,6 +20,7 @@
 
 RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 {
+    _name = "Render";
 	EntityManager& em = *Runtime::getModule<EntityManager>();
 	graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
 	_renderer = vkr.createRenderer<graphics::MeshRenderer>(&vkr, &em);
@@ -66,45 +67,42 @@ void RenderWindow::update()
 	}
 }
 
-void RenderWindow::draw()
+void RenderWindow::displayContent()
 {
-	if(ImGui::Begin("Render", &_open, ImGuiWindowFlags_None)){
-		auto window = ImGui::GetContentRegionAvail();
-		_windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
-		if(_windowSize.width != 0 && _windowSize.height != 0)
-		{
-			if(_texture && (_windowSize.width != _texture->size().width ||
-			                _windowSize.height != _texture->size().height))
-			{
-				_queueReload = true;
-			}
-			if(_texture)
-				ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
+    auto window = ImGui::GetContentRegionAvail();
+    _windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
+    if(_windowSize.width != 0 && _windowSize.height != 0)
+    {
+        if(_texture && (_windowSize.width != _texture->size().width ||
+                        _windowSize.height != _texture->size().height))
+        {
+            _queueReload = true;
+        }
+        if(_texture)
+            ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
 
-			if(ImGui::IsWindowHovered() || _panning)
-			{
-				//TODO add in sensitivity settings for all these
-				zoom = glm::min<float>(0,  zoom + ImGui::GetIO().MouseWheel);
+        if(ImGui::IsWindowHovered() || _panning)
+        {
+            //TODO add in sensitivity settings for all these
+            zoom = glm::min<float>(0,  zoom + ImGui::GetIO().MouseWheel);
 
-				bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
-				if(!_panning && mouseDown)
-					_lastMousePos = ImGui::GetMousePos();
-				_panning = mouseDown;
-				if(_panning)
-				{
-					ImVec2 mousePos = ImGui::GetMousePos();
-					rotation.x += (mousePos.y - _lastMousePos.y);
-					rotation.y += (mousePos.x - _lastMousePos.x);
-					_lastMousePos = ImGui::GetMousePos();
-				}
-			}
+            bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+            if(!_panning && mouseDown)
+                _lastMousePos = ImGui::GetMousePos();
+            _panning = mouseDown;
+            if(_panning)
+            {
+                ImVec2 mousePos = ImGui::GetMousePos();
+                rotation.x += (mousePos.y - _lastMousePos.y);
+                rotation.y += (mousePos.x - _lastMousePos.x);
+                _lastMousePos = ImGui::GetMousePos();
+            }
+        }
 
-			glm::quat rot = rotationQuat();
-			_renderer->position = position + rot * glm::vec3(0, 0, zoom);
-			_renderer->rotation = rot;
-		}
-	}
-	ImGui::End();
+        glm::quat rot = rotationQuat();
+        _renderer->position = position + rot * glm::vec3(0, 0, zoom);
+        _renderer->rotation = rot;
+    }
 }
 
 void RenderWindow::lookAt(glm::vec3 pos)

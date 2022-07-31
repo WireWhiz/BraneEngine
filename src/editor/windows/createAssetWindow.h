@@ -37,9 +37,9 @@ class CreateAssetWindow : public GUIWindow
     AssetType _assetType;
 
     std::unique_ptr<AssetUploadContext> _uploadContext;
+    void displayContent() override;
 public:
     CreateAssetWindow(GUI& ui, ServerDirectory* startingDir = nullptr);
-    void draw() override;
 };
 
 

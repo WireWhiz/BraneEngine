@@ -79,20 +79,26 @@ const char* Editor::name()
 
 void Editor::addMainWindows()
 {
+    auto* dataWindow = _ui->addWindow<DataWindow>();
+    auto* assetBrowser = _ui->addWindow<AssetBrowserWindow>();
+    auto* console = _ui->addWindow<ConsoleWindow>();
+    auto* entities = _ui->addWindow<EntitiesWindow>();
+    auto* renderer = _ui->addWindow<RenderWindow>();
+
 	ImGuiID root = ImGui::GetID("DockingRoot");
 	ImGui::DockBuilderRemoveNode(root);
 	root = ImGui::DockBuilderAddNode(root, ImGuiDockNodeFlags_DockSpace |  ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
 	ImGui::DockBuilderSetNodeSize(root, ImGui::GetCurrentContext()->CurrentViewport->WorkSize);
 
-	ImGuiID assetDataWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Right, .2f, nullptr, &root);
-	ImGuiID consoleWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Down, .2f, nullptr, &root);
-	ImGuiID entitiesWindow = ImGui::DockBuilderSplitNode(root, ImGuiDir_Left, .2f, nullptr, &root);
+	ImGuiID assetDataNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Right, .2f, nullptr, &root);
+	ImGuiID consoleWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Down, .2f, nullptr, &root);
+	ImGuiID entitiesWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Left, .2f, nullptr, &root);
 
-	ImGui::DockBuilderDockWindow("Data Inspector", assetDataWindow);
-	ImGui::DockBuilderDockWindow("Console", consoleWindow);
-	ImGui::DockBuilderDockWindow("Asset Browser", consoleWindow);
-	ImGui::DockBuilderDockWindow("Entities", entitiesWindow);
-	ImGui::DockBuilderDockWindow("Render", root);
+	ImGui::DockBuilderDockWindow(dataWindow->name().c_str(), assetDataNode);
+	ImGui::DockBuilderDockWindow(console->name().c_str(), consoleWindowNode);
+	ImGui::DockBuilderDockWindow(assetBrowser->name().c_str(), consoleWindowNode);
+	ImGui::DockBuilderDockWindow(entities->name().c_str(), entitiesWindowNode);
+	ImGui::DockBuilderDockWindow(renderer->name().c_str(), root);
 
 	//Attempt at recreating the (for some reason commented out) ImGuiDockNodeFlags_NoCentralNode
 	ImGui::DockBuilderGetNode(root)->MergedFlags ^= ImGuiDockNodeFlags_CentralNode;
@@ -100,11 +106,7 @@ void Editor::addMainWindows()
 
 	ImGui::DockBuilderFinish(root);
 
-	_ui->addWindow<DataWindow>();
-	_ui->addWindow<AssetBrowserWindow>();
-	_ui->addWindow<ConsoleWindow>();
-	_ui->addWindow<EntitiesWindow>();
-	_ui->addWindow<RenderWindow>();
+
 	Runtime::log("Main layout loaded");
 }
 
@@ -125,17 +127,17 @@ void Editor::drawMenu()
 		if(ImGui::BeginMenu("Window"))
 		{
             if(ImGui::Selectable("Entities"))
-                _ui->addWindow<EntitiesWindow>();
+                _ui->addWindow<EntitiesWindow>()->resizeDefault();
             if(ImGui::Selectable("Asset Browser"))
-                _ui->addWindow<AssetBrowserWindow>();
+                _ui->addWindow<AssetBrowserWindow>()->resizeDefault();
             if(ImGui::Selectable("Render Preview"))
-                _ui->addWindow<RenderWindow>();
+                _ui->addWindow<RenderWindow>()->resizeDefault();
             if(ImGui::Selectable("Console"))
-                _ui->addWindow<ConsoleWindow>();
+                _ui->addWindow<ConsoleWindow>()->resizeDefault();
             if(ImGui::Selectable("Data Inspector"))
-                _ui->addWindow<DataWindow>();
+                _ui->addWindow<DataWindow>()->resizeDefault();
             if(ImGui::Selectable("Memory Manager"))
-                _ui->addWindow<MemoryManagerWindow>();
+                _ui->addWindow<MemoryManagerWindow>()->resizeDefault();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
