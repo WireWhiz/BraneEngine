@@ -23,3 +23,6 @@
 [submodule "libraries/external/repos/glslang"]
 	path = libraries/external/repos/glslang
 	url = https://github.com/KhronosGroup/glslang
+[submodule "libraries/external/repos/imguizmo"]
+	path = libraries/external/repos/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo
