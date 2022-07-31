@@ -24,19 +24,19 @@ GUI::GUI()
 {
 	Runtime::timeline().addBlockBefore("gui", "draw");
 	Runtime::timeline().addTask("updateUI", [&]{
-        std::remove_if(_windows.begin(), _windows.end(), [this](auto& window){
+        _windows.erase(std::remove_if(_windows.begin(), _windows.end(), [this](auto& window){
             if(window->isOpen())
                 return false;
             //Remove listeners first
             for(auto& listeners : _eventListeners)
             {
                 auto* winPtr = window.get();
-                std::remove_if(listeners.second.begin(), listeners.second.end(), [winPtr](auto& l){
+                listeners.second.erase(std::remove_if(listeners.second.begin(), listeners.second.end(), [winPtr](auto& l){
                    return l.window == winPtr;
-                });
+                }), listeners.second.end());
             }
             return true;
-        });
+        }), _windows.end());
         for(auto& w : _windows)
         {
             w->update();
