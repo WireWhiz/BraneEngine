@@ -5,7 +5,7 @@
 #include "assetBrowserWindow.h"
 #include <ui/gui.h>
 
-AssetBrowserWindow::AssetBrowserWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id), _browser(ui, true)
+AssetBrowserWindow::AssetBrowserWindow(GUI& ui) : GUIWindow(ui), _browser(ui, true)
 {
 
 }

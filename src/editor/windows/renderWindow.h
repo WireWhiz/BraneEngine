@@ -29,13 +29,11 @@ class RenderWindow : public GUIWindow
 	bool _panning = false;
 	ImVec2 _lastMousePos;
 
-	EntityID _sceneRoot;
-
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};
 	glm::vec2 rotation = {24,-45};
 public:
-	RenderWindow(GUI& ui, GUIWindowID id);
+	RenderWindow(GUI& ui);
 	~RenderWindow();
 	void update() override;
 	void draw() override;

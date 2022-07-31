@@ -175,7 +175,7 @@ void ServerFilesystem::moveDirectory(ServerDirectory* target, ServerDirectory* d
 
 void ServerFilesystem::start()
 {
-    Runtime::getModule<GUI>()->addEventListener("login", std::function([this](const LoginEvent* login){
+    Runtime::getModule<GUI>()->addEventListener("login", nullptr, std::function([this](const LoginEvent* login){
         setServer(login->server());
     }));
 }

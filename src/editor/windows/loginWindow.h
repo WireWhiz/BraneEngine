@@ -26,7 +26,7 @@ class LoginWindow : public GUIWindow
 	std::string _feedbackMessage;
 	bool _saveUsername;
 public:
-	LoginWindow(GUI& ui, GUIWindowID id);
+	LoginWindow(GUI& ui);
 	void draw() override;
 };
 

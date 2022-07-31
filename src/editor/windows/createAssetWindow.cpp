@@ -10,7 +10,7 @@
 #include "../gltf/gltfLoader.h"
 #include "../gltf/assemblyBuilder.h"
 
-CreateAssetWindow::CreateAssetWindow(GUI &ui, GUIWindowID id, ServerDirectory* startingDir) : GUIWindow(ui, id), _browser(ui, false)
+CreateAssetWindow::CreateAssetWindow(GUI &ui, ServerDirectory* startingDir) : GUIWindow(ui), _browser(ui, false)
 {
     if(startingDir)
         _browser.setDirectory(startingDir);

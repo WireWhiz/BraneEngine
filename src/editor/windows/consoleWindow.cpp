@@ -7,7 +7,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <ui/gui.h>
 
-ConsoleWindow::ConsoleWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
+ConsoleWindow::ConsoleWindow(GUI& ui) : GUIWindow(ui)
 {
 	_listenerIndex = Logging::addListener([this](const auto& log){
 		_messages.push_back(CachedLog{log.toString(), log.level});

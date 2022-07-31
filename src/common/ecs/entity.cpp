@@ -25,7 +25,6 @@ EntityID EntityManager::createEntity()
 
 EntityID EntityManager::createEntity(ComponentSet components)
 {
-	ASSERT_MAIN_THREAD();
 	components.add(EntityIDComponent::def()->id);
 	Archetype* arch = getArchetype(components);
 	EntityIDComponent id{};
@@ -47,7 +46,6 @@ EntityID EntityManager::createEntity(ComponentSet components)
 
 void EntityManager::createEntities(const ComponentSet& components, size_t count)
 {
-	ASSERT_MAIN_THREAD();
 	Archetype* arch = getArchetype(components);
 
 	for (size_t i = 0; i < count; i++)
@@ -63,8 +61,6 @@ void EntityManager::createEntities(const ComponentSet& components, size_t count)
 
 void EntityManager::destroyEntity(EntityID entity)
 {
-	ASSERT_MAIN_THREAD();
-
 	assert(entityExists(entity));
 	Archetype* archetype = getEntityArchetype(entity);
     size_t index = _entities[entity].index;
@@ -124,7 +120,6 @@ void EntityManager::setComponent(EntityID entity, const VirtualComponentView& co
 
 void EntityManager::addComponent(EntityID entity, ComponentID component)
 {
-	ASSERT_MAIN_THREAD();
     assert(entityExists(entity));
 	Archetype* destArchetype = nullptr;
 	if (hasArchetype(entity))
@@ -180,7 +175,6 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 
 void EntityManager::removeComponent(EntityID entity, ComponentID component)
 {
-	ASSERT_MAIN_THREAD();
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
     assert(entityExists(entity));

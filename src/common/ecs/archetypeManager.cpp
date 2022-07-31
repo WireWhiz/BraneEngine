@@ -12,7 +12,6 @@ ArchetypeManager::ArchetypeManager(ComponentManager& componentManager) : _compon
 
 Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 {
-	ASSERT_MAIN_THREAD();
 	assert(components.size() > 0);
 	size_t numComps = components.size();
 
@@ -71,7 +70,6 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 
 Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 {
-	ASSERT_MAIN_THREAD();
 	size_t numComps = components.size();
 	assert(numComps > 0);
 	if (numComps > _archetypes.size())
@@ -121,4 +119,43 @@ EntitySet ArchetypeManager::getEntities(ComponentFilter filter)
 	}
 
 	return {std::move(componentViews), std::move(filter)};
+}
+
+ArchetypeManager::iterator ArchetypeManager::begin()
+{
+    return {0, 0, *this};
+}
+
+ArchetypeManager::iterator ArchetypeManager::end()
+{
+    return {_archetypes.size(), 0, *this};
+}
+
+ArchetypeManager::iterator::iterator(size_t size, size_t archetype, ArchetypeManager& ref) : _size{size}, _archetype{archetype}, _ref(ref)
+{
+    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size())
+    {
+        _archetype = 0;
+        _size++;
+    }
+}
+
+void ArchetypeManager::iterator::operator++()
+{
+    _archetype++;
+    while(_size < _ref._archetypes.size() && _archetype == _ref._archetypes[_size].size())
+    {
+        _archetype = 0;
+        _size++;
+    }
+}
+
+bool ArchetypeManager::iterator::operator!=(const ArchetypeManager::iterator& o) const
+{
+    return !(_size == o._size && _archetype == o._archetype);
+}
+
+Archetype& ArchetypeManager::iterator::operator*()
+{
+    return *_ref._archetypes[_size][_archetype];
 }

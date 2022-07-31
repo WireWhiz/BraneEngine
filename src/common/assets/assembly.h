@@ -43,7 +43,7 @@ public:
 #elif defined(SERVER)
     void initialize(EntityManager& em, AssetManager& am);
 #endif
-	void inject(EntityManager& em, EntityID rootID);
+	std::vector<EntityID> inject(EntityManager& em, EntityID rootID);
 };
 
 

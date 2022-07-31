@@ -8,6 +8,7 @@
 #include <ui/guiWindow.h>
 #include "../widgets/assetBrowserWidget.h"
 #include "../gltf/assemblyBuilder.h"
+#include "utility/asyncData.h"
 
 class CreateAssetWindow : public GUIWindow
 {
@@ -37,7 +38,7 @@ class CreateAssetWindow : public GUIWindow
 
     std::unique_ptr<AssetUploadContext> _uploadContext;
 public:
-    CreateAssetWindow(GUI& ui, GUIWindowID id, ServerDirectory* startingDir = nullptr);
+    CreateAssetWindow(GUI& ui, ServerDirectory* startingDir = nullptr);
     void draw() override;
 };
 

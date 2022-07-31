@@ -41,6 +41,11 @@ namespace graphics{
 				filter.addComponent(mat->component()->id, ComponentFilterFlags_Const);
 				_em.getEntities(filter).forEachNative([this, &meshes](byte** components){
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
+                    if(!_vkr.meshes().hasIndex(mr->mesh))
+                    {
+                        Runtime::error("No mesh at index " + std::to_string(mr->mesh) + "!");
+                        return;
+                    }
 					Mesh* mesh = _vkr.meshes()[mr->mesh].get();
 					for (int j = 0; j < mesh->primitiveCount(); ++j)
 					{

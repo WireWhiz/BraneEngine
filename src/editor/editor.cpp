@@ -4,6 +4,7 @@
 
 #include "editor.h"
 
+#include "ui/gui.h"
 #include "windows/loginWindow.h"
 #include "windows/dataWindow.h"
 #include "windows/consoleWindow.h"
@@ -13,14 +14,16 @@
 #include "editorEvents.h"
 #include <fileManager/fileManager.h>
 #include <assets/assetManager.h>
-
+#include "windows/memoryManagerWindow.h"
+#include "graphics/material.h"
+#include "graphics/graphics.h"
 
 void Editor::start()
 {
 	_ui = Runtime::getModule<GUI>();
 	auto* loginWindow = _ui->addWindow<LoginWindow>();
 
-	_ui->addEventListener("login", std::function([this, loginWindow](const LoginEvent* evt){
+	_ui->addEventListener("login", nullptr, std::function([this, loginWindow](const LoginEvent* evt){
 		_server = evt->server();
         loginWindow->close();
 		addMainWindows();
@@ -54,6 +57,18 @@ void Editor::start()
 		});
 		return asset;
 	});
+    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+    auto* em = Runtime::getModule<EntityManager>();
+   _defaultMaterial = new graphics::Material();
+    _defaultMaterial->setVertex(vkr->loadShader(0));
+    _defaultMaterial->setFragment(vkr->loadShader(1));
+    //mat->addTextureDescriptor(vkr.loadTexture(0));
+    _defaultMaterial->addBinding(0,sizeof(glm::vec3));
+    _defaultMaterial->addBinding(1, sizeof(glm::vec3));
+    _defaultMaterial->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+    _defaultMaterial->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+    vkr->addMaterial(_defaultMaterial);
+    em->components().registerComponent(_defaultMaterial->component());
 
 }
 
@@ -109,9 +124,25 @@ void Editor::drawMenu()
 		}
 		if(ImGui::BeginMenu("Window"))
 		{
-
+            if(ImGui::Selectable("Entities"))
+                _ui->addWindow<EntitiesWindow>();
+            if(ImGui::Selectable("Asset Browser"))
+                _ui->addWindow<AssetBrowserWindow>();
+            if(ImGui::Selectable("Render Preview"))
+                _ui->addWindow<RenderWindow>();
+            if(ImGui::Selectable("Console"))
+                _ui->addWindow<ConsoleWindow>();
+            if(ImGui::Selectable("Data Inspector"))
+                _ui->addWindow<DataWindow>();
+            if(ImGui::Selectable("Memory Manager"))
+                _ui->addWindow<MemoryManagerWindow>();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
 	}
+}
+
+graphics::Material* Editor::defaultMaterial() const
+{
+    return _defaultMaterial;
 }

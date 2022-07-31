@@ -10,21 +10,17 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "IconsFontAwesome6.h"
 
-using GUIWindowID = size_t;
-
 class GUI;
 class GUIWindow
 {
-	GUIWindowID _id;
 protected:
 	GUI& _ui;
     bool _open = true;
 public:
-	GUIWindow(GUI& ui, GUIWindowID id);
+	GUIWindow(GUI& ui);
 	virtual ~GUIWindow() = default;
 	virtual void draw() = 0;
 	virtual void update();
-	GUIWindowID id() const;
     bool isOpen() const;
     void close();
 };

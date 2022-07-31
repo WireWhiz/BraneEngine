@@ -16,7 +16,7 @@ else() #TODO add exe icon on linux
             main.cpp
             editor.cpp
             serverFilesystem.cpp
-            editorEvents.cpp)
+            editorEvents.cpp assetEditorContext.cpp assetEditorContext.h)
 endif()
 target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}

@@ -102,6 +102,8 @@ void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
 
 glm::mat4 Transforms::getParentTransform(EntityID parent, EntityManager& em)
 {
+    if(!em.entityExists(parent))
+        return glm::mat4(1);
 	if(!em.hasComponent<LocalTransform>(parent))
 		return em.getComponent<Transform>(parent)->value;
 	auto* gt = em.getComponent<Transform>(parent);

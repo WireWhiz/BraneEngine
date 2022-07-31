@@ -6,7 +6,9 @@
 #define BRANEENGINE_GUIEVENT_H
 
 #include <string>
+#include <functional>
 
+class GUIWindow;
 class GUIEvent
 {
 	std::string _name;
@@ -14,6 +16,12 @@ public:
 	GUIEvent(std::string name);
 	virtual ~GUIEvent() = default;
 	const std::string& name() const;
+};
+
+struct GUIEventListener
+{
+    GUIWindow* window;
+    std::function<void(const GUIEvent*)> callback;
 };
 
 

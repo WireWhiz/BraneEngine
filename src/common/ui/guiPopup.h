@@ -5,9 +5,8 @@
 #ifndef BRANEENGINE_GUIPOPUP_H
 #define BRANEENGINE_GUIPOPUP_H
 
-#include "imgui.h"
 #include <string>
-
+typedef unsigned int ImGuiID;
 class GUIPopup
 {
     ImGuiID _id;

@@ -182,7 +182,7 @@ void Assembly::initialize(EntityManager& em, AssetManager& am)
 }
 #endif
 
-void Assembly::inject(EntityManager& em, EntityID rootID)
+std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
 {
 	std::vector<EntityID> entityMap(entities.size());
 	for (size_t i = 0; i < entities.size(); ++i)
@@ -219,6 +219,7 @@ void Assembly::inject(EntityManager& em, EntityID rootID)
             }
 		}
 	}
+    return entityMap;
 }
 
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include "ui/gui.h"
+#include "ui/guiPopup.h"
 
 class ServerFilesystem;
 class ServerDirectory;

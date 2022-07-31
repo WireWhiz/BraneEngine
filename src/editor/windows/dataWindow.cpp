@@ -13,18 +13,19 @@
 #include <assets/assetManager.h>
 #include <assets/assembly.h>
 #include "common/ecs/entity.h"
+#include "../assetEditorContext.h"
 
-DataWindow::DataWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
+DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
 {
-	ui.addEventListener<FocusAssetEvent>("focus asset", [this](const FocusAssetEvent* event){
+	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
 		_focusedAsset = event->asset();
 		_focusMode = FocusMode::asset;
 		_focusedAssetEntity = -1;
 	});
-	ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", [this](const FocusEntityAssetEvent* event){
+	ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
 		_focusedAssetEntity = event->entity();
 	});
-    ui.addEventListener<FocusEntityEvent>("focus entity", [this](const FocusEntityEvent* event){
+    ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
         _focusedEntity = event->id();
         _focusMode = FocusMode::entity;
     });
@@ -54,10 +55,10 @@ void DataWindow::displayAssetData()
 		return;
 
     ImGui::PushFont(_ui.fonts()[1]);
-	ImGui::Text("%s", _focusedAsset->name.c_str());
+	ImGui::Text("%s", _focusedAsset->asset()->name.c_str());
     ImGui::PopFont();
-	ImGui::TextDisabled("%s", _focusedAsset->type.toString().c_str());
-	switch(_focusedAsset->type.type())
+	ImGui::TextDisabled("%s", _focusedAsset->asset()->type.toString().c_str());
+	switch(_focusedAsset->asset()->type.type())
 	{
 		case AssetType::mesh:
 			displayMeshData();
@@ -66,13 +67,13 @@ void DataWindow::displayAssetData()
 			displayAssemblyData();
 			break;
 		default:
-			ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->type.toString().c_str(), _focusedAsset->name.c_str());
+			ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->asset()->type.toString().c_str(), _focusedAsset->asset()->name.c_str());
 	}
 }
 
 void DataWindow::displayAssemblyData()
 {
-	Assembly* assembly = static_cast<Assembly*>(_focusedAsset);
+	Assembly* assembly = static_cast<Assembly*>(_focusedAsset->asset());
 	if(_focusedAssetEntity < assembly->entities.size())
 	{
 		displayEntityAssetData();
@@ -114,7 +115,7 @@ void DataWindow::displayAssemblyData()
 
 void DataWindow::displayMeshData()
 {
-	MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset);
+	MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
 	ImGui::Text("Primitives %u", mesh->primitiveCount());
 	uint32_t vertices = 0;
 	uint32_t tris = 0;
@@ -152,13 +153,18 @@ void DataWindow::displayMeshData()
 
 void DataWindow::displayEntityAssetData()
 {
-	auto& entity = static_cast<Assembly*>(_focusedAsset)->entities[_focusedAssetEntity];
+	auto& entityAsset = static_cast<Assembly*>(_focusedAsset->asset())->entities[_focusedAssetEntity];
 	ImGui::Separator();
-	ImGui::Text("Entity Index: %u", _focusedAssetEntity);
+	ImGui::Text("Entity Index: %lu", _focusedAssetEntity);
 	ImGui::Separator();
-	for (int i = 0; i < entity.components.size(); ++i)
+    auto* em = Runtime::getModule<EntityManager>();
+	for (int i = 0; i < entityAsset.components.size(); ++i)
 	{
-        VirtualVariableWidgets::displayVirtualComponentData(entity.components[i]);
+        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
+        if(VirtualVariableWidgets::displayVirtualComponentData(component))
+        {
+            em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
+        }
 		ImGui::Separator();
 	}
 }

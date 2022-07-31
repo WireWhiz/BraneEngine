@@ -6,18 +6,26 @@
 #define BRANEENGINE_EDITOR_H
 
 #include <runtime/module.h>
-#include "common/ui/gui.h"
 
+namespace net{
+    class Connection;
+}
+namespace graphics{
+    class Material;
+}
+class GUI;
 class Editor : public Module
 {
 	GUI* _ui;
 	net::Connection* _server;
+    graphics::Material* _defaultMaterial;
 	void addMainWindows();
 	void drawMenu();
 public:
 	void start() override;
 	static const char* name();
 	net::Connection* server() const;
+    graphics::Material* defaultMaterial() const;
 };
 
 

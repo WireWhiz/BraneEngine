@@ -6,10 +6,12 @@
 #define BRANEENGINE_MEMORYMANAGERWINDOW_H
 
 #include "ui/guiWindow.h"
+class EntityManager;
 class MemoryManagerWindow : public GUIWindow
 {
+    EntityManager* _em;
 public:
-	MemoryManagerWindow(GUI& ui, GUIWindowID id);
+	MemoryManagerWindow(GUI& ui);
 	void draw() override;
 };
 

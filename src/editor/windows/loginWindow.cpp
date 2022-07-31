@@ -16,7 +16,7 @@ void LoginWindow::draw()
 	ImVec2 size(400, 220);
 	ImGui::SetNextWindowPos({center.x - size.x / 2, center.y - size.y / 2});
 	ImGui::SetNextWindowSize(size);
-	if(ImGui::Begin("login", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)){
+	if(ImGui::Begin("login", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar)){
 		ImGui::Text("Select Server:");
 		ImGui::InputText("address", &_serverAddress);
 		ImGui::InputText("port", &_port);
@@ -84,7 +84,7 @@ void LoginWindow::draw()
 	ImGui::End();
 }
 
-LoginWindow::LoginWindow(GUI& ui, GUIWindowID id) : GUIWindow(ui, id)
+LoginWindow::LoginWindow(GUI& ui) : GUIWindow(ui)
 {
 	_serverAddress = Config::json()["network"]["asset_server"].asString();
 	_port = Config::json()["network"]["tcp_port"].asString();

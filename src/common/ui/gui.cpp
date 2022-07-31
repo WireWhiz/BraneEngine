@@ -9,6 +9,10 @@
 #include "graphics/graphicsBuffer.h"
 #include "graphics/swapChain.h"
 
+#include "guiRenderer.h"
+#include "guiWindow.h"
+#include "guiPopup.h"
+
 #include "common/runtime/runtime.h"
 
 #include <imgui.h>
@@ -20,14 +24,19 @@ GUI::GUI()
 {
 	Runtime::timeline().addBlockBefore("gui", "draw");
 	Runtime::timeline().addTask("updateUI", [&]{
-        for(size_t i = 0; i < _windows.size(); ++i)
-        {
-            if(!_windows[i]->isOpen())
+        std::remove_if(_windows.begin(), _windows.end(), [this](auto& window){
+            if(window->isOpen())
+                return false;
+            //Remove listeners first
+            for(auto& listeners : _eventListeners)
             {
-                _windows.erase(_windows.begin() + i);
-                --i;
+                auto* winPtr = window.get();
+                std::remove_if(listeners.second.begin(), listeners.second.end(), [winPtr](auto& l){
+                   return l.window == winPtr;
+                });
             }
-        }
+            return true;
+        });
         for(auto& w : _windows)
         {
             w->update();
@@ -93,7 +102,7 @@ void GUI::callEvents()
 		{
 			for(auto& listener : _eventListeners.at(event->name()))
 			{
-				listener(event.get());
+				listener.callback(event.get());
 			}
 		}
 	}
@@ -231,7 +240,7 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	init_info.ImageCount = runtime.swapChain()->size();
 	init_info.CheckVkResultFn = [](VkResult r){
 		if(r != VK_SUCCESS)
-			std::cerr << "ImGui vulkan returned " << r << std::endl;
+			Runtime::error("ImGui vulkan returned " + std::to_string(r));
 	};
 	ImGui_ImplVulkan_Init(&init_info, _renderer->renderPass());
 

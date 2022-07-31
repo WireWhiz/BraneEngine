@@ -58,7 +58,11 @@ EntitySet::EntitySet(std::vector<ChunkComponentView*> components, ComponentFilte
 
 void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
 {
-	size_t numComps = _filter.components().size();
+	size_t numComps = 0;
+    for(auto& c : _filter.components())
+        if(!(c.flags & ComponentFilterFlags_Exclude))
+            ++numComps;
+
 	byte** data = (byte**)STACK_ALLOCATE(sizeof(const byte*) * numComps);
 
 	for (int i = 0; i < _components.size() / numComps; ++i)

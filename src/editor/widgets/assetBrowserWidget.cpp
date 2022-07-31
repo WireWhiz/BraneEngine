@@ -12,6 +12,7 @@
 #include "editor/windows/createAssetWindow.h"
 #include "editor/serverFilesystem.h"
 #include "ecs/entity.h"
+#include "graphics/graphics.h"
 
 
 AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits), _fs(*Runtime::getModule<ServerFilesystem>())

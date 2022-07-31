@@ -6,16 +6,18 @@
 #define BRANEENGINE_ENTITIESWINDOW_H
 
 #include <ui/guiWindow.h>
+#include <memory>
 
-class Assembly;
+class AssetEditorContext;
 class EntityManager;
+class Assembly;
 class EntitiesWindow : public GUIWindow
 {
-	Assembly* _assembly = nullptr;
+    std::shared_ptr<AssetEditorContext> _assetCtx;
 	EntityManager* _em;
-	void displayAssemblyEntities(Assembly* assembly, size_t entIndex);
+    void displayAssemblyEntities(Assembly* assembly, size_t entIndex);
 public:
-	EntitiesWindow(GUI& ui, GUIWindowID id);
+	EntitiesWindow(GUI& ui);
 	void draw() override;
 };
 

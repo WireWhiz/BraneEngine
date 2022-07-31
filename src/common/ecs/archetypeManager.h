@@ -20,6 +20,21 @@ class ArchetypeManager
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
 	ComponentManager& _componentManager;
 public:
+    class iterator{
+        ArchetypeManager& _ref;
+        size_t _size;
+        size_t _archetype;
+    public:
+        iterator(size_t size, size_t archetype, ArchetypeManager& ref);
+        void operator++();
+        bool operator!=(const iterator& o) const;
+        Archetype& operator*();
+
+        using iterator_category = std::forward_iterator_tag;
+        using reference = Archetype&;
+        using pointer = Archetype*;
+    };
+
 	ArchetypeManager(ComponentManager& componentManager);
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& components);
@@ -28,6 +43,8 @@ public:
 
 	void removeEmpty();
 	void clear();
+    iterator begin();
+    iterator end();
 };
 
 

@@ -3,6 +3,7 @@
 //
 
 #include "editorEvents.h"
+#include "assetEditorContext.h"
 
 LoginEvent::LoginEvent(net::Connection* server) : GUIEvent("login")
 {
@@ -20,10 +21,10 @@ ServerDirectory* DirectoryUpdateEvent::directory() const
 
 FocusAssetEvent::FocusAssetEvent(Asset* asset) : GUIEvent("focus asset")
 {
-	_asset = asset;
+	_asset = std::make_shared<AssetEditorContext>(asset);
 }
 
-Asset* FocusAssetEvent::asset() const
+std::shared_ptr<AssetEditorContext> FocusAssetEvent::asset() const
 {
 	return _asset;
 }

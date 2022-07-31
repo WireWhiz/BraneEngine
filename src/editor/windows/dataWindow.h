@@ -6,10 +6,11 @@
 #define BRANEENGINE_DATAWINDOW_H
 
 #include <ui/guiWindow.h>
+#include <memory>
 
 #include "ecs/entityID.h"
 
-class Asset;
+class AssetEditorContext;
 
 class DataWindow : public GUIWindow
 {
@@ -18,7 +19,7 @@ class DataWindow : public GUIWindow
 		entity
 	};
 	FocusMode _focusMode;
-	Asset* _focusedAsset = nullptr;
+	std::shared_ptr<AssetEditorContext> _focusedAsset;
 	size_t _focusedAssetEntity = 0;
 
 	EntityID _focusedEntity;
@@ -29,7 +30,7 @@ class DataWindow : public GUIWindow
 	void displayAssemblyData();
 	void displayMeshData();
 public:
-	DataWindow(GUI& ui, GUIWindowID id);
+	DataWindow(GUI& ui);
 	void draw() override;
 };
 

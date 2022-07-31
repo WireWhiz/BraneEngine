@@ -18,7 +18,7 @@ class AssetBrowserWindow : public GUIWindow
 	std::string _filePath;
 
 public:
-	AssetBrowserWindow(GUI& ui, GUIWindowID id);
+	AssetBrowserWindow(GUI& ui);
 	void draw() override;
 };
 

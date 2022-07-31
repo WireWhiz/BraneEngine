@@ -8,11 +8,13 @@
 #include <cstdint>
 #include "common/ui/guiEvent.h"
 #include "ecs/entityID.h"
+#include <memory>
 namespace net {
     class Connection;
 }
 class Asset;
 class ServerDirectory;
+class AssetEditorContext;
 
 class LoginEvent : public GUIEvent
 {
@@ -29,13 +31,12 @@ public:
     DirectoryUpdateEvent(ServerDirectory* dir);
     ServerDirectory* directory() const;
 };
-
 class FocusAssetEvent : public GUIEvent
 {
-	Asset* _asset;
+	std::shared_ptr<AssetEditorContext> _asset;
 public:
 	FocusAssetEvent(Asset* asset);
-	Asset* asset() const;
+    std::shared_ptr<AssetEditorContext> asset() const;
 };
 
 class FocusEntityEvent : public GUIEvent

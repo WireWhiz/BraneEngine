@@ -120,7 +120,6 @@ const std::vector<const ComponentDescription*>& Archetype::componentDescriptions
 
 std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(ComponentID component)
 {
-	ASSERT_MAIN_THREAD();
 	for (auto & _addEdge : _addEdges)
 	{
 		if (component == _addEdge->component)
@@ -133,7 +132,6 @@ std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(ComponentID component)
 
 std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(ComponentID component)
 {
-	ASSERT_MAIN_THREAD();
 	for (auto & _removeEdge : _removeEdges)
 	{
 		if (component == _removeEdge->component)
@@ -146,13 +144,11 @@ std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(ComponentID component)
 
 void Archetype::addAddEdge(ComponentID component, Archetype* archetype)
 {
-	ASSERT_MAIN_THREAD();
 	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
 
 void Archetype::addRemoveEdge(ComponentID component, Archetype* archetype)
 {
-	ASSERT_MAIN_THREAD();
 	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
 }
 

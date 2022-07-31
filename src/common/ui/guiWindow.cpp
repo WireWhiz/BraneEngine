@@ -6,7 +6,7 @@
 #include "runtime/runtime.h"
 #include "gui.h"
 
-GUIWindow::GUIWindow(GUI& ui, GUIWindowID id) : _ui(ui), _id(id)
+GUIWindow::GUIWindow(GUI& ui) : _ui(ui)
 {
 
 }
@@ -14,11 +14,6 @@ GUIWindow::GUIWindow(GUI& ui, GUIWindowID id) : _ui(ui), _id(id)
 void GUIWindow::update()
 {
 
-}
-
-GUIWindowID GUIWindow::id() const
-{
-	return _id;
 }
 
 bool GUIWindow::isOpen() const
