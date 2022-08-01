@@ -18,7 +18,6 @@
 #include "ecs/nativeTypes/assetComponents.h"
 #include <systems/transforms.h>
 #include "backends/imgui_impl_vulkan.h"
-#include <ImGuizmo.h>
 
 RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 {
@@ -39,6 +38,7 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
         _focusedAsset = nullptr;
         _focusedEntity = event->id();
     });
+    ImGuizmo::AllowAxisFlip(false); // Maybe add this to the config at some point
 }
 
 RenderWindow::~RenderWindow()
@@ -81,6 +81,29 @@ void RenderWindow::update()
 
 void RenderWindow::displayContent()
 {
+    const bool hovered = ImGui::IsWindowHovered();
+    ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::TRANSLATE);
+    if(ImGui::Button(ICON_FA_UP_DOWN_LEFT_RIGHT) || (hovered && ImGui::IsKeyPressed(ImGuiKey_W, false)))
+        _gizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
+    ImGui::EndDisabled();
+
+    ImGui::SameLine(0,0);
+    ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::ROTATE);
+    if(ImGui::Button(ICON_FA_ROTATE) || (hovered && ImGui::IsKeyPressed(ImGuiKey_E, false)))
+        _gizmoOperation = ImGuizmo::OPERATION::ROTATE;
+    ImGui::EndDisabled();
+
+    ImGui::SameLine(0,0);
+    ImGui::BeginDisabled(_gizmoOperation == ImGuizmo::OPERATION::SCALE);
+    if(ImGui::Button(ICON_FA_ARROWS_TO_DOT) || (hovered && ImGui::IsKeyPressed(ImGuiKey_R, false)))
+        _gizmoOperation = ImGuizmo::OPERATION::SCALE;
+    ImGui::EndDisabled();
+
+    ImGui::SameLine(0, 13);
+    if(ImGui::Button(_gizmoMode == ImGuizmo::MODE::WORLD ? ICON_FA_GLOBE : ICON_FA_OBJECT_GROUP)  || (hovered && ImGui::IsKeyPressed(ImGuiKey_Q, false)))
+        _gizmoMode = _gizmoMode == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
+
+
     auto window = ImGui::GetContentRegionAvail();
     _windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
     if(_windowSize.width != 0 && _windowSize.height != 0)
@@ -92,9 +115,14 @@ void RenderWindow::displayContent()
         }
 
         ImGuizmo::SetDrawlist();
-        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, window.x, window.y);
-        if(_texture)
+
+        if(_texture){
+
             ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
+            auto imgPos = ImGui::GetItemRectMin();
+            auto imgSize = ImGui::GetItemRectSize();
+            ImGuizmo::SetRect(imgPos.x, imgPos.y, imgSize.x, imgSize.y);
+        }
 
         if(ImGui::IsWindowHovered() || _panning)
         {
@@ -123,7 +151,7 @@ void RenderWindow::displayContent()
 
             auto objectTransform = Transforms::getGlobalTransform(_focusedEntity, *em);
 
-            ImGuizmo::Manipulate((float*)&vt, (float*)&pt, ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
+            ImGuizmo::Manipulate((float*)&vt, (float*)&pt, _gizmoOperation, (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
             if(ImGuizmo::IsUsing())
             {
                 _manipulating = true;

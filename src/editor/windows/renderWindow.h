@@ -11,6 +11,7 @@
 #include "ecs/entityID.h"
 #include <vector>
 #include <memory>
+#include <ImGuizmo.h>
 
 namespace graphics{
     class RenderTexture;
@@ -31,6 +32,8 @@ class RenderWindow : public GUIWindow
 	bool _panning = false;
 	ImVec2 _lastMousePos;
     bool _manipulating = false;
+    ImGuizmo::OPERATION _gizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
+    ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
     std::shared_ptr<AssetEditorContext> _focusedAsset;
     EntityID _focusedEntity;
@@ -38,6 +41,7 @@ class RenderWindow : public GUIWindow
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};
 	glm::vec2 rotation = {24,-45};
+
     void displayContent() override;
 public:
     RenderWindow(GUI& ui);
