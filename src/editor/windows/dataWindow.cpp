@@ -10,8 +10,6 @@
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
 #include <assets/assetID.h>
-#include <assets/assetManager.h>
-#include <assets/assembly.h>
 #include "common/ecs/entity.h"
 #include "../assetEditorContext.h"
 

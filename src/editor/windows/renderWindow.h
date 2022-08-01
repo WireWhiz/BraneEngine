@@ -8,8 +8,9 @@
 #include <ui/guiWindow.h>
 #include "vulkan/vulkan.h"
 #include "glm/gtx/quaternion.hpp"
-#include <vector>
 #include "ecs/entityID.h"
+#include <vector>
+#include <memory>
 
 namespace graphics{
     class RenderTexture;
@@ -17,6 +18,7 @@ namespace graphics{
     class SwapChain;
 }
 
+class AssetEditorContext;
 class RenderWindow : public GUIWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
@@ -28,6 +30,10 @@ class RenderWindow : public GUIWindow
 	uint64_t _frameCount = 0;
 	bool _panning = false;
 	ImVec2 _lastMousePos;
+    bool _manipulating = false;
+
+    std::shared_ptr<AssetEditorContext> _focusedAsset;
+    EntityID _focusedEntity;
 
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};

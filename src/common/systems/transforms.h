@@ -32,6 +32,7 @@ public:
 	glm::quat rotation = glm::quat(1,0,0,0);   //local rotation
 	glm::vec3 scale = {1, 1, 1};      //local scale
 	glm::mat4 toMat() const;
+    void fromMat(const glm::mat4& t);
 };
 
 class Children : public NativeComponent<Children>
@@ -47,9 +48,12 @@ class Transforms : public Module
 	void updateTRSFromMatrix(EntityID entity, glm::mat4 value);
 public:
 	static void setParent(EntityID entity, EntityID parent, EntityManager& em);
-	void removeParent(EntityID entity);
+	static void removeParent(EntityID entity, EntityManager& em);
 	void destroyRecursive(EntityID entity, bool updateParentChildren = true);
 	static glm::mat4 getParentTransform(EntityID parent, EntityManager& em);
+    static glm::mat4& getGlobalTransform(EntityID entity, EntityManager& em);
+    static void setGlobalTransform(EntityID entity, const glm::mat4& t, EntityManager& em);
+    static void setDirty(EntityID entity, EntityManager& em);
 	void start() override;
 
 	static const char* name();

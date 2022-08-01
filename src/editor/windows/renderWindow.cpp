@@ -3,7 +3,9 @@
 //
 
 #include "renderWindow.h"
-#include <ui/gui.h>
+#include "ui/gui.h"
+#include "../editorEvents.h"
+#include "../assetEditorContext.h"
 #include "graphics/graphics.h"
 #include "graphics/meshRenderer.h"
 #include "graphics/material.h"
@@ -14,9 +16,9 @@
 #include "assets/types/meshAsset.h"
 #include "common/ecs/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
-#include "editor/editorEvents.h"
 #include <systems/transforms.h>
 #include "backends/imgui_impl_vulkan.h"
+#include <ImGuizmo.h>
 
 RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 {
@@ -26,7 +28,17 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 	_renderer = vkr.createRenderer<graphics::MeshRenderer>(&vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
-
+    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
+        _focusedAsset = event->asset();
+        _focusedEntity.version = -1;
+    });
+    _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
+        _focusedEntity = _focusedAsset->entities()[event->entity()];
+    });
+    _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
+        _focusedAsset = nullptr;
+        _focusedEntity = event->id();
+    });
 }
 
 RenderWindow::~RenderWindow()
@@ -78,6 +90,9 @@ void RenderWindow::displayContent()
         {
             _queueReload = true;
         }
+
+        ImGuizmo::SetDrawlist();
+        ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, window.x, window.y);
         if(_texture)
             ImGui::Image(_imGuiBindings[_swapChain->currentFrame()], window);
 
@@ -96,6 +111,28 @@ void RenderWindow::displayContent()
                 rotation.x += (mousePos.y - _lastMousePos.y);
                 rotation.y += (mousePos.x - _lastMousePos.x);
                 _lastMousePos = ImGui::GetMousePos();
+            }
+        }
+        auto* em = Runtime::getModule<EntityManager>();
+        if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
+        {
+            glm::mat4 vt = _renderer->transformMatrix();
+            glm::mat4 pt = _renderer->perspectiveMatrix();
+            //Undo inversion since ImGuizmo won't expect it
+            pt[1][1] *= -1;
+
+            auto objectTransform = Transforms::getGlobalTransform(_focusedEntity, *em);
+
+            ImGuizmo::Manipulate((float*)&vt, (float*)&pt, ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
+            if(ImGuizmo::IsUsing())
+            {
+                _manipulating = true;
+                Transforms::setGlobalTransform(_focusedEntity, objectTransform, *em);
+            }
+            else if(_manipulating)
+            {
+                _manipulating = false;
+                //Event on manipulation change
             }
         }
 

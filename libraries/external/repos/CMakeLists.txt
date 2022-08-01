@@ -21,6 +21,13 @@ target_include_directories(imgui PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/imgui/)
 target_include_directories(imgui PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_link_libraries(imgui PUBLIC include_dir)
 
+add_library(imguizmo STATIC
+        imguizmo/ImGuizmo.cpp)
+target_include_directories(imguizmo PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/imgui/
+        ${CMAKE_CURRENT_SOURCE_DIR}/imguizmo/)
+target_link_libraries(imguizmo PUBLIC imgui)
+
 add_library(external_include_dirs INTERFACE)
 
 add_subdirectory(asmjit)

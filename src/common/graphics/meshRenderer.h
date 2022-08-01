@@ -26,6 +26,8 @@ namespace graphics{
 		MeshRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em);
 		~MeshRenderer() override;
 		void render(VkCommandBuffer cmdBuffer) override;
+        glm::mat4 transformMatrix() const;
+        glm::mat4 perspectiveMatrix() const;
 	};
 }
 

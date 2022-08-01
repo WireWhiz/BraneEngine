@@ -25,12 +25,11 @@ namespace graphics{
 		if(_extent.width == 0 || _extent.height == 0)
             return;
         startRenderPass(cmdBuffer);
-        glm::mat4 transform = glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
-		glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
-		projection[1][1] *= -1;
- 		glm::mat4 cameraMatrix = projection * transform;
+ 		glm::mat4 cameraMatrix = perspectiveMatrix() * transformMatrix();
 		for(auto& mat :  _vkr.materials())
         {
+            if(!mat->component())
+                return;
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
 			std::vector<RenderObject> meshes;
@@ -122,4 +121,16 @@ namespace graphics{
 				vkDestroyPipeline(graphics::device->get(), p.second, nullptr);
 		_cachedPipelines.clear();
 	}
+
+    glm::mat4 MeshRenderer::transformMatrix() const
+    {
+        return glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
+    }
+
+    glm::mat4 MeshRenderer::perspectiveMatrix() const
+    {
+        glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
+        projection[1][1] *= -1;
+        return projection;
+    }
 }

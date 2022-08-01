@@ -7,12 +7,14 @@
 #include "gui.h"
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
+#include <ImGuizmo.h>
 
 void GUIRenderer::render(VkCommandBuffer cmdBuffer)
 {
 	startRenderPass(cmdBuffer);
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 	_gui->drawUI();
 	ImGui_ImplVulkan_NewFrame();
 	ImGui::Render();

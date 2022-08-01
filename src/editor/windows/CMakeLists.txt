@@ -7,5 +7,5 @@ add_library(editorWindows STATIC
         assetBrowserWindow.cpp
         memoryManagerWindow.cpp
         createAssetWindow.cpp)
-target_link_libraries(editorWindows PUBLIC ui editorWidgets)
+target_link_libraries(editorWindows PUBLIC ui editorWidgets imguizmo)
 target_compile_definitions(editorWindows PUBLIC CLIENT)
