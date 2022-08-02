@@ -32,6 +32,7 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
         _focusedEntity.version = -1;
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
+        _focusedAssetEntity = event->entity();
         _focusedEntity = _focusedAsset->entities()[event->entity()];
     });
     _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
@@ -140,6 +141,14 @@ void RenderWindow::displayContent()
                 rotation.y += (mousePos.x - _lastMousePos.x);
                 _lastMousePos = ImGui::GetMousePos();
             }
+
+            if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+            {
+                if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
+                    _focusedAsset->redo();
+                else if(ImGui::IsKeyPressed(ImGuiKey_Z))
+                    _focusedAsset->undo();
+            }
         }
         auto* em = Runtime::getModule<EntityManager>();
         if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
@@ -160,7 +169,10 @@ void RenderWindow::displayContent()
             else if(_manipulating)
             {
                 _manipulating = false;
-                //Event on manipulation change
+                if(_focusedAsset)
+                {
+                    _focusedAsset->updateEntity(_focusedAssetEntity);
+                }
             }
         }
 

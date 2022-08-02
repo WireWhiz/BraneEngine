@@ -36,6 +36,7 @@ class RenderWindow : public GUIWindow
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
     std::shared_ptr<AssetEditorContext> _focusedAsset;
+    size_t _focusedAssetEntity;
     EntityID _focusedEntity;
 
 	float zoom = -5;

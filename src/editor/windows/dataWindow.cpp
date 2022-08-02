@@ -157,12 +157,20 @@ void DataWindow::displayEntityAssetData()
 	for (int i = 0; i < entityAsset.components.size(); ++i)
 	{
         VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
-        if(VirtualVariableWidgets::displayVirtualComponentData(component))
-        {
+        auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
+        if((uint8_t)res > 0)
             em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
-        }
+        if(res == UiChangeType::finished)
+            _focusedAsset->updateEntity(_focusedAssetEntity);
 		ImGui::Separator();
 	}
+    if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+    {
+        if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
+            _focusedAsset->redo();
+        else if(ImGui::IsKeyPressed(ImGuiKey_Z))
+            _focusedAsset->undo();
+    }
 }
 
 void DataWindow::displayEntityData()
@@ -181,7 +189,7 @@ void DataWindow::displayEntityData()
     auto& components = em->getEntityArchetype(_focusedEntity)->components();
     for (auto cid : components)
     {
-        if(VirtualVariableWidgets::displayVirtualComponentData(em->getComponent(_focusedEntity, cid)))
+        if((int)VirtualVariableWidgets::displayVirtualComponentData(em->getComponent(_focusedEntity, cid)) > 0)
             em->markComponentChanged(_focusedEntity, cid);
         ImGui::Separator();
     }

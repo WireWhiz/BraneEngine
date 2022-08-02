@@ -69,6 +69,7 @@ public:
 	VirtualComponent(const ComponentDescription* definition, const byte* data);
 	~VirtualComponent();
 	VirtualComponent& operator=(const VirtualComponent& source);
+    VirtualComponent& operator=(const VirtualComponentView& source);
 	template<class T>
 	T* getVar(size_t index) const
 	{

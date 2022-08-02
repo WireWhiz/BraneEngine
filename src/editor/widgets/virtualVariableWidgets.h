@@ -7,11 +7,18 @@
 
 #include "common/ecs/component.h"
 
+enum class UiChangeType
+{
+    none = 0,
+    ongoing = 1,
+    finished = 2
+};
+
 class VirtualVariableWidgets
 {
 public:
-    static bool displayVirtualComponentData(VirtualComponentView component);
-    static bool displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
+    static UiChangeType displayVirtualComponentData(VirtualComponentView component);
+    static UiChangeType displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
 };
 
 
