@@ -15,6 +15,7 @@ EntitiesWindow::EntitiesWindow(GUI& ui) : GUIWindow(ui)
     _name = "Entities";
 	_em = Runtime::getModule<EntityManager>();
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
+        _selected = -1;
         _assetCtx = event->asset();
 	});
 }
@@ -44,14 +45,18 @@ void EntitiesWindow::displayAssemblyEntities(Assembly* assembly, size_t entIndex
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	if(!hasChildren)
 		flags |= ImGuiTreeNodeFlags_Leaf;
+    if(entIndex == _selected)
+        flags |= ImGuiTreeNodeFlags_Selected;
     std::string name;
     if(entity.hasComponent(EntityName::def()))
         name = *entity.getComponent(EntityName::def())->getVar<std::string>(0);
     else
         name = "Unnamed " + std::to_string(entIndex);
 	bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
-	if(ImGui::IsItemClicked())
-		_ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(entIndex));
+	if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()){
+        _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(entIndex));
+        _selected = entIndex;
+    }
 	if(nodeOpen)
 	{
 		if (hasChildren)

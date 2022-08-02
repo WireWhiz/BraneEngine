@@ -156,10 +156,10 @@ void DataWindow::displayEntityAssetData()
     auto* em = Runtime::getModule<EntityManager>();
 	for (int i = 0; i < entityAsset.components.size(); ++i)
 	{
-        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
+        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
         auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
         if((uint8_t)res > 0)
-            em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
+            em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
         if(res == UiChangeType::finished)
             _focusedAsset->updateEntity(_focusedAssetEntity);
 		ImGui::Separator();

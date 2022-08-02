@@ -15,6 +15,7 @@ class EntitiesWindow : public GUIWindow
 {
     std::shared_ptr<AssetEditorContext> _assetCtx;
 	EntityManager* _em;
+    size_t _selected = -1;
     void displayAssemblyEntities(Assembly* assembly, size_t entIndex);
     void displayContent() override;
 public:

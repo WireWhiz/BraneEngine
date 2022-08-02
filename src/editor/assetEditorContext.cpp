@@ -21,7 +21,10 @@ AssetEditorContext::AssetEditorContext(Asset* asset) : _asset(asset)
         EntityName name;
         name.name = "EditorRoot";
         em->setComponent(root, name.toVirtual());
-        _entityMap = dynamic_cast<Assembly*>(_asset)->inject(*em, root);
+        auto entities = dynamic_cast<Assembly*>(_asset)->inject(*em, root);
+        _entities.reserve(entities.size());
+        for(auto id : entities)
+            _entities.push_back({id, false});
     }
     else if(_asset->type == AssetType::Type::mesh)
     {
@@ -40,7 +43,7 @@ AssetEditorContext::AssetEditorContext(Asset* asset) : _asset(asset)
         mr.mesh = mesh->pipelineID;
         mr.materials.push_back(0);
         em->setComponent(previewEntity, mr.toVirtual());
-        _entityMap.push_back(previewEntity);
+        _entities.push_back({previewEntity, false});
     }
     _changes.reserve(maxUndo);
 }
@@ -50,23 +53,23 @@ Asset* AssetEditorContext::asset()
     return _asset;
 }
 
-const std::vector<EntityID>& AssetEditorContext::entities()
+const std::vector<AssetEditorContext::EditorEntity>& AssetEditorContext::entities()
 {
-    return _entityMap;
+    return _entities;
 }
 
 AssetEditorContext::~AssetEditorContext()
 {
     auto* em = Runtime::getModule<EntityManager>();
-    for(auto e : _entityMap)
+    for(auto e : _entities)
     {
-        em->destroyEntity(e);
+        em->destroyEntity(e.id);
     }
 }
 
 void AssetEditorContext::updateEntity(size_t entity)
 {
-    assert(entity < _entityMap.size());
+    assert(entity < _entities.size());
 
     auto* assembly = dynamic_cast<Assembly*>(_asset);
     assert(assembly);
@@ -74,16 +77,20 @@ void AssetEditorContext::updateEntity(size_t entity)
     if(_currentChange + 1 < _changes.size())
         _changes.erase(_changes.begin() + _currentChange + 1, _changes.end());
 
+    if(!_entities[entity].unsavedChanges)
+        _changes.push_back({Change::initialValue, true, entity, assembly->entities[entity]});
+
     auto* em = Runtime::getModule<EntityManager>();
     for(auto& comp : assembly->entities[entity].components)
     {
-        VirtualComponentView currentValue = em->getComponent(_entityMap[entity], comp.description()->id);
+        VirtualComponent currentValue = em->getComponent(_entities[entity].id, comp.description()->id);
         if(currentValue.description() == Transform::def())
             currentValue.setVar(1, true);
-        comp = currentValue;
+        comp = referencesToAsset(currentValue);
     }
 
-    _changes.push_back({Change::change, entity, assembly->entities[entity]});
+    _changes.push_back({Change::change, !_entities[entity].unsavedChanges, entity, assembly->entities[entity]});
+    _entities[entity].unsavedChanges = true;
     _currentChange = _changes.size() - 1;
 }
 
@@ -98,10 +105,16 @@ void AssetEditorContext::undo()
 
     switch(change.type)
     {
+        case Change::initialValue:
+            assembly->entities[change.entIndex] = change.entityData;
+            updateLinkedEntity(change.entIndex);
+            _entities[change.entIndex].unsavedChanges = false;
+            undo();
+            return;
         case Change::change:
-            assembly->entities[change.entityIndex] = change.entityData;
-            updateLinkedEntity(change.entityIndex);
-            break;
+            assembly->entities[change.entIndex] = change.entityData;
+            updateLinkedEntity(change.entIndex);
+            return;
         default:
             Runtime::error("Unimplemented change type: " + std::to_string(change.type));
             assert(false);
@@ -119,10 +132,16 @@ void AssetEditorContext::redo()
 
     switch(change.type)
     {
+        case Change::initialValue:
+            assembly->entities[change.entIndex] = change.entityData;
+            updateLinkedEntity(change.entIndex);
+            _entities[change.entIndex].unsavedChanges = true;
+            redo();
+            return;
         case Change::change:
-            assembly->entities[change.entityIndex] = change.entityData;
-            updateLinkedEntity(change.entityIndex);
-            break;
+            assembly->entities[change.entIndex] = change.entityData;
+            updateLinkedEntity(change.entIndex);
+            return;
         default:
             Runtime::error("Unimplemented change type: " + std::to_string(change.type));
             assert(false);
@@ -137,7 +156,58 @@ void AssetEditorContext::updateLinkedEntity(size_t entity)
 
     for(auto& comp : assembly->entities[entity].components)
     {
-        em->setComponent(_entityMap[entity], comp);
-        em->markComponentChanged(_entityMap[entity], comp.description()->id);
+        VirtualComponent copy = comp;
+        em->setComponent(_entities[entity].id, referencesToGlobal(copy));
+        em->markComponentChanged(_entities[entity].id, comp.description()->id);
     }
+}
+
+EntityID AssetEditorContext::entityIndex(EntityID id)
+{
+    for(uint32_t i = 0; i < _entities.size(); ++i)
+        if(_entities[i].id == id)
+            return {i, static_cast<uint32_t>(-1)};
+    return {0, static_cast<uint32_t>(-1)};
+}
+
+VirtualComponent& AssetEditorContext::referencesToAsset(VirtualComponent& comp)
+{
+    auto* assembly = dynamic_cast<Assembly*>(_asset);
+    assert(assembly);
+    auto& members = comp.description()->members();
+    for(size_t m = 0; m < members.size(); ++m)
+    {
+        if(members[m].type == VirtualType::virtualEntityID)
+            comp.setVar<EntityID>(m, entityIndex(*comp.getVar<EntityID>(m)));
+        else if(members[m].type == VirtualType::virtualEntityIDArray)
+        {
+            auto& entityIDs = *comp.getVar<inlineEntityIDArray>(m);
+            for(auto& id : entityIDs)
+            {
+                id = entityIndex(id);
+            }
+        }
+    }
+    return comp;
+}
+
+VirtualComponent& AssetEditorContext::referencesToGlobal(VirtualComponent& comp)
+{
+    auto* assembly = dynamic_cast<Assembly*>(_asset);
+    assert(assembly);
+    auto& members = comp.description()->members();
+    for(size_t m = 0; m < members.size(); ++m)
+    {
+        if(members[m].type == VirtualType::virtualEntityID)
+            comp.setVar<EntityID>(m, _entities[*comp.getVar<EntityID>(m)].id);
+        else if(members[m].type == VirtualType::virtualEntityIDArray)
+        {
+            auto& entityIDs = *comp.getVar<inlineEntityIDArray>(m);
+            for(auto& id : entityIDs)
+            {
+                id = _entities[id.id].id;
+            }
+        }
+    }
+    return comp;
 }

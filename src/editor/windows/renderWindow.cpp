@@ -33,7 +33,7 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
-        _focusedEntity = _focusedAsset->entities()[event->entity()];
+        _focusedEntity = _focusedAsset->entities()[event->entity()].id;
     });
     _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
         _focusedAsset = nullptr;

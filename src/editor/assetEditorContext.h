@@ -16,21 +16,32 @@ class AssetEditorContext
     struct Change
     {
         enum Type{
-            change = 0,
-            add = 1,
-            erase = 2
+            initialValue = 0,
+            change = 1,
+            add = 2,
+            erase = 3
         };
         Type type = change;
-        size_t entityIndex = 0;
+        bool firstChange = false;
+        size_t entIndex;
         Assembly::EntityAsset entityData;
     };
 
+    struct EditorEntity
+    {
+        EntityID id;
+        bool unsavedChanges = false;
+    };
+
     Asset* _asset;
-    std::vector<EntityID> _entityMap;
+    std::vector<EditorEntity> _entities;
 
     size_t _currentChange = 0;
     std::vector<Change> _changes;
     void updateLinkedEntity(size_t entity);
+    EntityID entityIndex(EntityID id);
+    VirtualComponent& referencesToAsset(VirtualComponent& entity);
+    VirtualComponent& referencesToGlobal(VirtualComponent& entity);
 public:
     size_t maxUndo = 200;
     AssetEditorContext(Asset* asset);
@@ -41,7 +52,7 @@ public:
     void undo();
     void redo();
     Asset* asset();
-    const std::vector<EntityID>& entities();
+    const std::vector<EditorEntity>& entities();
 };
 
 
