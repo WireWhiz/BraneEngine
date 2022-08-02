@@ -154,15 +154,41 @@ void DataWindow::displayEntityAssetData()
 	ImGui::Text("Entity Index: %lu", _focusedAssetEntity);
 	ImGui::Separator();
     auto* em = Runtime::getModule<EntityManager>();
-	for (int i = 0; i < entityAsset.components.size(); ++i)
-	{
+	for (size_t i = 0; i < entityAsset.components.size(); ++i)
+    {
         VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
-        auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
-        if((uint8_t)res > 0)
-            em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
-        if(res == UiChangeType::finished)
-            _focusedAsset->updateEntity(_focusedAssetEntity);
-		ImGui::Separator();
+        bool displaying = ImGui::CollapsingHeader(component.description()->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        if(ImGui::BeginDragDropSource())
+        {
+            ImGui::TextDisabled("%s", component.description()->name.c_str());
+            DraggedComponent dragData{(Assembly*)_focusedAsset->asset(), _focusedAssetEntity, i};
+            ImGui::SetDragDropPayload("component", &dragData, sizeof(DraggedComponent));
+            ImGui::EndDragDropSource();
+        }
+        if(ImGui::BeginDragDropTarget())
+        {
+            if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("component"))
+            {
+                auto dc = static_cast<DraggedComponent*>(p->Data);
+                auto& srcComponents = dc->asset->entities[dc->entity].components;
+                VirtualComponent source = srcComponents[dc->componentIndex];
+                srcComponents.erase(srcComponents.begin() + dc->componentIndex);
+                auto& destComponents = entityAsset.components;
+                // The min is to account for if we're trying to move the component to the end, and just removed it from the same list.
+                destComponents.insert(destComponents.begin() + std::min<uint32_t>(destComponents.size(), i), source);
+            }
+            ImGui::EndDragDropTarget();
+        }
+        if(displaying)
+        {
+            ImGui::Indent(13);
+            auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
+            if((uint8_t)res > 0)
+                em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
+            if(res == UiChangeType::finished)
+                _focusedAsset->updateEntity(_focusedAssetEntity);
+            ImGui::Unindent(13);
+        }
 	}
     if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
     {

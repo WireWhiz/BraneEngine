@@ -11,7 +11,6 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
 {
     UiChangeType changed = UiChangeType::none;
     ImGui::PushID(component.description()->id);
-    ImGui::Text("%s", component.description()->name.c_str());
     for(size_t i = 0; i < component.description()->members().size(); ++i)
     {
         auto& member = component.description()->members()[i];

@@ -11,6 +11,7 @@
 #include "ecs/entityID.h"
 
 class AssetEditorContext;
+class Assembly;
 
 class DataWindow : public GUIWindow
 {
@@ -21,6 +22,13 @@ class DataWindow : public GUIWindow
 	FocusMode _focusMode;
 	std::shared_ptr<AssetEditorContext> _focusedAsset;
 	size_t _focusedAssetEntity = 0;
+
+    struct DraggedComponent
+    {
+        Assembly* asset;
+        size_t entity;
+        size_t componentIndex;
+    };
 
 	EntityID _focusedEntity;
 	void displayAssetData();

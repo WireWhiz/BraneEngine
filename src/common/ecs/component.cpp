@@ -183,13 +183,17 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
 	if(source._data == _data)
 		return *this;
 
-    if(_description != source._description)
+    if(_description != source._description || !_data)
     {
-        for (auto& member : _description->members())
-            VirtualType::deconstruct(member.type, _data + member.offset);
+        if(_data)
+        {
+            for (auto& member : _description->members())
+                VirtualType::deconstruct(member.type, _data + member.offset);
+        }
         if(_description->size() != source._description->size())
         {
-            delete _data;
+            if(_data)
+                delete _data;
             _data = new byte[source._description->size()];
         }
         _description = source._description;
@@ -207,13 +211,17 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponentView& source
     if(source.data() == _data)
         return *this;
 
-    if(_description != source.description())
+    if(_description != source.description() || !_data)
     {
-        for (auto& member : _description->members())
-            VirtualType::deconstruct(member.type, _data + member.offset);
+        if(_data)
+        {
+            for (auto& member : _description->members())
+                VirtualType::deconstruct(member.type, _data + member.offset);
+        }
         if(_description->size() != source.description()->size())
         {
-            delete _data;
+            if(_data)
+                delete _data;
             _data = new byte[source.description()->size()];
         }
         _description = source.description();
