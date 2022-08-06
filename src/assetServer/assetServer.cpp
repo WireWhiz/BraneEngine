@@ -60,21 +60,15 @@ _db(*Runtime::getModule<Database>())
 		rc.req >> id;
 		std::cout << "request for: " << id.string() << std::endl;
 
-
-
-		Asset* asset = _am.getAsset<Asset>(id);
-		if(asset)
-            asset->serialize(rc.res);
-		else
+        auto info = _db.getAssetInfo(id.id);
+        if(info.filename.empty())
         {
-            auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
-            _am.fetchAsset<Asset>(id).then([ctxPtr](Asset* asset) mutable
-            {
-                asset->serialize(ctxPtr->res);
-            });
-
+            rc.code = net::ResponseCode::denied;
+            rc.res << std::string("asset not found");
+            return;
         }
-
+        SerializedData serializedAsset;
+        _fm.readFile(fullAssetPath(info.filename), rc.responseData.vector());
 	});
 
 	_nm.addRequestListener("incrementalAsset", [this](auto& rc){
