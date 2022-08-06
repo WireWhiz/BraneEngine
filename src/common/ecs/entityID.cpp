@@ -8,6 +8,7 @@ EntityID& EntityID::operator=(uint32_t value) {
     return *this;
 }
 
-EntityID::operator uint32_t() const{
-    return id;
+bool EntityID::operator==(const EntityID& o) const
+{
+    return id == o.id && version == o.version;
 }

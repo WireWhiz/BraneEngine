@@ -10,6 +10,7 @@
 #include <memory>
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
+#include "utility/asyncQueue.h"
 
 class ServerFilesystem;
 class ServerDirectory;
@@ -33,6 +34,7 @@ private:
     ServerFilesystem& _fs;
     GUI& _ui;
     bool _allowEdits;
+    AsyncQueue<std::function<void()>> _mainThreadActions;
 
     void displayDirectoriesRecursive(ServerDirectory* dir);
 public:

@@ -112,6 +112,7 @@ void AssetEditorContext::undo()
             undo();
             return;
         case Change::change:
+        case Change::removeComponent:
             assembly->entities[change.entIndex] = change.entityData;
             updateLinkedEntity(change.entIndex);
             return;
@@ -139,6 +140,7 @@ void AssetEditorContext::redo()
             redo();
             return;
         case Change::change:
+        case Change::removeComponent:
             assembly->entities[change.entIndex] = change.entityData;
             updateLinkedEntity(change.entIndex);
             return;
@@ -154,11 +156,27 @@ void AssetEditorContext::updateLinkedEntity(size_t entity)
     assert(assembly);
     auto* em = Runtime::getModule<EntityManager>();
 
-    for(auto& comp : assembly->entities[entity].components)
+    EntityID& id = _entities[entity].id;
+    auto& entityAsset = assembly->entities[entity];
+    // -1 accounts for entity ID component
+    auto* arch = em->getEntityArchetype(id);
+    if(arch->components().size() - 1 != entityAsset.components.size())
+    {
+        for(auto& c : arch->components())
+        {
+            if(c != EntityIDComponent::def()->id)
+                em->removeComponent(id, c);
+        }
+        for(auto& c : entityAsset.components)
+            em->addComponent(id, c.description()->id);
+    }
+
+
+    for(auto& comp : entityAsset.components)
     {
         VirtualComponent copy = comp;
-        em->setComponent(_entities[entity].id, referencesToGlobal(copy));
-        em->markComponentChanged(_entities[entity].id, comp.description()->id);
+        em->setComponent(id, referencesToGlobal(copy));
+        em->markComponentChanged(id, comp.description()->id);
     }
 }
 
@@ -199,15 +217,33 @@ VirtualComponent& AssetEditorContext::referencesToGlobal(VirtualComponent& comp)
     for(size_t m = 0; m < members.size(); ++m)
     {
         if(members[m].type == VirtualType::virtualEntityID)
-            comp.setVar<EntityID>(m, _entities[*comp.getVar<EntityID>(m)].id);
+            comp.setVar<EntityID>(m, _entities[comp.getVar<EntityID>(m)->id].id);
         else if(members[m].type == VirtualType::virtualEntityIDArray)
         {
             auto& entityIDs = *comp.getVar<inlineEntityIDArray>(m);
             for(auto& id : entityIDs)
-            {
                 id = _entities[id.id].id;
-            }
         }
     }
     return comp;
+}
+
+void AssetEditorContext::removeComponent(size_t entity, uint32_t componentIndex)
+{
+    auto* assembly = dynamic_cast<Assembly*>(_asset);
+    assert(assembly);
+    auto* em = Runtime::getModule<EntityManager>();
+    auto& components = assembly->entities[entity].components;
+    VirtualComponentView component = components[componentIndex];
+
+    if(!_entities[entity].unsavedChanges)
+        _changes.push_back({Change::initialValue, true, entity, assembly->entities[entity]});
+
+    if(em->hasComponent(_entities[entity].id, component.description()->id))
+        em->removeComponent(_entities[entity].id, component.description()->id);
+    components.erase(components.begin() + componentIndex);
+
+    _changes.push_back({Change::removeComponent, !_entities[entity].unsavedChanges, entity, assembly->entities[entity]});
+    _entities[entity].unsavedChanges = true;
+    _currentChange = _changes.size() - 1;
 }

@@ -152,23 +152,34 @@ void AssetBrowserWidget::displayFiles()
             {
                 if(file.isAsset)
                 {
+                    // Make sure to construct the focus asset event on the main thread
                     AssetManager& am = *Runtime::getModule<AssetManager>();
                     if(am.hasAsset(file.assetID))
                     {
                         Asset* asset = am.getAsset<Asset>(file.assetID);
-                        am.fetchDependencies(asset, [this, asset]{
-                            _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                        auto threadHandle = std::this_thread::get_id();
+                        am.fetchDependencies(asset, [this, asset, threadHandle]{
+                            if(threadHandle == std::this_thread::get_id())
+                                _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                            else
+                            {
+                                _mainThreadActions.push_back([this, asset]{
+                                    _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                                });
+                            }
                         });
                     }
                     else
                     {
                         am.fetchAsset(file.assetID).then([this, &am](Asset* asset){
                             am.fetchDependencies(asset, [this, asset, &am]{
+                                _mainThreadActions.push_back([this, asset, &am]{
                                 if(dynamic_cast<Assembly*>(asset))
                                     dynamic_cast<Assembly*>(asset)->initialize(
                                             *Runtime::getModule<EntityManager>(),
                                             *Runtime::getModule<graphics::VulkanRuntime>(), am);
                                 _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                                });
                             });
                         });
                     }
@@ -230,6 +241,15 @@ ServerDirectory* AssetBrowserWidget::currentDirectory()
 void AssetBrowserWidget::displayFullBrowser()
 {
     ImGui::TextDisabled("/%s", _currentDir->path().c_str());
+
+    if(_allowEdits)
+    {
+        /* When an asset is selected, we create an AssetEditorContext object, and that creates/destroys entities. This
+         * should really only be done on the main thread, as otherwise we might get race conditions. As we sometimes
+         * need to request an asset, the responses may come in on another thread and we need to switch back to main*/
+        while(!_mainThreadActions.empty())
+            _mainThreadActions.pop_front()();
+    }
 
     if(_currentDir != _fs.root())
     {

@@ -52,9 +52,9 @@ void Transforms::removeParent(EntityID entity, EntityManager& em)
 	{
 		for(size_t i = 0; i < carray->size(); ++i)
 		{
-			if((*carray)[i] == entity)
+			if((*carray)[i] == entity.id)
 			{
-				carray->erase(entity);
+				carray->erase(entity.id);
 				break;
 			}
 		}
@@ -93,7 +93,7 @@ void Transforms::destroyRecursive(EntityID entity, bool updateParentChildren)
 	if(updateParentChildren && _em->hasComponent(entity, LocalTransform::def()->id)){
 		VirtualComponent lt = _em->getComponent(entity, LocalTransform::def()->id);
 		VirtualComponent cc = _em->getComponent(*lt.getVar<EntityID>(1), Children::def()->id);
-		inlineUIntArray& children = *cc.getVar<inlineUIntArray>(0);
+		auto& children = *cc.getVar<inlineEntityIDArray>(0);
 		for (int i = 0; i < children.size(); ++i)
 		{
 			if(children[i] == entity)

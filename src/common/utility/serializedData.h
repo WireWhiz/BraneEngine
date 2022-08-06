@@ -260,6 +260,11 @@ public:
         assert(index <= _ctx->data.size());
         _ctx->index = index;
     }
+
+    bool isDone() const
+    {
+        return _ctx->index == _ctx->data.size();
+    }
 };
 
 class OutputSerializer
@@ -364,5 +369,17 @@ public:
 		_data.resize(index + size);
 		std::memcpy(&_data[index], src, size);
 	}
+
+    void overwrite(size_t pos, const void* src, size_t size)
+    {
+        if(pos + size >= _data.size())
+            throw std::runtime_error("tried to overwrite nonexistent data");
+        std::memcpy(&_data[pos], src, size);
+    }
+
+    size_t size() const
+    {
+        return _data.size();
+    }
 };
 

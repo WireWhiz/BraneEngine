@@ -2,6 +2,7 @@
 #include <utility/serializedData.h>
 #include "types/meshAsset.h"
 #include "types/componentAsset.h"
+#include "assembly.h"
 
 void Asset::serialize(OutputSerializer& s)
 {
@@ -15,10 +16,6 @@ void Asset::deserialize(InputSerializer& s)
 	type.set(typeStr);
 	loadState = LoadState::complete;
 }
-
-#include "types/componentAsset.h"
-#include "types/meshAsset.h"
-#include "assembly.h"
 
 Asset* Asset::assetFromType(AssetType type)
 {

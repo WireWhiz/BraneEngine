@@ -6,11 +6,16 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "common/ecs/entity.h"
+#include "systems/transforms.h"
 
 UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView component)
 {
     UiChangeType changed = UiChangeType::none;
     ImGui::PushID(component.description()->id);
+    bool viewOnly = component.description() == Transform::def()
+            || component.description() == LocalTransform::def()
+            || component.description() == Children::def();
+    ImGui::BeginDisabled(viewOnly);
     for(size_t i = 0; i < component.description()->members().size(); ++i)
     {
         auto& member = component.description()->members()[i];
@@ -20,6 +25,7 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
             ImGui::Spacing();
         }
     }
+    ImGui::EndDisabled();
     ImGui::PopID();
     return changed;
 }

@@ -12,6 +12,7 @@
 #include <assets/assetID.h>
 #include "common/ecs/entity.h"
 #include "../assetEditorContext.h"
+#include "systems/transforms.h"
 
 DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
 {
@@ -157,7 +158,22 @@ void DataWindow::displayEntityAssetData()
 	for (size_t i = 0; i < entityAsset.components.size(); ++i)
     {
         VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
+        if(component.description()->name.empty())
+            continue;
+        ImGui::PushID(i);
         bool displaying = ImGui::CollapsingHeader(component.description()->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        if(ImGui::BeginPopupContextItem("comp actions"))
+        {
+            bool relationalComponent = component.description() == LocalTransform::def() || component.description() == Children::def();
+            bool transform = component.description() == Transform::def();
+            bool entityHasChildren = entityAsset.hasComponent(Children::def());
+            if(!relationalComponent && !(transform && entityHasChildren))
+            {
+                if(ImGui::Selectable(ICON_FA_TRASH "delete"))
+                    _focusedAsset->removeComponent(_focusedAssetEntity, i);
+            }
+            ImGui::EndPopup();
+        }
         if(ImGui::BeginDragDropSource())
         {
             ImGui::TextDisabled("%s", component.description()->name.c_str());
@@ -189,7 +205,17 @@ void DataWindow::displayEntityAssetData()
                 _focusedAsset->updateEntity(_focusedAssetEntity);
             ImGui::Unindent(13);
         }
+        ImGui::PopID();
 	}
+    if(ImGui::Button("Add Component", {ImGui::GetContentRegionAvail().x, 0}))
+    {
+        ImGui::OpenPopup("add component");
+    }
+    if(ImGui::BeginPopup("add component"))
+    {
+        ImGui::TextDisabled("Can't add components yet.. need to make server calls for this");
+        ImGui::EndPopup();
+    }
     if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
     {
         if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))

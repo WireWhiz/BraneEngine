@@ -214,7 +214,7 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
             auto children =  std::move(cc->children);
             for(auto& child : children)
             {
-                EntityID childID = entityMap[child];
+                EntityID childID = entityMap[child.id];
                 Transforms::setParent(childID, id, em);
             }
 		}

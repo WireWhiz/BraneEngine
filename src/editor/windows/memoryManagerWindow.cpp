@@ -55,7 +55,7 @@ void MemoryManagerWindow::displayContent()
             unnamedEntities.addComponent(EntityName::def()->id, ComponentFilterFlags_Exclude);
             _em->getEntities(unnamedEntities).forEachNative([this](byte** components){
                 auto* id = EntityIDComponent::fromVirtual(components[0]);
-                if(ImGui::Selectable(("Unnamed " + std::to_string(id->id)).c_str()))
+                if(ImGui::Selectable(("Unnamed " + std::to_string(id->id.id)).c_str()))
                 {
                     _ui.sendEvent(std::make_unique<FocusEntityEvent>(id->id));
                 }

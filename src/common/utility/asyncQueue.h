@@ -2,7 +2,7 @@
 #include <mutex>
 #include <queue>
 #include <iterator>
-
+#include <cassert>
 
 template <class T>
 class AsyncQueue

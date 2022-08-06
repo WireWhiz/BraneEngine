@@ -18,8 +18,10 @@ class AssetEditorContext
         enum Type{
             initialValue = 0,
             change = 1,
-            add = 2,
-            erase = 3
+            addEntity = 2,
+            removeEntity = 3,
+            addComponent = 4,
+            removeComponent = 5
         };
         Type type = change;
         bool firstChange = false;
@@ -48,6 +50,8 @@ public:
     ~AssetEditorContext();
     size_t addEntity();
     void updateEntity(size_t entity);
+    void addComponent(size_t entity, const ComponentDescription* component);
+    void removeComponent(size_t entity, uint32_t component);
     void deleteEntity(size_t entity);
     void undo();
     void redo();
