@@ -4,10 +4,17 @@
 
 #ifndef BRANEENGINE_ASSETSERVER_H
 #define BRANEENGINE_ASSETSERVER_H
-#include "common/networking/networking.h"
-#include "common/assets/assetManager.h"
 #include "database/database.h"
 #include <list>
+#include <utility/asyncData.h>
+#include "assets/asset.h"
+
+class AssetManager;
+
+class NetworkManager;
+namespace net{
+    class Connection;
+}
 
 struct IncrementalAssetSender
 {
@@ -17,6 +24,7 @@ struct IncrementalAssetSender
 	net::Connection* connection = nullptr;
 };
 
+class FileManager;
 class AssetServer : public Module
 {
 	NetworkManager& _nm;
@@ -34,7 +42,7 @@ class AssetServer : public Module
 	std::unordered_map<net::Connection*, ConnectionContext> _connectionCtx;
 	std::list<IncrementalAssetSender> _senders;
 
-    std::string fullAssetPath(const std::string& postfix);
+    std::string fullAssetPath(const std::string& suffix);
 	void addDirectoryRequestListeners();
 
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);

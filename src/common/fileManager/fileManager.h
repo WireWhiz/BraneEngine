@@ -63,7 +63,7 @@ public:
 	{
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
-			return nullptr;
+			throw std::runtime_error("File not found!");
         SerializedData data;
         readFile(filename, data.vector());
         f.close();

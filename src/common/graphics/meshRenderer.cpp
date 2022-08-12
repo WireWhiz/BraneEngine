@@ -9,6 +9,7 @@
 #include "ecs/entity.h"
 #include "material.h"
 #include "mesh.h"
+#include "assets/types/materialAsset.h"
 
 namespace graphics{
 
@@ -26,10 +27,9 @@ namespace graphics{
             return;
         startRenderPass(cmdBuffer);
  		glm::mat4 cameraMatrix = perspectiveMatrix() * transformMatrix();
+         //TODO REFACTOR THIS!!! INEFFICIENT!!!
 		for(auto& mat :  _vkr.materials())
         {
-            if(!mat->component())
-                return;
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
 
 			std::vector<RenderObject> meshes;
@@ -37,9 +37,10 @@ namespace graphics{
 				ComponentFilter filter(ctx);
 				filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
 				filter.addComponent(MeshRendererComponent::def()->id, ComponentFilterFlags_Const);
-				filter.addComponent(mat->component()->id, ComponentFilterFlags_Const);
-				_em.getEntities(filter).forEachNative([this, &meshes](byte** components){
+				_em.getEntities(filter).forEachNative([this, &mat, &meshes](byte** components){
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
+                    if(mr->materials[0] != mat->asset()->runtimeID)
+                        return;
                     if(!_vkr.meshes().hasIndex(mr->mesh))
                     {
                         Runtime::error("No mesh at index " + std::to_string(mr->mesh) + "!");

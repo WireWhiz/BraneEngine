@@ -19,12 +19,12 @@ ServerDirectory* DirectoryUpdateEvent::directory() const
     return _dir;
 }
 
-FocusAssetEvent::FocusAssetEvent(Asset* asset) : GUIEvent("focus asset")
+FocusAssetEvent::FocusAssetEvent(const AssetID& asset) : GUIEvent("focus asset")
 {
-	_asset = std::make_shared<AssetEditorContext>(asset);
+	_asset = asset;
 }
 
-std::shared_ptr<AssetEditorContext> FocusAssetEvent::asset() const
+const AssetID&FocusAssetEvent::asset() const
 {
 	return _asset;
 }

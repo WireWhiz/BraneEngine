@@ -43,6 +43,7 @@ Database::Database()
 	_updateAssetPermission.initialize("INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
 	                      " ON CONFLICT DO UPDATE SET Level = ?3 WHERE AssetID = ?1 AND UserID = ?2", _db);
 	_deleteAssetPermission.initialize("DELETE FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
+    _searchAssets.initialize("SELECT AssetID, Name, Type FROM Assets WHERE Name LIKE ?3 AND Type LIKE ?4 ORDER BY Name LIMIT ?2 OFFSET ?1", _db);
 
 	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
 	{
@@ -241,6 +242,19 @@ bool Database::fileToAssetID(const std::string& path, AssetID& id)
 void Database::moveAssets(const std::string& oldDir, const std::string& newDir)
 {
     _moveAssets.run(oldDir, newDir);
+}
+
+std::vector<Database::AssetSearchResult> Database::searchAssets(int start, int count, std::string match,  AssetType type)
+{
+    std::vector<AssetSearchResult> results;
+    if(count == 0)
+        count = 1000;
+    match = "%" + match + "%";
+    std::string typeStr = (type == AssetType::none) ? "%" : type.toString();
+    _searchAssets.run(start, count, match, typeStr, [&results](sqlINT id, sqlTEXT name, sqlTEXT type){
+        results.push_back(AssetSearchResult{static_cast<uint32_t>(id), std::move(name), AssetType::fromString(type)});
+    });
+    return results;
 }
 
 

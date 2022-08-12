@@ -15,11 +15,17 @@
 #include "material.h"
 #include "renderer.h"
 #include "mesh.h"
+#include "shader.h"
+#include "assets/types/shaderAsset.h"
+#include "assets/types/materialAsset.h"
+
 
 namespace graphics
 {
     void VulkanRuntime::draw(EntityManager& em)
     {
+        while(!_newAssets.empty())
+            processAsset(_newAssets.pop_front());
 		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
 		{
 			return;
@@ -104,14 +110,10 @@ namespace graphics
     {
         return _textures.push(std::unique_ptr<Texture>(texture));
     }
-	Shader* VulkanRuntime::loadShader(size_t shaderID)
-    {
-        return _shaderManager->loadShader(shaderID);
-    }
     size_t VulkanRuntime::addMesh(MeshAsset* mesh)
     {
 		uint32_t index = _meshes.size();
-		mesh->pipelineID = index;
+		mesh->runtimeID = index;
         _meshes.push(std::make_unique<Mesh>(mesh));
 		return index;
     }
@@ -125,7 +127,6 @@ namespace graphics
         _window->createSurface(_instance, nullptr);
         _device = new GraphicsDevice(_instance, _window->surface());
         _swapChain = new SwapChain(_window);
-        _shaderManager = new ShaderManager();
 
         createSyncObjects();
         createDrawBuffers();
@@ -141,8 +142,6 @@ namespace graphics
         _materials.clear();
         _textures.clear();
         _meshes.clear();
-        
-        delete _shaderManager;
         
         for (size_t i = 0; i < _renderFinishedSemaphores.size(); i++)
         {
@@ -423,11 +422,18 @@ namespace graphics
         _window->update();
     }
 
-	void VulkanRuntime::addMaterial(Material* material)
+    size_t VulkanRuntime::addShader(ShaderAsset* shader)
+    {
+        auto id = _shaders.push(std::make_unique<Shader>(shader));
+        shader->runtimeID = id;
+        return id;
+    }
+
+	size_t VulkanRuntime::addMaterial(MaterialAsset* materialAsset)
 	{
-		material->buildPipelineLayout(_swapChain);
-		material->initialize(_swapChain->size());
-		_materials.push(std::unique_ptr<Material>(material));
+		auto id = _materials.push(std::make_unique<Material>(materialAsset, this));
+        materialAsset->runtimeID = id;
+        return id;
 	}
 
 	Material* VulkanRuntime::getMaterial(size_t id)
@@ -469,5 +475,32 @@ namespace graphics
         Runtime::error("Tried to remove nonexistent renderer");
     }
 
+    Shader* VulkanRuntime::getShader(size_t shaderID)
+    {
+        return _shaders[shaderID].get();
+    }
 
+    void VulkanRuntime::addAsset(Asset* graphicalAsset)
+    {
+        _newAssets.push_back(graphicalAsset);
+    }
+
+    void VulkanRuntime::processAsset(Asset* graphicalAsset)
+    {
+        switch(graphicalAsset->type.type())
+        {
+            case AssetType::mesh:
+                addMesh((MeshAsset*)graphicalAsset);
+                break;
+            case AssetType::shader:
+                addShader((ShaderAsset*)graphicalAsset);
+                break;
+            case AssetType::material:
+                addMaterial((MaterialAsset*)graphicalAsset);
+                break;
+            default:
+                Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");
+                assert(false);
+        }
+    }
 }

@@ -9,6 +9,7 @@
 #include "ecs/entity.h"
 #include "systems/transforms.h"
 #include "../assetEditorContext.h"
+#include "editor/editor.h"
 
 EntitiesWindow::EntitiesWindow(GUI& ui) : GUIWindow(ui)
 {
@@ -16,7 +17,8 @@ EntitiesWindow::EntitiesWindow(GUI& ui) : GUIWindow(ui)
 	_em = Runtime::getModule<EntityManager>();
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         _selected = -1;
-        _assetCtx = event->asset();
+        auto editor = Runtime::getModule<Editor>();
+        _assetCtx = editor->getEditorContext(event->asset());
 	});
 }
 

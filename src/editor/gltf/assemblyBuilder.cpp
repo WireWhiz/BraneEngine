@@ -5,18 +5,19 @@
 #include "assemblyBuilder.h"
 #include "common/systems/transforms.h"
 #include "common/ecs/nativeTypes/meshRenderer.h"
+#include "assets/types/materialAsset.h"
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/quaternion.hpp"
 
-AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string& name, gltfLoader& loader)
+AssemblyBuilder::AssemblyAssets
+AssemblyBuilder::buildAssembly(const std::string& name, gltfLoader& loader, MaterialAsset* defaultMaterial)
 {
 	AssemblyAssets assets;
 
 	std::unique_ptr<Assembly> assembly = std::make_unique<Assembly>();
 	assembly->name = name;
-	assembly->loadState = Asset::complete;
 
 	std::vector<MeshAsset*> meshes = loader.extractAllMeshes();
 	for(auto mesh : meshes)
@@ -100,7 +101,7 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 			mc.setVar(0, meshIndex);
 			inlineUIntArray& materials = *mc.getVar<inlineUIntArray>(1);
 			for(auto& primitive : loader.json()["meshes"][meshIndex]["primitives"])
-				materials.push_back(primitive["material"].asUInt());
+				materials.push_back(0); //primitive["material"].asUInt()); TODO: extract materials
 
 			entity.components.push_back(std::move(mc));
 		}
@@ -137,6 +138,8 @@ AssemblyBuilder::AssemblyAssets AssemblyBuilder::buildAssembly(const std::string
 	assembly->components.push_back(Children::def()->asset->id);
 	assembly->components.push_back(TRS::def()->asset->id);
 	assembly->components.push_back(MeshRendererComponent::def()->asset->id);
+
+    assembly->materials.push_back(defaultMaterial->id);
 
 	assembly->entities = std::move(entities);
 	assets.assembly = std::move(assembly);

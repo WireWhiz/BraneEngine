@@ -31,6 +31,7 @@ class Database : public Module
 	PreppedSQLCall<sqlINT, sqlINT> _getAssetPermission;
 	PreppedSQLCall<sqlINT, sqlINT, sqlINT> _updateAssetPermission;
 	PreppedSQLCall<sqlINT, sqlINT> _deleteAssetPermission;
+    PreppedSQLCall<sqlINT, sqlINT, sqlTEXT, sqlTEXT> _searchAssets;
 
 	static int sqliteCallback(void *callback, int argc, char **argv, char **azColName);
 
@@ -44,6 +45,12 @@ public:
 		char* name;
 		char* value;
 	};
+    struct AssetSearchResult
+    {
+        uint32_t id;
+        std::string name;
+        AssetType type;
+    };
 	using sqlCallbackFunction =  std::function<void(const std::vector<sqlColumn>& columns)>;
 	Database();
 	~Database();
@@ -58,6 +65,7 @@ public:
 	void insertAssetInfo(AssetInfo& info);
     void moveAssets(const std::string& oldDir, const std::string& newDir);
 	void deleteAssetInfo(uint32_t id);
+    std::vector<AssetSearchResult> searchAssets(int start, int count = 0, std::string match = "",  AssetType type = AssetType::none);
 	bool fileToAssetID(const std::string& path, AssetID& id);
 	AssetPermissionLevel getAssetPermission(uint32_t assetID, uint32_t userID);
 	void setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermissionLevel level);

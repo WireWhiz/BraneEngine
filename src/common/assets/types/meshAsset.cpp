@@ -1,4 +1,6 @@
 #include "meshAsset.h"
+#include "runtime/runtime.h"
+#include "graphics/graphics.h"
 
 #include <utility/serializedData.h>
 
@@ -18,7 +20,6 @@ void MeshAsset::deserialize(InputSerializer& s)
 
 MeshAsset::MeshAsset()
 {
-	pipelineID = -1;
 	type.set(AssetType::Type::mesh);
 	meshUpdated = false;
 }
@@ -72,7 +73,6 @@ void MeshAsset::deserializeHeader(InputSerializer& s)
     uint32_t dataSize;
     s >> dataSize;
     _data.resize(dataSize);
-	loadState = partial;
 }
 
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
@@ -225,5 +225,13 @@ uint32_t MeshAsset::indexCount(size_t primitive) const
     assert(primitive < _primitives.size());
     return _primitives[primitive].indexCount;
 }
+
+#ifdef CLIENT
+void MeshAsset::onDependenciesLoaded()
+{
+    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+    vkr->addAsset(this);
+}
+#endif
 
 

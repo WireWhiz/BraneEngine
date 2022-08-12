@@ -27,6 +27,12 @@ namespace Runtime
 	}
 
 	bool hasModule(const std::string& name);
+    template<typename T>
+    bool hasModule()
+    {
+        static_assert(std::is_base_of<Module, T>());
+        return hasModule(T::name());
+    }
 	Module* getModule(const std::string& name);
 	template<typename T>
 	T* getModule()

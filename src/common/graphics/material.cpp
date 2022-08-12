@@ -1,5 +1,11 @@
 #include "material.h"
 #include "renderer.h"
+#include "graphics.h"
+#include "assets/assetManager.h"
+#include "assets/types/materialAsset.h"
+#include "assets/types/shaderAsset.h"
+#include "shader.h"
+#include "mesh.h"
 
 namespace graphics
 {
@@ -49,6 +55,7 @@ namespace graphics
 
         poolInfo.maxSets = static_cast<uint32_t>(swapChain->size());
 
+
         if (vkCreateDescriptorPool(device->get(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create descriptor pool!");
@@ -64,30 +71,6 @@ namespace graphics
 
         vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
     }
-    void Material::addTextureDescriptor(Texture* texture)
-    {
-        assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        _textures.push_back(texture);
-    }
-    void Material::setGeometry(Shader* shader)
-	{
-        assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        assert(_descriptorSetLayout == VK_NULL_HANDLE);
-        assert(shader->type() == VK_SHADER_STAGE_GEOMETRY_BIT);
-		_geometryShader = shader;
-	}
-	void Material::setVertex(Shader* shader)
-	{
-        assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        assert(shader->type() == VK_SHADER_STAGE_VERTEX_BIT);
-		_vertexShader = shader;
-	}
-	void Material::setFragment(Shader* shader)
-	{
-        assert(_descriptorSetLayout == VK_NULL_HANDLE && "Can only edit materials before they are used, make a new one instead");
-        assert(shader->type() == VK_SHADER_STAGE_FRAGMENT_BIT);
-		_fragmentShader = shader;
-	}
 	void Material::buildPipelineLayout(SwapChain* swapChain)
 	{
         if (_pipelineLayout != VK_NULL_HANDLE)
@@ -126,7 +109,6 @@ namespace graphics
         }
 
         buildDescriptorSetVars(swapChain);
-		generateComponent();
 	}
     VkPipeline Material::pipeline(Renderer* renderer) const
     {
@@ -345,18 +327,33 @@ namespace graphics
 		return &_descriptorSets[frame];
 	}
 
-	ComponentDescription* Material::component() const
+	const ComponentDescription* Material::component() const
 	{
 		return _component;
 	}
 
-	void Material::setInputs(std::vector<VirtualType::Type> types)
-	{
-		_inputs = std::move(types);
-	}
+    Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
+    {
+        auto* am = Runtime::getModule<AssetManager>();
+        if(!asset->vertexShader.empty())
+            _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
+        if(!asset->fragmentShader.empty())
+            _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
 
-	void Material::generateComponent()
-	{
-		_component = new ComponentDescription(_inputs);
-	}
+        //Position
+        addBinding(0,sizeof(glm::vec3));
+        //Normal
+        addBinding(1, sizeof(glm::vec3));
+        //TODO create a way to set custom attributes
+        addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+        addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+
+        buildPipelineLayout(vkr->swapChain());
+        initialize(vkr->swapChain()->size());
+    }
+
+    MaterialAsset* Material::asset() const
+    {
+        return _asset;
+    }
 }

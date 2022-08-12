@@ -3,6 +3,9 @@
 //
 
 #include "assetServer.h"
+#include "networking/networking.h"
+#include "assets/assetManager.h"
+#include "fileManager/fileManager.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),
@@ -12,8 +15,6 @@ _db(*Runtime::getModule<Database>())
 {
 	_nm.start();
 	_nm.configureServer();
-
-	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
 	std::filesystem::create_directory(Config::json()["data"]["asset_path"].asString());
 
 	if(!Config::json()["network"]["use_ssl"].asBool())
@@ -112,6 +113,30 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
+    _nm.addRequestListener("searchAssets", [this](auto& rc){
+        auto ctx = getContext(rc.sender);
+        if(!validatePermissions(ctx, {"edit assets"}))
+        {
+            rc.code = net::ResponseCode::denied;
+            return;
+        }
+        std::string match;
+        int start;
+        int count;
+        AssetType type;
+        rc.req >> start >> count >> match >> type;
+
+        auto results = _db.searchAssets(start, count, match, type);
+        rc.res << static_cast<uint32_t>(results.size());
+        std::string serverAddress = Config::json()["network"]["domain"].asString();
+        for(auto& r : results)
+        {
+            AssetID id(serverAddress, r.id);
+            rc.res << id << r.name << r.type;
+        }
+
+    });
+
 	_nm.addRequestListener("saveAsset",[this](auto& rc){
 		auto ctx = getContext(rc.sender);
 		if(!validatePermissions(ctx, {"edit assets"}))
@@ -135,6 +160,7 @@ _db(*Runtime::getModule<Database>())
         {
             AssetInfo info{};
             info.name = asset->name;
+            info.type = asset->type;
             info.filename = assetPath + asset->name + "." + asset->type.toString();
             _db.insertAssetInfo(info);
             asset->id.id = info.id;
@@ -143,6 +169,28 @@ _db(*Runtime::getModule<Database>())
         _fm.writeAsset(asset, fullPath);
         rc.res << asset->id;
 	});
+
+    _nm.addRequestListener("updateAsset",[this](auto& rc){
+        auto ctx = getContext(rc.sender);
+        if(!validatePermissions(ctx, {"edit assets"}))
+        {
+            rc.code = net::ResponseCode::denied;
+            return;
+        }
+        Asset* asset = Asset::deserializeUnknown(rc.req);
+        auto assetInfo = _db.getAssetInfo(asset->id.id);
+
+        if(assetInfo.filename.empty())
+        {
+            rc.code = net::ResponseCode::denied;
+            rc.res << "Could not find asset";
+            return;
+        }
+
+        std::string fullPath = fullAssetPath(assetInfo.filename);
+        _fm.writeAsset(asset, fullPath);
+        rc.res << asset->id;
+    });
 
 	addDirectoryRequestListeners();
 	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
@@ -326,9 +374,9 @@ bool AssetServer::checkAssetPath(const std::string& path)
 	return path.find('.') == std::string::npos;
 }
 
-std::string AssetServer::fullAssetPath(const std::string& postfix)
+std::string AssetServer::fullAssetPath(const std::string& suffix)
 {
-    std::string combined = Config::json()["data"]["asset_path"].asString() + "/" + postfix;
+    std::string combined = Config::json()["data"]["asset_path"].asString() + "/" + suffix;
     std::string output;
     output.reserve(combined.size());
     char lastChar = '\0';

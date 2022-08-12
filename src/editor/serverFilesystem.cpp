@@ -206,3 +206,46 @@ AsyncData<AssetID> ServerFilesystem::saveAsset(ServerDirectory* destination, Ass
     });
     return retID;
 }
+
+void ServerFilesystem::updateAsset(Asset* asset)
+{
+    SerializedData data;
+    OutputSerializer s(data);
+    asset->serialize(s);
+    AsyncData<AssetID> retID;
+    _server->sendRequest("updateAsset", std::move(data), [this, retID](auto code, auto res){
+        if(code != net::ResponseCode::success)
+        {
+            Runtime::error("Could not update asset, server responded with code: " + std::to_string((uint8_t)code));
+            retID.setError("Could not update asset, server responded with code: " + std::to_string((uint8_t)code));
+            return;
+        }
+    });
+}
+
+AsyncData<std::vector<ServerFilesystem::SearchResult>> ServerFilesystem::searchAssets(int start, int count, const std::string& match, AssetType type)
+{
+    AsyncData<std::vector<ServerFilesystem::SearchResult>> results;
+    SerializedData data;
+    OutputSerializer s(data);
+    s << start << count << match << type;
+    _server->sendRequest("searchAssets", std::move(data), [this, results](auto code, auto  s) mutable{
+        if(code != net::ResponseCode::success)
+        {
+            results.setError("Could not search assets, code " + std::to_string((uint8_t)code) + " returned");
+            return;
+        }
+        uint32_t resultCount;
+        s >> resultCount;
+        std::vector<SearchResult> resultsArray;
+        resultsArray.reserve(resultCount);
+        for(uint32_t i = 0; i < resultCount; ++i)
+        {
+            SearchResult r{};
+            s >> r.id >> r.name >> r.type;
+            resultsArray.push_back(std::move(r));
+        }
+        results.setData(std::move(resultsArray));
+    });
+    return results;
+}

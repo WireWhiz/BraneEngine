@@ -3,6 +3,7 @@
 #include "runtime/runtime.h"
 #include <atomic>
 #include "assets/asset.h"
+#include "utility/threadPool.h"
 
 NetworkManager::NetworkManager() : _tcpResolver(_context), _ssl_context(asio::ssl::context::tls)
 {
@@ -150,6 +151,8 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 	AsyncData<IncrementalAsset*> asset;
 
 	_serverLock.lock_shared();
+    if(!_servers.count(id.serverAddress))
+        throw std::runtime_error("No connection with " + id.serverAddress);
 	net::Connection* server = _servers[id.serverAddress].get();
 	_serverLock.unlock_shared();
 
@@ -170,6 +173,8 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 		IncrementalAsset* assetPtr = IncrementalAsset::deserializeUnknownHeader(sData);
         server->addStreamListener(streamID, [assetPtr](InputSerializer sData){
             assetPtr->deserializeIncrement(sData);
+        }, [assetPtr]{
+            assetPtr->onDependenciesLoaded();
         });
 		asset.setData(assetPtr);
 	});

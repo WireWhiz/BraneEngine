@@ -37,6 +37,7 @@ class DataWindow : public GUIWindow
 
 	void displayAssemblyData();
 	void displayMeshData();
+    void displayMaterialData();
     void displayContent() override;
 public:
     DataWindow(GUI& ui);

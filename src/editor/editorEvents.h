@@ -9,13 +9,11 @@
 #include "common/ui/guiEvent.h"
 #include "ecs/entityID.h"
 #include <memory>
+#include "assets/assetID.h"
 namespace net {
     class Connection;
 }
-class Asset;
 class ServerDirectory;
-class AssetEditorContext;
-
 class LoginEvent : public GUIEvent
 {
     net::Connection* _server;
@@ -33,10 +31,10 @@ public:
 };
 class FocusAssetEvent : public GUIEvent
 {
-	std::shared_ptr<AssetEditorContext> _asset;
+	AssetID _asset;
 public:
-	FocusAssetEvent(Asset* asset);
-    std::shared_ptr<AssetEditorContext> asset() const;
+	FocusAssetEvent(const AssetID& asset);
+    const AssetID& asset() const;
 };
 
 class FocusEntityEvent : public GUIEvent

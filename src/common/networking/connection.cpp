@@ -46,11 +46,11 @@ namespace net
 		send(std::move(message));
 	}
 
-	void Connection::addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback)
+	void Connection::addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback, std::function<void()> onEnd)
 	{
 		_streamLock.lock();
 		assert(!_streamListeners.count(id));
-		_streamListeners.insert({id, std::move(callback)});
+		_streamListeners.insert({id, {std::move(callback), std::move(onEnd)}});
 		_streamLock.unlock();
 	}
 
@@ -89,6 +89,11 @@ namespace net
     void Connection::onRequest(std::function<void(Connection*, IMessage&&)> request)
     {
         _requestHandler = std::move(request);
+    }
+
+    const std::string& Connection::address() const
+    {
+        return _address;
     }
 
     template<>

@@ -2,7 +2,9 @@
 #include <utility/serializedData.h>
 #include "types/meshAsset.h"
 #include "types/componentAsset.h"
+#include "types/materialAsset.h"
 #include "assembly.h"
+#include "types/shaderAsset.h"
 
 void Asset::serialize(OutputSerializer& s)
 {
@@ -14,7 +16,6 @@ void Asset::deserialize(InputSerializer& s)
 	std::string typeStr;
 	s >> id >> name >> typeStr;
 	type.set(typeStr);
-	loadState = LoadState::complete;
 }
 
 Asset* Asset::assetFromType(AssetType type)
@@ -27,24 +28,22 @@ Asset* Asset::assetFromType(AssetType type)
 		case AssetType::component:
 			return new ComponentAsset();
 		case AssetType::system:
-			assert("Not implemented");
+			assert("Not implemented" && false);
 			break;
 		case AssetType::mesh:
 			return new MeshAsset();
 		case AssetType::texture:
-			assert("Not implemented");
+			assert("Not implemented" && false);
 			break;
 		case AssetType::shader:
-			assert("Not implemented");
-			break;
+			return new ShaderAsset();
 		case AssetType::material:
-			assert("Not implemented");
-			break;
+			return new MaterialAsset();
 		case AssetType::assembly:
 			return new Assembly();
 			break;
 		case AssetType::player:
-			assert("Not implemented");
+			assert("Not implemented" && false);
 			break;
 	}
 	return nullptr;
@@ -63,9 +62,19 @@ Asset* Asset::deserializeUnknown(InputSerializer& s)
 	Asset* asset = assetFromType(type);
 	s.setPos(sPos);
 	if(!asset)
-		return nullptr;
+		throw std::runtime_error("unable to create asset type: " + type.toString());
 	asset->deserialize(s);
 	return asset;
+}
+
+std::vector<AssetDependency> Asset::dependencies() const
+{
+    return {};
+}
+
+void Asset::onDependenciesLoaded()
+{
+
 }
 
 void IncrementalAsset::serializeHeader(OutputSerializer& s)
@@ -106,4 +115,9 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
 bool IncrementalAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData)
 {
 	return false; //Return false because there is no more data
+}
+
+void IncrementalAsset::onFullyLoaded()
+{
+
 }

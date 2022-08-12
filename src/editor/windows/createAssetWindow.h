@@ -16,7 +16,7 @@ class CreateAssetWindow : public GUIWindow
         bool done = false;
         ServerDirectory* directory;
         std::string status;
-        virtual void update() = 0;
+        virtual void update();
         virtual ~AssetUploadContext() = default;
     };
     struct AssemblyUploadContext : public AssetUploadContext
@@ -27,19 +27,22 @@ class CreateAssetWindow : public GUIWindow
         bool uploadingAssembly = false;
         void update() override;
     };
-    void loadAssetFromFile(const std::string &filename);
+    static bool _spirvHelperCreated;
     bool _selectingDirectory = false;
     AssetBrowserWidget _browser;
 
     std::string _importFile = "";
+    AssetID _defaultMaterial;
 
     std::string _assetName = "new_asset";
     AssetType _assetType;
 
     std::unique_ptr<AssetUploadContext> _uploadContext;
     void displayContent() override;
+    void createAsset();
 public:
     CreateAssetWindow(GUI& ui, ServerDirectory* startingDir = nullptr);
+    ~CreateAssetWindow();
 };
 
 

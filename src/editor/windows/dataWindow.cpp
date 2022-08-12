@@ -3,6 +3,7 @@
 //
 
 #include "dataWindow.h"
+#include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "../widgets/virtualVariableWidgets.h"
 #include <ui/gui.h>
@@ -13,12 +14,15 @@
 #include "common/ecs/entity.h"
 #include "../assetEditorContext.h"
 #include "systems/transforms.h"
+#include "assets/types/materialAsset.h"
+#include "../widgets/assetSelectWidget.h"
 
 DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
 {
     _name = "Data Inspector";
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
-		_focusedAsset = event->asset();
+        auto editor = Runtime::getModule<Editor>();
+        _focusedAsset = editor->getEditorContext(event->asset());
 		_focusMode = FocusMode::asset;
 		_focusedAssetEntity = -1;
 	});
@@ -63,9 +67,19 @@ void DataWindow::displayAssetData()
 		case AssetType::assembly:
 			displayAssemblyData();
 			break;
+        case AssetType::material:
+            displayMaterialData();
+            break;
 		default:
 			ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->asset()->type.toString().c_str(), _focusedAsset->asset()->name.c_str());
 	}
+    if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+    {
+        if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
+            _focusedAsset->redo();
+        else if(ImGui::IsKeyPressed(ImGuiKey_Z))
+            _focusedAsset->undo();
+    }
 }
 
 void DataWindow::displayAssemblyData()
@@ -97,7 +111,10 @@ void DataWindow::displayAssemblyData()
 			for(auto& mID : assembly->meshes)
 			{
 				MeshAsset* asset = am.getAsset<MeshAsset>(mID);
-				ImGui::Selectable(asset->name.c_str());
+                const char* name = "no asset found";
+                if(asset)
+                    name = asset->name.c_str();
+				ImGui::Selectable(name);
 				if(ImGui::IsItemHovered())
 					ImGui::SetTooltip("ID: %s", mID.string().c_str());
 			}
@@ -157,7 +174,7 @@ void DataWindow::displayEntityAssetData()
     auto* em = Runtime::getModule<EntityManager>();
 	for (size_t i = 0; i < entityAsset.components.size(); ++i)
     {
-        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
+        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
         if(component.description()->name.empty())
             continue;
         ImGui::PushID(i);
@@ -200,7 +217,7 @@ void DataWindow::displayEntityAssetData()
             ImGui::Indent(13);
             auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
             if((uint8_t)res > 0)
-                em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity].id, entityAsset.components[i].description()->id);
+                em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
             if(res == UiChangeType::finished)
                 _focusedAsset->updateEntity(_focusedAssetEntity);
             ImGui::Unindent(13);
@@ -215,13 +232,6 @@ void DataWindow::displayEntityAssetData()
     {
         ImGui::TextDisabled("Can't add components yet.. need to make server calls for this");
         ImGui::EndPopup();
-    }
-    if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-    {
-        if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
-            _focusedAsset->redo();
-        else if(ImGui::IsKeyPressed(ImGuiKey_Z))
-            _focusedAsset->undo();
     }
 }
 
@@ -245,6 +255,27 @@ void DataWindow::displayEntityData()
             em->markComponentChanged(_focusedEntity, cid);
         ImGui::Separator();
     }
+}
+
+void DataWindow::displayMaterialData()
+{
+    MaterialAsset* material = static_cast<MaterialAsset*>(_focusedAsset->asset());
+    AssetID vertexID = material->vertexShader;
+    if(AssetSelectWidget::draw(&vertexID, AssetType::shader))
+    {
+        _focusedAsset->setSerializedField(&material->vertexShader, vertexID);
+    };
+    ImGui::SameLine();
+    ImGui::Text("Vertex Shader");
+    AssetID fragmentID = material->fragmentShader;
+    if(AssetSelectWidget::draw(&fragmentID, AssetType::shader))
+    {
+        _focusedAsset->setSerializedField(&material->fragmentShader, fragmentID);
+    }
+    ImGui::SameLine();
+    ImGui::Text("Fragment Shader");
+    ImGui::Spacing();
+    ImGui::TextDisabled("Custom property components coming soon");
 }
 
 

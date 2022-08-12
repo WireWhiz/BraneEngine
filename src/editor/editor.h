@@ -6,26 +6,30 @@
 #define BRANEENGINE_EDITOR_H
 
 #include <runtime/module.h>
+#include <memory>
+#include <unordered_map>
+#include "assets/assetID.h"
 
 namespace net{
     class Connection;
 }
-namespace graphics{
-    class Material;
-}
+
 class GUI;
+class AssetEditorContext;
 class Editor : public Module
 {
 	GUI* _ui;
 	net::Connection* _server;
-    graphics::Material* _defaultMaterial;
+
+    // Using shared pointers so we can track which ones are in use
+    std::unordered_map<AssetID, std::shared_ptr<AssetEditorContext>> _assetContexts;
 	void addMainWindows();
 	void drawMenu();
 public:
 	void start() override;
 	static const char* name();
 	net::Connection* server() const;
-    graphics::Material* defaultMaterial() const;
+    std::shared_ptr<AssetEditorContext> getEditorContext(const AssetID& id);
 };
 
 

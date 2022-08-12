@@ -177,6 +177,11 @@ void Transforms::setDirty(EntityID entity, EntityManager& em)
     {
         for(auto& c : em.getComponent<Children>(entity)->children)
         {
+            if(!em.entityExists(c))
+            {
+                Runtime::warn("Invalid child set on entity " + std::to_string(c.id));
+                continue;
+            }
             setDirty(c, em);
         }
     }

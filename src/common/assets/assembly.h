@@ -33,16 +33,13 @@ public:
 	std::vector<AssetID> components;
 	std::vector<AssetID> scripts; // Any systems in dependencies will be automatically loaded
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
-	std::vector<AssetID> textures;
+    std::vector<AssetID> materials;
 	std::vector<EntityAsset> entities;
 	void serialize(OutputSerializer& message) override;
 	void deserialize(InputSerializer& message) override;
 
-#ifdef CLIENT
-	void initialize(EntityManager& em, graphics::VulkanRuntime& vkr, AssetManager& am);
-#elif defined(SERVER)
-    void initialize(EntityManager& em, AssetManager& am);
-#endif
+    std::vector<AssetDependency> dependencies() const override;
+    void onDependenciesLoaded() override;
 	std::vector<EntityID> inject(EntityManager& em, EntityID rootID);
 };
 

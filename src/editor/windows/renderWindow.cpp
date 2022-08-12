@@ -4,6 +4,7 @@
 
 #include "renderWindow.h"
 #include "ui/gui.h"
+#include "../editor.h"
 #include "../editorEvents.h"
 #include "../assetEditorContext.h"
 #include "graphics/graphics.h"
@@ -28,14 +29,24 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
-        _focusedAsset = event->asset();
-        _focusedEntity.version = -1;
+        auto editor = Runtime::getModule<Editor>();
+        if(_focusedAsset)
+            _focusedAsset->setPreviewEntities(false);
+        _focusedAsset = editor->getEditorContext(event->asset());
+        _focusedAsset->setPreviewEntities(true);
+        if(!_focusedAsset->entities().empty())
+        {
+            _focusedEntity = _focusedAsset->entities()[0];
+            _focusedAssetEntity = 0;
+        }
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
-        _focusedEntity = _focusedAsset->entities()[event->entity()].id;
+        _focusedEntity = _focusedAsset->entities()[event->entity()];
     });
     _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
+        if(_focusedAsset)
+            _focusedAsset->setPreviewEntities(false);
         _focusedAsset = nullptr;
         _focusedEntity = event->id();
     });

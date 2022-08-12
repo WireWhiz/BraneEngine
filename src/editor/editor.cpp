@@ -17,6 +17,8 @@
 #include "windows/memoryManagerWindow.h"
 #include "graphics/material.h"
 #include "graphics/graphics.h"
+#include "networking/networking.h"
+#include "assetEditorContext.h"
 
 void Editor::start()
 {
@@ -29,47 +31,6 @@ void Editor::start()
 		addMainWindows();
 		_ui->setMainMenuCallback([this](){drawMenu();});
 	}));
-
-	auto& nm = *Runtime::getModule<NetworkManager>();
-	auto& am = *Runtime::getModule<AssetManager>();
-	am.setFetchCallback([&](auto id, auto incremental){
-		AsyncData<Asset*> asset;
-		nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [&nm, id, incremental, asset](bool connected){
-			if(!connected)
-			{
-				asset.setError("Could not connect to server: " + id.serverAddress);
-				std::cerr << "Could not get asset: " << id << std::endl;
-				return;
-			}
-			if (incremental)
-			{
-				nm.async_requestAssetIncremental(id).then([asset, id](Asset* data){
-					asset.setData(data);
-				});
-			}
-			else
-			{
-				AsyncData<Asset*> assetToSave;
-				nm.async_requestAsset(id).then([asset, id](Asset* data){
-					asset.setData(data);
-				});
-			}
-		});
-		return asset;
-	});
-    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    auto* em = Runtime::getModule<EntityManager>();
-   _defaultMaterial = new graphics::Material();
-    _defaultMaterial->setVertex(vkr->loadShader(0));
-    _defaultMaterial->setFragment(vkr->loadShader(1));
-    //mat->addTextureDescriptor(vkr.loadTexture(0));
-    _defaultMaterial->addBinding(0,sizeof(glm::vec3));
-    _defaultMaterial->addBinding(1, sizeof(glm::vec3));
-    _defaultMaterial->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-    _defaultMaterial->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-    vkr->addMaterial(_defaultMaterial);
-    em->components().registerComponent(_defaultMaterial->component());
-
 }
 
 const char* Editor::name()
@@ -144,7 +105,19 @@ void Editor::drawMenu()
 	}
 }
 
-graphics::Material* Editor::defaultMaterial() const
+std::shared_ptr<AssetEditorContext> Editor::getEditorContext(const AssetID& id)
 {
-    return _defaultMaterial;
+    if(_assetContexts.count(id))
+        return _assetContexts.at(id);
+
+    auto* am = Runtime::getModule<AssetManager>();
+    Asset* asset = am->getAsset<Asset>(id);
+    if(!asset)
+    {
+        Runtime::warn("Tried to create editor context but " + id.string() + " is not loaded!");
+        return nullptr;
+    }
+
+    _assetContexts.insert({id, std::make_shared<AssetEditorContext>(asset)});
+    return _assetContexts.at(id);
 }

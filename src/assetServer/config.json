@@ -18,5 +18,9 @@
   "data" : {
     "database_path" : "database/data.db",
     "asset_path" : "assets"
+  },
+  "default_assets" :
+  {
+    "material" : "defaults/shaded.material"
   }
 }

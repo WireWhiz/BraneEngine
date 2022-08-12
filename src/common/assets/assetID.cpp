@@ -10,7 +10,7 @@ AssetID::AssetID(const std::string& id)
 
 void AssetID::parseString(const std::string& id)
 {
-	std::string* strings = new std::string[2];
+	std::string strings[2] = {"", ""};
 	uint8_t strIndex = 0;
 	for (size_t i = 0; i < id.size(); i++)
 	{
@@ -59,6 +59,11 @@ AssetID::AssetID(const std::string& serverAddress, uint32_t id)
 {
 	this->serverAddress = serverAddress;
 	this->id = id;
+}
+
+bool AssetID::empty() const
+{
+    return this->serverAddress.empty();
 }
 
 std::size_t std::hash<AssetID>::operator()(const AssetID& k) const

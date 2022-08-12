@@ -10,7 +10,7 @@
 #include <fstream>
 #include <memory>
 
-
+class ShaderAsset;
 namespace graphics
 {
 	struct SpirvHelper
@@ -32,24 +32,14 @@ namespace graphics
 
 	class Shader
 	{
-		VkShaderModule _shader;
-		VkShaderStageFlagBits _type;
-		std::string _name;
+		ShaderAsset* _asset;
+        VkShaderModule _shader;
 	public:
-		Shader(std::string name, VkShaderStageFlagBits type, const std::vector<uint32_t>& spirv);
+        Shader(ShaderAsset* asset);
 		~Shader();
 		VkShaderModule get();
 		VkShaderStageFlagBits type();
 		VkPipelineShaderStageCreateInfo stageInfo();
 	};
 
-	class ShaderManager
-	{
-		std::array<std::pair<std::string_view, VkShaderStageFlagBits>, 2> _shaderExtensions = {std::make_pair("vert", VK_SHADER_STAGE_VERTEX_BIT), std::make_pair("frag" , VK_SHADER_STAGE_FRAGMENT_BIT)};
-		std::unordered_map<ShaderID, std::unique_ptr<Shader>> _shaders;
-	public:
-		ShaderManager();
-		~ShaderManager();
-		Shader* loadShader(ShaderID id);
-	};
 }

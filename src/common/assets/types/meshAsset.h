@@ -30,10 +30,14 @@ public:
         std::vector<bool> vertexSent;
     };
 
-	size_t pipelineID = -1;
+	size_t runtimeID = -1;
 	bool meshUpdated;
 
 	MeshAsset();
+
+#ifdef CLIENT
+    void onDependenciesLoaded() override;
+#endif
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);
     template<typename T>
     void addAttribute(size_t primitive, const std::string& name, std::vector<T>& data)

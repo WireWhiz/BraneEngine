@@ -45,7 +45,7 @@ namespace net
         AsyncQueue<OMessage> _obuffer;
 		AsyncQueue<IMessage> _ibuffer;
 		std::shared_mutex _streamLock;
-		std::unordered_map<uint32_t, std::function<void(InputSerializer s)>> _streamListeners;
+		std::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>> _streamListeners;
 		uint32_t _reqIDCounter = 1000;
 		std::shared_mutex _responseLock;
 		std::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
@@ -54,6 +54,7 @@ namespace net
 
 		std::vector<std::function<void()>> _onDisconnect;
 
+        std::string _address;
 	public:
 
 		Connection();
@@ -64,12 +65,13 @@ namespace net
 		virtual void send(OMessage&& msg) = 0;
 		void sendStreamData(uint32_t id, SerializedData&& sData);
 		void endStream(uint32_t id);
-		void addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback);
+		void addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback, std::function<void()> onEnd = std::function<void()>());
 		void eraseStreamListener(uint32_t id);
 		void sendRequest(const std::string& name, SerializedData&& data, const std::function<void(ResponseCode code, InputSerializer s)>& callback);
 		void onDisconnect(std::function<void()> f);
         void onRequest(std::function<void(Connection* connection, IMessage&& message)> request);
 		bool messageAvailable();
+        const std::string& address() const;
 		IMessage popMessage();
 
 	};
@@ -80,7 +82,6 @@ namespace net
 
 	protected:
 		socket_t _socket;
-		std::string _address;
 		void async_readHeader()
 		{
 			_tempIn.body.clear();
@@ -151,7 +152,7 @@ namespace net
                                 Runtime::error("Unknown stream data received: " + std::to_string(id));
                                 break;
                             }
-                            _streamListeners.at(id)(s);
+                            _streamListeners.at(id).first(s);
                         }
                         break;
                     }
@@ -162,9 +163,12 @@ namespace net
                         s >> id;
                         std::cout << "ending stream: " << id << std::endl;
                         _streamLock.lock();
-                        if (_streamListeners.count(id))
+                        auto listener = _streamListeners.find(id);
+                        if (listener != _streamListeners.end())
                         {
-                            _streamListeners.erase(id);
+                            if(listener->second.second)
+                                listener->second.second();
+                            _streamListeners.erase(listener);
                         } else
                             Runtime::error("Attempted to end nonexistent stream: " + std::to_string(id));
                         _streamLock.unlock();

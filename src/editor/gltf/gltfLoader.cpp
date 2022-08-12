@@ -236,7 +236,6 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 	{
 		MeshAsset* mesh = new MeshAsset();
 		mesh->name = meshData["name"].asString();
-		mesh->loadState = Asset::LoadState::complete;
 
 		for(auto& primitive : meshData["primitives"])
 		{

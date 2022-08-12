@@ -1,6 +1,7 @@
 #pragma once
 #include "../asset.h"
 #include <vector>
+#include <vulkan/vulkan.hpp>
 
 enum class ShaderType
 {
@@ -13,11 +14,16 @@ enum class ShaderType
 class ShaderAsset : public Asset
 {
 public:
-	ShaderType shaderType;
-	std::vector<uint32_t> spirv;
-	ShaderAsset(AssetID id, ShaderType type, std::vector<uint32_t> spirv);
+    std::vector<uint32_t> spirv;
+    ShaderType shaderType;
+    uint32_t runtimeID = -1;
 	ShaderAsset();
 
-	virtual void serialize(OutputSerializer& message) override;
-	virtual void deserialize(InputSerializer& message) override;
+	virtual void serialize(OutputSerializer& s) override;
+	virtual void deserialize(InputSerializer& s) override;
+    VkShaderStageFlagBits vulkanShaderType() const;
+
+#ifdef CLIENT
+    void onDependenciesLoaded() override;
+#endif
 };

@@ -5,6 +5,8 @@
 #include "assetServer.h"
 #include <database/database.h>
 #include <runtime/runtime.h>
+#include "networking/networking.h"
+#include "assets/assetManager.h"
 
 int main()
 {

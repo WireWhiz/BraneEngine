@@ -154,35 +154,14 @@ void AssetBrowserWidget::displayFiles()
                 {
                     // Make sure to construct the focus asset event on the main thread
                     AssetManager& am = *Runtime::getModule<AssetManager>();
-                    if(am.hasAsset(file.assetID))
-                    {
-                        Asset* asset = am.getAsset<Asset>(file.assetID);
-                        auto threadHandle = std::this_thread::get_id();
-                        am.fetchDependencies(asset, [this, asset, threadHandle]{
-                            if(threadHandle == std::this_thread::get_id())
-                                _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
-                            else
-                            {
-                                _mainThreadActions.push_back([this, asset]{
-                                    _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
-                                });
-                            }
-                        });
-                    }
-                    else
-                    {
-                        am.fetchAsset(file.assetID).then([this, &am](Asset* asset){
-                            am.fetchDependencies(asset, [this, asset, &am]{
-                                _mainThreadActions.push_back([this, asset, &am]{
-                                if(dynamic_cast<Assembly*>(asset))
-                                    dynamic_cast<Assembly*>(asset)->initialize(
-                                            *Runtime::getModule<EntityManager>(),
-                                            *Runtime::getModule<graphics::VulkanRuntime>(), am);
-                                _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
-                                });
+                    am.fetchAsset(file.assetID).then([this](Asset* asset){
+                        if(asset)
+                            _mainThreadActions.push_back([this, asset]{
+                                _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset->id));
                             });
-                        });
-                    }
+                        else
+                            Runtime::error("Selected asset was null!");
+                    });
                 }
             }
             if(ImGui::IsItemHovered())

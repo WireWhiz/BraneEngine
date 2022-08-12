@@ -1,18 +1,20 @@
 #pragma once
-#include "shader.h"
 #include "texture.h"
 
 #include "swapChain.h"
 #include <vulkan/vulkan.h>
-#include "common/ecs/entity.h"
-#include "mesh.h"
+
+class MaterialAsset;
+class ComponentDescription;
 
 namespace graphics
 {
+    class Shader;
+    class VulkanRuntime;
 	class Renderer;
-	using MaterialID = uint64_t;
 	class Material
 	{
+        MaterialAsset* _asset;
 		Shader* _geometryShader     = nullptr;
 		Shader* _vertexShader       = nullptr;
 		Shader* _fragmentShader     = nullptr;
@@ -27,30 +29,23 @@ namespace graphics
 		VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> _descriptorSets;
 
-		std::vector<VirtualType::Type> _inputs;
-
-		ComponentDescription* _component;
+		const ComponentDescription* _component;
 
 		void buildDescriptorSetVars(SwapChain* swapChain);
-		void generateComponent();
 	public:
+        Material(MaterialAsset* asset, VulkanRuntime* vkr);
 		~Material();
-
-		void setInputs(std::vector<VirtualType::Type> types);
-		void addTextureDescriptor(Texture* texture);
-		void setGeometry(Shader* shader);
-		void setVertex(Shader* shader);
-		void setFragment(Shader* shader);
 		void addBinding(uint32_t binding, uint32_t stride);
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildPipelineLayout(SwapChain* swapChain);
 		void initialize(size_t swapChainSize);
-		ComponentDescription* component() const;
+		const ComponentDescription* component() const;
 		VkPipeline pipeline(Renderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();
 		VkDescriptorPool descriptorPool();
 		VkDescriptorSet const* descriptorSet(size_t frame) const;
+        MaterialAsset* asset() const;
 		
 	};
 

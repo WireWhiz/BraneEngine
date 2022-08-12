@@ -10,6 +10,7 @@
 #include "runtime/runtime.h"
 #include "assets/assetID.h"
 #include "networking/connection.h"
+#include "assets/assetType.h"
 #include <utility/asyncData.h>
 
 class Asset;
@@ -41,15 +42,23 @@ class ServerFilesystem : public Module
     net::Connection* _server = nullptr;
     std::mutex _directoryLock;
 public:
+    struct SearchResult
+    {
+        AssetID id;
+        std::string name;
+        AssetType type;
+    };
     void start() override;
     void setServer(net::Connection* server);
     ServerDirectory* root();
     void fetchDirectory(ServerDirectory* dir);
     void createDirectory(ServerDirectory* parent, const std::string& name);
     AsyncData<AssetID> saveAsset(ServerDirectory* destination, Asset* asset);
+    void updateAsset(Asset* asset);
     void deleteDirectory(ServerDirectory* directory);
     void deleteFile(ServerDirectory* parent, const std::string& name);
     void moveDirectory(ServerDirectory* target, ServerDirectory* destination);
+    AsyncData<std::vector<SearchResult>> searchAssets(int start, int count = 0, const std::string& match = "",  AssetType type = AssetType::none);
 
     static const char* name();
 };

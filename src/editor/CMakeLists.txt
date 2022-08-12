@@ -33,7 +33,7 @@ install(TARGETS BraneEditor
 install(FILES config.json ${PROJECT_SOURCE_DIR}/media/branelogo.png
         DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
-install(DIRECTORY shaders DESTINATION ${INSTALL_DIR}
+install(DIRECTORY defaultAssets DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
 install(DIRECTORY fonts DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)

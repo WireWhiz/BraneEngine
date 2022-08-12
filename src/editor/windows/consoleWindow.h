@@ -15,6 +15,7 @@ class ConsoleWindow : public GUIWindow
 	{
 		std::string text = "";
 		Logging::LogLevel level = Logging::LogLevel::log;
+        float lineCount;
 	};
 	std::vector<CachedLog> _messages;
     size_t _listenerIndex;

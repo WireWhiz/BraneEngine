@@ -22,6 +22,10 @@ if(NOT EXISTS ${INSTALL_DIR}/database)
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/database/data.db
         DESTINATION ${INSTALL_DIR}/database)
 endif()
+if(NOT EXISTS ${INSTALL_DIR}/assets/defaults)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets/defaults
+        DESTINATION ${INSTALL_DIR}/assets)
+endif()
         "
         COMPONENT AssetServer)
 

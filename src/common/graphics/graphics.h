@@ -8,9 +8,13 @@
 #include <utility/staticIndexVector.h>
 #include <runtime/module.h>
 #include <vulkan/vulkan.hpp>
+#include <utility/asyncQueue.h>
 
 class EntityManager;
+class Asset;
 class MeshAsset;
+class ShaderAsset;
+class MaterialAsset;
 
 namespace graphics
 {
@@ -29,13 +33,15 @@ namespace graphics
 		Window* _window;
 		GraphicsDevice* _device;
 		SwapChain* _swapChain;
-		ShaderManager* _shaderManager;
 		std::vector<VkCommandBuffer> _drawBuffers;
 
+        AsyncQueue<Asset*> _newAssets;
+        staticIndexVector<std::unique_ptr<Shader>> _shaders;
 		staticIndexVector<std::unique_ptr<Material>> _materials;
-		std::vector<std::unique_ptr<Renderer>> _renderers;
 		staticIndexVector<std::unique_ptr<Texture>> _textures;
-		staticIndexVector<std::unique_ptr<Mesh>> _meshes;
+        staticIndexVector<std::unique_ptr<Mesh>> _meshes;
+
+        std::vector<std::unique_ptr<Renderer>> _renderers;
 
 		VkInstance _instance;
 
@@ -65,7 +71,7 @@ namespace graphics
 		static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-		
+		void processAsset(Asset* graphicalAsset);
 	public:
 		
 		VulkanRuntime();
@@ -84,12 +90,17 @@ namespace graphics
 		// Behold, the only function we care about:
 		void draw(EntityManager& em);
 		// Bask in its glory!
-		
+
+        // These methods must be called from the main thread
 		size_t addTexture(Texture* texture);
-		Shader* loadShader(size_t shaderID);
-		void addMaterial(Material* material);
-		size_t addMesh(MeshAsset* mesh);
-		const staticIndexVector<std::unique_ptr<Material>>& materials();
+        size_t addShader(ShaderAsset* shader);
+        size_t addMaterial(MaterialAsset* material);
+        size_t addMesh(MeshAsset* mesh);
+
+        // Add asset may be called from any thread
+        void addAsset(Asset* graphicalAsset);
+        const staticIndexVector<std::unique_ptr<Material>>& materials();
+        Shader* getShader(size_t runtimeID);
 
 		template<typename T, typename... Args>
 		T* createRenderer(Args... args)

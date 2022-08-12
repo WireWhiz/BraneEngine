@@ -8,7 +8,7 @@
 #include "assets/assembly.h"
 #include "assets/types/meshAsset.h"
 #include "gltfLoader.h"
-
+class MaterialAsset;
 class AssemblyBuilder
 {
 public:
@@ -17,7 +17,8 @@ public:
 		std::unique_ptr<Assembly> assembly;
 		std::vector<std::unique_ptr<MeshAsset>> meshes;
 	};
-	static AssemblyAssets buildAssembly(const std::string& name, gltfLoader& loader);
+	static AssemblyBuilder::AssemblyAssets
+    buildAssembly(const std::string& name, gltfLoader& loader, MaterialAsset* defaultMaterial);
 };
 
 

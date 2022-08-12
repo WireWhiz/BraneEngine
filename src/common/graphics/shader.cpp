@@ -1,5 +1,7 @@
 #include "shader.h"
 #include "graphicsDevice.h"
+#include "runtime/runtime.h"
+#include "assets/types/shaderAsset.h"
 
 namespace graphics
 {
@@ -163,8 +165,8 @@ namespace graphics
 
 		if (!shader.parse(&Resources, 100, false, messages))
 		{
-			std::cerr << shader.getInfoLog() << std::endl;
-			std::cerr << shader.getInfoDebugLog() << std::endl;
+			Runtime::error(shader.getInfoLog());
+            Runtime::error(shader.getInfoDebugLog());
 			return false;  // something didn't work
 		}
 
@@ -176,9 +178,8 @@ namespace graphics
 
 		if (!program.link(messages))
 		{
-			puts(shader.getInfoLog());
-			puts(shader.getInfoDebugLog());
-			fflush(stdout);
+            Runtime::error(shader.getInfoLog());
+            Runtime::error(shader.getInfoDebugLog());
 			return false;
 		}
 
@@ -186,114 +187,40 @@ namespace graphics
 		return true;
 	}
 
-	Shader::Shader(std::string name, VkShaderStageFlagBits type, const std::vector<uint32_t>& spirv)
-	{
-		_name = std::move(name);
-		_type = type;
+    Shader::Shader(ShaderAsset* asset) : _asset(asset)
+    {
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = _asset->spirv.size() * sizeof(uint32_t);
+        createInfo.pCode = _asset->spirv.data();
 
-		VkShaderModuleCreateInfo createInfo{};
-		createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		createInfo.codeSize = spirv.size() * sizeof(uint32_t);
-		createInfo.pCode = spirv.data();
-
-		if (vkCreateShaderModule(device->get(), &createInfo, nullptr, &_shader) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Could not create shader module!");
-		}
-	}
-	Shader::~Shader()
+        if (vkCreateShaderModule(device->get(), &createInfo, nullptr, &_shader) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Could not create shader module!");
+        }
+    }
+    Shader::~Shader()
 	{
 		vkDestroyShaderModule(device->get(), _shader, nullptr);
 	}
-	VkShaderModule Shader::get()
+    VkShaderModule Shader::get()
 	{
 		return _shader;
 	}
-	VkShaderStageFlagBits Shader::type()
+    VkShaderStageFlagBits Shader::type()
 	{
-		return _type;
+		return _asset->vulkanShaderType();
 	}
+
 	VkPipelineShaderStageCreateInfo Shader::stageInfo()
 	{
 		VkPipelineShaderStageCreateInfo shaderStageInfo{};
 		shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		shaderStageInfo.stage = _type;
+		shaderStageInfo.stage = _asset->vulkanShaderType();
 		shaderStageInfo.module = _shader;
 		shaderStageInfo.pName = "main";
 
 		return shaderStageInfo;
 	}
-	ShaderManager::ShaderManager()
-	{
-		SpirvHelper::Init();
-	}
-	ShaderManager::~ShaderManager()
-	{
-		SpirvHelper::Finalize();
-	}
-	Shader* ShaderManager::loadShader(ShaderID id)
-	{
-		// See if we already loaded it
-		if(_shaders.count(id))
-			return _shaders[id].get();
 
-		// Check for cached spirv
-		for (auto& ext : _shaderExtensions)
-		{
-			std::ifstream file("shaders/spirv/" + std::to_string(id) + "." + (std::string)ext.first + "b", std::ios::binary);
-			if (!file.is_open())
-				continue;
-
-			uint64_t fileSize;
-			file.read((char*)&fileSize, sizeof(uint64_t));
-
-			std::vector<unsigned int> spirv(fileSize);
-			file.read((char*)spirv.data(), fileSize * sizeof(unsigned int));
-
-			// emplace shader
-			_shaders[id] = std::make_unique<Shader>(std::to_string(id), ext.second, spirv);
-			return _shaders[id].get();
-		}
-
-		// We didn't find a cache so try to find a source and compile
-		for (auto& ext : _shaderExtensions)
-		{
-			std::ifstream file("shaders/src/" + std::to_string(id) + "." + (std::string)ext.first, std::ios::ate | std::ios::binary);
-			if (!file.is_open())
-				continue;
-
-
-			size_t fileSize = file.tellg();
-			char* code = new char[fileSize + 1];
-			code[fileSize] = '\0'; // turn this into a c str
-
-			//read the array into the file
-			file.seekg(0);
-
-			file.read(code, fileSize);
-
-			file.close();
-
-			//convert file into spirv
-			std::vector<unsigned int> spirv;
-			if (!CompileGLSL(ext.second, code, spirv))
-				throw std::runtime_error("failed to compile shader with id: " + id);
-
-			delete[] code;
-			
-			//cache spirv
-			std::ofstream cacheFile("shaders/spirv/" + std::to_string(id) + "." + (std::string)ext.first + "b", std::ios::out | std::ofstream::binary);
-			uint64_t spirvLength = spirv.size();
-			cacheFile.write((char*)&spirvLength, sizeof(uint64_t));
-			cacheFile.write((char*)spirv.data(), spirv.size() * sizeof(unsigned int));
-			cacheFile.close();
-
-			// emplace shader
-			_shaders[id] = std::make_unique<Shader>(std::to_string(id), ext.second, spirv);
-			return _shaders[id].get();
-		}
-
-		throw std::runtime_error("Could not find shader with id: " + id);
-		return nullptr;
-	}
 }

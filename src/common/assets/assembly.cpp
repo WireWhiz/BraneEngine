@@ -11,6 +11,9 @@
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "types/meshAsset.h"
 #include "graphics/material.h"
+#include "types/materialAsset.h"
+#include "utility/serializedData.h"
+
 
 void Assembly::EntityAsset::serialize(OutputSerializer& message, Assembly& assembly)
 {
@@ -93,7 +96,7 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 void Assembly::serialize(OutputSerializer& message)
 {
 	Asset::serialize(message);
-	message << components << scripts << meshes << textures;
+	message << components << scripts << meshes << materials;
 	message << (uint32_t)entities.size();
 	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
@@ -107,7 +110,7 @@ void Assembly::deserialize(InputSerializer& message)
 	AssetManager& am = *Runtime::getModule<AssetManager>();
 
 	Asset::deserialize(message);
-	message >> components >> scripts >> meshes >> textures;
+	message >> components >> scripts >> meshes >> materials;
 	uint32_t size;
 	message.readSafeArraySize(size);
 	entities.resize(size);
@@ -121,66 +124,6 @@ Assembly::Assembly()
 {
 	type.set(AssetType::Type::assembly);
 }
-
-#ifdef CLIENT
-void Assembly::initialize(EntityManager& em, graphics::VulkanRuntime& vkr, AssetManager& am)
-{
-	//Temporarily use an example material
-	auto* mat = new graphics::Material();
-	mat->setVertex(vkr.loadShader(0));
-	mat->setFragment(vkr.loadShader(1));
-	//mat->addTextureDescriptor(vkr.loadTexture(0));
-	mat->addBinding(0,sizeof(glm::vec3));
-	mat->addBinding(1, sizeof(glm::vec3));
-	mat->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	mat->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	vkr.addMaterial(mat);
-	em.components().registerComponent(mat->component());
-
-	for(auto& entity : entities)
-	{
-		for(auto& component : entity.components)
-		{
-			if(component.description() == Transform::def())
-			{
-				component.setVar(1, true);
-			}
-			else  if(component.description() == MeshRendererComponent::def())
-			{
-				MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());
-				auto* meshAsset = am.getAsset<MeshAsset>(AssetID(meshes[mr->mesh]));
-				if(meshAsset->pipelineID == -1){
-					vkr.addMesh(meshAsset);
-				}
-				mr->mesh = meshAsset->pipelineID;
-				entity.components.emplace_back(mat->component());
-
-				//TODO: process materials here as well
-			}
-		}
-	}
-}
-#endif
-
-#ifdef SERVER
-void Assembly::initialize(EntityManager& em, AssetManager& am)
-{
-    for(auto& entity : entities)
-    {
-        for(auto& component : entity.components)
-        {
-            if(component.description() == Transform::def())
-            {
-                component.setVar(1, true);
-            }
-            else if(component.description() == TRS::def())
-            {
-                component.setVar(3, true);
-            }
-        }
-    }
-}
-#endif
 
 std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
 {
@@ -203,7 +146,9 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
 			em.setComponent(id, component);
 	}
 
-	//Set transforms
+#ifdef CLIENT
+    auto* am = Runtime::getModule<AssetManager>();
+#endif
 	for(size_t i = 0; i < entities.size(); ++i)
 	{
 		EntityAsset& entity = entities[i];
@@ -218,8 +163,49 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
                 Transforms::setParent(childID, id, em);
             }
 		}
+#ifdef CLIENT
+        if(entity.hasComponent(MeshRendererComponent::def()))
+        {
+            auto* renderer = em.getComponent<MeshRendererComponent>(entityMap[i]);
+            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh]);
+            renderer->mesh = mesh->runtimeID;
+            for(auto& mID : renderer->materials)
+            {
+                auto* material = am->getAsset<MaterialAsset>(materials[mID]);
+                mID = material->runtimeID;
+            }
+        }
+#endif
 	}
     return entityMap;
+}
+
+void Assembly::onDependenciesLoaded()
+{
+    for(auto& entity : entities)
+    {
+        for(auto& component : entity.components)
+        {
+            if(component.description() == Transform::def())
+            {
+                component.setVar(1, true);
+            }
+        }
+    }
+}
+
+std::vector<AssetDependency> Assembly::dependencies() const
+{
+    std::vector<AssetDependency> deps;
+    for(auto& id : components)
+        deps.push_back({id, false});
+    for(auto& id : scripts)
+        deps.push_back({id, false});
+    for(auto& id : meshes)
+        deps.push_back({id, true});
+    for(auto& id : materials)
+        deps.push_back({id, false});
+    return deps;
 }
 
 
