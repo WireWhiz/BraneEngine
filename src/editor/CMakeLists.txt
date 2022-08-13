@@ -1,28 +1,30 @@
 
+SET(CMAKE_FOLDER ${CMAKE_FOLDER}/Editor)
+
 add_subdirectory(widgets)
 add_subdirectory(windows)
 add_subdirectory(gltf)
 
-if(WIN32 AND ${CMAKE_BUILD_TYPE} STREQUAL Release)
-    add_executable(BraneEditor WIN32
-            main.cpp
-            ${PROJECT_SOURCE_DIR}/media/brane.rc
-            editor.cpp
-            serverFilesystem.cpp
-            editorEvents.cpp
-            )
-else() #TODO add exe icon on linux
-    add_executable(BraneEditor
-            main.cpp
-            editor.cpp
-            serverFilesystem.cpp
-            editorEvents.cpp assetEditorContext.cpp assetEditorContext.h)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_executable(BraneEditor
+        ${PROJECT_SOURCE_DIR}/media/brane.rc
+        main.cpp
+        editor.cpp
+        serverFilesystem.cpp
+        editorEvents.cpp
+        assetEditorContext.cpp)
+if(WIN32)
+    set_target_properties(BraneEditor PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,TRUE,FALSE>)
 endif()
 target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
 target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager gltf)
+
+configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
+file(COPY ${PROJECT_SOURCE_DIR}/media/branelogo.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY defaultAssets fonts DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
 set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/braneEditor)
 
@@ -37,8 +39,3 @@ install(DIRECTORY defaultAssets DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
 install(DIRECTORY fonts DESTINATION ${INSTALL_DIR}
         COMPONENT Editor)
-
-add_custom_command(TARGET BraneEditor POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND cmake --install . --component Editor --prefix ${CMAKE_BINARY_DIR}
-        COMMENT "Installing Editor...")

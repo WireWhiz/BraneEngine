@@ -34,8 +34,11 @@ add_subdirectory(asmjit)
 target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
+if(BUILD_TESTS)
+    add_subdirectory(gtest)
+endif()
 add_subdirectory(SQLite)
-add_subdirectory(gtest)
+
 add_subdirectory(glslang)
 
 add_subdirectory(jsoncpp)

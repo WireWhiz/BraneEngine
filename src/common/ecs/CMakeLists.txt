@@ -14,6 +14,7 @@ add_library(ecs STATIC
 target_link_libraries(ecs PUBLIC runtime utility)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
+if(BUILD_TESTS)
 add_library(ecs_test STATIC
         archetype.cpp
         component.cpp
@@ -28,3 +29,4 @@ add_library(ecs_test STATIC
 target_link_libraries(ecs_test PUBLIC runtime assets utility_test)
 target_include_directories(ecs_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(ecs_test PUBLIC TEST_BUILD MALLOC_CHECK_)
+endif()

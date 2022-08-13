@@ -1,3 +1,4 @@
+set(CMAKE_FOLDER ${CMAKE_FOLDER}/Windows)
 add_library(editorWindows STATIC
         loginWindow.cpp
         dataWindow.cpp
@@ -7,5 +8,5 @@ add_library(editorWindows STATIC
         assetBrowserWindow.cpp
         memoryManagerWindow.cpp
         createAssetWindow.cpp)
-target_link_libraries(editorWindows PUBLIC ui editorWidgets imguizmo)
+target_link_libraries(editorWindows PUBLIC ui editorWidgets imgui imguizmo)
 target_compile_definitions(editorWindows PUBLIC CLIENT)

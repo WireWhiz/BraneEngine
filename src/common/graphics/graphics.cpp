@@ -27,9 +27,7 @@ namespace graphics
         while(!_newAssets.empty())
             processAsset(_newAssets.pop_front());
 		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
-		{
 			return;
-		}
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
 
         VkResult result = _swapChain->acquireNextImage();
@@ -43,15 +41,11 @@ namespace graphics
 			result = _swapChain->acquireNextImage();
         }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-        {
             throw std::runtime_error("failed to acquire swap chain image!");
-        }
         
 
         if (_imagesInFlight[_swapChain->currentFrame()] != VK_NULL_HANDLE)
-        {
             vkWaitForFences(_device->get(), 1, &_imagesInFlight[_swapChain->currentFrame()], VK_TRUE, UINT64_MAX);
-        }
         _imagesInFlight[_swapChain->currentFrame()] = _inFlightFences[_swapChain->currentFrame()];
 
         VkCommandBuffer drawBuffer = _drawBuffers[_swapChain->currentFrame()];
@@ -103,7 +97,15 @@ namespace graphics
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &_swapChain->currentFrame();
         presentInfo.pResults = nullptr; // Optional
-        vkQueuePresentKHR(_device->presentQueue(), &presentInfo);
+        result = vkQueuePresentKHR(_device->presentQueue(), &presentInfo);
+		if(result == VK_SUBOPTIMAL_KHR)
+		{
+			vkDeviceWaitIdle(_device->get());
+			_swapChain->resize();
+			for(auto& r : _renderers)
+				if(r->targetingSwapChain())
+					r->setTargetAsSwapChain(r->depthTexture());
+		}
     }
 
 	size_t VulkanRuntime::addTexture(Texture* texture)

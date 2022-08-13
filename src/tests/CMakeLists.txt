@@ -1,5 +1,5 @@
 #src/tests
-
+set(CMAKE_FOLDER ${CMAKE_FOLDER}/Tests)
 add_executable(tests
         "ecs/ecsTest.cpp"
         "ecs/virtualTypeTest.cpp"

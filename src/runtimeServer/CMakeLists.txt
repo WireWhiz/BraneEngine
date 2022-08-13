@@ -1,4 +1,5 @@
 # src/runtimeServer
+set(CMAKE_FOLDER ${CMAKE_FOLDER}/RuntimeServer)
 add_executable(RuntimeServer main.cpp
         #"runtimeServer.cpp"
         )
@@ -18,8 +19,3 @@ install(TARGETS RuntimeServer
 install(FILES config.json
         DESTINATION ${INSTALL_DIR}
         COMPONENT RuntimeServer)
-
-add_custom_command(TARGET RuntimeServer POST_BUILD
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMAND cmake --install . --component RuntimeServer --prefix ${CMAKE_BINARY_DIR}
-        COMMENT "Installing Runtime Server...")

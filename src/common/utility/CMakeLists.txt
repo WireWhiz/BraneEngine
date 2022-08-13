@@ -7,12 +7,13 @@ add_library(utility STATIC
 
  target_link_libraries(utility PUBLIC runtime include_dir)
 
+if(BUILD_TESTS)
  add_library(utility_test STATIC
 	clock.cpp
 	threadPool.cpp
  "sharedRecursiveMutex.h"
  "sharedRecursiveMutex.cpp"
 	 )
-
 target_compile_definitions(utility_test PUBLIC TEST_BUILD)
 target_link_options(utility_test PRIVATE -lpthread)
+endif()

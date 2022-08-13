@@ -294,9 +294,4 @@ void GUI::closePopup()
     _popup = nullptr;
 }
 
-const std::vector<ImFont*>& GUI::fonts() const
-{
-    return _fonts;
-}
-
 

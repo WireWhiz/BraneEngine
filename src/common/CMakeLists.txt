@@ -1,5 +1,5 @@
 # src/common
-
+set(CMAKE_FOLDER ${CMAKE_FOLDER}/Common)
 add_subdirectory(graphics)
 add_subdirectory(assets)
 add_subdirectory(runtime)

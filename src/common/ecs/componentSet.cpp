@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include "componentSet.h"
 
 void ComponentSet::add(ComponentID id)

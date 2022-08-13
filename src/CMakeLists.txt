@@ -1,5 +1,6 @@
 #file: src
 
+set(CMAKE_FOLDER BraneEngine)
 
 include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}
@@ -11,8 +12,11 @@ include_directories(
 add_subdirectory(common)
 
 # create executables
-add_subdirectory(tests)
 add_subdirectory(client)
 add_subdirectory(editor)
 add_subdirectory(runtimeServer)
 add_subdirectory(assetServer)
+
+if(BUILD_TESTS)
+	add_subdirectory(tests)
+endif()

@@ -15,11 +15,9 @@ namespace graphics
         _imageFormat = surfaceFormat.format;
         _extent = chooseExtent(swapChainSupport.capabilities);
 
-        uint32_t imageCount = std::max<uint32_t>(swapChainSupport.capabilities.minImageCount, 2);
+        uint32_t imageCount = std::max<uint32_t>(swapChainSupport.capabilities.minImageCount + 1, 2);
         if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
-        {
             imageCount = swapChainSupport.capabilities.maxImageCount;
-        }
 
         VkSwapchainCreateInfoKHR createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -55,9 +53,6 @@ namespace graphics
         createInfo.clipped = VK_TRUE;
 
         createInfo.oldSwapchain = VK_NULL_HANDLE;
-       
-
-        
 
         if (vkCreateSwapchainKHR(device->get(), &createInfo, nullptr, &_swapChain) != VK_SUCCESS)
         {
@@ -342,5 +337,7 @@ namespace graphics
 		createSwapChain();
 		createImageViews();
 		createDepthResources();
+		_currentFrame = 0;
+		 _currentSemaphore = 0;
 	}
 }

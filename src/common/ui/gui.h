@@ -79,7 +79,10 @@ public:
 	void setupImGui(graphics::VulkanRuntime& runtime);
 	void cleanupImGui();
 
-    const std::vector<ImFont*>& fonts() const;
+    inline const std::vector<ImFont*>& fonts() const
+	{
+		return _fonts;
+	}
 };
 
 

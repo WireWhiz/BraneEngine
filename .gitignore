@@ -7,6 +7,9 @@
 SPIRV-Tools-optd.lib
 mysqlcppconn8-static.lib
 
+#cmake generated vs project
+vs-proj/
+
 # Bison debugging files
 *.output
 
