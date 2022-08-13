@@ -184,7 +184,7 @@ public:
 using inlineUIntArray = InlineArray<uint32_t, 4>;
 using inlineIntArray = InlineArray<int32_t, 4>;
 using inlineFloatArray = InlineArray<float, 4>;
-class EntityID;
+struct EntityID;
 using inlineEntityIDArray = InlineArray<EntityID, 4>;
 
 

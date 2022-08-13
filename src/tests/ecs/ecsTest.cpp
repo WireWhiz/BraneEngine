@@ -1,5 +1,6 @@
 #include <testing.h>
-#include <ecs/ecs.h>
+#include <ecs/entity.h>
+#include <ecs/structMembers.h>
 #include <utility/clock.h>
 
 TEST(ECS, VirtualComponentTest)
@@ -141,6 +142,8 @@ TEST(ECS, NativeComponentTest)
 	EXPECT_EQ(42 * 2, nc.var3);
 }
 
+//TODO Create test for ChunkComponentView
+
 TEST(ECS, ChunkTest)
 {
 	// Create chunk
@@ -150,20 +153,15 @@ TEST(ECS, ChunkTest)
 
 	TestNativeComponent::constructDescription();
 	TestNativeComponent2::constructDescription();
-
-	//Create archetype
 	std::vector<const ComponentDescription*> components = {TestNativeComponent::def(), TestNativeComponent2::def()};
-	Archetype arch(components, cp);
+	c->setComponents(components);
 
-	c->setArchetype(&arch);
-	EXPECT_EQ(c->maxCapacity(), c->_data.size() / arch._entitySize);
-	EXPECT_EQ(c->_componentIndices[1], components[0]->size() * c->maxCapacity());
-
+	EXPECT_EQ(c->maxCapacity(), c->_data.size() / (TestNativeComponent::def()->size() + TestNativeComponent2::def()->size()));
 }
 
 TEST(ECS, StructMembersTypesTest)
 {
-	std::vector<VirtualType::Type> members = STRUCT_MEMBER_TYPES_3(TestNativeComponent, var1, var2, var3);
+	std::vector<VirtualType::Type> members = STRUCT_MEMBER_TYPES_3(TestNativeComponent, var1, "", var2, "", var3, "");
 	EXPECT_EQ(members.size(), 3);
 
 	EXPECT_EQ(members[0], VirtualType::virtualBool);
@@ -173,7 +171,7 @@ TEST(ECS, StructMembersTypesTest)
 
 TEST(ECS, StructMembersOffsetsTest)
 {
-	std::vector<size_t> members = STRUCT_MEMBER_OFFSETS_3(TestNativeComponent, var1, var2, var3);
+	std::vector<size_t> members = STRUCT_MEMBER_OFFSETS_3(TestNativeComponent, var1, "", var2, "", var3, "");
 	EXPECT_EQ(members.size(), 3);
 
 	EXPECT_EQ(members[0], offsetof(TestNativeComponent, var1));
@@ -195,6 +193,7 @@ TEST(ECS, EntityManagerTest)
 	std::vector<VirtualType::Type> comps3 = {VirtualType::virtualBool, VirtualType::virtualFloat};
 	ComponentDescription vcd3(comps3);
 
+	Runtime::timeline().addBlock("main");
 	EntityManager em;
 	em.components().registerComponent(EntityIDComponent::constructDescription());
 	em.components().registerComponent(&vcd1);
@@ -248,15 +247,18 @@ TEST(ECS, EntityManagerTest)
 	Runtime::cleanup();
 }
 
+//TODO component filter test
+
 TEST(ECS, ForEachTest)
 {
 	Runtime::init();
+	Runtime::timeline().addBlock("main");
 	EntityManager em;
 	em.components().registerComponent(EntityIDComponent::constructDescription());
 	em.components().registerComponent(TestNativeComponent::constructDescription());
 	em.components().registerComponent(TestNativeComponent2::constructDescription());
 
-
+	std::array<EntityID, 100> entities;
 	//Create 50 entities with one component, and 50 with two
 	for (size_t i = 0; i < 100; i++)
 	{
@@ -265,13 +267,17 @@ TEST(ECS, ForEachTest)
 		// Create a new archetype
 		if (i > 49)
 			em.addComponent(e, TestNativeComponent2::def()->id);
+		entities[i] = e;
 	}
 
 	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
 	EXPECT_EQ(em._archetypes._archetypes[1].size(), 1);
 
 	//Set the variables on all the entities with the first component
-	em.forEach({TestNativeComponent::def()->id}, [&](byte* components[]) {
+	SystemContext ctx;
+	ComponentFilter filter1(&ctx);
+	filter1.addComponent(TestNativeComponent::def()->id);
+	em.getEntities(filter1).forEachNative([&](byte* components[]) {
 		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
 		c1->var1 = false;
 		c1->var2 += 32;
@@ -279,13 +285,16 @@ TEST(ECS, ForEachTest)
 	});
 
 	// Set the variables on all the entities with two components
-	em.forEach({TestNativeComponent2::def()->id, TestNativeComponent::def()->id}, [&](byte* components[]) {
-		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[0]);
-		c2->var1 = true;
-		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[1]);
+	ComponentFilter filter2(&ctx);
+	filter2.addComponent(TestNativeComponent::def()->id);
+	filter2.addComponent(TestNativeComponent2::def()->id);
+	em.getEntities(filter2).forEachNative([&](byte* components[]) {
+		TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
 		c1->var1 = true;
 		c1->var2 += 42;
 		c1->var3 += 32;
+		TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
+		c2->var1 = true;
 	});
 
 
@@ -293,9 +302,9 @@ TEST(ECS, ForEachTest)
 	// 
 	//Checking the variables on all the entities with two components
 	Stopwatch sw;
-	em.constForEach({TestNativeComponent::def()->id, TestNativeComponent2::def()->id}, [&](const byte* components[]) {
-		const TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
+	em.getEntities(filter2).forEachNative([&](byte* components[]) {
 		const TestNativeComponent* c1 = TestNativeComponent::fromVirtual(components[0]);
+		const TestNativeComponent2* c2 = TestNativeComponent2::fromVirtual(components[1]);
 		EXPECT_EQ(true, c1->var1);
 		EXPECT_EQ(74, c1->var2);
 		EXPECT_EQ(74, c1->var3);
@@ -309,11 +318,9 @@ TEST(ECS, ForEachTest)
 	{
 		if (i > 49)
 		{
-			//Entites with two
-			VirtualComponent vc1 = em.getComponent(i, TestNativeComponent::def()->id);
-			TestNativeComponent*  ts1 = TestNativeComponent::fromVirtual(vc1.data());
-			VirtualComponent vc2 = em.getComponent(i, TestNativeComponent2::def()->id);
-			TestNativeComponent2* ts2 = TestNativeComponent2::fromVirtual(vc2.data());
+			//Entities with two
+			TestNativeComponent*  ts1 = em.getComponent<TestNativeComponent>(entities[i]);
+			TestNativeComponent2* ts2 = em.getComponent<TestNativeComponent2>(entities[i]);
 			
 			EXPECT_EQ(true, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(74, ts1->var2)   << "entity: " << i;
@@ -325,8 +332,7 @@ TEST(ECS, ForEachTest)
 		else
 		{
 			//Entites with one
-			VirtualComponent vc1 = em.getComponent(i, TestNativeComponent::def()->id);
-			TestNativeComponent* ts1 = TestNativeComponent::fromVirtual(vc1.data());
+			TestNativeComponent* ts1 = em.getComponent<TestNativeComponent>(entities[i]);
 			EXPECT_EQ(false, ts1->var1) << "entity: " << i;
 			EXPECT_EQ(32, ts1->var2)    << "entity: " << i;
 			EXPECT_EQ(42, ts1->var3)    << "entity: " << i;
@@ -335,6 +341,8 @@ TEST(ECS, ForEachTest)
 	Runtime::cleanup();
 }
 
+//Revive this test when we once again add threading back into ECS, for now, let it rest in peace
+/*
 TEST(ECS, ForEachParellelTest)
 {
 	Runtime::init();
@@ -377,4 +385,4 @@ TEST(ECS, ForEachParellelTest)
 		EXPECT_EQ(*c.getVar<size_t>(0), 420) << "entitiy: " << i << std::endl;
 	}
 	Runtime::cleanup();
-}
+}*/

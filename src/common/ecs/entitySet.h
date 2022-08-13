@@ -12,7 +12,7 @@
 #include "chunk.h"
 
 using ComponentID = uint16_t;
-class SystemContext;
+struct SystemContext;
 class ChunkComponentView;
 class Archetype;
 
