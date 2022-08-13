@@ -3,11 +3,6 @@
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "systems/transforms.h"
 #include "ecs/entity.h"
-#ifdef SERVER
-#include "fileManager/fileManager.h"
-#include "assetServer/database/database.h"
-#endif
-#include "networking/networking.h"
 
 AssetManager::AssetManager()
 {
@@ -58,87 +53,6 @@ void AssetManager::start()
 	addNativeComponent<Children>(em);
 	addNativeComponent<TRS>(em);
 	addNativeComponent<MeshRendererComponent>(em);
-}
-
-AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
-{
-	AsyncData<Asset*> asset;
-    if(hasAsset(id))
-    {
-        asset.setData(getAsset<Asset>(id));
-        return asset;
-    }
-
-    AssetData* assetData = new AssetData{};
-    assetData->loadState = LoadState::requested;
-    _assetLock.lock();
-    _assets.insert({id, std::unique_ptr<AssetData>(assetData)});
-    _assetLock.unlock();
-
-    auto* nm = Runtime::getModule<NetworkManager>();
-#ifdef SERVER
-    auto* fm = Runtime::getModule<FileManager>();
-    auto* db = Runtime::getModule<Database>();
-    auto info = db->getAssetInfo(id.id);
-    if(!info.filename.empty())
-    {
-        std::string fullPath = Config::json()["data"]["asset_path"].asString() + "/" + info.filename;
-        fm->async_readUnknownAsset(fullPath).then([this, asset](Asset* ptr) {
-            std::scoped_lock lock(_assetLock);
-            auto& d = _assets.at(ptr->id);
-            d->asset = std::unique_ptr<Asset>(ptr);
-            if(dependenciesLoaded(ptr))
-            {
-                d->loadState = LoadState::loaded;
-                asset.setData(ptr);
-                return;
-            }
-
-            d->loadState = LoadState::awaitingDependencies;
-            fetchDependencies(ptr, [this, ptr, asset]() mutable{
-                auto& d = _assets.at(ptr->id);
-                d->loadState = LoadState::usable;
-                ptr->onDependenciesLoaded();
-                asset.setData(ptr);
-            });
-        });
-        return asset;
-    }
-#endif
-    if(incremental)
-    {
-        nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
-            auto& d = _assets.at(ptr->id);
-            d->loadState = LoadState::usable;
-            d->asset = std::unique_ptr<Asset>(ptr);
-            ptr->onDependenciesLoaded();
-            asset.setData(ptr);
-        });
-    }
-    else
-    {
-        nm->async_requestAsset(id).then([this, asset](Asset* ptr){
-            AssetID id = ptr->id;
-            auto& d = _assets.at(id);
-            d->loadState = LoadState::awaitingDependencies;
-            d->asset = std::unique_ptr<Asset>(ptr);
-            if(dependenciesLoaded(d->asset.get()))
-            {
-                d->loadState = LoadState::loaded;
-                d->asset->onDependenciesLoaded();
-                asset.setData(ptr);
-                return;
-            }
-            d->loadState = LoadState::awaitingDependencies;
-            fetchDependencies(d->asset.get(), [this, id, asset]() mutable{
-                auto& d = _assets.at(id);
-                d->loadState = LoadState::loaded;
-                d->asset->onDependenciesLoaded();
-                asset.setData(d->asset.get());
-            });
-        });
-    }
-	return asset;
 }
 
 bool AssetManager::hasAsset(const AssetID& id)

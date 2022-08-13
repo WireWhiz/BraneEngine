@@ -2,6 +2,15 @@
 #include <assets/asset.h>
 #include "assets/assetManager.h"
 
+
+//Edit this function if we need to "load" any assets for testing
+AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	asset.setData(nullptr);
+	return asset;
+}
+
 TEST(assets, AssetIDTest)
 {
 	AssetID aa;
@@ -11,8 +20,6 @@ TEST(assets, AssetIDTest)
 	EXPECT_EQ(aa.string(), "server.ip.goes.here/0001234A");
 	EXPECT_TRUE(aa == aa);
 }
-
-
 
 /*
 TEST(assets, AssetManagerTest)

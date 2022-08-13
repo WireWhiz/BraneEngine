@@ -121,3 +121,56 @@ std::shared_ptr<AssetEditorContext> Editor::getEditorContext(const AssetID& id)
     _assetContexts.insert({id, std::make_shared<AssetEditorContext>(asset)});
     return _assetContexts.at(id);
 }
+
+//The editor specific fetch asset function
+AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	if(hasAsset(id))
+	{
+		asset.setData(getAsset<Asset>(id));
+		return asset;
+	}
+
+	AssetData* assetData = new AssetData{};
+	assetData->loadState = LoadState::requested;
+	_assetLock.lock();
+	_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
+	_assetLock.unlock();
+
+	auto* nm = Runtime::getModule<NetworkManager>();
+	if(incremental)
+	{
+		nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
+			auto& d = _assets.at(ptr->id);
+			d->loadState = LoadState::usable;
+			d->asset = std::unique_ptr<Asset>(ptr);
+			ptr->onDependenciesLoaded();
+			asset.setData(ptr);
+		});
+	}
+	else
+	{
+		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
+			AssetID id = ptr->id;
+			auto& d = _assets.at(id);
+			d->loadState = LoadState::awaitingDependencies;
+			d->asset = std::unique_ptr<Asset>(ptr);
+			if(dependenciesLoaded(d->asset.get()))
+			{
+				d->loadState = LoadState::loaded;
+				d->asset->onDependenciesLoaded();
+				asset.setData(ptr);
+				return;
+			}
+			d->loadState = LoadState::awaitingDependencies;
+			fetchDependencies(d->asset.get(), [this, id, asset]() mutable{
+				auto& d = _assets.at(id);
+				d->loadState = LoadState::loaded;
+				d->asset->onDependenciesLoaded();
+				asset.setData(d->asset.get());
+			});
+		});
+	}
+	return asset;
+}
