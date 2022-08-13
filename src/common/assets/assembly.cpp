@@ -6,11 +6,8 @@
 #include "assetManager.h"
 #include "common/ecs/componentManager.h"
 #include "systems/transforms.h"
-#include "graphics/graphics.h"
-#include <glm/glm.hpp>
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "types/meshAsset.h"
-#include "graphics/material.h"
 #include "types/materialAsset.h"
 #include "utility/serializedData.h"
 
