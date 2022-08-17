@@ -5,16 +5,18 @@
 #include "editor.h"
 
 #include "ui/gui.h"
-#include "windows/loginWindow.h"
 #include "windows/dataWindow.h"
 #include "windows/consoleWindow.h"
 #include "windows/entitiesWindow.h"
 #include "windows/renderWindow.h"
 #include "windows/assetBrowserWindow.h"
+#include "windows/syncWindow.h"
+#include "windows/selectProjectWindow.h"
+#include "windows/memoryManagerWindow.h"
+
 #include "editorEvents.h"
 #include <fileManager/fileManager.h>
 #include <assets/assetManager.h>
-#include "windows/memoryManagerWindow.h"
 #include "graphics/material.h"
 #include "graphics/graphics.h"
 #include "networking/networking.h"
@@ -23,14 +25,17 @@
 void Editor::start()
 {
 	_ui = Runtime::getModule<GUI>();
-	auto* loginWindow = _ui->addWindow<LoginWindow>();
+	_selectProjectWindow = _ui->addWindow<SelectProjectWindow>();
 
-	_ui->addEventListener("login", nullptr, std::function([this, loginWindow](const LoginEvent* evt){
-		_server = evt->server();
-        loginWindow->close();
-		addMainWindows();
-		_ui->setMainMenuCallback([this](){drawMenu();});
-	}));
+	_ui->setMainMenuCallback([this](){drawMenu();});
+	_ui->addEventListener<GUIEvent>("projectLoaded", nullptr, [this](auto evt){
+		if(_selectProjectWindow)
+		{
+			_selectProjectWindow = nullptr;
+			_ui->clearWindows();
+			addMainWindows();
+		}
+	});
 }
 
 const char* Editor::name()
@@ -71,11 +76,6 @@ void Editor::addMainWindows()
 	Runtime::log("Main layout loaded");
 }
 
-net::Connection* Editor::server() const
-{
-	return _server;
-}
-
 void Editor::drawMenu()
 {
 	if(ImGui::BeginMainMenuBar())
@@ -91,6 +91,8 @@ void Editor::drawMenu()
                 _ui->addWindow<EntitiesWindow>()->resizeDefault();
             if(ImGui::Selectable("Asset Browser"))
                 _ui->addWindow<AssetBrowserWindow>()->resizeDefault();
+			if(ImGui::Selectable("Sync Window"))
+				_ui->addWindow<SyncWindow>()->resizeDefault();
             if(ImGui::Selectable("Render Preview"))
                 _ui->addWindow<RenderWindow>()->resizeDefault();
             if(ImGui::Selectable("Console"))
@@ -120,6 +122,23 @@ std::shared_ptr<AssetEditorContext> Editor::getEditorContext(const AssetID& id)
 
     _assetContexts.insert({id, std::make_shared<AssetEditorContext>(asset)});
     return _assetContexts.at(id);
+}
+
+BraneProject& Editor::project()
+{
+	return _project;
+}
+
+void Editor::loadProject(const std::filesystem::path& filepath)
+{
+	_project.load(filepath);
+	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
+}
+
+void Editor::createProject(const std::string& name, const std::filesystem::path& directory)
+{
+	_project.create(name, directory);
+	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
 //The editor specific fetch asset function

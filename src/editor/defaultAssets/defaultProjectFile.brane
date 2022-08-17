@@ -1,0 +1,12 @@
+{
+    "info" : {
+        "name" : "",
+        "version" : "0.0.0"
+    },
+    "settings" : {
+        "assetServer" : {
+            "address" : "",
+            "port" : 0,
+        }
+    }
+}

@@ -12,16 +12,16 @@ AssetSearchWidget::AssetSearchWidget(AssetType type, size_t searchIncrement)
 {
     _assetType = type;
     _searchIncrement = searchIncrement;
-    _fm = Runtime::getModule<ServerFilesystem>();
+    /*_fm = Runtime::getModule<ServerFilesystem>();
     _fm->searchAssets(0, _searchIncrement, "", _assetType).then([this](auto results){
        std::scoped_lock lock(_resultsLock);
         _searchResults = results;
-    });
+    });*/
 }
 
 bool AssetSearchWidget::draw()
 {
-    ImGui::BeginDisabled(_selectionMade);
+    /*ImGui::BeginDisabled(_selectionMade);
     if(ImGui::InputText("search", &_searchText))
     {
         _selected = -1;
@@ -67,18 +67,20 @@ bool AssetSearchWidget::draw()
     ImGui::EndDisabled();
     ImGui::EndDisabled();
 
-    return _selectionMade && !_fetchingSelected;
+    return _selectionMade && !_fetchingSelected;*/
+	return false;
 }
 
 AssetID AssetSearchWidget::currentSelected()
 {
-    std::scoped_lock lock(_resultsLock);
-    return _searchResults[_selected].id;
+	/*std::scoped_lock lock(_resultsLock);
+	return _searchResults[_selected].id;*/
+	return {};
 }
 
 void AssetSearchWidget::makeSelection()
 {
-    _selectionMade = true;
+	/*_selectionMade = true;
     _fetchingSelected = true;
     auto* am = Runtime::getModule<AssetManager>();
     auto selected = _searchResults[_selected].id;
@@ -87,6 +89,6 @@ void AssetSearchWidget::makeSelection()
     else
         am->fetchAsset<Asset>(selected).then([this](Asset* asset){
             _fetchingSelected = false;
-        });
+        });*/
 
 }

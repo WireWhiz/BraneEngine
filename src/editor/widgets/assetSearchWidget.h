@@ -5,16 +5,18 @@
 #ifndef BRANEENGINE_ASSETSEARCHWIDGET_H
 #define BRANEENGINE_ASSETSEARCHWIDGET_H
 
-#include "../serverFilesystem.h"
+#include <string>
+#include <mutex>
+#include "assets/assetType.h"
+#include "assets/assetID.h"
 
 class AssetSearchWidget
 {
-    ServerFilesystem* _fm;
     std::string _searchText;
     size_t _searchIncrement;
     AssetType _assetType;
     std::mutex _resultsLock;
-    std::vector<ServerFilesystem::SearchResult> _searchResults;
+   // std::vector<ServerFilesystem::SearchResult> _searchResults;
     int _selected = -1;
     bool _selectionMade = false;
     bool _fetchingSelected = false;

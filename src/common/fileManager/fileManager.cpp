@@ -5,8 +5,10 @@
 #include <config/config.h>
 #include <utility/strCaseCompare.h>
 #include <tinyfiledialogs.h>
+#include <openssl/md5.h>
+#include <utility/hex.h>
 
-void FileManager::writeAsset(Asset* asset, const std::string& filename)
+void FileManager::writeAsset(Asset* asset, const std::filesystem::path& filename)
 {
 	SerializedData data;
     OutputSerializer s(data);
@@ -20,9 +22,7 @@ void FileManager::writeAsset(Asset* asset, const std::string& filename)
 	f.close();
 }
 
-
-
-bool FileManager::readFile(const std::string& filename, std::string& data)
+bool FileManager::readFile(const std::filesystem::path& filename, std::string& data)
 {
 	std::ifstream f(filename, std::ios::binary | std::ios::ate);
 	if (!f.is_open())
@@ -36,7 +36,7 @@ bool FileManager::readFile(const std::string& filename, std::string& data)
 	return true;
 }
 
-bool FileManager::readFile(const std::string& filename, Json::Value& data)
+bool FileManager::readFile(const std::filesystem::path& filename, Json::Value& data)
 {
 	std::ifstream f(filename, std::ios::binary);
 	if (!f.is_open())
@@ -47,7 +47,7 @@ bool FileManager::readFile(const std::string& filename, Json::Value& data)
 	return true;
 }
 
-void FileManager::writeFile(const std::string& filename, std::string& data)
+void FileManager::writeFile(const std::filesystem::path& filename, std::string& data)
 {
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());
@@ -57,7 +57,7 @@ void FileManager::writeFile(const std::string& filename, std::string& data)
 	f.close();
 }
 
-void FileManager::writeFile(const std::string& filename, Json::Value& data)
+void FileManager::writeFile(const std::filesystem::path& filename, Json::Value& data)
 {
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());
@@ -67,7 +67,7 @@ void FileManager::writeFile(const std::string& filename, Json::Value& data)
 	f.close();
 }
 
-AsyncData<Asset*> FileManager::async_readUnknownAsset(const std::string& filename)
+AsyncData<Asset*> FileManager::async_readUnknownAsset(const std::filesystem::path& filename)
 {
 	AsyncData<Asset*> asset;
 	ThreadPool::enqueue([this, filename, asset]{
@@ -86,9 +86,8 @@ FileManager::FileManager()
 
 }
 
-FileManager::DirectoryContents FileManager::getDirectoryContents(const std::string& p)
+FileManager::DirectoryContents FileManager::getDirectoryContents(const std::filesystem::path& path)
 {
-	std::filesystem::path path{p};
 	DirectoryContents contents;
 	for(auto& file : std::filesystem::directory_iterator(path))
 	{
@@ -103,17 +102,32 @@ FileManager::DirectoryContents FileManager::getDirectoryContents(const std::stri
 	return contents;
 }
 
-void FileManager::createDirectory(const std::string& path)
+std::unique_ptr<FileManager::Directory> FileManager::getDirectoryTree(const std::filesystem::path& path)
+{
+	auto d = std::make_unique<Directory>();
+	d->name = path.filename().string();
+	d->open = true;
+	for(auto& file : std::filesystem::directory_iterator{path})
+		if(file.is_directory()){
+			auto c = getDirectoryTree(file);
+			c->parent = d.get();
+			d->children.push_back(std::move(c));
+		}
+
+	return std::move(d);
+}
+
+void FileManager::createDirectory(const std::filesystem::path& path)
 {
 	std::filesystem::create_directories(path);
 }
 
-bool FileManager::deleteFile(const std::string& path)
+bool FileManager::deleteFile(const std::filesystem::path& path)
 {
 	return std::filesystem::remove_all(path);
 }
 
-void FileManager::moveFile(const std::string& source, const std::string& destination)
+void FileManager::moveFile(const std::filesystem::path& source, const std::filesystem::path& destination)
 {
 	std::filesystem::rename(source, destination);
 }
@@ -124,4 +138,36 @@ std::string FileManager::requestLocalFilePath(const std::string& title, const st
 	if(!path)
 		return "";
 	return std::string(path);
+}
+
+std::string FileManager::fileHash(const std::filesystem::path& filename)
+{
+	std::vector<unsigned char> fileContents;
+	readFile(filename, fileContents);
+
+	MD5_CTX ctx;
+	MD5_Init(&ctx);
+	MD5_Update(&ctx, fileContents.data(), fileContents.size());
+
+	//Didn't want to include md5.h in header, so just making sure I got the length right
+	std::array<unsigned char, MD5_DIGEST_LENGTH> hash;
+	MD5_Final((unsigned char*)hash.data(), &ctx);
+
+	return toHex(hash);
+}
+
+std::filesystem::path FileManager::Directory::path() const
+{
+	if(parent)
+		return parent->path() / name;
+	return "";
+}
+
+void FileManager::Directory::setParentsOpen()
+{
+	if(parent)
+	{
+		parent->open = true;
+		parent->setParentsOpen();
+	}
 }

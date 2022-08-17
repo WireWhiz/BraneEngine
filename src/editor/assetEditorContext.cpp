@@ -11,7 +11,6 @@
 #include "editor.h"
 #include "graphics/graphics.h"
 #include "tinyfiledialogs.h"
-#include "serverFilesystem.h"
 
 AssetEditorContext::AssetEditorContext(Asset* asset) : _asset(asset)
 {
@@ -220,8 +219,7 @@ void AssetEditorContext::save()
 {
     _dirty = false;
     Runtime::log("Saving " + _asset->name);
-    auto* fs = Runtime::getModule<ServerFilesystem>();
-    fs->updateAsset(_asset);
+	throw std::runtime_error("Saving not reimplemented!");
 }
 
 void AssetEditorContext::setPreviewEntities(bool visible)

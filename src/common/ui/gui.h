@@ -57,6 +57,7 @@ public:
 		_windows.push_back(std::make_unique<WindowT>(*this, args...));
 		return static_cast<WindowT*>(_windows[index].get());
 	}
+	void clearWindows();
 	void setMainMenuCallback(std::function<void()> drawMenu);
 
     void openPopup(std::unique_ptr<GUIPopup>&& popup);

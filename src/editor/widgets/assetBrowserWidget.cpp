@@ -4,28 +4,31 @@
 
 #include "assetBrowserWidget.h"
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "ui/IconsFontAwesome6.h"
 #include "utility/strCaseCompare.h"
 #include "fileManager/fileManager.h"
 #include "assets/assetManager.h"
 #include "editor/editorEvents.h"
-#include "editor/windows/createAssetWindow.h"
-#include "editor/serverFilesystem.h"
+//#include "editor/windows/createAssetWindow.h"
 #include "ecs/entity.h"
 #include "graphics/graphics.h"
+#include "editor/editor.h"
 
 
-AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits), _fs(*Runtime::getModule<ServerFilesystem>())
+AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits)
 {
-    setDirectory(_fs.root());
+	_rootPath = Runtime::getModule<Editor>()->project().projectDirectory() / "assets";
+	_root = FileManager::getDirectoryTree(_rootPath);
+	setDirectory(_root.get());
 }
 
 void AssetBrowserWidget::displayDirectoryTree()
 {
-    displayDirectoriesRecursive(_fs.root());
+    displayDirectoriesRecursive(_root.get());
 }
 
-void AssetBrowserWidget::displayDirectoriesRecursive(ServerDirectory* dir)
+void AssetBrowserWidget::displayDirectoriesRecursive(FileManager::Directory* dir)
 {
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
     if(dir->children.empty())
@@ -40,10 +43,9 @@ void AssetBrowserWidget::displayDirectoriesRecursive(ServerDirectory* dir)
     }
     if(_allowEdits)
     {
-        if (dir != _fs.root() && ImGui::BeginDragDropSource())
+        if (dir != _root.get() && ImGui::BeginDragDropSource())
         {
-            std::string path = dir->path();
-            ImGui::SetDragDropPayload("directory", &dir, sizeof(ServerDirectory*));
+            ImGui::SetDragDropPayload("directory", &dir, sizeof(FileManager::Directory*));
             ImGui::Text("%s", dir->name.c_str());
             ImGui::EndDragDropSource();
         }
@@ -52,7 +54,7 @@ void AssetBrowserWidget::displayDirectoriesRecursive(ServerDirectory* dir)
         {
             if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
             {
-                _fs.moveDirectory(*(ServerDirectory**) p->Data, dir);
+                FileManager::moveFile(_rootPath / (*(FileManager::Directory**)p->Data)->path(), _rootPath / dir->path());
             }
         }
     }
@@ -67,21 +69,17 @@ void AssetBrowserWidget::displayDirectoriesRecursive(ServerDirectory* dir)
     }
 }
 
-void AssetBrowserWidget::setDirectory(ServerDirectory* dir)
+void AssetBrowserWidget::setDirectory(FileManager::Directory* dir)
 {
-    if(dir == _currentDir)
-        return;
     _currentDir = dir;
     _currentDir->setParentsOpen();
-    if(!dir->loaded)
-    {
-        _fs.fetchDirectory(dir);
-    }
-}
-
-void AssetBrowserWidget::reloadCurrentDirectory()
-{
-    _fs.fetchDirectory(_currentDir);
+    _contents = FileManager::getDirectoryContents(_rootPath / _currentDir->path());
+	if(_contents.directories.size() != _currentDir->children.size())
+	{
+		_currentDir->children = std::move(FileManager::getDirectoryTree(_rootPath / _currentDir->path())->children);
+		for(auto& c : _currentDir->children)
+			c->parent = _currentDir;
+	}
 }
 
 void AssetBrowserWidget::displayFiles()
@@ -90,10 +88,6 @@ void AssetBrowserWidget::displayFiles()
 
     if (!_currentDir)
         ImGui::Text("No directory selected");
-    else if (!_currentDir->loaded)
-        ImGui::Text("Loading...");
-    else if (_currentDir->children.empty() && _currentDir->files.empty())
-        ImGui::Text("No Assets");
     else
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
@@ -117,20 +111,16 @@ void AssetBrowserWidget::displayFiles()
                     if (ImGui::Selectable(ICON_FA_TRASH "Delete"))
                     {
                         //Todo: confirmation dialog
-                        _fs.deleteDirectory(dir.get());
-                    }
-                    if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
-                    {
-                        _fs.fetchDirectory(_currentDir);
+                         FileManager::deleteFile(_rootPath / dir->path());
+						 reloadCurrentDirectory();
                     }
                     ImGui::EndPopup();
                 }
 
                 if (ImGui::BeginDragDropSource())
                 {
-                    std::string path = dir->path();
                     auto* dirPtr = dir.get();
-                    ImGui::SetDragDropPayload("directory", &dirPtr, sizeof(ServerDirectory*));
+                    ImGui::SetDragDropPayload("directory", &dirPtr, sizeof(FileManager::Directory*));
                     ImGui::Text("%s",dir->name.c_str());
                     ImGui::EndDragDropSource();
                 }
@@ -139,18 +129,18 @@ void AssetBrowserWidget::displayFiles()
                 {
                     if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
                     {
-                        _fs.moveDirectory(*(ServerDirectory**)p->Data, dir.get());
+                        FileManager::moveFile(_rootPath / (*(FileManager::Directory**)p->Data)->path(), _rootPath / dir->path());
                     }
                 }
             }
             ImGui::PopID();
         }
-        for (auto& file: _currentDir->files)
+        for (auto& file: _contents.files)
         {
-            ImGui::PushID(file.name.c_str());
-            if (ImGui::Selectable(std::string(ICON_FA_FILE " " + file.name).c_str()))
+            ImGui::PushID(file.c_str());
+            if (ImGui::Selectable(std::string(ICON_FA_FILE " " + file).c_str()))
             {
-                if(file.isAsset)
+                /*if(file.isAsset)
                 {
                     // Make sure to construct the focus asset event on the main thread
                     AssetManager& am = *Runtime::getModule<AssetManager>();
@@ -162,13 +152,13 @@ void AssetBrowserWidget::displayFiles()
                         else
                             Runtime::error("Selected asset was null!");
                     });
-                }
+                }*/
             }
             if(ImGui::IsItemHovered())
             {
                 fileHovered = true;
-                if(file.isAsset)
-                    ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.
+                /*if(file.isAsset)
+                    ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.*/
             }
             if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
             {
@@ -177,10 +167,10 @@ void AssetBrowserWidget::displayFiles()
 
             if (ImGui::BeginPopup("fileActions"))
             {
-                ImGui::TextDisabled(ICON_FA_TRASH "Delete");
-                if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
+                if(ImGui::Selectable(ICON_FA_TRASH "Delete"))
                 {
-                    _fs.fetchDirectory(_currentDir);
+	                FileManager::deleteFile(_rootPath / _currentDir->path() / file);
+					reloadCurrentDirectory();
                 }
                 ImGui::EndPopup();
             }
@@ -195,31 +185,21 @@ void AssetBrowserWidget::displayFiles()
         if (!fileHovered && ImGui::BeginPopupContextWindow("directoryActions"))
         {
             if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
-            {
-                _ui.openPopup(std::make_unique<CreateDirectoryPopup>(_currentDir, _fs));
-            }
-            if (ImGui::Selectable(ICON_FA_FILE_IMPORT " Import Asset"))
-            {
-                _ui.addWindow<CreateAssetWindow>(_currentDir);
-            }
-            if (ImGui::Selectable(ICON_FA_ARROWS_ROTATE "Refresh"))
-            {
-                _fs.fetchDirectory(_currentDir);
-            }
+	            _ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
             ImGui::EndPopup();
         }
     }
 }
 
 
-ServerDirectory* AssetBrowserWidget::currentDirectory()
+std::filesystem::path AssetBrowserWidget::currentDirectory()
 {
-    return _currentDir;
+    return _rootPath / _currentDir->path();
 }
 
 void AssetBrowserWidget::displayFullBrowser()
 {
-    ImGui::TextDisabled("/%s", _currentDir->path().c_str());
+    ImGui::TextDisabled("/%s", _currentDir->path().string().c_str());
 
     if(_allowEdits)
     {
@@ -230,7 +210,7 @@ void AssetBrowserWidget::displayFullBrowser()
             _mainThreadActions.pop_front()();
     }
 
-    if(_currentDir != _fs.root())
+    if(_currentDir != _root.get())
     {
         ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 10);
         if(ImGui::Selectable(ICON_FA_ARROW_LEFT))
@@ -253,7 +233,12 @@ void AssetBrowserWidget::displayFullBrowser()
     }
 }
 
-CreateDirectoryPopup::CreateDirectoryPopup(ServerDirectory* parent, ServerFilesystem& fs) : _parent(parent), GUIPopup("Create Directory"), _fs(fs)
+void AssetBrowserWidget::reloadCurrentDirectory()
+{
+	setDirectory(_currentDir);
+}
+
+CreateDirectoryPopup::CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")
 {
 }
 
@@ -265,6 +250,7 @@ void CreateDirectoryPopup::drawBody()
         || ImGui::Button("create"))
     {
         ImGui::CloseCurrentPopup();
-        _fs.createDirectory(_parent, _dirName);
+        FileManager::createDirectory(_widget.currentDirectory() / _dirName);
+		_widget.reloadCurrentDirectory();
     }
 }

@@ -9,6 +9,7 @@
 #include <memory>
 #include <unordered_map>
 #include "assets/assetID.h"
+#include "BraneProject.h"
 
 namespace net{
     class Connection;
@@ -16,20 +17,24 @@ namespace net{
 
 class GUI;
 class AssetEditorContext;
+class GUIWindow;
 class Editor : public Module
 {
 	GUI* _ui;
-	net::Connection* _server;
+	GUIWindow* _selectProjectWindow = nullptr;
 
     // Using shared pointers so we can track which ones are in use
     std::unordered_map<AssetID, std::shared_ptr<AssetEditorContext>> _assetContexts;
+	BraneProject _project;
 	void addMainWindows();
 	void drawMenu();
 public:
 	void start() override;
-	static const char* name();
-	net::Connection* server() const;
+	void loadProject(const std::filesystem::path& filepath);
+	void createProject(const std::string& name, const std::filesystem::path& directory);
+	BraneProject& project();
     std::shared_ptr<AssetEditorContext> getEditorContext(const AssetID& id);
+	static const char* name();
 };
 
 

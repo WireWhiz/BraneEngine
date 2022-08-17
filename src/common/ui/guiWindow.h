@@ -17,7 +17,7 @@ class GUIWindow
     static size_t _instanceCounter;
     size_t _instance;
     bool _open = true;
-    bool _resetSize = false;
+    bool _resetSize = true;
 protected:
     GUI& _ui;
     std::string _name;

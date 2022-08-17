@@ -10,9 +10,9 @@ add_executable(BraneEditor
         ${PROJECT_SOURCE_DIR}/media/brane.rc
         main.cpp
         editor.cpp
-        serverFilesystem.cpp
         editorEvents.cpp
-        assetEditorContext.cpp)
+        assetEditorContext.cpp
+        BraneProject.cpp)
 if(WIN32)
     set_target_properties(BraneEditor PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,TRUE,FALSE>)
 endif()
