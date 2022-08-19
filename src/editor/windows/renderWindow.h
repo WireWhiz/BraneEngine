@@ -19,7 +19,6 @@ namespace graphics{
     class SwapChain;
 }
 
-class AssetEditorContext;
 class RenderWindow : public GUIWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
@@ -35,7 +34,6 @@ class RenderWindow : public GUIWindow
     ImGuizmo::OPERATION _gizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
-    std::shared_ptr<AssetEditorContext> _focusedAsset;
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;
 

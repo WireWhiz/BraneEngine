@@ -5,6 +5,7 @@
 #include "dataWindow.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
+#include "editor/assets/editorAsset.h"
 #include "../widgets/virtualVariableWidgets.h"
 #include <ui/gui.h>
 #include <assets/assembly.h>
@@ -12,7 +13,6 @@
 #include "assets/types/meshAsset.h"
 #include <assets/assetID.h>
 #include "common/ecs/entity.h"
-#include "../assetEditorContext.h"
 #include "systems/transforms.h"
 #include "assets/types/materialAsset.h"
 #include "../widgets/assetSelectWidget.h"
@@ -22,7 +22,7 @@ DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
     _name = "Data Inspector";
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         auto editor = Runtime::getModule<Editor>();
-        _focusedAsset = editor->getEditorContext(event->asset());
+        _focusedAsset = editor->project().getEditorAsset(event->asset());
 		_focusMode = FocusMode::asset;
 		_focusedAssetEntity = -1;
 	});
@@ -56,10 +56,10 @@ void DataWindow::displayAssetData()
 		return;
 
     ImGui::PushFont(_ui.fonts()[1]);
-	ImGui::Text("%s", _focusedAsset->asset()->name.c_str());
+	ImGui::Text("%s", _focusedAsset->json().data()["name"].asCString());
     ImGui::PopFont();
-	ImGui::TextDisabled("%s", _focusedAsset->asset()->type.toString().c_str());
-	switch(_focusedAsset->asset()->type.type())
+	ImGui::TextDisabled("%s", _focusedAsset->json().data()["type"].asCString());
+	/*switch(_focusedAsset->asset()->type.type())
 	{
 		case AssetType::mesh:
 			displayMeshData();
@@ -72,19 +72,12 @@ void DataWindow::displayAssetData()
             break;
 		default:
 			ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->asset()->type.toString().c_str(), _focusedAsset->asset()->name.c_str());
-	}
-    if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-    {
-        if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
-            _focusedAsset->redo();
-        else if(ImGui::IsKeyPressed(ImGuiKey_Z))
-            _focusedAsset->undo();
-    }
+	}*/
 }
 
 void DataWindow::displayAssemblyData()
 {
-	Assembly* assembly = static_cast<Assembly*>(_focusedAsset->asset());
+	/*Assembly* assembly = static_cast<Assembly*>(_focusedAsset->asset());
 	if(_focusedAssetEntity < assembly->entities.size())
 	{
 		displayEntityAssetData();
@@ -124,12 +117,12 @@ void DataWindow::displayAssemblyData()
 	}
 	ImGui::Text("Entities: %u", assembly->entities.size());
 	if(ImGui::IsItemHovered())
-		ImGui::SetTooltip("Edit in entities window");
+		ImGui::SetTooltip("Edit in entities window");*/
 }
 
 void DataWindow::displayMeshData()
 {
-	MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
+	/*MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
 	ImGui::Text("Primitives %u", mesh->primitiveCount());
 	uint32_t vertices = 0;
 	uint32_t tris = 0;
@@ -161,13 +154,13 @@ void DataWindow::displayMeshData()
             ImGui::Unindent(16);
         }
         ImGui::PopID();
-    }
+    }*/
 
 }
 
 void DataWindow::displayEntityAssetData()
 {
-	auto& entityAsset = static_cast<Assembly*>(_focusedAsset->asset())->entities[_focusedAssetEntity];
+	/*auto& entityAsset = static_cast<Assembly*>(_focusedAsset->asset())->entities[_focusedAssetEntity];
 	ImGui::Separator();
 	ImGui::Text("Entity Index: %lu", _focusedAssetEntity);
 	ImGui::Separator();
@@ -232,7 +225,7 @@ void DataWindow::displayEntityAssetData()
     {
         ImGui::TextDisabled("Can't add components yet.. need to make server calls for this");
         ImGui::EndPopup();
-    }
+    }*/
 }
 
 void DataWindow::displayEntityData()
@@ -259,7 +252,7 @@ void DataWindow::displayEntityData()
 
 void DataWindow::displayMaterialData()
 {
-    MaterialAsset* material = static_cast<MaterialAsset*>(_focusedAsset->asset());
+    /*MaterialAsset* material = static_cast<MaterialAsset*>(_focusedAsset->asset());
     AssetID vertexID = material->vertexShader;
     if(AssetSelectWidget::draw(&vertexID, AssetType::shader))
     {
@@ -275,7 +268,7 @@ void DataWindow::displayMaterialData()
     ImGui::SameLine();
     ImGui::Text("Fragment Shader");
     ImGui::Spacing();
-    ImGui::TextDisabled("Custom property components coming soon");
+    ImGui::TextDisabled("Custom property components coming soon");*/
 }
 
 

@@ -10,7 +10,7 @@
 
 #include "ecs/entityID.h"
 
-class AssetEditorContext;
+class EditorAsset;
 class Assembly;
 
 class DataWindow : public GUIWindow
@@ -20,7 +20,7 @@ class DataWindow : public GUIWindow
 		entity
 	};
 	FocusMode _focusMode;
-	std::shared_ptr<AssetEditorContext> _focusedAsset;
+	std::shared_ptr<EditorAsset> _focusedAsset;
 	size_t _focusedAssetEntity = 0;
 
     struct DraggedComponent

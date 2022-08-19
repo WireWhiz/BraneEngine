@@ -47,7 +47,7 @@ bool FileManager::readFile(const std::filesystem::path& filename, Json::Value& d
 	return true;
 }
 
-void FileManager::writeFile(const std::filesystem::path& filename, std::string& data)
+void FileManager::writeFile(const std::filesystem::path& filename, const std::string& data)
 {
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());
@@ -57,7 +57,7 @@ void FileManager::writeFile(const std::filesystem::path& filename, std::string& 
 	f.close();
 }
 
-void FileManager::writeFile(const std::filesystem::path& filename, Json::Value& data)
+void FileManager::writeFile(const std::filesystem::path& filename, const Json::Value& data)
 {
 	std::filesystem::path path{filename};
 	std::filesystem::create_directories(path.parent_path());

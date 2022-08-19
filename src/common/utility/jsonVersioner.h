@@ -7,6 +7,7 @@
 
 #include <json/json.h>
 #include <deque>
+#include <functional>
 
 class VersionedJson;
 class JsonChange
@@ -31,6 +32,7 @@ class JsonVersionTracker
 	//TODO add this to config
 	size_t maxChanges = 200;
 public:
+	JsonVersionTracker();
 	void recordChange(std::unique_ptr<JsonChange> change);
 	void clearChanges(const VersionedJson* json);
 	void undo();
@@ -49,14 +51,17 @@ class VersionedJson
 		Json::Value before;
 	};
 	std::unique_ptr<UncompletedChange> _uncompletedChange;
+	std::function<void()> _onChanged;
 	friend class JsonChange;
 public:
 	VersionedJson(JsonVersionTracker& tkr);
-	void initialize(Json::Value& value);
+	void initialize(const Json::Value& value);
 	void changeValue(const std::string& path, const Json::Value& newValue, bool changeComplete = true);
 	void markClean();
+	void onChanged(const std::function<void()>& callback);
 	bool dirty() const;
-	const Json::Value& data() const;
+	Json::Value& data();
+	JsonVersionTracker& tracker();
 };
 
 

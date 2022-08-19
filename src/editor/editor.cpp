@@ -20,7 +20,7 @@
 #include "graphics/material.h"
 #include "graphics/graphics.h"
 #include "networking/networking.h"
-#include "assetEditorContext.h"
+#include "assets/editorAsset.h"
 
 void Editor::start()
 {
@@ -107,23 +107,6 @@ void Editor::drawMenu()
 	}
 }
 
-std::shared_ptr<AssetEditorContext> Editor::getEditorContext(const AssetID& id)
-{
-    if(_assetContexts.count(id))
-        return _assetContexts.at(id);
-
-    auto* am = Runtime::getModule<AssetManager>();
-    Asset* asset = am->getAsset<Asset>(id);
-    if(!asset)
-    {
-        Runtime::warn("Tried to create editor context but " + id.string() + " is not loaded!");
-        return nullptr;
-    }
-
-    _assetContexts.insert({id, std::make_shared<AssetEditorContext>(asset)});
-    return _assetContexts.at(id);
-}
-
 BraneProject& Editor::project()
 {
 	return _project;
@@ -139,6 +122,16 @@ void Editor::createProject(const std::string& name, const std::filesystem::path&
 {
 	_project.create(name, directory);
 	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
+}
+
+JsonVersionTracker& Editor::jsonTracker()
+{
+	return _jsonTracker;
+}
+
+Editor::Editor() : _project(_jsonTracker)
+{
+
 }
 
 //The editor specific fetch asset function

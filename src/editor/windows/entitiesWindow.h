@@ -8,12 +8,12 @@
 #include <ui/guiWindow.h>
 #include <memory>
 
-class AssetEditorContext;
+class EditorAsset;
 class EntityManager;
 class Assembly;
 class EntitiesWindow : public GUIWindow
 {
-    std::shared_ptr<AssetEditorContext> _assetCtx;
+    std::shared_ptr<EditorAsset> _asset;
 	EntityManager* _em;
     size_t _selected = -1;
     void displayAssemblyEntities(Assembly* assembly, size_t entIndex);

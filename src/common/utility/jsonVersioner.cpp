@@ -10,24 +10,32 @@ JsonChange::JsonChange(Json::Path path, Json::Value newValue, VersionedJson* jso
 	_before = _path.resolve(_json->data());
 	_path.make(_json->_root) = _after;
 	++_json->_version;
+	if(_json->_onChanged)
+		_json->_onChanged();
 }
 
 JsonChange::JsonChange(Json::Path path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(std::move(path)), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json)
 {
 	_path.make(_json->_root) = _after;
 	++_json->_version;
+	if(_json->_onChanged)
+		_json->_onChanged();
 }
 
 void JsonChange::undo()
 {
 	_path.make(_json->_root)= _before;
 	--_json->_version;
+	if(_json->_onChanged)
+		_json->_onChanged();
 }
 
 void JsonChange::redo()
 {
 	_path.make(_json->_root)= _after;
 	++_json->_version;
+	if(_json->_onChanged)
+		_json->_onChanged();
 }
 
 const VersionedJson* JsonChange::json()
@@ -40,6 +48,8 @@ void JsonVersionTracker::recordChange(std::unique_ptr<JsonChange> change)
 	if(_currentChange != _changes.end())
 		_changes.erase(_currentChange, _changes.end());
 	_changes.push_back(std::move(change));
+	while(_changes.size() > maxChanges)
+		_changes.pop_front();
 	_currentChange = _changes.end();
 }
 
@@ -70,12 +80,17 @@ void JsonVersionTracker::clearChanges(const VersionedJson* json)
 	_currentChange = _changes.end();
 }
 
+JsonVersionTracker::JsonVersionTracker()
+{
+	_currentChange = _changes.end();
+}
+
 VersionedJson::VersionedJson(JsonVersionTracker& tkr) : _tkr(tkr)
 {
 
 }
 
-void VersionedJson::initialize(Json::Value& value)
+void VersionedJson::initialize(const Json::Value& value)
 {
 	_root = value;
 	_version = 0;
@@ -93,6 +108,8 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 			_uncompletedChange->before = Json::Path(path).resolve(_root);
 		}
 		Json::Path(path).make(_root) = newValue;
+		if(_onChanged)
+			_onChanged();
 		return;
 	}
 
@@ -118,7 +135,17 @@ bool VersionedJson::dirty() const
 	return _lastCleanedVersion != _version;
 }
 
-const Json::Value& VersionedJson::data() const
+Json::Value& VersionedJson::data()
 {
 	return _root;
+}
+
+void VersionedJson::onChanged(const std::function<void()>& callback)
+{
+	_onChanged = callback;
+}
+
+JsonVersionTracker& VersionedJson::tracker()
+{
+	return _tkr;
 }

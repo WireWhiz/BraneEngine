@@ -15,5 +15,5 @@ layout(location = 1) out vec3 fragNormal;
 void main() {
     gl_Position = md.render_matrix * vec4(inPosition, 1.0);
     outPoisiton = (md.objectToWorld * vec4(inPosition, 1.0)).xyz;
-    fragNormal =normalize((md.objectToWorld * vec4(inNormal, 1.0)).xyz);
+    fragNormal = normalize((md.objectToWorld * vec4(inNormal, 1.0)).xyz);
 }

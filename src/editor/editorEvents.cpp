@@ -3,7 +3,6 @@
 //
 
 #include "editorEvents.h"
-#include "assetEditorContext.h"
 
 LoginEvent::LoginEvent(net::Connection* server) : GUIEvent("login")
 {

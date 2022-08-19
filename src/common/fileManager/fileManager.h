@@ -103,15 +103,13 @@ public:
 		std::filesystem::path path{filename};
 		std::filesystem::create_directories(path.parent_path());
 
-
-
 		std::ofstream f(path, std::ios::out | std::ofstream::binary);
 		f.write((char*)data.data(), data.size() * sizeof(T));
 		f.close();
 	}
 
-	static void writeFile(const std::filesystem::path& filename, std::string& data);
-	static void writeFile(const std::filesystem::path& filename, Json::Value& data);
+	static void writeFile(const std::filesystem::path& filename, const std::string& data);
+	static void writeFile(const std::filesystem::path& filename, const Json::Value& data);
 
 	void writeAsset(Asset* asset, const std::filesystem::path& filename);
 

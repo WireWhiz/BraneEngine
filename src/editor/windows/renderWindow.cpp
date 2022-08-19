@@ -6,7 +6,6 @@
 #include "ui/gui.h"
 #include "../editor.h"
 #include "../editorEvents.h"
-#include "../assetEditorContext.h"
 #include "graphics/graphics.h"
 #include "graphics/meshRenderer.h"
 #include "graphics/material.h"
@@ -28,7 +27,7 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
 	_renderer = vkr.createRenderer<graphics::MeshRenderer>(&vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
-    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
+   /* _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         auto editor = Runtime::getModule<Editor>();
         if(_focusedAsset)
             _focusedAsset->setPreviewEntities(false);
@@ -49,7 +48,7 @@ RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
             _focusedAsset->setPreviewEntities(false);
         _focusedAsset = nullptr;
         _focusedEntity = event->id();
-    });
+    });*/
     ImGuizmo::AllowAxisFlip(false); // Maybe add this to the config at some point
 }
 
@@ -153,13 +152,13 @@ void RenderWindow::displayContent()
                 _lastMousePos = ImGui::GetMousePos();
             }
 
-            if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+            /*if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
             {
                 if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
                     _focusedAsset->redo();
                 else if(ImGui::IsKeyPressed(ImGuiKey_Z))
                     _focusedAsset->undo();
-            }
+            }*/
         }
         auto* em = Runtime::getModule<EntityManager>();
         if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
@@ -180,10 +179,10 @@ void RenderWindow::displayContent()
             else if(_manipulating)
             {
                 _manipulating = false;
-                if(_focusedAsset)
+                /*if(_focusedAsset)
                 {
                     _focusedAsset->updateEntity(_focusedAssetEntity);
-                }
+                }*/
             }
         }
 

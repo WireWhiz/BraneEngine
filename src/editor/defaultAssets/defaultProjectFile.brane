@@ -8,5 +8,13 @@
             "address" : "",
             "port" : 0,
         }
+    },
+    "assets" : {
+        "remote" : [
+
+        ],
+        "local" : [
+
+        ]
     }
 }

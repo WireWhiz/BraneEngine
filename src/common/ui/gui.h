@@ -22,7 +22,7 @@ namespace graphics{
 class GUIRenderer;
 class GUIWindow;
 class GUIPopup;
-class ImFont;
+struct ImFont;
 
 class GUI : public Module
 {

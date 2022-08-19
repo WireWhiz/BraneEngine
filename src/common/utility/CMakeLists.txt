@@ -7,7 +7,7 @@ set(SOURCES
 		serializedData.cpp
 		jsonVersioner.cpp)
 
-add_library(utility STATIC ${SOURCES})
+add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)
 
 target_link_libraries(utility PUBLIC runtime include_dir jsoncpp_static)
 
