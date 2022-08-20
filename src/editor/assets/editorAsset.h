@@ -10,22 +10,21 @@
 #include <utility/serializedData.h>
 
 class Asset;
+class BraneProject;
 class EditorAsset
 {
 protected:
 	//Editable data goes in the json for easy versioning, other things will be serialized in binary format
+	BraneProject& _project;
 	VersionedJson _json;
 	std::filesystem::path _file;
 	virtual Json::Value defaultJson() const;
-	virtual void serialize(OutputSerializer& s);
-	virtual void deserialize(InputSerializer& s);
 public:
-	static std::filesystem::path assetPathFromSource(const std::filesystem::path& path);
-	static EditorAsset* openUnknownAsset(const std::filesystem::path& path, JsonVersionTracker& tkr);
-	EditorAsset(const std::filesystem::path& file, JsonVersionTracker& tkr);
+	static EditorAsset* openUnknownAsset(const std::filesystem::path& path, BraneProject& project);
+	EditorAsset(const std::filesystem::path& file, BraneProject& project);
 	virtual ~EditorAsset() = default;
 	void load();
-	virtual void rebuildAsset(Asset* asset);
+	virtual void cacheAsset() = 0;
 	bool unsavedChanged() const;
 	void save();
 	VersionedJson& json();

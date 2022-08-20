@@ -129,7 +129,7 @@ JsonVersionTracker& Editor::jsonTracker()
 	return _jsonTracker;
 }
 
-Editor::Editor() : _project(_jsonTracker)
+Editor::Editor() : _project(*this)
 {
 
 }

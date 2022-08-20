@@ -7,8 +7,10 @@
 #include "graphics/shader.h"
 #include "runtime/runtime.h"
 #include "fileManager/fileManager.h"
+#include "editor/braneProject.h"
+#include "utility/hex.h"
 
-EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, JsonVersionTracker& tkr) : EditorAsset(file, tkr)
+EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
 
 }
@@ -17,46 +19,40 @@ Json::Value EditorShaderAsset::defaultJson() const
 {
 	Json::Value value = EditorAsset::defaultJson();
 	value["type"] = "shader";
+	value["source"] = "";
 	return value;
 }
 
-void EditorShaderAsset::rebuildAsset(Asset* asset)
+void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 {
-	EditorAsset::rebuildAsset(asset);
-	ShaderAsset* shader = dynamic_cast<ShaderAsset*>(asset);
-	shader->spirv = _spirv;
-	shader->shaderType = _type;
+	_json.data()["source"] = std::filesystem::relative(source, _file.parent_path()).string();
+	save();
 }
 
-void EditorShaderAsset::serialize(OutputSerializer& s)
+void EditorShaderAsset::cacheAsset()
 {
-	EditorAsset::serialize(s);
-	s << _spirv << _type;
-}
-
-void EditorShaderAsset::deserialize(InputSerializer& s)
-{
-	EditorAsset::deserialize(s);
-	s >> _spirv >> _type;
-}
-
-void EditorShaderAsset::updateFromSource(const std::filesystem::path& source)
-{
+	if(_json.data()["source"].asString().empty())
+	{
+		Runtime::error("Shader source not set for " + _json.data()["name"].asString());
+		return;
+	}
+	std::filesystem::path source = _file.parent_path() / _json.data()["source"].asString();
 	std::string fileSuffix = source.extension().string();
-	auto assetPath = source;
-	assetPath.replace_extension(".shader");
 
+	ShaderAsset shader;
+	shader.id.parseString(_json.data()["id"].asString());
+	shader.name = _json.data()["name"].asString();
 	graphics::SpirvHelper::Init();
 	VkShaderStageFlagBits stageFlags;
 	if(fileSuffix == ".vert")
 	{
 		stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-		_type = ShaderType::vertex;
+		shader.shaderType = ShaderType::vertex;
 	}
 	else if(fileSuffix == ".frag")
 	{
 		stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-		_type = ShaderType::fragment;
+		shader.shaderType = ShaderType::fragment;
 	}
 	else
 	{
@@ -66,16 +62,23 @@ void EditorShaderAsset::updateFromSource(const std::filesystem::path& source)
 	std::vector<char> shaderCode;
 	if(!FileManager::readFile(source, shaderCode))
 	{
-		Runtime::error("Failed to open " + source.string());
+		Runtime::error("Failed to open shader source: " + source.string());
 		return;
 	}
+	//Add null termination char
 	shaderCode.resize(shaderCode.size() + 1, '\0');
-	if(!graphics::CompileGLSL(stageFlags, shaderCode.data(), _spirv))
+	if(!graphics::CompileGLSL(stageFlags, shaderCode.data(), shader.spirv))
 	{
 		Runtime::error("Shader compilation failed for " + source.string());
 		graphics::SpirvHelper::Finalize();
 		return;
 	}
 	graphics::SpirvHelper::Finalize();
-	save();
+
+	SerializedData data;
+	OutputSerializer s(data);
+
+	shader.serialize(s);
+
+	FileManager::writeFile(_project.projectDirectory() / "cache" / "assets" / (toHex(shader.id.id) + ".bin"), data.vector());
 }

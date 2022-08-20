@@ -18,7 +18,7 @@ SelectProjectWindow::SelectProjectWindow(GUI& ui) : GUIWindow(ui)
 
 void SelectProjectWindow::displayContent()
 {
-	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, .3);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.3f);
 	ImGui::Text("Create New");
 	ImGui::InputText("Name", &_projectName);
 	std::string pathStr = _projectPath.string();

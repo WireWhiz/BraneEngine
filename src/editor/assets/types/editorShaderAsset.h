@@ -10,15 +10,12 @@
 
 class EditorShaderAsset : public EditorAsset
 {
-	std::vector<uint32_t> _spirv;
-	ShaderType _type;
+
 	Json::Value defaultJson() const override;
-	void serialize(OutputSerializer& s) override;
-	void deserialize(InputSerializer& s) override;
 public:
-	EditorShaderAsset(const std::filesystem::path& file, JsonVersionTracker& tkr);
-	void rebuildAsset(Asset *asset) override;
-	void updateFromSource(const std::filesystem::path& source);
+	EditorShaderAsset(const std::filesystem::path& file, BraneProject& project);
+	void cacheAsset() override;
+	void updateSource(const std::filesystem::path& source);
 };
 
 

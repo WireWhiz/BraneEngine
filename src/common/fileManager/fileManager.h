@@ -98,7 +98,7 @@ public:
 	static bool readFile(const std::filesystem::path& filename, std::string& data);
 	static bool readFile(const std::filesystem::path& filename, Json::Value& data);
 	template<typename T>
-	void writeFile(const std::filesystem::path& filename, const std::vector<T>& data)
+	static void writeFile(const std::filesystem::path& filename, const std::vector<T>& data)
 	{
 		std::filesystem::path path{filename};
 		std::filesystem::create_directories(path.parent_path());

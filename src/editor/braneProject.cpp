@@ -8,9 +8,10 @@
 #include "fileManager/fileWatcher.h"
 #include "assets/editorAsset.h"
 #include "assets/types/editorShaderAsset.h"
+#include "editor.h"
 #include <fstream>
 
-BraneProject::BraneProject(JsonVersionTracker& tkr) : _file(tkr)
+BraneProject::BraneProject(Editor& editor) : _editor(editor), _file(editor.jsonTracker())
 {
 
 }
@@ -110,9 +111,9 @@ void BraneProject::initLoaded()
 			isOpen = true;
 		}
 		else
-			shaderAsset = new EditorShaderAsset(assetPath, _file.tracker());
+			shaderAsset = new EditorShaderAsset(assetPath, *this);
 
-		shaderAsset->updateFromSource(path);
+		shaderAsset->updateSource(path);
 
 		_idToAssetPath[AssetID(shaderAsset->json().data()["id"].asString())] = assetPath.string();
 
@@ -132,9 +133,9 @@ void BraneProject::initLoaded()
 			isOpen = true;
 		}
 		else
-			shaderAsset = new EditorShaderAsset(assetPath, _file.tracker());
+			shaderAsset = new EditorShaderAsset(assetPath, *this);
 
-		shaderAsset->updateFromSource(path);
+		shaderAsset->updateSource(path);
 
 		_idToAssetPath[AssetID(shaderAsset->json().data()["id"].asString())] = assetPath.string();
 
@@ -165,8 +166,13 @@ std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(std::filesystem::path 
 {
 	if(_openAssets.count(path.string()))
 		return _openAssets.at(path.string());
-	auto asset = std::shared_ptr<EditorAsset>(EditorAsset::openUnknownAsset(path, _file.tracker()));
+	auto asset = std::shared_ptr<EditorAsset>(EditorAsset::openUnknownAsset(path, *this));
 	if(asset)
 		_openAssets.insert({path.string(), asset});
 	return asset;
+}
+
+Editor& BraneProject::editor()
+{
+	return _editor;
 }

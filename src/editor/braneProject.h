@@ -13,10 +13,12 @@
 
 class FileWatcher;
 class EditorAsset;
+class Editor;
 
 //This file stores everything to do with our connection to the server
 class BraneProject
 {
+	Editor& _editor;
 	bool _loaded = false;
 	std::filesystem::path _filepath;
 	VersionedJson _file;
@@ -27,7 +29,7 @@ class BraneProject
 	void loadDefault();
 	void initLoaded();
 public:
-	BraneProject(JsonVersionTracker& tkr);
+	BraneProject(Editor& editor);
 	~BraneProject();
 	bool loaded() const;
 	bool load(const std::filesystem::path& filepath);
@@ -36,6 +38,7 @@ public:
 	bool unsavedChanges() const;
 	std::filesystem::path projectDirectory();
 	VersionedJson& json();
+	Editor& editor();
 
 	std::shared_ptr<EditorAsset> getEditorAsset(AssetID id);
 	std::shared_ptr<EditorAsset> getEditorAsset(std::filesystem::path path);
