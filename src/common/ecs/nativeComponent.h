@@ -32,6 +32,10 @@ public:
 	{
 		return VirtualComponentView(_description, (byte*)this);
 	}
+	operator VirtualComponentView() const
+	{
+		return toVirtual();
+	}
 	static T* fromVirtual(byte* data)
 	{
 		return (T*)data;
