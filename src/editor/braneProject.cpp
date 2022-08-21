@@ -9,6 +9,7 @@
 #include "assets/editorAsset.h"
 #include "assets/types/editorShaderAsset.h"
 #include "editor.h"
+#include "assets/types/editorAssemblyAsset.h"
 #include <fstream>
 
 BraneProject::BraneProject(Editor& editor) : _editor(editor), _file(editor.jsonTracker())
@@ -93,10 +94,34 @@ std::filesystem::path BraneProject::projectDirectory()
 
 void BraneProject::initLoaded()
 {
+	const Json::Value& localAssets = _file["assets"]["local"];
+	std::string testID = "localhost/" + std::to_string(_assetIdCounter);
+	while(localAssets.isMember(testID))
+		testID = "localhost/" + std::to_string(++_assetIdCounter);
+
 	_fileWatcher = std::make_unique<FileWatcher>();
 	_fileWatcher->watchDirectory(projectDirectory() / "assets");
 	_fileWatcher->addFileWatcher(".gltf", [this](const std::filesystem::path& path){
 		Runtime::log("loading gltf: " + path.string());
+		std::filesystem::path assetPath = path;
+		assetPath.replace_extension(".assembly");
+
+		bool isOpen = false;
+		EditorAssemblyAsset* assembly;
+		if(_openAssets.count(assetPath.string()))
+		{
+			assembly = (EditorAssemblyAsset*)_openAssets.at(assetPath.string()).get();
+			isOpen = true;
+		}
+		else
+			assembly = new EditorAssemblyAsset(assetPath, *this);
+
+		assembly->linkToGLTF(path);
+
+		_file.data()["assets"]["local"][assembly->json()["id"].asString()] = assetPath.string();
+
+		if(!isOpen)
+			delete assembly;
 	});
 	_fileWatcher->addFileWatcher(".vert", [this](const std::filesystem::path& path){
 		Runtime::log("loading fragment shader: " + path.string());
@@ -115,7 +140,7 @@ void BraneProject::initLoaded()
 
 		shaderAsset->updateSource(path);
 
-		_idToAssetPath[AssetID(shaderAsset->json().data()["id"].asString())] = assetPath.string();
+		_file.data()["assets"]["local"][shaderAsset->json()["id"].asString()] = assetPath.string();
 
 		if(!isOpen)
 			delete shaderAsset;
@@ -137,7 +162,7 @@ void BraneProject::initLoaded()
 
 		shaderAsset->updateSource(path);
 
-		_idToAssetPath[AssetID(shaderAsset->json().data()["id"].asString())] = assetPath.string();
+		_file.data()["assets"]["local"][shaderAsset->json()["id"].asString()] = assetPath.string();
 
 		if(!isOpen)
 			delete shaderAsset;
@@ -157,12 +182,10 @@ VersionedJson& BraneProject::json()
 
 std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(AssetID id)
 {
-	if(_idToAssetPath.count(id))
-		return getEditorAsset(std::filesystem::path(_idToAssetPath.at(id)));
-	return nullptr;
+	return getEditorAsset(std::filesystem::path(_file.data()["assets"]["local"][id.string()].asString()));
 }
 
-std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(std::filesystem::path path)
+std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const std::filesystem::path& path)
 {
 	if(_openAssets.count(path.string()))
 		return _openAssets.at(path.string());
@@ -175,4 +198,16 @@ std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(std::filesystem::path 
 Editor& BraneProject::editor()
 {
 	return _editor;
+}
+
+AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset)
+{
+	Json::Value& localAssets = _file.data()["assets"]["local"];
+	std::string testID = "localhost/" + std::to_string(_assetIdCounter);
+	while(localAssets.isMember(testID))
+		testID = "localhost/" + std::to_string(++_assetIdCounter);
+
+	localAssets[testID] = editorAsset.string();
+
+	return AssetID(testID);
 }

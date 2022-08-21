@@ -54,11 +54,11 @@ VersionedJson& EditorAsset::json()
 	return _json;
 }
 
-Json::Value EditorAsset::defaultJson() const
+Json::Value EditorAsset::defaultJson()
 {
 	Json::Value value;
 	value["name"] = "new asset";
-	value["id"] = "null/0";
+	value["id"] = _project.newAssetID(_file).string();
 	return value;
 }
 

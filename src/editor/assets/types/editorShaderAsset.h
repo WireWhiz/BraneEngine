@@ -11,7 +11,7 @@
 class EditorShaderAsset : public EditorAsset
 {
 
-	Json::Value defaultJson() const override;
+	Json::Value defaultJson() override;
 public:
 	EditorShaderAsset(const std::filesystem::path& file, BraneProject& project);
 	void cacheAsset() override;

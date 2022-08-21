@@ -24,7 +24,8 @@ class BraneProject
 	VersionedJson _file;
 	std::unique_ptr<FileWatcher> _fileWatcher;
 	std::unordered_map<std::string, std::shared_ptr<EditorAsset>> _openAssets;
-	std::unordered_map<AssetID, std::string> _idToAssetPath;
+
+	uint32_t _assetIdCounter = 0;
 
 	void loadDefault();
 	void initLoaded();
@@ -40,8 +41,10 @@ public:
 	VersionedJson& json();
 	Editor& editor();
 
+	AssetID newAssetID(const std::filesystem::path& editorAsset);
+
 	std::shared_ptr<EditorAsset> getEditorAsset(AssetID id);
-	std::shared_ptr<EditorAsset> getEditorAsset(std::filesystem::path path);
+	std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path& path);
 };
 
 

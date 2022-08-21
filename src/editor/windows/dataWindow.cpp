@@ -56,9 +56,9 @@ void DataWindow::displayAssetData()
 		return;
 
     ImGui::PushFont(_ui.fonts()[1]);
-	ImGui::Text("%s", _focusedAsset->json().data()["name"].asCString());
+	ImGui::Text("%s", _focusedAsset->json()["name"].asCString());
     ImGui::PopFont();
-	ImGui::TextDisabled("%s", _focusedAsset->json().data()["type"].asCString());
+	ImGui::TextDisabled("%s", _focusedAsset->json()["type"].asCString());
 	/*switch(_focusedAsset->asset()->type.type())
 	{
 		case AssetType::mesh:

@@ -18,7 +18,7 @@ protected:
 	BraneProject& _project;
 	VersionedJson _json;
 	std::filesystem::path _file;
-	virtual Json::Value defaultJson() const;
+	virtual Json::Value defaultJson();
 public:
 	static EditorAsset* openUnknownAsset(const std::filesystem::path& path, BraneProject& project);
 	EditorAsset(const std::filesystem::path& file, BraneProject& project);

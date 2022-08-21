@@ -15,7 +15,7 @@ EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BranePro
 
 }
 
-Json::Value EditorShaderAsset::defaultJson() const
+Json::Value EditorShaderAsset::defaultJson()
 {
 	Json::Value value = EditorAsset::defaultJson();
 	value["type"] = "shader";
@@ -31,17 +31,17 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 
 void EditorShaderAsset::cacheAsset()
 {
-	if(_json.data()["source"].asString().empty())
+	if(_json["source"].asString().empty())
 	{
-		Runtime::error("Shader source not set for " + _json.data()["name"].asString());
+		Runtime::error("Shader source not set for " + _json["name"].asString());
 		return;
 	}
-	std::filesystem::path source = _file.parent_path() / _json.data()["source"].asString();
+	std::filesystem::path source = _file.parent_path() / _json["source"].asString();
 	std::string fileSuffix = source.extension().string();
 
 	ShaderAsset shader;
-	shader.id.parseString(_json.data()["id"].asString());
-	shader.name = _json.data()["name"].asString();
+	shader.id.parseString(_json["id"].asString());
+	shader.name = _json["name"].asString();
 	graphics::SpirvHelper::Init();
 	VkShaderStageFlagBits stageFlags;
 	if(fileSuffix == ".vert")
