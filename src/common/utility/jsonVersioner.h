@@ -61,6 +61,8 @@ public:
 	void onChanged(const std::function<void()>& callback);
 	bool dirty() const;
 	Json::Value& data();
+	const Json::Value& operator[](const std::string&) const;
+	const Json::Value& operator[](const char*) const;
 	JsonVersionTracker& tracker();
 };
 

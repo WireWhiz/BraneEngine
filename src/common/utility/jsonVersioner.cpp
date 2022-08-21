@@ -149,3 +149,13 @@ JsonVersionTracker& VersionedJson::tracker()
 {
 	return _tkr;
 }
+
+const Json::Value& VersionedJson::operator[](const std::string& p) const
+{
+	return _root[p];
+}
+
+const Json::Value& VersionedJson::operator[](const char* p) const
+{
+	return _root[p];
+}
