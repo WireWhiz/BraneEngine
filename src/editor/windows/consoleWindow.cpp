@@ -7,7 +7,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include <ui/gui.h>
 
-ConsoleWindow::ConsoleWindow(GUI& ui) : GUIWindow(ui)
+ConsoleWindow::ConsoleWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Console";
 	_listenerIndex = Logging::addListener([this](const auto& log){

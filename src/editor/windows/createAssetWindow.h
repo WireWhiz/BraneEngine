@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_CREATEASSETWINDOW_H
 #define BRANEENGINE_CREATEASSETWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include "../widgets/assetBrowserWidget.h"
 #include "../gltf/assemblyBuilder.h"
 #include "utility/asyncData.h"
@@ -41,7 +41,7 @@ class CreateAssetWindow : public GUIWindow
     void displayContent() override;
     void createAsset();
 public:
-    CreateAssetWindow(GUI& ui, ServerDirectory* startingDir = nullptr);
+    CreateAssetWindow(GUI& ui, Editor& editor, FileManager::Directory* startingDir = nullptr);
     ~CreateAssetWindow();
 };
 

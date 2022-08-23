@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_DATAWINDOW_H
 #define BRANEENGINE_DATAWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include <memory>
 
 #include "ecs/entityID.h"
@@ -13,7 +13,7 @@
 class EditorAsset;
 class Assembly;
 
-class DataWindow : public GUIWindow
+class DataWindow : public EditorWindow
 {
 	enum class FocusMode{
 		asset,
@@ -40,7 +40,7 @@ class DataWindow : public GUIWindow
     void displayMaterialData();
     void displayContent() override;
 public:
-    DataWindow(GUI& ui);
+    DataWindow(GUI& ui, Editor& editor);
 };
 
 

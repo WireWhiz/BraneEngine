@@ -51,7 +51,7 @@ public:
 	void stop() override;
 
 	template<typename WindowT, typename... Args>
-	WindowT* addWindow(Args... args)
+	WindowT* addWindow(Args&... args)
 	{
 		size_t index = _windows.size();
 		_windows.push_back(std::make_unique<WindowT>(*this, args...));

@@ -10,15 +10,21 @@
 #include <functional>
 
 class VersionedJson;
+
+namespace Json
+{
+	Value& resolvePath(const std::string& path, Json::Value& root);
+}
+
 class JsonChange
 {
 	VersionedJson* _json = nullptr;
-	Json::Path _path;
+	std::string _path;
 	Json::Value _before;
 	Json::Value _after;
 public:
-	JsonChange(Json::Path path, Json::Value newValue, VersionedJson*  json);
-	JsonChange(Json::Path path, Json::Value oldValue, Json::Value newValue, VersionedJson*  json);
+	JsonChange(const std::string& path, Json::Value newValue, VersionedJson*  json);
+	JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson*  json);
 	const VersionedJson* json();
 	void undo();
 	void redo();

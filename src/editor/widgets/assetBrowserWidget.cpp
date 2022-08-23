@@ -9,11 +9,12 @@
 #include "utility/strCaseCompare.h"
 #include "fileManager/fileManager.h"
 #include "assets/assetManager.h"
-#include "editor/editorEvents.h"
 //#include "editor/windows/createAssetWindow.h"
 #include "ecs/entity.h"
 #include "graphics/graphics.h"
 #include "editor/editor.h"
+#include "editor/editorEvents.h"
+#include "editor/assets/editorAsset.h"
 
 
 AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits)
@@ -73,13 +74,8 @@ void AssetBrowserWidget::setDirectory(FileManager::Directory* dir)
 {
     _currentDir = dir;
     _currentDir->setParentsOpen();
+	FileManager::refreshDirectoryTree(dir, _rootPath);
     _contents = FileManager::getDirectoryContents(_rootPath / _currentDir->path());
-	if(_contents.directories.size() != _currentDir->children.size())
-	{
-		_currentDir->children = std::move(FileManager::getDirectoryTree(_rootPath / _currentDir->path())->children);
-		for(auto& c : _currentDir->children)
-			c->parent = _currentDir;
-	}
 }
 
 void AssetBrowserWidget::displayFiles()
@@ -91,99 +87,94 @@ void AssetBrowserWidget::displayFiles()
     else
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
-        for (auto& dir: _currentDir->children)
+
+		//Can't change directory in the middle of displaying it, so cache it in this var instead
+		FileManager::Directory* newDirectory = nullptr;
+        for(size_t i = 0; i < _contents.size(); ++i)
         {
-            ImGui::PushID(dir->name.c_str());
-            if (ImGui::Selectable(std::string(ICON_FA_FOLDER " " + dir->name).c_str()))
-            {
-                setDirectory(dir.get());
-            }
-            fileHovered |= ImGui::IsItemHovered();
-            if(_allowEdits)
-            {
-                if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-                {
-                    ImGui::OpenPopup("directoryActions");
-                }
+			auto& file = _contents[i];
+	        bool isSelected = _selectedFiles.x <= i && i <= _selectedFiles.y;
+			FileType type = getFileType(file);
 
-                if (ImGui::BeginPopup("directoryActions"))
-                {
-                    if (ImGui::Selectable(ICON_FA_TRASH "Delete"))
-                    {
-                        //Todo: confirmation dialog
-                         FileManager::deleteFile(_rootPath / dir->path());
-						 reloadCurrentDirectory();
-                    }
-                    ImGui::EndPopup();
-                }
+	        ImGui::PushID(file.path().c_str());
+            if (ImGui::Selectable("##", isSelected, ImGuiSelectableFlags_AllowDoubleClick, {0,0}))
+            {
+				if(ImGui::IsMouseDoubleClicked(0))
+				{
+					if(type == FileType::asset && _allowEdits)
+					{
+						// Make sure to construct the focus asset event on the main thread
+						auto editor = Runtime::getModule<Editor>();
+						std::shared_ptr<EditorAsset> asset = editor->project().getEditorAsset(currentDirectory() / file);
+						if(asset)
+							_ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+					}
+					if(type == FileType::directory)
+					{
+						//Since directories are sorted to the top of files and in the same manner as directory children, they have the same index
+						newDirectory = _currentDir->children[i].get();
+					}
+				}
+				if(!ImGui::IsKeyDown(ImGuiKey_ModShift) || _selectedFiles.x == -1)
+				{
+					_selectedFiles = {i,i};
+					_firstSelected = i;
+				}
+				else
+					_selectedFiles = {std::min(_firstSelected, i), std::max(_firstSelected, i)};
+            }
+			ImGui::SameLine(0,0);
+	        ImVec4 iconColor = {1,0,0,1};
 
-                if (ImGui::BeginDragDropSource())
-                {
-                    auto* dirPtr = dir.get();
-                    ImGui::SetDragDropPayload("directory", &dirPtr, sizeof(FileManager::Directory*));
-                    ImGui::Text("%s",dir->name.c_str());
-                    ImGui::EndDragDropSource();
-                }
-
-                if (ImGui::BeginDragDropTarget())
-                {
-                    if(const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
-                    {
-                        FileManager::moveFile(_rootPath / (*(FileManager::Directory**)p->Data)->path(), _rootPath / dir->path());
-                    }
-                }
-            }
-            ImGui::PopID();
-        }
-        for (auto& file: _contents.files)
-        {
-            ImGui::PushID(file.c_str());
-            if (ImGui::Selectable(std::string(ICON_FA_FILE " " + file).c_str()))
-            {
-                /*if(file.isAsset)
-                {
-                    // Make sure to construct the focus asset event on the main thread
-                    AssetManager& am = *Runtime::getModule<AssetManager>();
-                    am.fetchAsset(file.assetID).then([this](Asset* asset){
-                        if(asset)
-                            _mainThreadActions.push_back([this, asset]{
-                                _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset->id));
-                            });
-                        else
-                            Runtime::error("Selected asset was null!");
-                    });
-                }*/
-            }
-            if(ImGui::IsItemHovered())
-            {
-                fileHovered = true;
-                /*if(file.isAsset)
-                    ImGui::SetTooltip("ID: %s", file.assetID.string().c_str());//Slow, cache string somewhere in future.*/
-            }
-            if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-            {
-                ImGui::OpenPopup("fileActions");
-            }
-
-            if (ImGui::BeginPopup("fileActions"))
-            {
-                if(ImGui::Selectable(ICON_FA_TRASH "Delete"))
-                {
-	                FileManager::deleteFile(_rootPath / _currentDir->path() / file);
-					reloadCurrentDirectory();
-                }
-                ImGui::EndPopup();
-            }
+	        switch(type)
+	        {
+				case FileType::directory:
+					iconColor = {0.8,0.8,0.8,1};
+					break;
+		        case FileType::normal:
+			        iconColor = {1,1,1,1};
+			        break;
+		        case FileType::source:
+			        iconColor = {0, .80, 1, 1};
+			        break;
+		        case FileType::asset:
+			        iconColor = {0, 1, .25, 1};
+			        break;
+	        }
+	        ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
+			ImGui::Text("%s", getIcon(file));
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::Text("%ls", file.path().filename().c_str());
             ImGui::PopID();
         }
         ImGui::PopStyleVar(1);
+
+		if(!ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(0))
+			_selectedFiles = {-1,-1};
+
+		if(newDirectory)
+	        setDirectory(newDirectory);
     }
     assert(_currentDir);
     if(_allowEdits)
     {
 
-        if (!fileHovered && ImGui::BeginPopupContextWindow("directoryActions"))
+        if (ImGui::BeginPopupContextWindow("directoryActions"))
         {
+			if(_selectedFiles.x != -1)
+			{
+				if(ImGui::Selectable(ICON_FA_TRASH "Delete"))
+				{
+					Runtime::warn("TODO delete assets from project file");
+					for(size_t i = _selectedFiles.x; i <= _selectedFiles.y; ++i)
+					{
+						FileManager::deleteFile(_contents[i]);
+					}
+					reloadCurrentDirectory();
+				}
+				ImGui::Separator();
+			}
             if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
 	            _ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
             ImGui::EndPopup();
@@ -236,6 +227,40 @@ void AssetBrowserWidget::displayFullBrowser()
 void AssetBrowserWidget::reloadCurrentDirectory()
 {
 	setDirectory(_currentDir);
+}
+
+const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
+{
+	auto ext = path.extension();
+	if(ext == "")
+		return ICON_FA_FOLDER;
+	if(ext == ".shader")
+		return ICON_FA_FIRE;
+	if(ext == ".assembly")
+		return ICON_FA_BOXES_STACKED;
+	if(ext == ".gltf" || ext == ".glb")
+		return ICON_FA_TABLE_CELLS;
+	if(ext == ".bin")
+		return ICON_FA_BOX_ARCHIVE;
+	if(ext == ".vert" || ext == ".frag")
+		return ICON_FA_CODE;
+	return ICON_FA_FILE;
+}
+
+AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesystem::directory_entry& file)
+{
+	if(file.is_directory())
+		return FileType::directory;
+	if(file.is_regular_file())
+	{
+		auto ext = file.path().extension();
+		if(ext == ".shader" || ext == ".assembly")
+			return FileType::asset;
+		if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
+			return FileType::source;
+		return FileType::normal;
+	}
+	return FileType::unknown;
 }
 
 CreateDirectoryPopup::CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")

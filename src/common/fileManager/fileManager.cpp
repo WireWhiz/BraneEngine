@@ -86,20 +86,18 @@ FileManager::FileManager()
 
 }
 
-FileManager::DirectoryContents FileManager::getDirectoryContents(const std::filesystem::path& path)
+std::vector<std::filesystem::directory_entry> FileManager::getDirectoryContents(const std::filesystem::path& path)
 {
-	DirectoryContents contents;
+	std::vector<std::filesystem::directory_entry> paths;
 	for(auto& file : std::filesystem::directory_iterator(path))
-	{
-		if(file.is_directory())
-			contents.directories.push_back(file.path().filename().string());
-		if(file.is_regular_file())
-			contents.files.push_back(file.path().filename().string());
-	}
-	std::sort(contents.directories.begin(), contents.directories.end(), strCaseCompare<std::string>);
-	std::sort(contents.files.begin(), contents.files.end(), strCaseCompare<std::string>);
+		paths.push_back(file);
+	std::sort(paths.begin(), paths.end(), [](std::filesystem::directory_entry& p1, std::filesystem::directory_entry& p2){
+		if(p1.is_directory() != p2.is_directory())
+			return std::filesystem::is_directory(p1);
+		return strCaseCompare(p1.path().filename().string(), p2.path().filename().string());
+	});
 
-	return contents;
+	return paths;
 }
 
 std::unique_ptr<FileManager::Directory> FileManager::getDirectoryTree(const std::filesystem::path& path)
@@ -108,13 +106,49 @@ std::unique_ptr<FileManager::Directory> FileManager::getDirectoryTree(const std:
 	d->name = path.filename().string();
 	d->open = true;
 	for(auto& file : std::filesystem::directory_iterator{path})
+	{
 		if(file.is_directory()){
 			auto c = getDirectoryTree(file);
 			c->parent = d.get();
 			d->children.push_back(std::move(c));
 		}
+	}
+	std::sort(d->children.begin(), d->children.end(), [](auto& a, auto& b){
+		return strCaseCompare(a->name, b->name);
+	});
 
 	return std::move(d);
+}
+
+void FileManager::refreshDirectoryTree(Directory* dir, const std::filesystem::path& root)
+{
+	auto& children = dir->children;
+	children.erase(std::remove_if(children.begin(), children.end(), [](auto& c){
+		return !std::filesystem::exists(c->path());
+	}), children.end());
+	for(auto& file : std::filesystem::directory_iterator{root / dir->path()})
+	{
+		if(!file.is_directory())
+			continue;
+
+		bool found = false;
+		for(auto& c : children)
+		{
+			if(c->name == file.path().filename())
+			{
+				found = true;
+				break;
+			}
+		}
+		if(!found){
+			auto c = getDirectoryTree(file);
+			c->parent = dir;
+			children.push_back(std::move(c));
+		}
+	}
+	std::sort(children.begin(), children.end(), [](auto& a, auto& b){
+		return strCaseCompare(a->name, b->name);
+	});
 }
 
 void FileManager::createDirectory(const std::filesystem::path& path)

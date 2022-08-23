@@ -19,7 +19,7 @@
 #include <systems/transforms.h>
 #include "backends/imgui_impl_vulkan.h"
 
-RenderWindow::RenderWindow(GUI& ui) : GUIWindow(ui)
+RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Render";
 	EntityManager& em = *Runtime::getModule<EntityManager>();

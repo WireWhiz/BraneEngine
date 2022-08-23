@@ -33,7 +33,7 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
 UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualType::Type type, byte* data)
 {
     assert(name);
-    const float dragSpeed = 0.05;
+    const float dragSpeed = 0.05f;
     UiChangeType changed = UiChangeType::none;
     ImGui::PushID(name);
     switch(type)

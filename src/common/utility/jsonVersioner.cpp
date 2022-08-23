@@ -3,28 +3,22 @@
 //
 
 #include <cassert>
+#include <regex>
+#include <iostream>
 #include "jsonVersioner.h"
 
-JsonChange::JsonChange(Json::Path path, Json::Value newValue, VersionedJson* json) : _path(std::move(path)), _after(std::move(newValue)), _json(json)
+JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, std::move(newValue), Json::resolvePath(path, json->_root), json)
 {
-	_before = _path.resolve(_json->data());
-	_path.make(_json->_root) = _after;
-	++_json->_version;
-	if(_json->_onChanged)
-		_json->_onChanged();
 }
 
-JsonChange::JsonChange(Json::Path path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(std::move(path)), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json)
+JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(path), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json)
 {
-	_path.make(_json->_root) = _after;
-	++_json->_version;
-	if(_json->_onChanged)
-		_json->_onChanged();
+	redo();
 }
 
 void JsonChange::undo()
 {
-	_path.make(_json->_root)= _before;
+	Json::resolvePath(_path, _json->_root) = _before;
 	--_json->_version;
 	if(_json->_onChanged)
 		_json->_onChanged();
@@ -32,7 +26,7 @@ void JsonChange::undo()
 
 void JsonChange::redo()
 {
-	_path.make(_json->_root)= _after;
+	Json::resolvePath(_path, _json->_root) = _after;
 	++_json->_version;
 	if(_json->_onChanged)
 		_json->_onChanged();
@@ -105,9 +99,9 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 		if(!_uncompletedChange){
 			_uncompletedChange = std::make_unique<UncompletedChange>();
 			_uncompletedChange->path = path;
-			_uncompletedChange->before = Json::Path(path).resolve(_root);
+			_uncompletedChange->before = Json::resolvePath(path, _root);
 		}
-		Json::Path(path).make(_root) = newValue;
+		Json::resolvePath(path, _root) = newValue;
 		if(_onChanged)
 			_onChanged();
 		return;
@@ -158,4 +152,39 @@ const Json::Value& VersionedJson::operator[](const std::string& p) const
 const Json::Value& VersionedJson::operator[](const char* p) const
 {
 	return _root[p];
+}
+
+Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
+{
+	Json::Value* value = &root;
+	std::vector<std::string> components;
+	uint32_t begin = 0;
+	for(uint32_t end = 1; end < path.size(); ++end)
+	{
+		if(path[end] == '/' && begin < end)
+		{
+			components.emplace_back(path.begin() + begin, path.begin() + end);
+			begin = end + 1;
+		}
+	}
+	if(begin < path.size())
+		components.emplace_back(path.begin() + begin, path.end());
+	for(auto& comp : components)
+	{
+		bool isIndex = true;
+		for(char c : comp)
+		{
+			if(!std::isdigit(c))
+			{
+				isIndex = false;
+				break;
+			}
+		}
+		if(!isIndex)
+			value = &(*value)[comp];
+		else
+			value = &(*value)[std::stoi(comp)];
+	}
+
+	return *value;
 }

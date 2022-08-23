@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_RENDERWINDOW_H
 #define BRANEENGINE_RENDERWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include "vulkan/vulkan.h"
 #include "glm/gtx/quaternion.hpp"
 #include "ecs/entityID.h"
@@ -19,7 +19,7 @@ namespace graphics{
     class SwapChain;
 }
 
-class RenderWindow : public GUIWindow
+class RenderWindow : public EditorWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
 	graphics::MeshRenderer* _renderer;
@@ -43,7 +43,7 @@ class RenderWindow : public GUIWindow
 
     void displayContent() override;
 public:
-    RenderWindow(GUI& ui);
+    RenderWindow(GUI& ui, Editor& editor);
     ~RenderWindow();
     void update() override;
 	void lookAt(glm::vec3 pos);

@@ -8,7 +8,7 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "tinyfiledialogs.h"
 
-SelectProjectWindow::SelectProjectWindow(GUI& ui) : GUIWindow(ui)
+SelectProjectWindow::SelectProjectWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
 	loadRecent();
 	_name = "Select Project";

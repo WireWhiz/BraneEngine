@@ -8,9 +8,9 @@
 #include <string>
 #include <vector>
 #include <filesystem>
-#include "ui/guiWindow.h"
+#include "editorWindow.h"
 
-class SelectProjectWindow : public GUIWindow
+class SelectProjectWindow : public EditorWindow
 {
 	struct RecentProject
 	{
@@ -24,10 +24,9 @@ class SelectProjectWindow : public GUIWindow
 	int _selectedProject = -1;
 	void loadRecent();
 	void saveRecents();
-	void addRecent(const std::string& path);
-public:
-	SelectProjectWindow(GUI& ui);
 	void displayContent() override;
+public:
+	SelectProjectWindow(GUI& ui, Editor& editor);
 };
 
 

@@ -12,9 +12,9 @@ class EditorAssemblyAsset : public EditorAsset
 {
 	Json::Value defaultJson() override;
 	void cacheFromGLTF();
-	Json::Value componentToJson(VirtualComponentView component);
-	VirtualComponent jsonToComponent(Json::Value component);
 public:
+	static Json::Value componentToJson(VirtualComponentView component);
+	static VirtualComponent jsonToComponent(Json::Value component);
 	EditorAssemblyAsset(const std::filesystem::path& file, BraneProject& project);
 	void cacheAsset() override;
 	void linkToGLTF(const std::filesystem::path& file);

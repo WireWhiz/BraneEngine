@@ -18,12 +18,12 @@ ServerDirectory* DirectoryUpdateEvent::directory() const
     return _dir;
 }
 
-FocusAssetEvent::FocusAssetEvent(const AssetID& asset) : GUIEvent("focus asset")
+FocusAssetEvent::FocusAssetEvent(std::shared_ptr<EditorAsset> asset) : GUIEvent("focus asset")
 {
-	_asset = asset;
+	_asset = std::move(asset);
 }
 
-const AssetID&FocusAssetEvent::asset() const
+std::shared_ptr<EditorAsset> FocusAssetEvent::asset() const
 {
 	return _asset;
 }
@@ -32,6 +32,7 @@ FocusEntityAssetEvent::FocusEntityAssetEvent(size_t index) : GUIEvent("focus ent
 {
 	_index = index;
 }
+
 size_t FocusEntityAssetEvent::entity() const
 {
 	return _index;

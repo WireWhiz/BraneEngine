@@ -5,11 +5,11 @@
 #ifndef BRANEENGINE_CONSOLEWINDOW_H
 #define BRANEENGINE_CONSOLEWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include <string>
 #include <runtime/logging.h>
 
-class ConsoleWindow : public GUIWindow
+class ConsoleWindow : public EditorWindow
 {
 	struct CachedLog
 	{
@@ -21,7 +21,7 @@ class ConsoleWindow : public GUIWindow
     size_t _listenerIndex;
     void displayContent() override;
 public:
-    ConsoleWindow(GUI& ui);
+    ConsoleWindow(GUI& ui, Editor& editor);
     ~ConsoleWindow();
 };
 

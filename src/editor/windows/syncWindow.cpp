@@ -11,7 +11,7 @@ std::atomic_bool SyncWindow::_loggingIn = false;
 net::Connection* SyncWindow::_syncServer = nullptr;
 std::string SyncWindow::_feedbackMessage;
 
-SyncWindow::SyncWindow(GUI& ui) : GUIWindow(ui)
+SyncWindow::SyncWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
 	_name = "Sync";
 }

@@ -9,11 +9,18 @@
 #include "types/editorShaderAsset.h"
 #include "editor/braneProject.h"
 #include "editor/editor.h"
+#include "editor/assets/types/editorAssemblyAsset.h"
 
 const std::string endToken = "\n/* Do not edit past this line */\n";
 
 EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& project) : _file(file), _project(project), _json(project.editor().jsonTracker())
 {
+	auto ext = file.extension();
+	if(ext == ".shader")
+		_type = AssetType::shader;
+	else if(ext == ".assembly")
+		_type = AssetType::assembly;
+	_name = file.stem().string();
 	load();
 }
 
@@ -57,17 +64,28 @@ VersionedJson& EditorAsset::json()
 Json::Value EditorAsset::defaultJson()
 {
 	Json::Value value;
-	value["name"] = "new asset";
 	value["id"] = _project.newAssetID(_file).string();
 	return value;
 }
 
 EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, BraneProject& project)
 {
-	std::string ext = path.extension().string();
+	auto ext = path.extension();
 	if(ext == ".shader")
 		return new EditorShaderAsset(path, project);
+	if(ext == ".assembly")
+		return new EditorAssemblyAsset(path, project);
 	return nullptr;
+}
+
+const AssetType& EditorAsset::type() const
+{
+	return _type;
+}
+
+const std::string& EditorAsset::name() const
+{
+	return _name;
 }
 
 

@@ -13,11 +13,6 @@
 class FileManager : public Module
 {
 public:
-	struct DirectoryContents
-	{
-		std::vector<std::string> directories;
-		std::vector<std::string> files;
-	};
 	struct Directory
 	{
 		std::string name;
@@ -28,8 +23,9 @@ public:
 		void setParentsOpen();
 	};
 
-	static DirectoryContents getDirectoryContents(const std::filesystem::path& path);
+	static std::vector<std::filesystem::directory_entry> getDirectoryContents(const std::filesystem::path& path);
 	static std::unique_ptr<Directory> getDirectoryTree(const std::filesystem::path& path);
+	static void refreshDirectoryTree(Directory* dir, const std::filesystem::path& root = std::filesystem::current_path());
 	static void createDirectory(const std::filesystem::path& path);
 	static bool deleteFile(const std::filesystem::path& path);
 	static void moveFile(const std::filesystem::path& source, const std::filesystem::path& destination);

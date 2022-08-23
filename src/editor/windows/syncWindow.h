@@ -6,10 +6,10 @@
 #define BRANEENGINE_SYNCWINDOW_H
 
 #include "networking/connection.h"
-#include "ui/guiWindow.h"
+#include "editorWindow.h"
 #include <atomic>
 
-class SyncWindow : public GUIWindow
+class SyncWindow : public EditorWindow
 {
 	//Login variables
 	static std::atomic_bool _loggedIn;
@@ -25,9 +25,9 @@ class SyncWindow : public GUIWindow
 	//sync variables
 	static net::Connection* _syncServer;
 	void drawConnected();
-public:
-	SyncWindow(GUI& ui);
 	void displayContent() override;
+public:
+	SyncWindow(GUI& ui, Editor& editor);
 	static net::Connection* syncServer();
 };
 

@@ -25,7 +25,7 @@
 void Editor::start()
 {
 	_ui = Runtime::getModule<GUI>();
-	_selectProjectWindow = _ui->addWindow<SelectProjectWindow>();
+	_selectProjectWindow = _ui->addWindow<SelectProjectWindow>(*this);
 
 	_ui->setMainMenuCallback([this](){drawMenu();});
 	_ui->addEventListener<GUIEvent>("projectLoaded", nullptr, [this](auto evt){
@@ -45,11 +45,11 @@ const char* Editor::name()
 
 void Editor::addMainWindows()
 {
-    auto* dataWindow = _ui->addWindow<DataWindow>();
-    auto* assetBrowser = _ui->addWindow<AssetBrowserWindow>();
-    auto* console = _ui->addWindow<ConsoleWindow>();
-    auto* entities = _ui->addWindow<EntitiesWindow>();
-    auto* renderer = _ui->addWindow<RenderWindow>();
+    auto* dataWindow = _ui->addWindow<DataWindow>(*this);
+    auto* assetBrowser = _ui->addWindow<AssetBrowserWindow>(*this);
+    auto* console = _ui->addWindow<ConsoleWindow>(*this);
+    auto* entities = _ui->addWindow<EntitiesWindow>(*this);
+    auto* renderer = _ui->addWindow<RenderWindow>(*this);
 
 	ImGuiID root = ImGui::GetID("DockingRoot");
 	ImGui::DockBuilderRemoveNode(root);
@@ -88,22 +88,35 @@ void Editor::drawMenu()
 		if(ImGui::BeginMenu("Window"))
 		{
             if(ImGui::Selectable("Entities"))
-                _ui->addWindow<EntitiesWindow>()->resizeDefault();
+                _ui->addWindow<EntitiesWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Asset Browser"))
-                _ui->addWindow<AssetBrowserWindow>()->resizeDefault();
+                _ui->addWindow<AssetBrowserWindow>(*this)->resizeDefault();
 			if(ImGui::Selectable("Sync Window"))
-				_ui->addWindow<SyncWindow>()->resizeDefault();
+				_ui->addWindow<SyncWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Render Preview"))
-                _ui->addWindow<RenderWindow>()->resizeDefault();
+                _ui->addWindow<RenderWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Console"))
-                _ui->addWindow<ConsoleWindow>()->resizeDefault();
+                _ui->addWindow<ConsoleWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Data Inspector"))
-                _ui->addWindow<DataWindow>()->resizeDefault();
+                _ui->addWindow<DataWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Memory Manager"))
-                _ui->addWindow<MemoryManagerWindow>()->resizeDefault();
+                _ui->addWindow<MemoryManagerWindow>(*this)->resizeDefault();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
+	}
+
+	if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+	{
+		if(ImGui::IsKeyPressed(ImGuiKey_Z))
+		{
+			if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
+				_jsonTracker.undo();
+			else
+				_jsonTracker.redo();
+		}
+		if(ImGui::IsKeyPressed(ImGuiKey_Y))
+			_jsonTracker.redo();
 	}
 }
 

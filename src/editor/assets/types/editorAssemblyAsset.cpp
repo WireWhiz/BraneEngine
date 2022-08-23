@@ -48,14 +48,9 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
 
 	for(auto& node : gltf.json()["nodes"])
 	{
-
 		Json::Value entity;
 		if(node.isMember("name"))
-		{
-			EntityName name;
-			name.name = node["name"].asString();
-			entity["components"].append(componentToJson(name));
-		}
+			entity["name"] = node["name"];
 		TRS trs;
 		if(node.isMember("matrix"))
 		{
@@ -80,8 +75,12 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
 				renderer.materials.push_back(primitive["material"].asUInt());
 			entity["components"].append(componentToJson(renderer));
 		}
+		if(node.isMember("children"))
+			entity["children"] = node["children"];
 		_json.data()["entities"].append(entity);
 	}
+
+	_json.data()["rootEntity"] = gltf.json()["scenes"][0]["nodes"].get(Json::ArrayIndex(0), "0");
 
 	save();
 }
@@ -109,7 +108,13 @@ Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
 	auto& members = component.description()->asset->members();
 	auto& names = component.description()->asset->memberNames();
 	for(size_t i = 0; i < members.size(); ++i)
-		output[names[i]] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i]);
+	{
+		Json::Value member;
+		member["name"] = names[i];
+		member["value"] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i]);
+		member["type"] = VirtualType::typeToString(members[i]);
+		output["members"].append(member);
+	}
 	return output;
 }
 
@@ -125,8 +130,8 @@ VirtualComponent EditorAssemblyAsset::jsonToComponent(Json::Value component)
 
 	auto& members = description->asset->members();
 	auto& names = description->asset->memberNames();
-	for(size_t i = 0; i < members.size(); ++i)
-		JsonVirtualType::toVirtual(output.getVar<byte>(i), component[names[i]], members[i]);
+	for(Json::ArrayIndex i = 0; i < members.size(); ++i)
+		JsonVirtualType::toVirtual(output.getVar<byte>(i), component["members"][i]["value"], members[i]);
 
 	return output;
 }
