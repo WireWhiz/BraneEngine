@@ -7,6 +7,7 @@
 #include "editor/editor.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "tinyfiledialogs.h"
+#include "ui/gui.h"
 
 SelectProjectWindow::SelectProjectWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -14,23 +15,31 @@ SelectProjectWindow::SelectProjectWindow(GUI& ui, Editor& editor) : EditorWindow
 	_name = "Select Project";
 	//TODO store a default project folder in config or grab the documents folder from the OS
 	_projectPath = std::filesystem::current_path().append("/Brane Projects/").string();
+	_flags |= ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
 }
 
 void SelectProjectWindow::displayContent()
 {
+	ImVec2 windowSize = {600, 350};
+	ImGui::SetWindowSize(windowSize, ImGuiCond_Always);
+	ImGui::SetWindowPos({(ImGui::GetIO().DisplaySize.x - windowSize.x) / 2, (ImGui::GetIO().DisplaySize.y - windowSize.y) / 2}, ImGuiCond_Always);
+
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.3f);
+	ImGui::PushFont(_ui.fonts()[1]);
 	ImGui::Text("Create New");
-	ImGui::InputText("Name", &_projectName);
+	ImGui::PopFont();
+	ImGui::InputText("Name", &_projectName, ImGuiInputTextFlags_AutoSelectAll);
 	std::string pathStr = _projectPath.string();
-	ImGui::InputText("Containing Directory", &pathStr);
-	_projectPath = pathStr;
-	ImGui::SameLine();
-	if(ImGui::Button("Select"))
+	if(ImGui::Button("Select##Directory"))
 	{
 		char* pathCStr = tinyfd_selectFolderDialog("Select Directory", _projectPath.string().c_str());
 		if(pathCStr)
 			_projectPath = pathCStr;
 	}
+	ImGui::SameLine();
+	ImGui::InputText("Directory", &pathStr, ImGuiInputTextFlags_AutoSelectAll);
+	_projectPath = pathStr;
+
 	if(ImGui::Button("Create"))
 	{
 		_recentProjects.insert(_recentProjects.begin(), {_projectName, (_projectPath / _projectName / (_projectName + ".brane")).string()});
@@ -38,10 +47,14 @@ void SelectProjectWindow::displayContent()
 		saveRecents();
 		Runtime::getModule<Editor>()->createProject(_projectName, _projectPath);
 	}
-	ImGui::Text("Recent Projects", ImGuiTreeNodeFlags_DefaultOpen);
+	ImGui::Separator();
 
-	ImGui::Indent();
-	ImGui::BeginChild("Recent", {ImGui::GetWindowContentRegionWidth(), ImGui::GetWindowHeight() * 0.45f});
+	ImGui::PushFont(_ui.fonts()[1]);
+	ImGui::Text("Recent Projects", ImGuiTreeNodeFlags_DefaultOpen);
+	ImGui::PopFont();
+
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.1f, 0.1f, 0.1f, 1.0f});
+	ImGui::BeginChild("Recent", {ImGui::GetWindowContentRegionWidth(), ImGui::GetWindowHeight() * 0.45f}, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	for(uint8_t i = 0; i < _recentProjects.size(); ++i)
 	{
 		auto& p = _recentProjects[i];
@@ -55,8 +68,9 @@ void SelectProjectWindow::displayContent()
 		}
 	}
 	ImGui::EndChild();
+	ImGui::PopStyleColor();
 	ImGui::BeginDisabled(_selectedProject < 0);
-	if(ImGui::Button("Select")){
+	if(ImGui::Button("Select##Project")){
 		saveRecents();
 		Runtime::getModule<Editor>()->loadProject(_recentProjects[_selectedProject].path);
 	}
@@ -70,7 +84,6 @@ void SelectProjectWindow::displayContent()
 		saveRecents();
 		Runtime::getModule<Editor>()->loadProject(_recentProjects[_selectedProject].path);
 	}
-	ImGui::Unindent();
 	ImGui::PopStyleVar();
 }
 
