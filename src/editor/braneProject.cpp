@@ -212,6 +212,8 @@ VersionedJson& BraneProject::json()
 
 std::shared_ptr<EditorAsset> BraneProject::getEditorAsset(const AssetID& id)
 {
+	if(!_file["assets"].isMember(id.string()))
+		return nullptr;
 	std::filesystem::path path = projectDirectory() / "assets" / _file["assets"][id.string()]["path"].asString();
 	return getEditorAsset(path);
 }

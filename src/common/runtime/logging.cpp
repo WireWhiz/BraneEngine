@@ -8,6 +8,7 @@
 #include <config/config.h>
 #include <filesystem>
 #include <string>
+#include <utility/asyncQueue.h>
 
 #if WIN32
 #include <windows.h>
@@ -18,6 +19,8 @@ namespace Logging
 	bool printToConsole = true;
 	std::ofstream _logFile;
 	std::vector<std::function<void(const Log&)>> _logListeners;
+	AsyncQueue<Log> _logEvents;
+
 #if WIN32
 	HANDLE hConsole;
 #endif
@@ -66,17 +69,6 @@ namespace Logging
 		if(_logFile.is_open())
 		{
 			_logFile << fStr << std::endl;
-			for (auto& f: _logListeners)
-			{
-				try
-				{
-					f(newLog);
-				}
-				catch (const std::exception& e)
-				{
-					std::cerr << "Log callback threw error!" << std::endl;
-				}
-			}
 		}
 		if(printToConsole)
 		{
@@ -97,6 +89,7 @@ namespace Logging
 					setColor(LogColor::reset);
 			}
 		}
+		_logEvents.push_back(newLog);
 	}
 
 	size_t addListener(std::function<void(const Log&)> callback)
@@ -110,6 +103,25 @@ namespace Logging
     {
         _logListeners.erase(_logListeners.begin() + index);
     }
+
+	void callListeners()
+	{
+		while (!_logEvents.empty())
+		{
+			auto event = _logEvents.pop_front();
+			for (auto& f: _logListeners)
+			{
+				try
+				{
+					f(event);
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "Log callback threw error!" << std::endl;
+				}
+			}
+		}
+	}
 
 	std::string Log::toString() const
 	{

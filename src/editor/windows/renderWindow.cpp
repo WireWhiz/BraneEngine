@@ -19,6 +19,14 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 
+class RenderWindowAssetReady : public GUIEvent
+{
+	AssetID _id;
+public:
+	RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
+	const AssetID& id() const {return _id;}
+};
+
 RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Render";
@@ -41,18 +49,23 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		{
 			if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
 			{
-				am->fetchAsset<Assembly>(_focusedAsset->json()["id"].asString()).then([this, &em](Assembly* assembly){
-					EntityID root = em.createEntity();
-					em.addComponent<Transform>(root);
-					Transform t;
-					t.value = glm::translate(glm::mat4(1), {0, 0, 0});
-					em.setComponent(root, t.toVirtual());
-					_entities = assembly->inject(em, root);
-					_entities.push_back(root);
+				am->fetchAsset<Assembly>(_focusedAsset->json()["id"].asString()).then([this](Assembly* assembly){
+					_ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
 				});
 			}
 		}
     });
+	_ui.addEventListener<RenderWindowAssetReady>("render window asset ready", this, [this, &em](const RenderWindowAssetReady* event){
+		auto* am = Runtime::getModule<AssetManager>();
+		Assembly* assembly = am->getAsset<Assembly>(event->id());
+		EntityID root = em.createEntity();
+		em.addComponent<Transform>(root);
+		Transform t;
+		t.value = glm::translate(glm::mat4(1), {0, 0, 0});
+		em.setComponent(root, t.toVirtual());
+		_entities = assembly->inject(em, root);
+		_entities.push_back(root);
+	});
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
         _focusedEntity = _entities[event->entity()];

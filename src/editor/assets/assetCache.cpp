@@ -41,4 +41,9 @@ Asset* AssetCache::getAsset(const AssetID& asset)
 	return FileManager::readUnknownAsset(path);
 }
 
+bool AssetCache::hasAsset(const AssetID& asset)
+{
+	return std::filesystem::exists(getPath(asset));
+}
+
 

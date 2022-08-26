@@ -43,6 +43,7 @@ namespace Logging
 	void pushLog(std::string message, LogLevel level);
 	size_t addListener(std::function<void(const Log&)> callback);
     void removeListener(size_t index);
+	void callListeners();
 	void setColor(LogColor color);
 };
 

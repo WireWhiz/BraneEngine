@@ -4,7 +4,7 @@
 
 
 //Edit this function if we need to "load" any assets for testing
-AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
 	asset.setData(nullptr);

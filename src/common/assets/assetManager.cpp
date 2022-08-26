@@ -57,45 +57,46 @@ void AssetManager::start()
 
 bool AssetManager::hasAsset(const AssetID& id)
 {
+	std::scoped_lock lock(_assetLock);
 	return _assets.count(id);
 }
 
-void AssetManager::fetchDependencies(Asset* a, const std::function<void()>& callback)
+void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 {
 	assert(a);
 	assert(a->id != AssetID::null);
-	auto deps = a->dependencies();
-    if(dependenciesLoaded(a))
+	std::vector<AssetDependency> unloadedDeps;
+	_assetLock.lock();
+    for(auto&d : a->dependencies())
     {
-		_assetLock.lock();
-		for(auto& d : deps)
-		{
-			if(!_assets[d.id]->usedBy.count(a->id))
-				_assets[d.id]->usedBy.insert(a->id);
-		}
-		_assetLock.unlock();
-        callback();
-        return;
+		auto dep = _assets.find(d.id);
+		if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
+			unloadedDeps.push_back(d);
     }
+	_assetLock.unlock();
+	if(unloadedDeps.empty())
+	{
+		callback();
+		return;
+	}
 
-    auto unloaded = std::make_shared<size_t>(deps.size());
     auto callbackPtr = std::make_shared<std::function<void()>>(callback);
-
-    for(auto& d : deps)
+	_assetLock.lock();
+	AssetData* data = _assets.at(a->id).get();
+	data->unloadedDependencies = unloadedDeps.size();
+	_assetLock.unlock();
+    for(auto& d : unloadedDeps)
     {
-        fetchAsset(d.id, d.streamable).then([this, a, unloaded, callbackPtr](Asset* asset)
+        fetchAsset(d.id, d.streamable).then([this, data, callbackPtr](Asset* asset)
         {
             Runtime::log("Loaded: " + asset->name);
 	        _assetLock.lock();
-			assert(_assets.count(asset->id));
-			_assets.at(asset->id)->usedBy.insert(a->id);
+			auto remaining = --data->unloadedDependencies;
 	        _assetLock.unlock();
-            if(--(*unloaded) == 0)
-                (*callbackPtr)();
-        }).onError([unloaded, d, callbackPtr](const std::string& message){
+	        if(remaining == 0)
+		        (*callbackPtr)();
+        }).onError([d](const std::string& message){
             Runtime::error("Unable to fetch: " + d.id.string());
-            if(--(*unloaded) == 0)
-                (*callbackPtr)();
         });
     }
 }
@@ -107,6 +108,54 @@ bool AssetManager::dependenciesLoaded(const Asset* asset) const
         if(!_assets.count(d.id))
             return false;
     return true;
+}
+
+AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+{
+	AsyncData<Asset*> asset;
+	_assetLock.lock();
+	if(_assets.count(id))
+	{
+		AssetData* assetData = _assets.at(id).get();
+		if(assetData->loadState >= LoadState::usable)
+			asset.setData(assetData->asset.get());
+		else
+			_awaitingLoad[id].push_back([id, asset](Asset* a){
+				asset.setData(a);
+			});
+		_assetLock.unlock();
+		return asset;
+	}
+
+	AssetData* assetData = new AssetData{};
+	assetData->loadState = LoadState::requested;
+	_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
+
+	_assetLock.unlock();
+	fetchAssetInternal(id, incremental).then([this, assetData, asset](Asset* a){
+		_assetLock.lock();
+		assetData->loadState = LoadState::loaded;
+		assetData->asset = std::unique_ptr<Asset>(a);
+		std::vector<std::function<void(Asset*)>> onLoaded;
+		if(_awaitingLoad.count(a->id))
+		{
+			onLoaded = std::move(_awaitingLoad.at(a->id));
+			_awaitingLoad.erase(a->id);
+		}
+		_assetLock.unlock();
+		a->onDependenciesLoaded();
+		for(auto& f : onLoaded)
+			f(a);
+
+		asset.setData(a);
+	}).onError([this, asset, assetData](const std::string& error){
+		_assetLock.lock();
+		assetData->loadState = LoadState::failed;
+		_assetLock.unlock();
+		asset.setError(error);
+	});
+
+	return asset;
 }
 
 

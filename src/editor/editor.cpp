@@ -160,92 +160,61 @@ AssetCache& Editor::cache()
 }
 
 //The editor specific fetch asset function
-AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
 	assert(id != AssetID::null);
 	AsyncData<Asset*> asset;
-	if(hasAsset(id))
-	{
-		asset.setData(getAsset<Asset>(id));
-		return asset;
-	}
 
 	Editor* editor = Runtime::getModule<Editor>();
-	Asset* cachedAsset = editor->cache().getAsset(id);
-	if(cachedAsset)
+	if(editor->cache().hasAsset(id))
 	{
-		AssetData* assetData = new AssetData{};
-		assetData->loadState = LoadState::awaitingDependencies;
-		assetData->asset = std::unique_ptr<Asset>(cachedAsset);
-		_assetLock.lock();
-		_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
-		_assetLock.unlock();
-		fetchDependencies(cachedAsset, [cachedAsset, asset, assetData]() mutable {
-			assetData->loadState = LoadState::loaded;
-			cachedAsset->onDependenciesLoaded();
-			asset.setData(cachedAsset);
-		});
-		asset.setData(cachedAsset);
+		ThreadPool::enqueue([this, editor, asset, id]()
+        {
+            Asset* cachedAsset = editor->cache().getAsset(id);
+            fetchDependencies(cachedAsset, [asset, cachedAsset]() mutable{
+                asset.setData(cachedAsset);
+            });
+        });
 		return asset;
 	}
 
-	auto editorAsset = editor->project().getEditorAsset(id);
+	std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
 	if(editorAsset)
 	{
-		Asset* a = editorAsset->buildAsset(id);
-		assert(a);
-		editor->cache().cacheAsset(a);
-		AssetData* assetData = new AssetData{};
-		assetData->loadState = LoadState::awaitingDependencies;
-		assetData->asset = std::unique_ptr<Asset>(a);
-		_assetLock.lock();
-		_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
-		_assetLock.unlock();
-		fetchDependencies(a, [a, asset, assetData]() mutable {
-			assetData->loadState = LoadState::loaded;
-			a->onDependenciesLoaded();
-			asset.setData(a);
+		ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
+			Asset* a = editorAsset->buildAsset(id);
+			assert(a);
+			_assetLock.lock();
+			_assets.at(id)->loadState = LoadState::awaitingDependencies;
+			_assetLock.unlock();
+			fetchDependencies(a, [editor, asset, a]() mutable{
+				editor->cache().cacheAsset(a);
+				asset.setData(a);
+			});
 		});
 		return asset;
 	}
-
-	AssetData* assetData = new AssetData{};
-	assetData->loadState = LoadState::requested;
-	_assetLock.lock();
-	_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
-	_assetLock.unlock();
 
 	auto* nm = Runtime::getModule<NetworkManager>();
 	if(incremental)
 	{
 		nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
-			auto& d = _assets.at(ptr->id);
-			d->loadState = LoadState::usable;
-			d->asset = std::unique_ptr<Asset>(ptr);
-			ptr->onDependenciesLoaded();
 			asset.setData(ptr);
 		});
 	}
 	else
 	{
 		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
-			AssetID id = ptr->id;
-			auto& d = _assets.at(id);
-			d->loadState = LoadState::awaitingDependencies;
-			d->asset = std::unique_ptr<Asset>(ptr);
-			if(dependenciesLoaded(d->asset.get()))
+			_assetLock.lock();
+			_assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
+			_assetLock.unlock();
+			if(dependenciesLoaded(ptr))
 			{
-				d->loadState = LoadState::loaded;
-				d->asset->onDependenciesLoaded();
 				asset.setData(ptr);
 				return;
 			}
-			d->loadState = LoadState::awaitingDependencies;
-			fetchDependencies(d->asset.get(), [this, id, asset]() mutable{
-				auto& d = _assets.at(id);
-				d->loadState = LoadState::loaded;
-				d->asset->onDependenciesLoaded();
-				asset.setData(d->asset.get());
+			fetchDependencies(ptr, [ptr, asset]() mutable{
+				asset.setData(ptr);
 			});
 		});
 	}

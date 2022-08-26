@@ -19,6 +19,7 @@ class AssetCache
 public:
 	void setProject(BraneProject* project);
 	void cacheAsset(const Asset* asset);
+	bool hasAsset(const AssetID& asset);
 	Asset* getAsset(const AssetID& asset);
 	void deleteCachedAsset(const AssetID& asset);
 

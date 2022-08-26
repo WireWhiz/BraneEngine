@@ -189,10 +189,10 @@ std::vector<AssetDependency> Assembly::dependencies() const
         deps.push_back({id, false});
     for(auto& id : scripts)
         deps.push_back({id, false});
+	for(auto& id : materials)
+		deps.push_back({id, false});
     for(auto& id : meshes)
         deps.push_back({id, true});
-    for(auto& id : materials)
-        deps.push_back({id, false});
     return deps;
 }
 
