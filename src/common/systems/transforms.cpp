@@ -50,9 +50,10 @@ void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, 
 		auto parentTransform = getParentTransform(parent, em);
 		localTransform->value = glm::inverse(parentTransform) * t->value;
 	}
-
+	em.markComponentChanged(entity, Transform::def()->id);
+	em.markComponentChanged(entity, LocalTransform::def()->id);
 	if(em.hasComponent<TRS>(entity))
-		em.getComponent<TRS>(entity)->fromMat(localTransform->value);
+		em.markComponentChanged(entity, TRS::def()->id);
 }
 
 void Transforms::removeParent(EntityID entity, EntityManager& em)

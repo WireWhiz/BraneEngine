@@ -142,6 +142,7 @@ namespace graphics
 
         _renderers.clear();
         _materials.clear();
+		_shaders.clear();
         _textures.clear();
         _meshes.clear();
         

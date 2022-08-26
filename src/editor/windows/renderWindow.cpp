@@ -6,18 +6,18 @@
 #include "ui/gui.h"
 #include "../editor.h"
 #include "../editorEvents.h"
+#include "../assets/editorAsset.h"
 #include "graphics/graphics.h"
 #include "graphics/meshRenderer.h"
 #include "graphics/material.h"
 #include "graphics/renderTarget.h"
 
-#include "ecs/nativeTypes/meshRenderer.h"
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
-#include "common/ecs/component.h"
 #include "ecs/nativeTypes/assetComponents.h"
 #include <systems/transforms.h>
 #include "backends/imgui_impl_vulkan.h"
+#include "editor/assets/types/editorAssemblyAsset.h"
 
 RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -27,23 +27,37 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 	_renderer = vkr.createRenderer<graphics::MeshRenderer>(&vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
-   /* _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
-        auto editor = Runtime::getModule<Editor>();
-        if(_focusedAsset)
-            _focusedAsset->setPreviewEntities(false);
-        _focusedAsset = editor->getEditorContext(event->asset());
-        _focusedAsset->setPreviewEntities(true);
-        if(!_focusedAsset->entities().empty())
+    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event){
+        if(!_entities.empty())
         {
-            _focusedEntity = _focusedAsset->entities()[0];
-            _focusedAssetEntity = 0;
-        }
+			for(auto& e : _entities)
+				em.destroyEntity(e);
+			_entities.resize(0);
+		}
+		auto* am = Runtime::getModule<AssetManager>();
+        _focusedAsset = event->asset();
+		_focusedAssetEntity = -1;
+		if(_focusedAsset->json().data().isMember("entities"))
+		{
+			if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
+			{
+				am->fetchAsset<Assembly>(_focusedAsset->json()["id"].asString()).then([this, &em](Assembly* assembly){
+					EntityID root = em.createEntity();
+					em.addComponent<Transform>(root);
+					Transform t;
+					t.value = glm::translate(glm::mat4(1), {0, 0, 0});
+					em.setComponent(root, t.toVirtual());
+					_entities = assembly->inject(em, root);
+					_entities.push_back(root);
+				});
+			}
+		}
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
-        _focusedEntity = _focusedAsset->entities()[event->entity()];
+        _focusedEntity = _entities[event->entity()];
     });
-    _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
+    /*_ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
         if(_focusedAsset)
             _focusedAsset->setPreviewEntities(false);
         _focusedAsset = nullptr;
@@ -151,14 +165,6 @@ void RenderWindow::displayContent()
                 rotation.y += (mousePos.x - _lastMousePos.x);
                 _lastMousePos = ImGui::GetMousePos();
             }
-
-            /*if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-            {
-                if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
-                    _focusedAsset->redo();
-                else if(ImGui::IsKeyPressed(ImGuiKey_Z))
-                    _focusedAsset->undo();
-            }*/
         }
         auto* em = Runtime::getModule<EntityManager>();
         if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
@@ -179,10 +185,33 @@ void RenderWindow::displayContent()
             else if(_manipulating)
             {
                 _manipulating = false;
-                /*if(_focusedAsset)
+                if(_focusedAsset)
                 {
-                    _focusedAsset->updateEntity(_focusedAssetEntity);
-                }*/
+					Json::Value entityJson = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
+					if(em->hasComponent<TRS>(_focusedEntity))
+					{
+						for(auto& member : entityJson["members"])
+						{
+							if(member["id"] == TRS::def()->asset->id.string())
+							{
+								member = EditorAssemblyAsset::componentToJson(em->getComponent<TRS>(_focusedEntity)->toVirtual());
+								break;
+							}
+						}
+					}
+	                if(em->hasComponent<Transform>(_focusedEntity))
+	                {
+		                for(auto& member : entityJson["members"])
+		                {
+			                if(member["id"] == Transform::def()->asset->id.string())
+			                {
+				                member = EditorAssemblyAsset::componentToJson(em->getComponent<Transform>(_focusedEntity)->toVirtual());
+				                break;
+			                }
+		                }
+	                }
+                    _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity), entityJson);
+                }
             }
         }
 

@@ -8,7 +8,7 @@
 #include <openssl/md5.h>
 #include <utility/hex.h>
 
-void FileManager::writeAsset(Asset* asset, const std::filesystem::path& filename)
+void FileManager::writeAsset(const Asset* asset, const std::filesystem::path& filename)
 {
 	SerializedData data;
     OutputSerializer s(data);

@@ -7,7 +7,7 @@
 #include <iostream>
 #include "jsonVersioner.h"
 
-JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, std::move(newValue), Json::resolvePath(path, json->_root), json)
+JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, Json::resolvePath(path, json->_root), std::move(newValue), json)
 {
 }
 

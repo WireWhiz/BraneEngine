@@ -31,6 +31,21 @@ public:
     ServerDirectory* directory() const;
 };
 
+class AssetReloadEvent : public GUIEvent
+{
+public:
+	AssetReloadEvent();
+};
+
+class EntityAssetReloadEvent : public GUIEvent
+{
+	size_t _entity;
+public:
+	EntityAssetReloadEvent(size_t entity);
+	size_t entity() const;
+
+};
+
 class EditorAsset;
 class FocusAssetEvent : public GUIEvent
 {

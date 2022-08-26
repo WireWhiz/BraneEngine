@@ -60,22 +60,36 @@ bool AssetManager::hasAsset(const AssetID& id)
 	return _assets.count(id);
 }
 
-void AssetManager::fetchDependencies(Asset* asset, const std::function<void()>& callback)
+void AssetManager::fetchDependencies(Asset* a, const std::function<void()>& callback)
 {
-    if(dependenciesLoaded(asset))
+	assert(a);
+	assert(a->id != AssetID::null);
+	auto deps = a->dependencies();
+    if(dependenciesLoaded(a))
     {
+		_assetLock.lock();
+		for(auto& d : deps)
+		{
+			if(!_assets[d.id]->usedBy.count(a->id))
+				_assets[d.id]->usedBy.insert(a->id);
+		}
+		_assetLock.unlock();
         callback();
         return;
     }
-    auto deps = asset->dependencies();
+
     auto unloaded = std::make_shared<size_t>(deps.size());
     auto callbackPtr = std::make_shared<std::function<void()>>(callback);
 
     for(auto& d : deps)
     {
-        fetchAsset(d.id, d.streamable).then([unloaded, callbackPtr](Asset* asset)
+        fetchAsset(d.id, d.streamable).then([this, a, unloaded, callbackPtr](Asset* asset)
         {
             Runtime::log("Loaded: " + asset->name);
+	        _assetLock.lock();
+			assert(_assets.count(asset->id));
+			_assets.at(asset->id)->usedBy.insert(a->id);
+	        _assetLock.unlock();
             if(--(*unloaded) == 0)
                 (*callbackPtr)();
         }).onError([unloaded, d, callbackPtr](const std::string& message){

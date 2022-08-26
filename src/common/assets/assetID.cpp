@@ -3,6 +3,8 @@
 #include <utility/hex.h>
 #include <cassert>
 
+const AssetID AssetID::null("null");
+
 AssetID::AssetID(const std::string& id)
 {
 	parseString(id);
@@ -10,6 +12,10 @@ AssetID::AssetID(const std::string& id)
 
 void AssetID::parseString(const std::string& id)
 {
+	if(id == "null"){
+		serverAddress = "null";
+		return;
+	}
 	std::string strings[2] = {"", ""};
 	uint8_t strIndex = 0;
 	for (size_t i = 0; i < id.size(); i++)
@@ -28,9 +34,9 @@ void AssetID::parseString(const std::string& id)
 
 std::string AssetID::string() const
 {
-	std::stringstream stream;
-	stream << serverAddress << '/' << toHex(id);
-	return stream.str();
+	if(serverAddress == "null")
+		return "null";
+	return serverAddress + '/' + toHex(id);
 }
 
 bool AssetID::operator==(const AssetID& other) const
@@ -39,6 +45,13 @@ bool AssetID::operator==(const AssetID& other) const
 	if (id != other.id)
 		return false;
 	return serverAddress == other.serverAddress;
+}
+
+bool AssetID::operator!=(const AssetID& other) const
+{
+	if (id != other.id)
+		return true;
+	return serverAddress != other.serverAddress;
 }
 
 std::ostream& operator<<(std::ostream& os, const AssetID& id)

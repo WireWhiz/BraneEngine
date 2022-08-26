@@ -11,6 +11,7 @@
 #include "assets/assetID.h"
 #include "braneProject.h"
 #include "utility/jsonVersioner.h"
+#include "assets/assetCache.h"
 
 namespace net{
     class Connection;
@@ -25,6 +26,7 @@ class Editor : public Module
 	GUIWindow* _selectProjectWindow = nullptr;
 
 	JsonVersionTracker _jsonTracker;
+	AssetCache _cache;
 	BraneProject _project;
 	void addMainWindows();
 	void drawMenu();
@@ -35,6 +37,7 @@ public:
 	void createProject(const std::string& name, const std::filesystem::path& directory);
 	BraneProject& project();
 	JsonVersionTracker& jsonTracker();
+	AssetCache& cache();
     std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 	static const char* name();
 };

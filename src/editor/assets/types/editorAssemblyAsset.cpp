@@ -11,12 +11,14 @@
 #include "../jsonVirtualType.h"
 #include "utility/jsonTypeUtilities.h"
 #include "ecs/nativeTypes/meshRenderer.h"
+#include "assets/assembly.h"
 
 Json::Value EditorAssemblyAsset::defaultJson()
 {
 	Json::Value json = EditorAsset::defaultJson();
-	json["type"] = "assembly";
 	json["linked"] = false;
+	json["dependencies"]["meshes"] = Json::arrayValue;
+	json["dependencies"]["materials"] = Json::arrayValue;
 	return json;
 }
 
@@ -40,7 +42,7 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
 	for(auto& mesh : gltf.json()["meshes"])
 	{
 		Json::Value meshData;
-		meshData["id"] = _project.newAssetID(_file).string();
+		meshData["id"] = _project.newAssetID(_file, AssetType::mesh).string();
 		meshData["name"] = mesh["name"];
 		_json.data()["linkedMeshes"].append(meshData);
 		_json.data()["dependencies"]["meshes"].append(meshData["id"]);
@@ -82,21 +84,26 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
 
 	_json.data()["rootEntity"] = gltf.json()["scenes"][0]["nodes"].get(Json::ArrayIndex(0), "0");
 
+	Json::ArrayIndex index = 0;
+	for(auto& entity : _json.data()["entities"])
+	{
+		// Set parent value on entities
+		if(entity.isMember("children"))
+		{
+			for(auto& child : entity["children"])
+				_json.data()["entities"][child.asUInt()]["parent"] = index;
+		}
+		index++;
+	}
+
 	save();
 }
 
-void EditorAssemblyAsset::cacheAsset()
+Asset* EditorAssemblyAsset::buildAsset(const AssetID& id) const
 {
-	if(_json["linked"].asBool())
-	{
-		cacheFromGLTF();
-		return;
-	}
-}
-
-void EditorAssemblyAsset::cacheFromGLTF()
-{
-
+	if(id.string() == _json["id"].asString())
+		return buildAssembly();
+	return buildMesh(id);
 }
 
 Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
@@ -134,4 +141,170 @@ VirtualComponent EditorAssemblyAsset::jsonToComponent(Json::Value component)
 		JsonVirtualType::toVirtual(output.getVar<byte>(i), component["members"][i]["value"], members[i]);
 
 	return output;
+}
+
+std::vector<std::pair<AssetID, AssetType>> EditorAssemblyAsset::containedAssets() const
+{
+	std::vector<std::pair<AssetID, AssetType>> assets = {{_json["id"].asString(), AssetType::assembly}};
+	if(_json["linked"].asBool())
+	{
+		for(auto& mesh : _json["linkedMeshes"])
+			assets.push_back({mesh["id"].asString(), AssetType::mesh});
+	}
+	return assets;
+}
+
+Asset* EditorAssemblyAsset::buildAssembly() const
+{
+	auto* assembly = new Assembly();
+	assembly->name = name();
+	assembly->id = _json["id"].asString();
+
+	for(auto& mesh : _json["dependencies"]["meshes"])
+		assembly->meshes.emplace_back(mesh.asString());
+
+	for(auto& material : _json["dependencies"]["materials"])
+		assembly->materials.emplace_back(material.asString());
+
+	std::unordered_set<const ComponentDescription*> components;
+	for(auto& entity : _json["entities"])
+	{
+		Assembly::EntityAsset entityAsset;
+		if(entity.isMember("name"))
+		{
+			EntityName name;
+			name.name = entity["name"].asString();
+			entityAsset.components.emplace_back(name.toVirtual());
+		}
+
+		bool hasTransform = false;
+		if(entity.isMember("children"))
+		{
+			Children cc;
+			for(auto& c : entity["children"])
+				cc.children.push_back({c.asUInt(), 0});
+			entityAsset.components.emplace_back(cc.toVirtual());
+			hasTransform = true;
+		}
+
+		for(auto& comp : entity["components"])
+		{
+			if(comp["id"] == TRS::def()->asset->id.string())
+				hasTransform = true;
+			entityAsset.components.push_back(jsonToComponent(comp));
+		}
+		if(hasTransform)
+		{
+			Transform transform;
+			transform.dirty = true;
+			entityAsset.components.emplace_back(transform.toVirtual());
+		}
+
+		assembly->entities.push_back(entityAsset);
+		for(auto& comp : entityAsset.components)
+		{
+			if(!components.count(comp.description()))
+				components.insert(comp.description());
+		}
+	}
+	for(auto* def : components)
+		assembly->components.emplace_back(def->asset->id);
+
+	return assembly;
+}
+
+void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>& entityMap) const
+{
+	assert(index < entityMap.size());
+	auto em = Runtime::getModule<EntityManager>();
+	EntityID id = entityMap[index];
+
+	//Reset entity
+	for(auto c: em->getEntityArchetype(id)->components())
+		em->removeComponent(id, c);
+
+	std::vector<VirtualComponent> components;
+
+	const Json::Value& entityData = _json["entities"][(Json::ArrayIndex)index];
+	if(entityData.isMember("parent"))
+	{
+		LocalTransform lt;
+		lt.parent = entityMap[entityData["parent"].asUInt()];
+		components.emplace_back(lt.toVirtual());
+	}
+	if(entityData.isMember("children"))
+	{
+		Children cc;
+		for(auto& c : entityData["children"])
+			cc.children.push_back(entityMap[c.asUInt()]);
+		components.emplace_back(cc.toVirtual());
+	}
+	for(auto& comp : entityData["components"])
+		components.push_back(jsonToComponent(comp));
+
+	for(auto& comp : components)
+	{
+		em->addComponent(id, comp.description()->id);
+		em->setComponent(id, comp);
+	}
+
+}
+
+Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
+{
+	GLTFLoader gltf;
+	if(!gltf.loadFromFile(_file.parent_path() / _json["source"].asString()))
+	{
+		Runtime::error("Could not load " + (_file.parent_path() / _json["source"].asString()).string());
+		return nullptr;
+	}
+
+	Json::Value meshData = Json::nullValue;
+	const Json::Value& meshes = _json["linkedMeshes"];
+	for(Json::ArrayIndex index = 0; index < meshes.size(); ++index)
+	{
+		if(meshes[index]["id"] == id.string())
+		{
+			meshData = gltf.json()["meshes"][index];
+			break;
+		}
+	}
+	if(meshData == Json::nullValue)
+		return nullptr;
+
+	auto* mesh = new MeshAsset();
+	mesh->name = meshData["name"].asString();
+	mesh->id = id;
+
+	for(auto& primitive : meshData["primitives"])
+	{
+		auto positions = gltf.readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
+		size_t pIndex = mesh->addPrimitive(gltf.readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+		mesh->addAttribute(pIndex, "POSITION", positions);
+
+
+		if(primitive["attributes"].isMember("NORMAL"))
+		{
+			auto v = gltf.readVec3Buffer(primitive["attributes"]["NORMAL"].asUInt());
+			mesh->addAttribute(pIndex, "NORMAL", v);
+		}
+
+		if(primitive["attributes"].isMember("TANGENT"))
+		{
+			//TODO account for tangents with bitangent sign stored as Vec4
+			auto v = gltf.readVec3Buffer(primitive["attributes"]["TANGENT"].asUInt());
+			mesh->addAttribute(pIndex, "TANGENT", v);
+		}
+
+		//TODO  make it so that we automatically detect all texcoords
+		if(primitive["attributes"].isMember("TEXCOORD_0"))
+		{
+			auto v = gltf.readVec2Buffer(primitive["attributes"]["TEXCOORD_0"].asUInt());
+			mesh->addAttribute(pIndex, "TEXCOORD_0", v);
+		}
+
+		//TODO: Remove vertices unused by indices array, since primitives reuse buffers
+
+	}
+	return mesh;
 }

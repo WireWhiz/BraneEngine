@@ -3,7 +3,7 @@
 #include "graphics/graphics.h"
 #include "runtime/runtime.h"
 
-void ShaderAsset::serialize(OutputSerializer& s)
+void ShaderAsset::serialize(OutputSerializer& s) const
 {
 	Asset::serialize(s);
 	s << shaderType;

@@ -63,15 +63,19 @@ namespace Logging
 	{
 		Log newLog{std::move(message), level, time(0)};
 		std::string fStr = newLog.toString();
-		_logFile << fStr << std::endl;
-		for(auto& f : _logListeners)
+		if(_logFile.is_open())
 		{
-			try{
-				f(newLog);
-			}
-			catch(const std::exception& e)
+			_logFile << fStr << std::endl;
+			for (auto& f: _logListeners)
 			{
-				std::cerr << "Log callback threw error!" << std::endl;
+				try
+				{
+					f(newLog);
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "Log callback threw error!" << std::endl;
+				}
 			}
 		}
 		if(printToConsole)
@@ -92,8 +96,6 @@ namespace Logging
 					std::cerr << fStr << std::endl;
 					setColor(LogColor::reset);
 			}
-
-
 		}
 	}
 

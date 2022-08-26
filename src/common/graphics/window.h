@@ -14,6 +14,7 @@ namespace graphics
 		glm::ivec2 _size;
 		VkSurfaceKHR _surface;
 		int _framerate;
+		static std::function<void()> _onRefocus;
 		void init();
 		void cleanup();
 	public:
@@ -29,6 +30,7 @@ namespace graphics
 		void setSize(glm::ivec2& newSize);
 		int framerate() const;
 		void setTitle(std::string_view name);
+		void onRefocus(std::function<void()> onRefocus);
 	};
 
 }

@@ -12,7 +12,7 @@
 #include "utility/serializedData.h"
 
 
-void Assembly::EntityAsset::serialize(OutputSerializer& message, Assembly& assembly)
+void Assembly::EntityAsset::serialize(OutputSerializer& message, const Assembly& assembly) const
 {
     uint32_t size = static_cast<uint32_t>(components.size());
 	message << size;
@@ -90,7 +90,7 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 	return componentIDs;
 }
 
-void Assembly::serialize(OutputSerializer& message)
+void Assembly::serialize(OutputSerializer& message) const
 {
 	Asset::serialize(message);
 	message << components << scripts << meshes << materials;
@@ -179,16 +179,7 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
 
 void Assembly::onDependenciesLoaded()
 {
-    for(auto& entity : entities)
-    {
-        for(auto& component : entity.components)
-        {
-            if(component.description() == Transform::def())
-            {
-                component.setVar(1, true);
-            }
-        }
-    }
+
 }
 
 std::vector<AssetDependency> Assembly::dependencies() const

@@ -15,7 +15,64 @@
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
 #include "editor/assets/editorAsset.h"
+#include "editor/assets/types/editorMaterialAsset.h"
 
+class CreateDirectoryPopup : public GUIPopup
+{
+	AssetBrowserWidget& _widget;
+	std::string _dirName = "new dir";
+	void drawBody() override
+	{
+		ImGui::Text("Create Directory:");
+		bool enter = ImGui::InputText("##name", &_dirName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+		if (enter || ImGui::Button("create"))
+		{
+			ImGui::CloseCurrentPopup();
+			FileManager::createDirectory(_widget.currentDirectory() / _dirName);
+			_widget.reloadCurrentDirectory();
+		}
+	}
+public:
+	CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")
+	{
+	}
+};
+
+class CreateAssetPopup : public GUIPopup
+{
+	AssetBrowserWidget& _widget;
+	AssetType _type;
+	std::string _assetName;
+	void drawBody() override
+	{
+		ImGui::Text("New %s:", _type.toString().c_str());
+		bool enter = ImGui::InputText("##name", &_assetName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+		if(enter || ImGui::Button("create"))
+		{
+			ImGui::CloseCurrentPopup();
+			EditorAsset* asset = nullptr;
+			Editor* editor = Runtime::getModule<Editor>();
+			switch(_type.type())
+			{
+				case AssetType::material:
+					asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"), editor->project());
+					break;
+			}
+			if(!asset)
+				return;
+			asset->save();
+			editor->project().registerAssetLocation(asset);
+			delete asset;
+			_widget.reloadCurrentDirectory();
+		}
+	}
+public:
+	CreateAssetPopup(AssetBrowserWidget& widget, AssetType type) : _widget(widget), GUIPopup("Create Asset")
+	{
+		_type = type;
+		_assetName = "New " + _type.toString();
+	}
+};
 
 AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits)
 {
@@ -55,6 +112,7 @@ void AssetBrowserWidget::displayDirectoriesRecursive(FileManager::Directory* dir
         {
             if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
             {
+				//TODO notify project file of moved assets
                 FileManager::moveFile(_rootPath / (*(FileManager::Directory**)p->Data)->path(), _rootPath / dir->path());
             }
         }
@@ -162,8 +220,17 @@ void AssetBrowserWidget::displayFiles()
 
         if (ImGui::BeginPopupContextWindow("directoryActions"))
         {
+			if(ImGui::BeginMenu("Create New"))
+			{
+				if(ImGui::Selectable(ICON_FA_FOLDER " Directory"))
+					_ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
+				if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
+					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
+				ImGui::EndMenu();
+			}
 			if(_selectedFiles.x != -1)
 			{
+				ImGui::Separator();
 				if(ImGui::Selectable(ICON_FA_TRASH "Delete"))
 				{
 					Runtime::warn("TODO delete assets from project file");
@@ -173,10 +240,7 @@ void AssetBrowserWidget::displayFiles()
 					}
 					reloadCurrentDirectory();
 				}
-				ImGui::Separator();
 			}
-            if (ImGui::Selectable(ICON_FA_FOLDER " New Directory"))
-	            _ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
             ImGui::EndPopup();
         }
     }
@@ -236,6 +300,8 @@ const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
 		return ICON_FA_FOLDER;
 	if(ext == ".shader")
 		return ICON_FA_FIRE;
+	if(ext == ".material")
+		return ICON_FA_SPRAY_CAN_SPARKLES;
 	if(ext == ".assembly")
 		return ICON_FA_BOXES_STACKED;
 	if(ext == ".gltf" || ext == ".glb")
@@ -254,7 +320,7 @@ AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesyst
 	if(file.is_regular_file())
 	{
 		auto ext = file.path().extension();
-		if(ext == ".shader" || ext == ".assembly")
+		if(ext == ".shader" || ext == ".assembly" || ext == ".material")
 			return FileType::asset;
 		if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
 			return FileType::source;
@@ -263,19 +329,3 @@ AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesyst
 	return FileType::unknown;
 }
 
-CreateDirectoryPopup::CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")
-{
-}
-
-void CreateDirectoryPopup::drawBody()
-{
-    ImGui::Text("Create Directory:");
-    if (ImGui::InputText("##name", &_dirName, ImGuiInputTextFlags_AutoSelectAll
-        | ImGuiInputTextFlags_EnterReturnsTrue)
-        || ImGui::Button("create"))
-    {
-        ImGui::CloseCurrentPopup();
-        FileManager::createDirectory(_widget.currentDirectory() / _dirName);
-		_widget.reloadCurrentDirectory();
-    }
-}

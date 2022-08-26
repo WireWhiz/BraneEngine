@@ -52,13 +52,4 @@ public:
     void setDirectory(FileManager::Directory* dir);
 };
 
-class CreateDirectoryPopup : public GUIPopup
-{
-	AssetBrowserWidget& _widget;
-	std::string _dirName = "new dir";
-	void drawBody() override;
-public:
-	CreateDirectoryPopup(AssetBrowserWidget& widget);
-};
-
 #endif //BRANEENGINE_ASSETBROWSERWIDGET_H

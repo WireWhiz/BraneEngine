@@ -19,7 +19,7 @@ public:
     uint32_t runtimeID = -1;
 	ShaderAsset();
 
-	virtual void serialize(OutputSerializer& s) override;
+	virtual void serialize(OutputSerializer& s) const override;
 	virtual void deserialize(InputSerializer& s) override;
     VkShaderStageFlagBits vulkanShaderType() const;
 

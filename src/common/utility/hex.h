@@ -7,6 +7,8 @@
 #include <string>
 #include <unordered_map>
 #include <cmath>
+#include <vector>
+#include <array>
 
 const char numToHex[16] = {
 		'0',

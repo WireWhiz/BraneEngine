@@ -4,6 +4,7 @@
 
 namespace graphics
 {
+	std::function<void()> Window::_onRefocus;
     Window::Window()
     {
         init();
@@ -98,5 +99,16 @@ namespace graphics
 	void Window::setTitle(std::string_view name)
 	{
 		glfwSetWindowTitle(_window, name.data());
+	}
+
+	void Window::onRefocus(std::function<void()> onRefocus)
+	{
+		if(!_onRefocus)
+			glfwSetWindowFocusCallback(_window, [](GLFWwindow *window, int focused){
+				if(focused)
+					_onRefocus();
+			});
+		_onRefocus = std::move(onRefocus);
+
 	}
 }

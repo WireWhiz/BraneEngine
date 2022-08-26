@@ -47,3 +47,18 @@ EntityID FocusEntityEvent::id() const
 {
     return _id;
 }
+
+EntityAssetReloadEvent::EntityAssetReloadEvent(size_t entity) : GUIEvent("entity asset reload")
+{
+	_entity = entity;
+}
+
+size_t EntityAssetReloadEvent::entity() const
+{
+	return _entity;
+}
+
+AssetReloadEvent::AssetReloadEvent() : GUIEvent("asset reload")
+{
+
+}

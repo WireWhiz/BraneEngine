@@ -15,12 +15,13 @@
 #include "windows/memoryManagerWindow.h"
 
 #include "editorEvents.h"
-#include <fileManager/fileManager.h>
-#include <assets/assetManager.h>
+#include "fileManager/fileManager.h"
+#include "assets/assetManager.h"
 #include "graphics/material.h"
 #include "graphics/graphics.h"
 #include "networking/networking.h"
 #include "assets/editorAsset.h"
+#include "fileManager/fileWatcher.h"
 
 void Editor::start()
 {
@@ -115,8 +116,10 @@ void Editor::drawMenu()
 			else
 				_jsonTracker.redo();
 		}
-		if(ImGui::IsKeyPressed(ImGuiKey_Y))
+		else if(ImGui::IsKeyPressed(ImGuiKey_Y))
 			_jsonTracker.redo();
+		else if(ImGui::IsKeyPressed(ImGuiKey_S))
+			_project.save();
 	}
 }
 
@@ -128,6 +131,10 @@ BraneProject& Editor::project()
 void Editor::loadProject(const std::filesystem::path& filepath)
 {
 	_project.load(filepath);
+	Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this](){
+		if(_project.fileWatcher())
+			_project.fileWatcher()->scanForChanges();
+	});
 	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
@@ -144,16 +151,61 @@ JsonVersionTracker& Editor::jsonTracker()
 
 Editor::Editor() : _project(*this)
 {
+	_cache.setProject(&_project);
+}
 
+AssetCache& Editor::cache()
+{
+	return _cache;
 }
 
 //The editor specific fetch asset function
 AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 {
+	assert(id != AssetID::null);
 	AsyncData<Asset*> asset;
 	if(hasAsset(id))
 	{
 		asset.setData(getAsset<Asset>(id));
+		return asset;
+	}
+
+	Editor* editor = Runtime::getModule<Editor>();
+	Asset* cachedAsset = editor->cache().getAsset(id);
+	if(cachedAsset)
+	{
+		AssetData* assetData = new AssetData{};
+		assetData->loadState = LoadState::awaitingDependencies;
+		assetData->asset = std::unique_ptr<Asset>(cachedAsset);
+		_assetLock.lock();
+		_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
+		_assetLock.unlock();
+		fetchDependencies(cachedAsset, [cachedAsset, asset, assetData]() mutable {
+			assetData->loadState = LoadState::loaded;
+			cachedAsset->onDependenciesLoaded();
+			asset.setData(cachedAsset);
+		});
+		asset.setData(cachedAsset);
+		return asset;
+	}
+
+	auto editorAsset = editor->project().getEditorAsset(id);
+	if(editorAsset)
+	{
+		Asset* a = editorAsset->buildAsset(id);
+		assert(a);
+		editor->cache().cacheAsset(a);
+		AssetData* assetData = new AssetData{};
+		assetData->loadState = LoadState::awaitingDependencies;
+		assetData->asset = std::unique_ptr<Asset>(a);
+		_assetLock.lock();
+		_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
+		_assetLock.unlock();
+		fetchDependencies(a, [a, asset, assetData]() mutable {
+			assetData->loadState = LoadState::loaded;
+			a->onDependenciesLoaded();
+			asset.setData(a);
+		});
 		return asset;
 	}
 

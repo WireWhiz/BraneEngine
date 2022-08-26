@@ -49,8 +49,8 @@ class VersionedJson
 {
 	JsonVersionTracker& _tkr;
 	Json::Value _root;
-	size_t _version = 0;
-	size_t _lastCleanedVersion = 0;
+	uint32_t _version = 0;
+	uint32_t _lastCleanedVersion = 0;
 
 	struct UncompletedChange{
 		std::string path;

@@ -23,7 +23,7 @@ public:
 	{
 		std::vector<VirtualComponent> components;
 		std::vector<ComponentID> runtimeComponentIDs();
-		void serialize(OutputSerializer& message, Assembly& assembly);
+		void serialize(OutputSerializer& message, const Assembly& assembly) const;
 		void deserialize(InputSerializer& message, Assembly& assembly, ComponentManager& cm, AssetManager& am);
 		bool hasComponent(const ComponentDescription* def) const;
 		VirtualComponent* getComponent(const ComponentDescription* def);
@@ -35,7 +35,7 @@ public:
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
     std::vector<AssetID> materials;
 	std::vector<EntityAsset> entities;
-	void serialize(OutputSerializer& message) override;
+	void serialize(OutputSerializer& message) const override;
 	void deserialize(InputSerializer& message) override;
 
     std::vector<AssetDependency> dependencies() const override;

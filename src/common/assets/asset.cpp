@@ -6,7 +6,7 @@
 #include "assembly.h"
 #include "types/shaderAsset.h"
 
-void Asset::serialize(OutputSerializer& s)
+void Asset::serialize(OutputSerializer& s) const
 {
 	s << id << name << type.toString();
 }
@@ -77,7 +77,7 @@ void Asset::onDependenciesLoaded()
 
 }
 
-void IncrementalAsset::serializeHeader(OutputSerializer& s)
+void IncrementalAsset::serializeHeader(OutputSerializer& s) const
 {
 	Asset::serialize(s);
 }
@@ -112,7 +112,7 @@ IncrementalAsset* IncrementalAsset::deserializeUnknownHeader(InputSerializer& s)
 	return asset;
 }
 
-bool IncrementalAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData)
+bool IncrementalAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData) const
 {
 	return false; //Return false because there is no more data
 }

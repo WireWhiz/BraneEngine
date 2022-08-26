@@ -27,9 +27,11 @@ public:
 	EditorAsset(const std::filesystem::path& file, BraneProject& project);
 	virtual ~EditorAsset() = default;
 	void load();
-	virtual void cacheAsset() = 0;
+	virtual std::vector<std::pair<AssetID, AssetType>> containedAssets() const = 0;
+	virtual Asset* buildAsset(const AssetID& id) const = 0;
 	const AssetType& type() const;
 	const std::string& name() const;
+	const std::filesystem::path& file() const;
 	bool unsavedChanged() const;
 	void save();
 	VersionedJson& json();

@@ -3,7 +3,7 @@
 #include "componentAsset.h"
 #include "graphics/graphics.h"
 
-void MaterialAsset::serialize(OutputSerializer& s)
+void MaterialAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);
     s << vertexShader << fragmentShader << textures << inputComponent;
@@ -23,11 +23,11 @@ MaterialAsset::MaterialAsset()
 std::vector<AssetDependency> MaterialAsset::dependencies() const
 {
     std::vector<AssetDependency> deps;
-    if(!vertexShader.serverAddress.empty())
+    if(vertexShader != AssetID::null)
         deps.push_back({vertexShader, false});
-    if(!fragmentShader.serverAddress.empty())
+    if(fragmentShader != AssetID::null)
         deps.push_back({fragmentShader, false});
-    if(!inputComponent.serverAddress.empty())
+    if(inputComponent != AssetID::null)
         deps.push_back({inputComponent, false});
     return deps;
 }

@@ -49,7 +49,7 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(const std::filesystem::path& filename)
+	static T* readAsset(const std::filesystem::path& filename)
 	{
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
@@ -64,7 +64,7 @@ public:
 		return asset;
 	}
 
-	Asset* readUnknownAsset(const std::filesystem::path& filename)
+	static Asset* readUnknownAsset(const std::filesystem::path& filename)
 	{
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
@@ -107,7 +107,7 @@ public:
 	static void writeFile(const std::filesystem::path& filename, const std::string& data);
 	static void writeFile(const std::filesystem::path& filename, const Json::Value& data);
 
-	void writeAsset(Asset* asset, const std::filesystem::path& filename);
+	static void writeAsset(const Asset* asset, const std::filesystem::path& filename);
 
 	static const char* name();
 };

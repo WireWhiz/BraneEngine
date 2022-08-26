@@ -27,7 +27,7 @@ public:
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
         LoadState loadState = LoadState::unloaded;
-        std::vector<AssetData*> _usedBy;
+        std::unordered_set<AssetID> usedBy;
     };
 private:
 	std::mutex _assetLock;
@@ -62,6 +62,7 @@ public:
 	}
 	void addAsset(Asset* asset);
 	bool hasAsset(const AssetID& id);
+
 
     bool dependenciesLoaded(const Asset* asset) const;
 	void fetchDependencies(Asset* asset, const std::function<void()>& callback);

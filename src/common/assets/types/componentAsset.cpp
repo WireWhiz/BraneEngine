@@ -24,7 +24,7 @@ const std::vector<VirtualType::Type>& ComponentAsset::members() const
 	return _members;
 }
 
-void ComponentAsset::serialize(OutputSerializer& s)
+void ComponentAsset::serialize(OutputSerializer& s) const
 {
 	Asset::serialize(s);
 	s << _members << _memberNames;

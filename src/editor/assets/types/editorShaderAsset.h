@@ -10,11 +10,11 @@
 
 class EditorShaderAsset : public EditorAsset
 {
-
 	Json::Value defaultJson() override;
 public:
 	EditorShaderAsset(const std::filesystem::path& file, BraneProject& project);
-	void cacheAsset() override;
+	std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
+	Asset* buildAsset(const AssetID& id) const override;
 	void updateSource(const std::filesystem::path& source);
 };
 

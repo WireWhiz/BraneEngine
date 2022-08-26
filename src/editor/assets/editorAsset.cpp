@@ -10,16 +10,15 @@
 #include "editor/braneProject.h"
 #include "editor/editor.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
+#include "editor/assets/types/editorMaterialAsset.h"
 
 const std::string endToken = "\n/* Do not edit past this line */\n";
 
 EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& project) : _file(file), _project(project), _json(project.editor().jsonTracker())
 {
-	auto ext = file.extension();
-	if(ext == ".shader")
-		_type = AssetType::shader;
-	else if(ext == ".assembly")
-		_type = AssetType::assembly;
+	auto ext = file.extension().string();
+	if(ext.size() > 1)
+		_type.set(ext.substr(1));
 	_name = file.stem().string();
 	load();
 }
@@ -38,11 +37,14 @@ void EditorAsset::load()
 			_json.data() = defaultJson();
 			return;
 		}
+		if(_json.data().get("id", "null").asString() == "null")
+			_json.data()["id"] = _project.newAssetID(_file, _type).string();
 	} catch(const std::exception& e)
 	{
 		Runtime::error("Could not parse " + _file.string() + "!\n" + e.what());
 		_json.data()["failedLoad"] = true;
 	}
+
 
 }
 
@@ -64,7 +66,7 @@ VersionedJson& EditorAsset::json()
 Json::Value EditorAsset::defaultJson()
 {
 	Json::Value value;
-	value["id"] = _project.newAssetID(_file).string();
+	value["id"] = _project.newAssetID(_file, _type).string();
 	return value;
 }
 
@@ -73,6 +75,8 @@ EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, Br
 	auto ext = path.extension();
 	if(ext == ".shader")
 		return new EditorShaderAsset(path, project);
+	if(ext == ".material")
+		return new EditorMaterialAsset(path, project);
 	if(ext == ".assembly")
 		return new EditorAssemblyAsset(path, project);
 	return nullptr;
@@ -86,6 +90,11 @@ const AssetType& EditorAsset::type() const
 const std::string& EditorAsset::name() const
 {
 	return _name;
+}
+
+const std::filesystem::path& EditorAsset::file() const
+{
+	return _file;
 }
 
 

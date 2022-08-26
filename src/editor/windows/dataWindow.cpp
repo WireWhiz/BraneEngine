@@ -17,6 +17,8 @@
 #include "assets/types/materialAsset.h"
 #include "../widgets/assetSelectWidget.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
+#include "ecs/nativeTypes/meshRenderer.h"
+#include "editor/assets/types/editorMaterialAsset.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -81,6 +83,9 @@ void DataWindow::displayAssetData()
 	}catch(const std::exception& e)
 	{
 		ImGui::TextColored({1,0,0,1}, "Error displaying asset: %s", e.what());
+#ifndef NDEBUG
+		throw e;
+#endif
 	}
 
 }
@@ -95,9 +100,9 @@ void DataWindow::displayAssemblyData()
 	AssetManager& am = *Runtime::getModule<AssetManager>();
 	if(ImGui::CollapsingHeader("Dependencies")){
 		ImGui::Indent();
-		if(ImGui::CollapsingHeader("Components")){
+		if(ImGui::CollapsingHeader("Materials")){
 			ImGui::Indent();
-			for(auto& cID : _focusedAsset->json()["dependencies"]["components"])
+			for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
 			{
 				ImGui::Selectable(cID.asCString());
 			}
@@ -165,7 +170,6 @@ void DataWindow::displayEntityAssetData()
 	ImGui::PopFont();
 	ImGui::TextDisabled("Index: %llu", _focusedAssetEntity);
 	ImGui::Separator();
-    auto* em = Runtime::getModule<EntityManager>();
 	for (Json::ArrayIndex i = 0; i < entityAsset["components"].size(); ++i)
     {
         auto& component = entityAsset["components"][i];
@@ -209,10 +213,32 @@ void DataWindow::displayEntityAssetData()
         if(displaying)
         {
             ImGui::Indent();
-			VirtualComponent vc = EditorAssemblyAsset::jsonToComponent(component);
-            auto res = VirtualVariableWidgets::displayVirtualComponentData(vc);
-			if(res != UiChangeType::none)
-	            _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components/" + std::to_string(i), EditorAssemblyAsset::componentToJson(vc), res == UiChangeType::finished);
+			if(component["name"].asString() == MeshRendererComponent::def()->name)
+			{
+				ImGui::Text("Mesh Index: %d", component["members"][0]["value"].asInt());
+				for(Json::ArrayIndex mat = 0; mat < component["members"][1]["value"].size(); ++mat)
+				{
+					ImGui::PushID(mat);
+					Json::ArrayIndex matIndex = component["members"][1]["value"][mat].asUInt();
+					ImGui::Text("Material %u (Assembly index %u)", mat, matIndex);
+					ImGui::SameLine();
+					AssetID matID = _focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString();
+					if(AssetSelectWidget::draw(matID, AssetType::material))
+					{
+						while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
+							_focusedAsset->json().data()["dependencies"]["materials"].append("null");
+						_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
+					}
+					ImGui::PopID();
+				}
+			}
+			else
+			{
+				Json::Value data = component;
+				auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->json().data());
+				if(res != UiChangeType::none)
+					_focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components/" + std::to_string(i), data, res == UiChangeType::finished);
+			}
             ImGui::Unindent();
         }
         ImGui::PopID();
@@ -252,23 +278,23 @@ void DataWindow::displayEntityData()
 
 void DataWindow::displayMaterialData()
 {
-    /*MaterialAsset* material = static_cast<MaterialAsset*>(_focusedAsset->asset());
-    AssetID vertexID = material->vertexShader;
-    if(AssetSelectWidget::draw(&vertexID, AssetType::shader))
+    auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+    AssetID vertexID = material->json()["vertexShader"].asString();
+    if(AssetSelectWidget::draw(vertexID, AssetType::shader))
     {
-        _focusedAsset->setSerializedField(&material->vertexShader, vertexID);
+	    material->json().changeValue("vertexShader", vertexID.string());
     };
     ImGui::SameLine();
     ImGui::Text("Vertex Shader");
-    AssetID fragmentID = material->fragmentShader;
-    if(AssetSelectWidget::draw(&fragmentID, AssetType::shader))
+    AssetID fragmentID = material->json()["fragmentShader"].asString();
+    if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
-        _focusedAsset->setSerializedField(&material->fragmentShader, fragmentID);
+	    material->json().changeValue("fragmentShader", fragmentID.string());
     }
     ImGui::SameLine();
     ImGui::Text("Fragment Shader");
     ImGui::Spacing();
-    ImGui::TextDisabled("Custom property components coming soon");*/
+    ImGui::TextDisabled("Custom property components coming eventually");
 }
 
 

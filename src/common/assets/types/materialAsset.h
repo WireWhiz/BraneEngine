@@ -13,7 +13,7 @@ public:
     AssetID inputComponent;
     size_t runtimeID = -1;
 
-    void serialize(OutputSerializer& s) override;
+    void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;
     std::vector<AssetDependency> dependencies() const override;
 

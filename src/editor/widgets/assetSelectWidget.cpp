@@ -6,20 +6,21 @@
 #include "assets/assetID.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "assets/assetManager.h"
 #include "runtime/runtime.h"
+#include "assets/assetID.h"
+#include "editor/editor.h"
 
 std::unique_ptr<AssetSearchWidget> AssetSelectWidget::_searchWidget;
 
-bool AssetSelectWidget::draw(AssetID* id, AssetType type)
+bool AssetSelectWidget::draw(AssetID& id, AssetType type)
 {
     bool changed = false;
-    ImGui::PushID(id);
+    ImGui::PushID(&id);
     std::string name;
-    if(id->serverAddress.empty())
-        name = "none";
+    if(id == AssetID::null)
+        name = "null";
     else
-        name = Runtime::getModule<AssetManager>()->getAsset<Asset>(*id)->name;
+        name = Runtime::getModule<Editor>()->project().getAssetName(id);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.2);
     ImGui::PushStyleColor(ImGuiCol_FrameBg, {0.1, 0.1, 0.1, 1});
     ImGui::InputText(("##" + name).c_str(), &name, ImGuiInputTextFlags_ReadOnly);
@@ -35,24 +36,24 @@ bool AssetSelectWidget::draw(AssetID* id, AssetType type)
         }
         if(ImGui::IsKeyPressed(ImGuiKey_Delete))
         {
-            id->id = 0;
-            id->serverAddress = "";
+            id = AssetID::null;
             changed = true;
         }
     }
-    if(ImGui::BeginPopup("select asset"))
-    {
-        if(_searchWidget->draw())
-        {
-            auto* am = Runtime::getModule<AssetManager>();
-            *id = _searchWidget->currentSelected();
-            changed = true;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
+	if(ImGui::BeginPopup("select asset"))
+	{
+		if(_searchWidget->draw())
+		{
+			id = _searchWidget->currentSelected();
+			changed = true;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+	ImGui::PopID();
+
+
 
     //TODO drag drop target for dragging from asset browser
-    ImGui::PopID();
     return changed;
 }
