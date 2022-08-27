@@ -12,6 +12,10 @@
 #include "utility/jsonTypeUtilities.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "assets/assembly.h"
+#include "ui/gui.h"
+#include "editor/editorEvents.h"
+#include "assets/types/materialAsset.h"
+#include <regex>
 
 Json::Value EditorAssemblyAsset::defaultJson()
 {
@@ -24,7 +28,14 @@ Json::Value EditorAssemblyAsset::defaultJson()
 
 EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
-
+	std::regex entityChange(R"((entities/)([0-9]+).*)");
+	_json.onChange([this, entityChange](const std::string& path){
+		if(std::regex_match(path, entityChange))
+		{
+			auto index = std::stoi(Json::getPathComponent(path, 1));
+			Runtime::getModule<GUI>()->sendEvent(std::make_unique<EntityAssetReloadEvent>(index));
+		}
+	});
 }
 
 void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
@@ -221,17 +232,17 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 
 	//Reset entity
 	for(auto c: em->getEntityArchetype(id)->components())
-		em->removeComponent(id, c);
+		if(c != 0) //Don't remove ID
+			em->removeComponent(id, c);
 
 	std::vector<VirtualComponent> components;
 
 	const Json::Value& entityData = _json["entities"][(Json::ArrayIndex)index];
+	if(entityData.isMember("parent") || entityData.isMember("children"))
+		em->addComponent<Transform>(id);
 	if(entityData.isMember("parent"))
-	{
-		LocalTransform lt;
-		lt.parent = entityMap[entityData["parent"].asUInt()];
-		components.emplace_back(lt.toVirtual());
-	}
+		Transforms::setParent(id, entityMap[entityData["parent"].asUInt()], *em);
+
 	if(entityData.isMember("children"))
 	{
 		Children cc;
@@ -240,12 +251,27 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 		components.emplace_back(cc.toVirtual());
 	}
 	for(auto& comp : entityData["components"])
+	{
 		components.push_back(jsonToComponent(comp));
+	}
 
 	for(auto& comp : components)
 	{
 		em->addComponent(id, comp.description()->id);
 		em->setComponent(id, comp);
+	}
+
+	if(em->hasComponent<MeshRendererComponent>(id))
+	{
+		auto* renderer = em->getComponent<MeshRendererComponent>(id);
+		auto* am = Runtime::getModule<AssetManager>();
+		auto* mesh = am->getAsset<MeshAsset>(_json["dependencies"]["meshes"][renderer->mesh].asString());
+		renderer->mesh = mesh->runtimeID;
+		for(auto& mID : renderer->materials)
+		{
+			auto* material = am->getAsset<MaterialAsset>(_json["dependencies"]["materials"][mID].asString());
+			mID = material->runtimeID;
+		}
 	}
 
 }

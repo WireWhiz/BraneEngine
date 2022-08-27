@@ -228,7 +228,7 @@ UiChangeType VirtualVariableWidgets::displayAssetComponentData(Json::Value& comp
 		VirtualType::construct(type, data);
 		JsonVirtualType::toVirtual(data, member["value"], type);
 		changed = (UiChangeType)std::max((uint8_t)changed, (uint8_t)displayVirtualVariable(member["name"].asCString(), type, data, assembly));
-		component["value"] = JsonVirtualType::fromVirtual(data, type);
+		member["value"] = JsonVirtualType::fromVirtual(data, type);
 		VirtualType::deconstruct(type, data);
 	}
 	ImGui::PopID();

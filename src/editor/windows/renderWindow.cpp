@@ -66,6 +66,12 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		_entities = assembly->inject(em, root);
 		_entities.push_back(root);
 	});
+	_ui.addEventListener<EntityAssetReloadEvent>("entity asset reload", this, [this](const EntityAssetReloadEvent* event){
+		if(_focusedAsset && event->entity() < _entities.size())
+		{
+			dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->updateEntity(event->entity(), _entities);
+		}
+	});
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
         _focusedEntity = _entities[event->entity()];
@@ -200,10 +206,11 @@ void RenderWindow::displayContent()
                 _manipulating = false;
                 if(_focusedAsset)
                 {
-					Json::Value entityJson = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
+					Json::Value components = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity]["components"];
+					assert(components != Json::nullValue);
 					if(em->hasComponent<TRS>(_focusedEntity))
 					{
-						for(auto& member : entityJson["members"])
+						for(auto& member : components)
 						{
 							if(member["id"] == TRS::def()->asset->id.string())
 							{
@@ -214,7 +221,7 @@ void RenderWindow::displayContent()
 					}
 	                if(em->hasComponent<Transform>(_focusedEntity))
 	                {
-		                for(auto& member : entityJson["members"])
+		                for(auto& member : components)
 		                {
 			                if(member["id"] == Transform::def()->asset->id.string())
 			                {
@@ -223,7 +230,7 @@ void RenderWindow::displayContent()
 			                }
 		                }
 	                }
-                    _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity), entityJson);
+                    _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components", components);
                 }
             }
         }

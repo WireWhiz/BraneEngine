@@ -121,6 +121,8 @@ void EntityManager::setComponent(EntityID entity, const VirtualComponentView& co
 
 void EntityManager::addComponent(EntityID entity, ComponentID component)
 {
+	if(hasComponent(entity, component))
+		return;
     assert(entityExists(entity));
 	Archetype* destArchetype = nullptr;
 	if (hasArchetype(entity))
@@ -172,10 +174,12 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	assert(newIndex < destArchetype->size());
 	_entities[entity.id].index = newIndex;
 	_entities[entity.id].archetype = destArchetype;
+	destArchetype->setComponentVersion(newIndex, component,  _systems.globalVersion++);
 }
 
 void EntityManager::removeComponent(EntityID entity, ComponentID component)
 {
+	assert(component != EntityIDComponent::def()->id);
 	Archetype* destArchetype = nullptr;
 	size_t destArchIndex = 0;
     assert(entityExists(entity));

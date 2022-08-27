@@ -14,6 +14,7 @@ class VersionedJson;
 namespace Json
 {
 	Value& resolvePath(const std::string& path, Json::Value& root);
+	std::string getPathComponent(const std::string& path, uint32_t index);
 }
 
 class JsonChange
@@ -51,20 +52,20 @@ class VersionedJson
 	Json::Value _root;
 	uint32_t _version = 0;
 	uint32_t _lastCleanedVersion = 0;
+	std::function<void(const std::string& path)> _onChange;
 
 	struct UncompletedChange{
 		std::string path;
 		Json::Value before;
 	};
 	std::unique_ptr<UncompletedChange> _uncompletedChange;
-	std::function<void()> _onChanged;
 	friend class JsonChange;
 public:
 	VersionedJson(JsonVersionTracker& tkr);
 	void initialize(const Json::Value& value);
 	void changeValue(const std::string& path, const Json::Value& newValue, bool changeComplete = true);
+	void onChange(const std::function<void(const std::string& path)>& f);
 	void markClean();
-	void onChanged(const std::function<void()>& callback);
 	bool dirty() const;
 	Json::Value& data();
 	const Json::Value& operator[](const std::string&) const;

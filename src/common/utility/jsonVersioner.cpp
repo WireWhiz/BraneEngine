@@ -20,16 +20,16 @@ void JsonChange::undo()
 {
 	Json::resolvePath(_path, _json->_root) = _before;
 	--_json->_version;
-	if(_json->_onChanged)
-		_json->_onChanged();
+	if(_json->_onChange)
+		_json->_onChange(_path);
 }
 
 void JsonChange::redo()
 {
 	Json::resolvePath(_path, _json->_root) = _after;
 	++_json->_version;
-	if(_json->_onChanged)
-		_json->_onChanged();
+	if(_json->_onChange)
+		_json->_onChange(_path);
 }
 
 const VersionedJson* JsonChange::json()
@@ -102,8 +102,8 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 			_uncompletedChange->before = Json::resolvePath(path, _root);
 		}
 		Json::resolvePath(path, _root) = newValue;
-		if(_onChanged)
-			_onChanged();
+		if(_onChange)
+			_onChange(path);
 		return;
 	}
 
@@ -134,11 +134,6 @@ Json::Value& VersionedJson::data()
 	return _root;
 }
 
-void VersionedJson::onChanged(const std::function<void()>& callback)
-{
-	_onChanged = callback;
-}
-
 JsonVersionTracker& VersionedJson::tracker()
 {
 	return _tkr;
@@ -152,6 +147,11 @@ const Json::Value& VersionedJson::operator[](const std::string& p) const
 const Json::Value& VersionedJson::operator[](const char* p) const
 {
 	return _root[p];
+}
+
+void VersionedJson::onChange(const std::function<void(const std::string& path)>& f)
+{
+	_onChange = f;
 }
 
 Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
@@ -187,4 +187,20 @@ Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
 	}
 
 	return *value;
+}
+
+std::string Json::getPathComponent(const std::string& path, uint32_t index)
+{
+	uint32_t begin = 0;
+	uint32_t searchIndex = 0;
+	for(uint32_t end = 1; end < path.size(); ++end)
+	{
+		if(path[end] == '/' && begin < end)
+		{
+			if(searchIndex++ == index)
+				return {path.begin() + begin, path.begin() + end};
+			begin = end + 1;
+		}
+	}
+	return {path.begin() + begin, path.end()};
 }
