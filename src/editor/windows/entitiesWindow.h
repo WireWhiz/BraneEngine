@@ -5,21 +5,21 @@
 #ifndef BRANEENGINE_ENTITIESWINDOW_H
 #define BRANEENGINE_ENTITIESWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include <memory>
 
-class AssetEditorContext;
+class EditorAsset;
 class EntityManager;
 class Assembly;
-class EntitiesWindow : public GUIWindow
+class EntitiesWindow : public EditorWindow
 {
-    std::shared_ptr<AssetEditorContext> _assetCtx;
+    std::shared_ptr<EditorAsset> _asset;
 	EntityManager* _em;
     size_t _selected = -1;
-    void displayAssemblyEntities(Assembly* assembly, size_t entIndex);
+    void displayAssetEntity(unsigned int index);
     void displayContent() override;
 public:
-    EntitiesWindow(GUI& ui);
+    EntitiesWindow(GUI& ui, Editor& editor);
 };
 
 

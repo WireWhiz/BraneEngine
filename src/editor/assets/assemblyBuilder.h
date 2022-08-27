@@ -18,7 +18,7 @@ public:
 		std::vector<std::unique_ptr<MeshAsset>> meshes;
 	};
 	static AssemblyBuilder::AssemblyAssets
-    buildAssembly(const std::string& name, gltfLoader& loader, MaterialAsset* defaultMaterial);
+    buildAssembly(const std::string& name, GLTFLoader& loader, MaterialAsset* defaultMaterial);
 };
 
 

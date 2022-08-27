@@ -7,9 +7,8 @@
 #include "runtime/runtime.h"
 #include <filesystem>
 
-bool gltfLoader::loadGltfFromFile(const std::string& gltfFilename)
+bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
 {
-    std::filesystem::path directory{gltfFilename};
     std::ifstream jsonFile(gltfFilename, std::ios::binary);
     if(!jsonFile.is_open())
         return false;
@@ -17,19 +16,19 @@ bool gltfLoader::loadGltfFromFile(const std::string& gltfFilename)
         jsonFile >> _json;
     }
     catch(const std::exception& e){
-        std::cerr << "Json parsing error: " << e.what() << std::endl;
+        Runtime::error("Problem reading gltf: " + (std::string)e.what());
         return false;
     }
 
     jsonFile.close();
 
-	std::string binFilename = directory.parent_path().string() + "/" + _json["buffers"][0]["uri"].asString();
+	std::filesystem::path binFilename = gltfFilename.parent_path() / _json["buffers"][0]["uri"].asString();
 
     std::ifstream binFile = std::ifstream(binFilename, std::ios::binary | std::ios::ate); // File will be closed when this object is destroyed.
     if(!binFile.is_open())
         return false;
 
-	size_t binLength = binFile.tellg();
+	auto binLength = binFile.tellg();
 	binFile.seekg(0);
 	_bin.resize(binLength);
     binFile.read((char*)_bin.data(), binLength);
@@ -37,7 +36,7 @@ bool gltfLoader::loadGltfFromFile(const std::string& gltfFilename)
     return true;
 }
 
-bool gltfLoader::loadGlbFromFile(const std::string& glbFilename)
+bool GLTFLoader::loadGlbFromFile(const std::filesystem::path& glbFilename)
 {
 	std::ifstream binFile = std::ifstream(glbFilename, std::ios::binary); // File will be closed when this object is destroyed.
 	if(!binFile.is_open())
@@ -68,9 +67,8 @@ bool gltfLoader::loadGlbFromFile(const std::string& glbFilename)
 }
 
 
-bool gltfLoader::loadGltfFromString(const std::string& gltf, const std::string& bin)
+bool GLTFLoader::loadGltfFromString(const std::string& gltf, const std::string& bin)
 {
-
 	Json::Reader reader;
 	if(!reader.parse(gltf, _json))
 	{
@@ -83,7 +81,7 @@ bool gltfLoader::loadGltfFromString(const std::string& gltf, const std::string& 
 	return true;
 }
 
-bool gltfLoader::loadGlbFromString(const std::string& glb)
+bool GLTFLoader::loadGlbFromString(const std::string& glb)
 {
 	std::stringstream binFile(glb);
 
@@ -110,13 +108,13 @@ bool gltfLoader::loadGlbFromString(const std::string& glb)
 	binFile.read((char*)_bin.data(), binLength);
 	return true;
 }
-gltfLoader::~gltfLoader()
+GLTFLoader::~GLTFLoader()
 {
 
 }
 #include <unordered_set>
 
-void gltfLoader::printInfo()
+void GLTFLoader::printInfo()
 {
     std::cout << "meshes: " << _json["meshes"].size() << std::endl;
     size_t primitives = 0;
@@ -140,7 +138,7 @@ void gltfLoader::printInfo()
 
 }
 
-void gltfLoader::printPositions(int meshIndex, int primitiveIndex)
+void GLTFLoader::printPositions(int meshIndex, int primitiveIndex)
 {
 	Json::Value& primitive = _json["meshes"][meshIndex]["primitives"][primitiveIndex];
 	Json::Value& positionAccessor = _json["accessors"][primitive["attributes"]["POSITION"].asInt()];
@@ -156,7 +154,7 @@ void gltfLoader::printPositions(int meshIndex, int primitiveIndex)
 	std::cout << "vertices: " << positionAccessor["count"].asInt() << std::endl;
 }
 
-std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
+std::vector<uint16_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
 {
 	Json::Value& accessor = _json["accessors"][accessorIndex];
 	if(accessor["componentType"].asUInt() != 5123 ||
@@ -178,7 +176,7 @@ std::vector<uint16_t> gltfLoader::readScalarBuffer(uint32_t accessorIndex)
 	return buffer;
 }
 
-std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
+std::vector<glm::vec2> GLTFLoader::readVec2Buffer(uint32_t accessorIndex)
 {
 	Json::Value& accessor = _json["accessors"][accessorIndex];
 	if(accessor["componentType"].asUInt() != 5126 ||
@@ -203,7 +201,7 @@ std::vector<glm::vec2> gltfLoader::readVec2Buffer(uint32_t accessorIndex)
 }
 
 
-std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
+std::vector<glm::vec3> GLTFLoader::readVec3Buffer(uint32_t accessorIndex)
 {
 	Json::Value& accessor = _json["accessors"][accessorIndex];
     std::string type = accessor["type"].asString();
@@ -229,7 +227,7 @@ std::vector<glm::vec3> gltfLoader::readVec3Buffer(uint32_t accessorIndex)
 	return buffer;
 }
 
-std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
+std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
 {
 	std::vector<MeshAsset*> meshAssets;
 	for(auto& meshData : _json["meshes"])
@@ -274,24 +272,24 @@ std::vector<MeshAsset*> gltfLoader::extractAllMeshes()
 	return meshAssets;
 }
 
-Json::Value& gltfLoader::nodes()
+Json::Value& GLTFLoader::nodes()
 {
 	return _json["nodes"];
 }
 
-Json::Value& gltfLoader::json()
+Json::Value& GLTFLoader::json()
 {
 	return _json;
 }
 
-bool gltfLoader::loadFromFile(const std::string& filename)
+bool GLTFLoader::loadFromFile(const std::filesystem::path& filename)
 {
-    std::string postfix = filename.substr(filename.find_last_of('.'));
-    if(postfix == ".gltf")
+    std::string ext = filename.extension().string();
+    if(ext == ".gltf")
         return loadGltfFromFile(filename);
-    if(postfix == ".glb")
+    if(ext == ".glb")
         return loadGltfFromFile(filename);
-    Runtime::error("Unrecognised file postfix: " + postfix);
+    Runtime::error("Unrecognised file postfix: " + ext);
     return false;
 }
 

@@ -12,7 +12,7 @@
 #include "glm/gtx/quaternion.hpp"
 
 AssemblyBuilder::AssemblyAssets
-AssemblyBuilder::buildAssembly(const std::string& name, gltfLoader& loader, MaterialAsset* defaultMaterial)
+AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, MaterialAsset* defaultMaterial)
 {
 	AssemblyAssets assets;
 

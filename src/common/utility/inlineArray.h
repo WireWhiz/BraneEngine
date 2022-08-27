@@ -171,6 +171,36 @@ public:
 		using reference = T&;
 		using pointer = T*;
 	};
+	class const_iterator{
+		const InlineArray<T, Count>& _ref;
+		size_t _index;
+	public:
+		const_iterator(const InlineArray<T, Count>& ref, size_t index) : _ref(ref), _index(index){};
+		void operator++()
+		{
+			++_index;
+		}
+		void operator+(size_t index)
+		{
+			_index += index;
+		}
+		bool operator!=(const const_iterator& o) const
+		{
+			return _index != o._index;
+		}
+		bool operator==(const const_iterator& o) const
+		{
+			return _index == o._index;
+		}
+		const T& operator*() const
+		{
+			return _ref[_index];
+		};
+
+		using iterator_category = std::random_access_iterator_tag;
+		using reference = T&;
+		using pointer = T*;
+	};
 	iterator begin()
 	{
 		return iterator(*this, 0);
@@ -178,6 +208,14 @@ public:
 	iterator end()
 	{
 		return iterator(*this, _size);
+	}
+	const_iterator begin() const
+	{
+		return const_iterator(*this, 0);
+	}
+	const_iterator end() const
+	{
+		return const_iterator(*this, _size);
 	}
 };
 

@@ -13,10 +13,10 @@ void GUIRenderer::render(VkCommandBuffer cmdBuffer)
 {
 	startRenderPass(cmdBuffer);
 	ImGui_ImplGlfw_NewFrame();
+	ImGui_ImplVulkan_NewFrame();
 	ImGui::NewFrame();
     ImGuizmo::BeginFrame();
 	_gui->drawUI();
-	ImGui_ImplVulkan_NewFrame();
 	ImGui::Render();
 	ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
 	ImGui::UpdatePlatformWindows();

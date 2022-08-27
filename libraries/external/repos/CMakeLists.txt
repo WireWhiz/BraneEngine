@@ -43,7 +43,6 @@ add_subdirectory(glslang)
 
 add_subdirectory(jsoncpp)
 
-
 target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/asio/asio/include
         ${CMAKE_CURRENT_SOURCE_DIR}/asmjit/src

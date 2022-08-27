@@ -7,6 +7,8 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "common/ecs/entity.h"
 #include "systems/transforms.h"
+#include "utility/stackAllocate.h"
+#include "../assets/jsonVirtualType.h"
 
 UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView component)
 {
@@ -30,10 +32,10 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
     return changed;
 }
 
-UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualType::Type type, byte* data)
+UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, VirtualType::Type type, byte* data, const Json::Value& assembly)
 {
     assert(name);
-    const float dragSpeed = 0.05;
+    const float dragSpeed = 0.05f;
     UiChangeType changed = UiChangeType::none;
     ImGui::PushID(name);
     switch(type)
@@ -43,18 +45,22 @@ UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, Vi
             break;
         case VirtualType::virtualEntityID:
         {
-
-            auto* id = (EntityID*)data;
-            ImGui::InputScalar(name, ImGuiDataType_U32, (void*) &id->id, NULL, NULL, "%u", 0);
-            if(ImGui::IsItemEdited())
-                changed = UiChangeType::ongoing;
-            if(ImGui::IsItemDeactivatedAfterEdit())
-            {
-                auto* em = Runtime::getModule<EntityManager>();
-                em->tryGetEntity(id->id, *id);
-                changed = UiChangeType::finished;
-            }
-            ImGui::TextDisabled("(version %u)", id->version);
+			if(assembly == Json::nullValue)
+			{
+				auto* id = (EntityID*)data;
+				ImGui::InputScalar(name, ImGuiDataType_U32, (void*) &id->id, NULL, NULL, "%u", 0);
+				if(ImGui::IsItemEdited())
+					changed = UiChangeType::ongoing;
+				if(ImGui::IsItemDeactivatedAfterEdit())
+					changed = UiChangeType::finished;
+				ImGui::TextDisabled("(version %u)", id->version);
+			}
+			else
+			{
+				const Json::Value& referencedEntity = assembly["entities"][((EntityID*)data)->id];
+				//TODO replace this with an entity selection widget
+				ImGui::Text("%s: %s", name, referencedEntity.get("name", "Entity " + std::to_string(((EntityID*)data)->id)).asCString());
+			}
         }
             break;
         case VirtualType::virtualBool:
@@ -209,4 +215,22 @@ UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, Vi
     }
     ImGui::PopID();
     return changed;
+}
+
+UiChangeType VirtualVariableWidgets::displayAssetComponentData(Json::Value& component, const Json::Value& assembly)
+{
+	auto changed = UiChangeType::none;
+	ImGui::PushID(component["name"].asCString());
+	for(auto& member : component["members"])
+	{
+		VirtualType::Type type = VirtualType::stringToType(member["type"].asString());
+		byte* data = (byte*)STACK_ALLOCATE(VirtualType::size(type));
+		VirtualType::construct(type, data);
+		JsonVirtualType::toVirtual(data, member["value"], type);
+		changed = (UiChangeType)std::max((uint8_t)changed, (uint8_t)displayVirtualVariable(member["name"].asCString(), type, data, assembly));
+		member["value"] = JsonVirtualType::fromVirtual(data, type);
+		VirtualType::deconstruct(type, data);
+	}
+	ImGui::PopID();
+	return changed;
 }

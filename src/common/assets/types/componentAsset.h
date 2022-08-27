@@ -22,6 +22,6 @@ public:
 	std::vector<VirtualType::Type>& members();
 	std::vector<std::string>& memberNames();
 
-    void serialize(OutputSerializer& s) override;
+    void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;
 };

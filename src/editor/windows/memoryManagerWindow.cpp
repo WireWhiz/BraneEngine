@@ -7,7 +7,7 @@
 #include "../editorEvents.h"
 #include "ui/gui.h"
 
-MemoryManagerWindow::MemoryManagerWindow(GUI& ui) : GUIWindow(ui)
+MemoryManagerWindow::MemoryManagerWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Memory Manager";
     _em = Runtime::getModule<EntityManager>();

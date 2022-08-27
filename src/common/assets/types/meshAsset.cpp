@@ -4,7 +4,7 @@
 
 #include <utility/serializedData.h>
 
-void MeshAsset::serialize(OutputSerializer& s)
+void MeshAsset::serialize(OutputSerializer& s) const
 {
 	Asset::serialize(s);
     serializeHeader(s);
@@ -28,7 +28,7 @@ size_t MeshAsset::meshSize() const
 {
 	return _data.size();
 }
-void MeshAsset::serializeHeader(OutputSerializer& s)
+void MeshAsset::serializeHeader(OutputSerializer& s) const
 {
 	IncrementalAsset::serializeHeader(s);
     s << (uint16_t)_primitives.size();
@@ -76,7 +76,7 @@ void MeshAsset::deserializeHeader(InputSerializer& s)
 }
 
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
-bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData)
+bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData) const
 {
 	auto* itr = (MeshSerializationContext*)iteratorData;
 	auto& primitive = _primitives[itr->primitive];

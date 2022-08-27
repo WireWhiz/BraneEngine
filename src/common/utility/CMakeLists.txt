@@ -1,19 +1,18 @@
 # src/common/utlity
 
-add_library(utility STATIC
-	clock.cpp
-	threadPool.cpp
- "sharedRecursiveMutex.h" "sharedRecursiveMutex.cpp" hex.h staticIndexVector.h serializedData.cpp strCaseCompare.h)
+set(SOURCES
+		clock.cpp
+		threadPool.cpp
+		sharedRecursiveMutex.cpp
+		serializedData.cpp
+		jsonVersioner.cpp)
 
- target_link_libraries(utility PUBLIC runtime include_dir)
+add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)
+
+target_link_libraries(utility PUBLIC runtime include_dir external_include_dirs jsoncpp_static)
 
 if(BUILD_TESTS)
- add_library(utility_test STATIC
-	clock.cpp
-	threadPool.cpp
- "sharedRecursiveMutex.h"
- "sharedRecursiveMutex.cpp"
-	 )
+ add_library(utility_test STATIC ${SOURCES})
 target_compile_definitions(utility_test PUBLIC TEST_BUILD)
-target_link_options(utility_test PRIVATE -lpthread)
+target_link_libraries(utility_test PUBLIC runtime include_dir external_include_dirs jsoncpp_static)
 endif()

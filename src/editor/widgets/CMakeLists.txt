@@ -2,6 +2,7 @@ set(CMAKE_FOLDER ${CMAKE_FOLDER}/Widgets)
 add_library(editorWidgets STATIC
         assetBrowserWidget.cpp
         virtualVariableWidgets.cpp
-        assetSelectWidget.cpp assetSearchWidget.cpp assetSearchWidget.h)
-target_link_libraries(editorWidgets PUBLIC ui editorWindows gltf)
+        assetSelectWidget.cpp
+        assetSearchWidget.cpp)
+target_link_libraries(editorWidgets PUBLIC ui editorWindows)
 target_compile_definitions(editorWidgets  PUBLIC CLIENT)

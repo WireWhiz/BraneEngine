@@ -6,6 +6,7 @@
 #define BRANEENGINE_VIRTUALVARIABLEWIDGETS_H
 
 #include "common/ecs/component.h"
+#include <json/json.h>
 
 enum class UiChangeType
 {
@@ -17,8 +18,9 @@ enum class UiChangeType
 class VirtualVariableWidgets
 {
 public:
+	static UiChangeType displayAssetComponentData(Json::Value& component, const Json::Value& assembly);
     static UiChangeType displayVirtualComponentData(VirtualComponentView component);
-    static UiChangeType displayVirtualVariable(const char* name, VirtualType::Type type, byte* data);
+    static UiChangeType displayVirtualVariable(const char* name, VirtualType::Type type, byte* data, const Json::Value& assembly = Json::nullValue);
 };
 
 

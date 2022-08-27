@@ -28,13 +28,19 @@ GUI::GUI()
             if(window->isOpen())
                 return false;
             //Remove listeners first
-            for(auto& listeners : _eventListeners)
-            {
-                auto* winPtr = window.get();
-                listeners.second.erase(std::remove_if(listeners.second.begin(), listeners.second.end(), [winPtr](auto& l){
-                   return l.window == winPtr;
-                }), listeners.second.end());
-            }
+	        auto la = _eventListeners.begin();
+	        while(la != _eventListeners.end())
+	        {
+		        //Remove listeners tied to windows
+		        la->second.erase(std::remove_if(la->second.begin(), la->second.end(), [&window](auto& l)
+		        {
+			        return l.window == window.get();
+		        }), la->second.end());
+		        if(la->second.empty())
+			        la = _eventListeners.erase(la);
+		        else
+			        ++la;
+	        }
             return true;
         }), _windows.end());
         for(auto& w : _windows)
@@ -122,7 +128,7 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
 	io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
 #ifdef WIN32
-	io.ConfigFlags   |= ImGuiConfigFlags_ViewportsEnable;
+	//io.ConfigFlags   |= ImGuiConfigFlags_ViewportsEnable;
 #endif
 	io.IniFilename = NULL;
     _fonts.push_back(io.Fonts->AddFontFromFileTTF("fonts/default.ttf", 15.0f));
@@ -160,10 +166,10 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
 	colors[ImGuiCol_SliderGrab]             = ImVec4(0.24f, 0.88f, 0.52f, 1.00f);
 	colors[ImGuiCol_SliderGrabActive]       = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
 	colors[ImGuiCol_Button]                 = ImVec4(0.26f, 0.98f, 0.59f, 0.40f);
-	colors[ImGuiCol_ButtonHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
+	colors[ImGuiCol_ButtonHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 0.70f);
 	colors[ImGuiCol_ButtonActive]           = ImVec4(0.06f, 0.98f, 0.53f, 1.00f);
 	colors[ImGuiCol_Header]                 = ImVec4(0.26f, 0.98f, 0.59f, 0.31f);
-	colors[ImGuiCol_HeaderHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 0.80f);
+	colors[ImGuiCol_HeaderHovered]          = ImVec4(0.26f, 0.98f, 0.59f, 0.40f);
 	colors[ImGuiCol_HeaderActive]           = ImVec4(0.26f, 0.98f, 0.59f, 1.00f);
 	colors[ImGuiCol_Separator]              = colors[ImGuiCol_Border];
 	colors[ImGuiCol_SeparatorHovered]       = ImVec4(0.10f, 0.75f, 0.40f, 0.78f);
@@ -292,6 +298,24 @@ void GUI::openPopup(std::unique_ptr<GUIPopup>&& popup)
 void GUI::closePopup()
 {
     _popup = nullptr;
+}
+
+void GUI::clearWindows()
+{
+	_windows.clear();
+	auto la = _eventListeners.begin();
+	while(la != _eventListeners.end())
+	{
+		//Remove listeners tied to windows
+		la->second.erase(std::remove_if(la->second.begin(), la->second.end(), [](auto& la)
+		{
+			return la.window;
+		}), la->second.end());
+		if(la->second.empty())
+			la = _eventListeners.erase(la);
+		else
+			++la;
+	}
 }
 
 

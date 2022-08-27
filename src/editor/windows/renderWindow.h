@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_RENDERWINDOW_H
 #define BRANEENGINE_RENDERWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include "vulkan/vulkan.h"
 #include "glm/gtx/quaternion.hpp"
 #include "ecs/entityID.h"
@@ -19,8 +19,8 @@ namespace graphics{
     class SwapChain;
 }
 
-class AssetEditorContext;
-class RenderWindow : public GUIWindow
+class EditorAsset;
+class RenderWindow : public EditorWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
 	graphics::MeshRenderer* _renderer;
@@ -35,7 +35,8 @@ class RenderWindow : public GUIWindow
     ImGuizmo::OPERATION _gizmoOperation = ImGuizmo::OPERATION::TRANSLATE;
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
-    std::shared_ptr<AssetEditorContext> _focusedAsset;
+	std::shared_ptr<EditorAsset> _focusedAsset;
+	std::vector<EntityID> _entities;
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;
 
@@ -45,7 +46,7 @@ class RenderWindow : public GUIWindow
 
     void displayContent() override;
 public:
-    RenderWindow(GUI& ui);
+    RenderWindow(GUI& ui, Editor& editor);
     ~RenderWindow();
     void update() override;
 	void lookAt(glm::vec3 pos);

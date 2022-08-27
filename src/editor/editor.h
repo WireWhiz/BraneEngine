@@ -9,27 +9,37 @@
 #include <memory>
 #include <unordered_map>
 #include "assets/assetID.h"
+#include "braneProject.h"
+#include "utility/jsonVersioner.h"
+#include "assets/assetCache.h"
 
 namespace net{
     class Connection;
 }
 
 class GUI;
-class AssetEditorContext;
+class GUIWindow;
+class EditorAsset;
 class Editor : public Module
 {
 	GUI* _ui;
-	net::Connection* _server;
+	GUIWindow* _selectProjectWindow = nullptr;
 
-    // Using shared pointers so we can track which ones are in use
-    std::unordered_map<AssetID, std::shared_ptr<AssetEditorContext>> _assetContexts;
+	JsonVersionTracker _jsonTracker;
+	AssetCache _cache;
+	BraneProject _project;
 	void addMainWindows();
 	void drawMenu();
 public:
+	Editor();
 	void start() override;
+	void loadProject(const std::filesystem::path& filepath);
+	void createProject(const std::string& name, const std::filesystem::path& directory);
+	BraneProject& project();
+	JsonVersionTracker& jsonTracker();
+	AssetCache& cache();
+    std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 	static const char* name();
-	net::Connection* server() const;
-    std::shared_ptr<AssetEditorContext> getEditorContext(const AssetID& id);
 };
 
 

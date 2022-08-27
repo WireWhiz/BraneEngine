@@ -8,44 +8,48 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <filesystem>
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
 #include "utility/asyncQueue.h"
-
-class ServerFilesystem;
-class ServerDirectory;
-
-class CreateDirectoryPopup : public GUIPopup
-{
-    ServerFilesystem& _fs;
-    ServerDirectory* _parent;
-    std::string _dirName = "new dir";
-    void drawBody() override;
-public:
-    CreateDirectoryPopup(ServerDirectory* parent, ServerFilesystem& fs);
-};
+#include "fileManager/fileManager.h"
+#include "glm/vec2.hpp"
 
 class AssetBrowserWidget
 {
 private:
-    ServerDirectory* _currentDir = nullptr;
-    int _selectedFile = -1;
+	std::filesystem::path _rootPath;
+	std::unique_ptr<FileManager::Directory> _root;
+	FileManager::Directory* _currentDir;
+	glm::ivec2 _selectedFiles = {-1, -1};
+	size_t _firstSelected = 0;
 
-    ServerFilesystem& _fs;
+	std::vector<std::filesystem::directory_entry> _contents;
+
     GUI& _ui;
     bool _allowEdits;
     AsyncQueue<std::function<void()>> _mainThreadActions;
 
-    void displayDirectoriesRecursive(ServerDirectory* dir);
+	enum class FileType
+	{
+		unknown,
+		directory,
+		normal,
+		source,
+		asset
+	};
+
+	const char* getIcon(const std::filesystem::path& path);
+	FileType getFileType(const std::filesystem::directory_entry& file);
+    void displayDirectoriesRecursive(FileManager::Directory* dir);
 public:
     AssetBrowserWidget(GUI &ui, bool allowEdits);
     void displayDirectoryTree();
     void displayFiles();
     void displayFullBrowser();
-    ServerDirectory* currentDirectory();
+	std::filesystem::path currentDirectory();
     void reloadCurrentDirectory();
-    void setDirectory(ServerDirectory* dir);
+    void setDirectory(FileManager::Directory* dir);
 };
-
 
 #endif //BRANEENGINE_ASSETBROWSERWIDGET_H

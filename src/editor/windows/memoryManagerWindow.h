@@ -5,14 +5,14 @@
 #ifndef BRANEENGINE_MEMORYMANAGERWINDOW_H
 #define BRANEENGINE_MEMORYMANAGERWINDOW_H
 
-#include "ui/guiWindow.h"
+#include "editorWindow.h"
 class EntityManager;
-class MemoryManagerWindow : public GUIWindow
+class MemoryManagerWindow : public EditorWindow
 {
     EntityManager* _em;
     void displayContent() override;
 public:
-    MemoryManagerWindow(GUI& ui);
+    MemoryManagerWindow(GUI& ui, Editor& editor);
 };
 
 

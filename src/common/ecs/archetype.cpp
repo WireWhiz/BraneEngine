@@ -238,7 +238,7 @@ void Archetype::setComponentVersion(size_t entity, ComponentID component, uint32
 
 ArchetypeEdge::ArchetypeEdge(ComponentID component, Archetype* archetype)
 {
-	assert(component && archetype);
+	assert(archetype);
 	this->component = component;
 	this->archetype = archetype;
 }

@@ -22,7 +22,7 @@ namespace graphics{
 class GUIRenderer;
 class GUIWindow;
 class GUIPopup;
-class ImFont;
+struct ImFont;
 
 class GUI : public Module
 {
@@ -51,12 +51,13 @@ public:
 	void stop() override;
 
 	template<typename WindowT, typename... Args>
-	WindowT* addWindow(Args... args)
+	WindowT* addWindow(Args&... args)
 	{
 		size_t index = _windows.size();
 		_windows.push_back(std::make_unique<WindowT>(*this, args...));
 		return static_cast<WindowT*>(_windows[index].get());
 	}
+	void clearWindows();
 	void setMainMenuCallback(std::function<void()> drawMenu);
 
     void openPopup(std::unique_ptr<GUIPopup>&& popup);

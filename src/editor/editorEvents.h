@@ -10,6 +10,7 @@
 #include "ecs/entityID.h"
 #include <memory>
 #include "assets/assetID.h"
+
 namespace net {
     class Connection;
 }
@@ -29,20 +30,29 @@ public:
     DirectoryUpdateEvent(ServerDirectory* dir);
     ServerDirectory* directory() const;
 };
-class FocusAssetEvent : public GUIEvent
+
+class AssetReloadEvent : public GUIEvent
 {
-	AssetID _asset;
 public:
-	FocusAssetEvent(const AssetID& asset);
-    const AssetID& asset() const;
+	AssetReloadEvent();
 };
 
-class FocusEntityEvent : public GUIEvent
+class EntityAssetReloadEvent : public GUIEvent
 {
-    EntityID _id;
+	size_t _entity;
 public:
-    FocusEntityEvent(EntityID id);
-    EntityID id() const;
+	EntityAssetReloadEvent(size_t entity);
+	size_t entity() const;
+
+};
+
+class EditorAsset;
+class FocusAssetEvent : public GUIEvent
+{
+	std::shared_ptr<EditorAsset> _asset;
+public:
+	FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
+	std::shared_ptr<EditorAsset> asset() const;
 };
 
 class FocusEntityAssetEvent : public GUIEvent
@@ -51,6 +61,14 @@ class FocusEntityAssetEvent : public GUIEvent
 public:
 	FocusEntityAssetEvent(size_t index);
 	size_t entity() const;
+};
+
+class FocusEntityEvent : public GUIEvent
+{
+    EntityID _id;
+public:
+    FocusEntityEvent(EntityID id);
+    EntityID id() const;
 };
 
 #endif //BRANEENGINE_EDITOREVENTS_H

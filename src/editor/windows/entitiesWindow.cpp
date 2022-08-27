@@ -8,66 +8,56 @@
 #include "ui/gui.h"
 #include "ecs/entity.h"
 #include "systems/transforms.h"
-#include "../assetEditorContext.h"
 #include "editor/editor.h"
+#include "editor/assets/editorAsset.h"
 
-EntitiesWindow::EntitiesWindow(GUI& ui) : GUIWindow(ui)
+EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Entities";
 	_em = Runtime::getModule<EntityManager>();
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         _selected = -1;
-        auto editor = Runtime::getModule<Editor>();
-        _assetCtx = editor->getEditorContext(event->asset());
+		_asset = event->asset();
 	});
 }
 
 void EntitiesWindow::displayContent()
 {
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
-    if(_assetCtx && dynamic_cast<Assembly*>(_assetCtx->asset()))
+    if(_asset && _asset->type() == AssetType::assembly)
     {
-        auto* assembly = dynamic_cast<Assembly*>(_assetCtx->asset());
-        for (size_t i = 0; i < assembly->entities.size(); ++i)
-        {
-            if(assembly->entities[i].hasComponent(LocalTransform::def()))
-                continue;
-            displayAssemblyEntities(assembly, i);
-        }
+	    displayAssetEntity(_asset->json()["rootEntity"].asUInt());
     }
     ImGui::PopStyleVar();
     ImGui::Spacing();
 }
 
-void EntitiesWindow::displayAssemblyEntities(Assembly* assembly, size_t entIndex)
+void EntitiesWindow::displayAssetEntity(unsigned int index)
 {
-	auto& entity = assembly->entities[entIndex];
-	const bool hasChildren = entity.hasComponent(Children::def());
+	auto& entity = _asset->json()["entities"][index];
+	const bool hasChildren = entity.isMember("children");
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	if(!hasChildren)
 		flags |= ImGuiTreeNodeFlags_Leaf;
-    if(entIndex == _selected)
+    if(index == _selected)
         flags |= ImGuiTreeNodeFlags_Selected;
     std::string name;
-    if(entity.hasComponent(EntityName::def()))
-        name = *entity.getComponent(EntityName::def())->getVar<std::string>(0);
+    if(entity.isMember("name"))
+        name = entity["name"].asString();
     else
-        name = "Unnamed " + std::to_string(entIndex);
+        name = "Unnamed " + std::to_string(index);
 	bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 	if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()){
-        _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(entIndex));
-        _selected = entIndex;
+        _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(index));
+        _selected = index;
     }
 	if(nodeOpen)
 	{
 		if (hasChildren)
 		{
-			auto* childrenComponent = Children::fromVirtual(*entity.getComponent(Children::def()));
-			for(auto& child : childrenComponent->children)
-			{
-				displayAssemblyEntities(assembly, child.id);
-			}
+			for(auto& child : entity["children"])
+				displayAssetEntity(child.asUInt());
 		}
 
 		ImGui::TreePop();

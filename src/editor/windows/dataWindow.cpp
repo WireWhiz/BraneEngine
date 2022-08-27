@@ -5,6 +5,7 @@
 #include "dataWindow.h"
 #include "editor/editor.h"
 #include "editor/editorEvents.h"
+#include "editor/assets/editorAsset.h"
 #include "../widgets/virtualVariableWidgets.h"
 #include <ui/gui.h>
 #include <assets/assembly.h>
@@ -12,17 +13,19 @@
 #include "assets/types/meshAsset.h"
 #include <assets/assetID.h>
 #include "common/ecs/entity.h"
-#include "../assetEditorContext.h"
 #include "systems/transforms.h"
 #include "assets/types/materialAsset.h"
 #include "../widgets/assetSelectWidget.h"
+#include "editor/assets/types/editorAssemblyAsset.h"
+#include "ecs/nativeTypes/meshRenderer.h"
+#include "editor/assets/types/editorMaterialAsset.h"
 
-DataWindow::DataWindow(GUI& ui) : GUIWindow(ui)
+DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Data Inspector";
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
         auto editor = Runtime::getModule<Editor>();
-        _focusedAsset = editor->getEditorContext(event->asset());
+        _focusedAsset = event->asset();
 		_focusMode = FocusMode::asset;
 		_focusedAssetEntity = -1;
 	});
@@ -56,80 +59,73 @@ void DataWindow::displayAssetData()
 		return;
 
     ImGui::PushFont(_ui.fonts()[1]);
-	ImGui::Text("%s", _focusedAsset->asset()->name.c_str());
+	ImGui::Text("%s", _focusedAsset->name().c_str());
     ImGui::PopFont();
-	ImGui::TextDisabled("%s", _focusedAsset->asset()->type.toString().c_str());
-	switch(_focusedAsset->asset()->type.type())
+	ImGui::TextDisabled("%s", _focusedAsset->type().toString().c_str());
+	try{
+		switch(_focusedAsset->type().type())
+		{
+			case AssetType::shader:
+				ImGui::Text("Source: %s", _focusedAsset->json()["source"].asCString());
+				break;
+			case AssetType::mesh:
+				displayMeshData();
+				break;
+			case AssetType::assembly:
+				displayAssemblyData();
+				break;
+			case AssetType::material:
+				displayMaterialData();
+				break;
+			default:
+				ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->type().toString().c_str(), _focusedAsset->name().c_str());
+		}
+	}catch(const std::exception& e)
 	{
-		case AssetType::mesh:
-			displayMeshData();
-			break;
-		case AssetType::assembly:
-			displayAssemblyData();
-			break;
-        case AssetType::material:
-            displayMaterialData();
-            break;
-		default:
-			ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->asset()->type.toString().c_str(), _focusedAsset->asset()->name.c_str());
+		ImGui::TextColored({1,0,0,1}, "Error displaying asset: %s", e.what());
+#ifndef NDEBUG
+		throw e;
+#endif
 	}
-    if(ImGui::IsWindowHovered() && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-    {
-        if(ImGui::IsKeyPressed(ImGuiKey_Y) || (ImGui::IsKeyDown(ImGuiKey_ModShift) && ImGui::IsKeyPressed(ImGuiKey_Z)))
-            _focusedAsset->redo();
-        else if(ImGui::IsKeyPressed(ImGuiKey_Z))
-            _focusedAsset->undo();
-    }
+
 }
 
 void DataWindow::displayAssemblyData()
 {
-	Assembly* assembly = static_cast<Assembly*>(_focusedAsset->asset());
-	if(_focusedAssetEntity < assembly->entities.size())
+	if(_focusedAssetEntity < _focusedAsset->json()["entities"].size())
 	{
 		displayEntityAssetData();
 		return;
 	}
 	AssetManager& am = *Runtime::getModule<AssetManager>();
 	if(ImGui::CollapsingHeader("Dependencies")){
-		ImGui::Indent(16);
-		if(ImGui::CollapsingHeader("Components")){
-			ImGui::Indent(16);
-			for(auto& cID : assembly->components)
+		ImGui::Indent();
+		if(ImGui::CollapsingHeader("Materials")){
+			ImGui::Indent();
+			for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
 			{
-				ComponentAsset* asset = am.getAsset<ComponentAsset>(cID);
-				ImGui::PushID(asset->name.c_str());
-				ImGui::Selectable(asset->name.c_str());
-				if(ImGui::IsItemHovered())
-					ImGui::SetTooltip("ID: %s", cID.string().c_str());
-				ImGui::PopID();
+				ImGui::Selectable(cID.asCString());
 			}
-			ImGui::Unindent(16);
+			ImGui::Unindent();
 		}
 		if(ImGui::CollapsingHeader("Meshes")){
-			ImGui::Indent(16);
-			for(auto& mID : assembly->meshes)
+			ImGui::Indent();
+			for(auto& mID :  _focusedAsset->json()["dependencies"]["meshes"])
 			{
-				MeshAsset* asset = am.getAsset<MeshAsset>(mID);
-                const char* name = "no asset found";
-                if(asset)
-                    name = asset->name.c_str();
-				ImGui::Selectable(name);
-				if(ImGui::IsItemHovered())
-					ImGui::SetTooltip("ID: %s", mID.string().c_str());
+				ImGui::Selectable(mID.asCString());
 			}
-			ImGui::Unindent(16);
+			ImGui::Unindent();
 		}
-		ImGui::Unindent(16);
+		ImGui::Unindent();
 	}
-	ImGui::Text("Entities: %u", assembly->entities.size());
+	ImGui::Text("Entities: %u", _focusedAsset->json()["entities"].size());
 	if(ImGui::IsItemHovered())
 		ImGui::SetTooltip("Edit in entities window");
 }
 
 void DataWindow::displayMeshData()
 {
-	MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
+	/*MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
 	ImGui::Text("Primitives %u", mesh->primitiveCount());
 	uint32_t vertices = 0;
 	uint32_t tris = 0;
@@ -161,39 +157,41 @@ void DataWindow::displayMeshData()
             ImGui::Unindent(16);
         }
         ImGui::PopID();
-    }
+    }*/
 
 }
 
 void DataWindow::displayEntityAssetData()
 {
-	auto& entityAsset = static_cast<Assembly*>(_focusedAsset->asset())->entities[_focusedAssetEntity];
+	auto& entityAsset = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
+	ImGui::PushFont(_ui.fonts()[1]);
+	if(entityAsset.isMember("name"))
+		ImGui::Text("%s", entityAsset["name"].asCString());
+	ImGui::PopFont();
+	ImGui::TextDisabled("Index: %llu", _focusedAssetEntity);
 	ImGui::Separator();
-	ImGui::Text("Entity Index: %lu", _focusedAssetEntity);
-	ImGui::Separator();
-    auto* em = Runtime::getModule<EntityManager>();
-	for (size_t i = 0; i < entityAsset.components.size(); ++i)
+	for (Json::ArrayIndex i = 0; i < entityAsset["components"].size(); ++i)
     {
-        VirtualComponentView component = em->getComponent(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
-        if(component.description()->name.empty())
+        auto& component = entityAsset["components"][i];
+        if(component["name"].empty())
             continue;
-        ImGui::PushID(i);
-        bool displaying = ImGui::CollapsingHeader(component.description()->name.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+        ImGui::PushID(component["name"].asCString());
+        bool displaying = ImGui::CollapsingHeader(component["name"].asCString(), ImGuiTreeNodeFlags_DefaultOpen);
         if(ImGui::BeginPopupContextItem("comp actions"))
         {
-            bool relationalComponent = component.description() == LocalTransform::def() || component.description() == Children::def();
+            /*bool relationalComponent = component.description() == LocalTransform::def() || component.description() == Children::def();
             bool transform = component.description() == Transform::def();
             bool entityHasChildren = entityAsset.hasComponent(Children::def());
             if(!relationalComponent && !(transform && entityHasChildren))
             {
                 if(ImGui::Selectable(ICON_FA_TRASH "delete"))
                     _focusedAsset->removeComponent(_focusedAssetEntity, i);
-            }
+            }*/
             ImGui::EndPopup();
         }
-        if(ImGui::BeginDragDropSource())
+        /*if(ImGui::BeginDragDropSource())
         {
-            ImGui::TextDisabled("%s", component.description()->name.c_str());
+            ImGui::TextDisabled("%s", component["name"].asCString());
             DraggedComponent dragData{(Assembly*)_focusedAsset->asset(), _focusedAssetEntity, i};
             ImGui::SetDragDropPayload("component", &dragData, sizeof(DraggedComponent));
             ImGui::EndDragDropSource();
@@ -211,16 +209,37 @@ void DataWindow::displayEntityAssetData()
                 destComponents.insert(destComponents.begin() + std::min<uint32_t>(destComponents.size(), i), source);
             }
             ImGui::EndDragDropTarget();
-        }
+        }*/
         if(displaying)
         {
-            ImGui::Indent(13);
-            auto res = VirtualVariableWidgets::displayVirtualComponentData(component);
-            if((uint8_t)res > 0)
-                em->markComponentChanged(_focusedAsset->entities()[_focusedAssetEntity], entityAsset.components[i].description()->id);
-            if(res == UiChangeType::finished)
-                _focusedAsset->updateEntity(_focusedAssetEntity);
-            ImGui::Unindent(13);
+            ImGui::Indent();
+			if(component["name"].asString() == MeshRendererComponent::def()->name)
+			{
+				ImGui::Text("Mesh Index: %d", component["members"][0]["value"].asInt());
+				for(Json::ArrayIndex mat = 0; mat < component["members"][1]["value"].size(); ++mat)
+				{
+					ImGui::PushID(mat);
+					Json::ArrayIndex matIndex = component["members"][1]["value"][mat].asUInt();
+					ImGui::Text("Material %u (Assembly index %u)", mat, matIndex);
+					ImGui::SameLine();
+					AssetID matID = _focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString();
+					if(AssetSelectWidget::draw(matID, AssetType::material))
+					{
+						while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
+							_focusedAsset->json().data()["dependencies"]["materials"].append("null");
+						_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
+					}
+					ImGui::PopID();
+				}
+			}
+			else
+			{
+				Json::Value data = component;
+				auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->json().data());
+				if(res != UiChangeType::none)
+					_focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components/" + std::to_string(i), data, res == UiChangeType::finished);
+			}
+            ImGui::Unindent();
         }
         ImGui::PopID();
 	}
@@ -259,23 +278,23 @@ void DataWindow::displayEntityData()
 
 void DataWindow::displayMaterialData()
 {
-    MaterialAsset* material = static_cast<MaterialAsset*>(_focusedAsset->asset());
-    AssetID vertexID = material->vertexShader;
-    if(AssetSelectWidget::draw(&vertexID, AssetType::shader))
+    auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+    AssetID vertexID = material->json()["vertexShader"].asString();
+    if(AssetSelectWidget::draw(vertexID, AssetType::shader))
     {
-        _focusedAsset->setSerializedField(&material->vertexShader, vertexID);
+	    material->json().changeValue("vertexShader", vertexID.string());
     };
     ImGui::SameLine();
     ImGui::Text("Vertex Shader");
-    AssetID fragmentID = material->fragmentShader;
-    if(AssetSelectWidget::draw(&fragmentID, AssetType::shader))
+    AssetID fragmentID = material->json()["fragmentShader"].asString();
+    if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
-        _focusedAsset->setSerializedField(&material->fragmentShader, fragmentID);
+	    material->json().changeValue("fragmentShader", fragmentID.string());
     }
     ImGui::SameLine();
     ImGui::Text("Fragment Shader");
     ImGui::Spacing();
-    ImGui::TextDisabled("Custom property components coming soon");
+    ImGui::TextDisabled("Custom property components coming eventually");
 }
 
 

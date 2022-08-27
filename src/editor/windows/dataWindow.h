@@ -5,22 +5,22 @@
 #ifndef BRANEENGINE_DATAWINDOW_H
 #define BRANEENGINE_DATAWINDOW_H
 
-#include <ui/guiWindow.h>
+#include "editorWindow.h"
 #include <memory>
 
 #include "ecs/entityID.h"
 
-class AssetEditorContext;
+class EditorAsset;
 class Assembly;
 
-class DataWindow : public GUIWindow
+class DataWindow : public EditorWindow
 {
 	enum class FocusMode{
 		asset,
 		entity
 	};
 	FocusMode _focusMode;
-	std::shared_ptr<AssetEditorContext> _focusedAsset;
+	std::shared_ptr<EditorAsset> _focusedAsset;
 	size_t _focusedAssetEntity = 0;
 
     struct DraggedComponent
@@ -40,7 +40,7 @@ class DataWindow : public GUIWindow
     void displayMaterialData();
     void displayContent() override;
 public:
-    DataWindow(GUI& ui);
+    DataWindow(GUI& ui, Editor& editor);
 };
 
 

@@ -5,13 +5,14 @@
 #ifndef BRANEENGINE_GLTFLOADER_H
 #define BRANEENGINE_GLTFLOADER_H
 #include <fstream>
+#include <filesystem>
 #include <string>
 #include "json/json.h"
 #include <memory>
 #include "common/byte.h"
 #include "common/assets/types/meshAsset.h"
 
-class gltfLoader
+class GLTFLoader
 {
     std::vector<byte> _bin;
     Json::Value _json;
@@ -26,13 +27,12 @@ class gltfLoader
 	}
 
 public:
-    ~gltfLoader();
-    bool loadFromFile(const std::string& filename);
+    ~GLTFLoader();
+    bool loadFromFile(const std::filesystem::path& filename);
     bool loadGltfFromString(const std::string& gltf, const std::string& bin);
     bool loadGlbFromString(const std::string& glb);
-    bool loadGltfFromFile(const std::string& gltfFilename);
-    bool loadGlbFromFile(const std::string& glbFilename);
-    std::string toGlbFile();
+    bool loadGltfFromFile(const std::filesystem::path& gltfFilename);
+    bool loadGlbFromFile(const std::filesystem::path& glbFilename);
     void printInfo();
     void printPositions(int mesh, int primitive);
 	std::vector<uint16_t> readScalarBuffer(uint32_t accessor);

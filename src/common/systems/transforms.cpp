@@ -27,7 +27,7 @@ void Transforms::start()
 	_em->systems().addSystem("transform", std::make_unique<TransformSystem>());
 }
 
-void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em)
+void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, bool keepOffset)
 {
 	if(!em.hasComponent<LocalTransform>(entity))
 		em.addComponent<LocalTransform>(entity);
@@ -39,6 +39,21 @@ void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em)
 
 	Children* children = em.getComponent<Children>(parent);
 	children->children.push_back(entity);
+
+	auto* t = em.getComponent<Transform>(entity);
+	if(!keepOffset)
+	{
+		localTransform->value = t->value;
+	}
+	else
+	{
+		auto parentTransform = getParentTransform(parent, em);
+		localTransform->value = glm::inverse(parentTransform) * t->value;
+	}
+	em.markComponentChanged(entity, Transform::def()->id);
+	em.markComponentChanged(entity, LocalTransform::def()->id);
+	if(em.hasComponent<TRS>(entity))
+		em.markComponentChanged(entity, TRS::def()->id);
 }
 
 void Transforms::removeParent(EntityID entity, EntityManager& em)

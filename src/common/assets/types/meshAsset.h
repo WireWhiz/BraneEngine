@@ -60,12 +60,12 @@ public:
     uint32_t attributeOffset(size_t primitive, const std::string& name) const;
     uint32_t vertexCount(uint32_t primitive) const;
 
-	void serialize(OutputSerializer& s) override;
+	void serialize(OutputSerializer& s) const override;
 	void deserialize(InputSerializer& s) override;
-	void serializeHeader(OutputSerializer& s) override;
+	void serializeHeader(OutputSerializer& s) const override;
 	void deserializeHeader(InputSerializer& s) override;
     std::unique_ptr<SerializationContext> createContext() const override;
-	bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) override;
+	bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const override;
 	void deserializeIncrement(InputSerializer& sData) override;
 
 

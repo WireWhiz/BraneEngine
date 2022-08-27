@@ -391,7 +391,7 @@ std::string AssetServer::fullAssetPath(const std::string& suffix)
 }
 
 //The asset server specific fetch asset function
-AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
+AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
 	if(hasAsset(id))

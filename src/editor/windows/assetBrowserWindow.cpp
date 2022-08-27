@@ -5,7 +5,7 @@
 #include "assetBrowserWindow.h"
 #include <ui/gui.h>
 
-AssetBrowserWindow::AssetBrowserWindow(GUI& ui) : GUIWindow(ui), _browser(ui, true)
+AssetBrowserWindow::AssetBrowserWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor), _browser(ui, true)
 {
     _flags = ImGuiWindowFlags_NoScrollbar;
     _name = "Asset Browser";

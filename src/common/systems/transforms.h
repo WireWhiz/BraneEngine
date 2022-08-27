@@ -47,7 +47,7 @@ class Transforms : public Module
 	EntityManager* _em;
 	void updateTRSFromMatrix(EntityID entity, glm::mat4 value);
 public:
-	static void setParent(EntityID entity, EntityID parent, EntityManager& em);
+	static void setParent(EntityID entity, EntityID parent, EntityManager& em, bool keepOffset = true);
 	static void removeParent(EntityID entity, EntityManager& em);
 	void destroyRecursive(EntityID entity, bool updateParentChildren = true);
 	static glm::mat4 getParentTransform(EntityID parent, EntityManager& em);

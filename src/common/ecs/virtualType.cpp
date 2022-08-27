@@ -48,7 +48,6 @@ namespace VirtualType
 				{"floatArray", virtualFloatArray},
 				{"intArray",   virtualIntArray},
 				{"uintArray",  virtualUIntArray},
-
 		};
 		assert(_toStringMap.count(type));
 		return _toStringMap.at(type);

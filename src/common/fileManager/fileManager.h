@@ -10,26 +10,31 @@
 #include <runtime/module.h>
 
 
-
 class FileManager : public Module
 {
 public:
-	struct DirectoryContents
+	struct Directory
 	{
-		std::vector<std::string> directories;
-		std::vector<std::string> files;
+		std::string name;
+		bool open = false;
+		Directory* parent;
+		std::vector<std::unique_ptr<Directory>> children;
+		std::filesystem::path path() const;
+		void setParentsOpen();
 	};
 
-	DirectoryContents getDirectoryContents(const std::string& path);
-	void createDirectory(const std::string& path);
-	bool deleteFile(const std::string& path);
-	void moveFile(const std::string& source, const std::string& destination);
+	static std::vector<std::filesystem::directory_entry> getDirectoryContents(const std::filesystem::path& path);
+	static std::unique_ptr<Directory> getDirectoryTree(const std::filesystem::path& path);
+	static void refreshDirectoryTree(Directory* dir, const std::filesystem::path& root = std::filesystem::current_path());
+	static void createDirectory(const std::filesystem::path& path);
+	static bool deleteFile(const std::filesystem::path& path);
+	static void moveFile(const std::filesystem::path& source, const std::filesystem::path& destination);
 
 	static std::string requestLocalFilePath(const std::string& title, const std::vector<const char*>& filters);
 
 	FileManager();
 	template <typename T>
-	bool readFile(const std::string& filename, std::vector<T>& data)
+	static bool readFile(const std::filesystem::path& filename, std::vector<T>& data)
 	{
 		std::ifstream f(filename, std::ios::binary | std::ios::ate);
 		if (!f.is_open())
@@ -44,7 +49,7 @@ public:
 	}
 
 	template<typename T>
-	T* readAsset(const std::string& filename)
+	static T* readAsset(const std::filesystem::path& filename)
 	{
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
@@ -59,7 +64,7 @@ public:
 		return asset;
 	}
 
-	Asset* readUnknownAsset(const std::string& filename)
+	static Asset* readUnknownAsset(const std::filesystem::path& filename)
 	{
 		std::ifstream f(filename, std::ios::binary);
 		if (!f.is_open())
@@ -72,7 +77,7 @@ public:
 	}
 
 	template<typename T>
-	AsyncData<T*> async_readAsset(const std::string& filename)
+	AsyncData<T*> async_readAsset(const std::filesystem::path& filename)
 	{
 		AsyncData<T*> asset;
 		ThreadPool::enqueue([this, filename, asset]{
@@ -81,29 +86,28 @@ public:
 		return asset;
 	}
 
-	AsyncData<Asset*> async_readUnknownAsset(const std::string& filename);
+	AsyncData<Asset*> async_readUnknownAsset(const std::filesystem::path& filename);
 
 
 
-	static bool readFile(const std::string& filename, std::string& data);
-	static bool readFile(const std::string& filename, Json::Value& data);
+	static std::string fileHash(const std::filesystem::path& filename);
+	static bool readFile(const std::filesystem::path& filename, std::string& data);
+	static bool readFile(const std::filesystem::path& filename, Json::Value& data);
 	template<typename T>
-	void writeFile(const std::string& filename, const std::vector<T>& data)
+	static void writeFile(const std::filesystem::path& filename, const std::vector<T>& data)
 	{
 		std::filesystem::path path{filename};
 		std::filesystem::create_directories(path.parent_path());
-
-
 
 		std::ofstream f(path, std::ios::out | std::ofstream::binary);
 		f.write((char*)data.data(), data.size() * sizeof(T));
 		f.close();
 	}
 
-	void writeFile(const std::string& filename, std::string& data);
-	void writeFile(const std::string& filename, Json::Value& data);
+	static void writeFile(const std::filesystem::path& filename, const std::string& data);
+	static void writeFile(const std::filesystem::path& filename, const Json::Value& data);
 
-	void writeAsset(Asset* asset, const std::string& filename);
+	static void writeAsset(const Asset* asset, const std::filesystem::path& filename);
 
 	static const char* name();
 };

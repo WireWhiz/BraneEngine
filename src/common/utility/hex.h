@@ -7,30 +7,31 @@
 #include <string>
 #include <unordered_map>
 #include <cmath>
+#include <vector>
+#include <array>
 
+const char numToHex[16] = {
+		'0',
+		'1',
+		'2',
+		'3',
+		'4',
+		'5',
+		'6',
+		'7',
+		'8',
+		'9',
+		'A',
+		'B',
+		'C',
+		'D',
+		'E',
+		'F'
+};
 
 template<typename T>
 std::string toHex(T num)
 {
-	const char numToHex[16] = {
-			'0',
-			'1',
-			'2',
-			'3',
-			'4',
-			'5',
-			'6',
-			'7',
-			'8',
-			'9',
-			'A',
-			'B',
-			'C',
-			'D',
-			'E',
-			'F'
-	};
-
 	std::string hex;
 	hex.resize(sizeof(T) * 2);
 
@@ -43,8 +44,30 @@ std::string toHex(T num)
 	return hex;
 }
 
+template<typename T, size_t N>
+std::string toHex(std::array<T, N>& array)
+{
+	std::string hex;
+	hex.reserve(array.size() * sizeof(T)  * 2);
+
+	for(auto& num : array)
+		hex += toHex(num);
+	return hex;
+}
+
 template<typename T>
-T fromHex(const std::string& hex)
+std::string toHex(std::vector<T>& vector)
+{
+	std::string hex;
+	hex.reserve(vector.size() * sizeof(T)  * 2);
+
+	for(auto& num : vector)
+		hex.append(toHex(num));
+	return hex;
+}
+
+template<typename T>
+T fromHex(std::string_view hex)
 {
 	T num = 0;
 

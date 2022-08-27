@@ -8,6 +8,7 @@
 #include "ui/gui.h"
 #include <algorithm>
 #include "assets/asset.h"
+/*
 
 std::string ServerDirectory::path() const
 {
@@ -249,3 +250,4 @@ AsyncData<std::vector<ServerFilesystem::SearchResult>> ServerFilesystem::searchA
     });
     return results;
 }
+*/
