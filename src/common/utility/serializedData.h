@@ -7,7 +7,6 @@
 #include <cstring>
 #include <regex>
 #include <typeinfo>
-#include <json/json.h>
 #include <fstream>
 #include <cassert>
 #include <utility/inlineArray.h>

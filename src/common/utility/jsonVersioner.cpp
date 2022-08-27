@@ -3,7 +3,6 @@
 //
 
 #include <cassert>
-#include <regex>
 #include <iostream>
 #include "jsonVersioner.h"
 
