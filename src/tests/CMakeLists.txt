@@ -7,7 +7,7 @@ add_executable(tests
         "assets/assetsTest.cpp"
         "utility/threadPool.cpp"
         networking/networking.cpp
-        utility/hex.cpp utility/versionedJson.cpp)
+        utility/hex.cpp utility/versionedJson.cpp ecs/ecsProfiling.cpp)
 include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(tests PUBLIC runtime gtest_main ecs_test assets_server networking utility include_dir jsoncpp_static config)

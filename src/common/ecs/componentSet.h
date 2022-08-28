@@ -22,6 +22,7 @@ public:
 	size_t size() const;
 
 	ComponentID operator[](size_t index) const;
+	bool operator==(const ComponentSet&) const;
 	std::vector<ComponentID>::const_iterator begin() const;
 	std::vector<ComponentID>::const_iterator end() const;
 

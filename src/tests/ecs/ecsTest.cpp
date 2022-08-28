@@ -310,7 +310,7 @@ TEST(ECS, ForEachTest)
 		EXPECT_EQ(74, c1->var3);
 		EXPECT_EQ(true, c2->var1);
 	});
-	long long time = sw.time();
+	long long time = sw.time<std::chrono::milliseconds>();
 	std::cout << "For Each on 50 entities took: " << time << std::endl;
 
 	std::cout << "Test done, checking values..." << std::endl;

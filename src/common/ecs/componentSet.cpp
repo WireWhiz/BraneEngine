@@ -91,3 +91,13 @@ void ComponentSet::indices(const ComponentSet& subset, std::vector<size_t>& offs
 		si++;
 	}
 }
+
+bool ComponentSet::operator==(const ComponentSet& o) const
+{
+	if(o.size() != size())
+		return false;
+	for (size_t i = 0; i < size(); ++i)
+		if(_components[i] != o._components[i])
+			return false;
+	return true;
+}
