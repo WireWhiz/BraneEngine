@@ -68,7 +68,7 @@ TEST(ECS_Profiling, QueryCreation)
 	std::unordered_set<ComponentSet> allSets;
 	allPossibleComponentSets(allComponents, allSets);
 	//Create one archetype for every possible combination of components.
-	std::cout << "Running test with " << components.size() << " components and " << allSets.size() + 1 << " archetypes" << std::endl;
+	std::cout << "Running test with " << components.size() + 1 << " components and " << allSets.size() + 1 << " archetypes" << std::endl;
 	for(const ComponentSet& set : allSets)
 		em.createEntity(set);
 
