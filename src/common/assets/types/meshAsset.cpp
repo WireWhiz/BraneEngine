@@ -163,8 +163,8 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
 std::unique_ptr<IncrementalAsset::SerializationContext> MeshAsset::createContext() const
 {
     std::unique_ptr<MeshSerializationContext> sc = std::make_unique<MeshSerializationContext>();
-    if(!_primitives.empty());
-    sc->vertexSent.resize(_primitives[0].vertexCount);
+    if(!_primitives.empty())
+        sc->vertexSent.resize(_primitives[0].vertexCount);
     return std::move(sc);
 }
 
