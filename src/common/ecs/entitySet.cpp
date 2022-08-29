@@ -9,6 +9,8 @@
 void ComponentFilter::addComponent(ComponentID id, ComponentFilterFlags flags)
 {
 	_components.push_back({id, flags});
+	if(ComponentFilterFlags_Changed & flags || ComponentFilterFlags_Exclude & flags)
+		_chunkFlags = true;
 }
 
 const std::vector<ComponentFilter::Component>& ComponentFilter::components() const
@@ -28,13 +30,14 @@ SystemContext* ComponentFilter::system() const
 
 bool ComponentFilter::checkChunk(Chunk* chunk) const
 {
+	if(!_chunkFlags)
+		return true;
 	for (auto& comp : _components)
 	{
-        if(comp.flags & ComponentFilterFlags_Exclude)
+        if(comp.flags & ComponentFilterFlags_Exclude || !(comp.flags & ComponentFilterFlags_Changed))
             continue;
 		assert(chunk->hasComponent(comp.id));
-		auto& view = chunk->getComponent(comp.id);
-		if(comp.flags & ComponentFilterFlags_Changed && (view.version <= _system->lastVersion))
+		if(chunk->getComponent(comp.id).version <= _system->lastVersion)
 			return false;
 	}
 	return true;
@@ -52,34 +55,42 @@ bool ComponentFilter::checkArchetype(Archetype* arch) const
 	return true;
 }
 
-EntitySet::EntitySet(std::vector<ChunkComponentView*> components, ComponentFilter filter) : _components(std::move(components)), _filter(std::move(filter))
+EntitySet::EntitySet(std::vector<Archetype*> archetypes, ComponentFilter filter) : _archetypes(std::move(archetypes)), _filter(std::move(filter))
 {
 }
 
 void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
 {
-	size_t numComps = 0;
+	std::vector<ComponentID> itrComponents;
     for(auto& c : _filter.components())
         if(!(c.flags & ComponentFilterFlags_Exclude))
-            ++numComps;
+            itrComponents.push_back(c.id);
 
-	byte** data = (byte**)STACK_ALLOCATE(sizeof(const byte*) * numComps);
+	std::vector<ChunkComponentView*> componentViews(itrComponents.size());
+	std::vector<byte*> data(itrComponents.size());
 
-	for (int i = 0; i < _components.size() / numComps; ++i)
+	for (auto* arch : _archetypes)
 	{
-		size_t setIndex = i * numComps;
-		for(int e = 0; e < _components[setIndex]->size(); ++e)
+		for(auto& chunk : arch->chunks())
 		{
-			for (int c = 0; c < numComps; ++c)
+			if(!_filter.checkChunk(chunk.get()))
+				continue;
+
+			for(size_t i = 0; i < itrComponents.size(); ++i)
+				componentViews[i] = &chunk->getComponent(itrComponents[i]);
+			for(size_t i = 0; i < chunk->size(); ++i)
 			{
-				data[c] = (*_components[setIndex + c])[e].data();
+				for(size_t d = 0; d < itrComponents.size(); ++d)
+					data[d] = componentViews[d]->getComponentData(i);
+				f(data.data());
 			}
-			f(data);
-		}
-		for (int c = 0; c < numComps; ++c)
-		{
-			if(!(_filter.components()[c].flags & ComponentFilterFlags_Const))
-				_components[setIndex + c]->version = _filter.system()->version;
+			for(auto c : componentViews)
+				c->version = _filter.system()->version;
 		}
 	}
+}
+
+size_t EntitySet::archetypeCount() const
+{
+	return _archetypes.size();
 }

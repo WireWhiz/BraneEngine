@@ -32,39 +32,41 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 
 	Archetype* newArch = _archetypes[numComps - 1][newIndex].get();
 
-
-
-	{//Scope for bool array
-		// find edges to other archetypes lower than this one
-		if (numComps > 1)
+	// find edges to other archetypes lower than this one
+	if (numComps > 1)
+	{
+		ComponentID connectingComponent;
+		for(size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
 		{
-			ComponentID connectingComponent;
-			for (size_t i = 0; i < _archetypes[numComps - 2].size(); i++)
+			if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
 			{
-				if (_archetypes[numComps - 2][i]->isChildOf(newArch, connectingComponent))
-				{
-					Archetype* otherArch = _archetypes[numComps - 2][i].get();
-					otherArch->addAddEdge(connectingComponent, newArch);
-					newArch->addRemoveEdge(connectingComponent, otherArch);
-				}
-			}
-		}
-
-		// find edges to other archetypes higher than this one
-		if (_archetypes.size() > numComps)
-		{
-			for (size_t i = 0; i < _archetypes[numComps].size(); i++)
-			{
-				ComponentID connectingComponent;
-				if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
-				{
-					Archetype* otherArch = _archetypes[numComps][i].get();
-					newArch->addAddEdge(connectingComponent, otherArch);
-					otherArch->addRemoveEdge(connectingComponent, newArch);
-				}
+				Archetype* otherArch = _archetypes[numComps - 2][i].get();
+				otherArch->addEdges().insert({connectingComponent, newArch});
+				newArch->removeEdges().insert({connectingComponent, otherArch});
 			}
 		}
 	}
+
+	// find edges to other archetypes higher than this one
+	if (_archetypes.size() > numComps)
+	{
+		for (size_t i = 0; i < _archetypes[numComps].size(); i++)
+		{
+			ComponentID connectingComponent;
+			if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
+			{
+				Archetype* otherArch = _archetypes[numComps][i].get();
+				newArch->addEdges().insert({connectingComponent, otherArch});
+				otherArch->removeEdges().insert({connectingComponent, newArch});
+			}
+		}
+	}
+
+	//We do this pointer->size_t cast to take advantage of the custom hashing algorithms provided by robin_hood
+	static_assert(sizeof(size_t) == sizeof(Archetype*));
+	for(auto c : newArch->components())
+		_compToArch[c].insert((size_t)newArch);
+
 	return newArch;
 }
 
@@ -76,16 +78,49 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 	{
 		return makeArchetype(components);
 	}
-	auto& archetypes = _archetypes[numComps - 1];
-
-	for (size_t a = 0; a < archetypes.size(); a++)
+	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithComponent;
+	for(auto c : components)
 	{
-		assert(archetypes[a]->components().size() == components.size());
-		if (archetypes[a]->hasComponents(components))
+		if(_compToArch.contains(c))
 		{
-			return archetypes[a].get();
+			archesWithComponent.push_back(&_compToArch[(size_t)c]);
+		}
+		else
+			return makeArchetype(components);
+	}
+
+	//Find smallest, (basically we never want to use entityID as the iterator in the next for-each
+	size_t smallest = 0;
+	for(size_t i = 1; i < archesWithComponent.size(); ++i)
+		if(archesWithComponent[smallest]->size() > archesWithComponent[i]->size())
+			smallest = i;
+
+	Archetype* foundArch = nullptr;
+	for(auto archBytes : *archesWithComponent[smallest])
+	{
+		auto* arch = (Archetype*)archBytes;
+		if(arch->components().size() != components.size())
+			continue;
+		bool isFound = true;
+		for(size_t i = 0; i < archesWithComponent.size(); ++i)
+		{
+			if(i == smallest)
+				continue;
+			if(!archesWithComponent[i]->contains(archBytes))
+			{
+				isFound = false;
+				break;
+			}
+		}
+		if(isFound)
+		{
+			foundArch = arch;
+			break;
 		}
 	}
+	if(foundArch)
+		return foundArch;
+
 	return makeArchetype(components);
 }
 
@@ -94,31 +129,45 @@ void ArchetypeManager::clear()
 	_archetypes.resize(0);
 }
 
-EntitySet ArchetypeManager::getEntities(ComponentFilter filter)
+std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& filter)
 {
 	assert(filter.components().size() > 0);
-	std::vector<ChunkComponentView*> componentViews;
-	for (size_t a = filter.components().size() - 1; a < _archetypes.size(); ++a)
+	std::vector<Archetype*> archetypes;
+	archetypes.reserve(256);
+
+	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithDesiredComponents;
+	archesWithDesiredComponents.reserve(filter.components().size());
+	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithExcludedComponents;
+	for(auto c : filter.components())
 	{
-		auto& archetypes = _archetypes[a];
-		for(auto& arch : archetypes)
-		{
-			if(!filter.checkArchetype(arch.get()))
-				continue;
-			for(auto& chunk : arch->chunks())
-			{
-				if(!filter.checkChunk(chunk.get()))
-					continue;
-				for(auto& c : filter.components())
-				{
-					if(!(c.flags & ComponentFilterFlags_Exclude))
-						componentViews.push_back(&chunk->getComponent(c.id));
-				}
-			}
-		}
+		if(c.flags & ComponentFilterFlags_Exclude)
+			archesWithExcludedComponents.push_back(&_compToArch[c.id]);
+		else
+			archesWithDesiredComponents.push_back(&_compToArch[c.id]);
 	}
 
-	return {std::move(componentViews), std::move(filter)};
+	//Find smallest, (basically we never want to use entityID as the iterator in the next for loop)
+	uint32_t s = 0;
+	for(uint32_t i = 1; i < archesWithDesiredComponents.size(); ++i)
+		if(archesWithDesiredComponents[s]->size() > archesWithDesiredComponents[i]->size())
+			s = i;
+	auto& smallestSet = *archesWithDesiredComponents[s];
+	archesWithDesiredComponents.erase(archesWithDesiredComponents.begin() + s);
+
+	for(auto arch : smallestSet)
+	{
+		for(auto& cSet : archesWithDesiredComponents)
+			if(!cSet->contains(arch))
+				goto nextArch;
+		for(auto& cSet : archesWithExcludedComponents)
+			if(cSet->contains(arch))
+				goto nextArch;
+		archetypes.push_back((Archetype*)arch);
+nextArch:
+		continue;
+	}
+
+	return archetypes;
 }
 
 ArchetypeManager::iterator ArchetypeManager::begin()

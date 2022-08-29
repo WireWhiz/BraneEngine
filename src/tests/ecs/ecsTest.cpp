@@ -42,45 +42,6 @@ TEST(ECS, VirtualComponentComplexTypesTest)
 	EXPECT_EQ("Hello there! General Kenobi!", *vc.getVar<std::string>(0));
 }
 
-TEST(ECS, ComponentSetTest)
-{
-	ComponentSet cs;
-
-	cs.add(3);
-	cs.add(5);
-	cs.add(4);
-	cs.add(2);
-
-	EXPECT_EQ(cs[0], 2);
-	EXPECT_EQ(cs[1], 3);
-	EXPECT_EQ(cs[2], 4);
-	EXPECT_EQ(cs[3], 5);
-	EXPECT_TRUE(cs.contains(2));
-	EXPECT_TRUE(cs.contains(3));
-	EXPECT_FALSE(cs.contains(1));
-	EXPECT_FALSE(cs.contains(6));
-	EXPECT_TRUE(cs.contains(cs));
-
-	ComponentSet cs2 = cs;
-
-	cs2.add(1);
-	EXPECT_EQ(cs2[0], 1);
-	EXPECT_EQ(cs2[1], 2);
-	EXPECT_EQ(cs2[2], 3);
-	EXPECT_EQ(cs2[3], 4);
-	EXPECT_EQ(cs2[4], 5);
-
-	EXPECT_TRUE(cs2.contains(cs));
-
-	cs2.remove(2);
-	EXPECT_EQ(cs2[0], 1);
-	EXPECT_EQ(cs2[1], 3);
-
-	EXPECT_TRUE(cs.contains(cs));
-	EXPECT_FALSE(cs2.contains(cs));
-
-}
-
 TEST(ECS, ArchetypeTest)
 {
 	std::vector<VirtualType::Type> variables = {VirtualType::virtualString, VirtualType::virtualString};

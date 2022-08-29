@@ -81,6 +81,8 @@ namespace Runtime
 	void cleanup()
 	{
 		stop();
+		if(!_modules.empty())
+			_modules.clear();
 		ThreadPool::cleanup();
 		Logging::cleanup();
 	}

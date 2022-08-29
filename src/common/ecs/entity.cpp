@@ -38,9 +38,7 @@ EntityID EntityManager::createEntity(ComponentSet components)
 	arch->setComponent(eIndex.index, id.toVirtual());
 	assert(eIndex.index < arch->size());
     for(auto& e : _entities)
-    {
         assert(e.index < e.archetype->size());
-    }
 
 	return id.id;
 }
@@ -131,11 +129,8 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
         assert(!currentArchetype->hasComponent(component)); // can't add a component that we already have
         assert(_entities[entity.id].index < currentArchetype->size());
 		// See if there's already an archetype we know about:
-		std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getAddEdge(component);
-		if (ae != nullptr)
-		{
-			destArchetype = ae->archetype;
-		}
+		if (currentArchetype->addEdges().count(component))
+			destArchetype = currentArchetype->addEdges().at(component);
 		else
 		{
 			// Otherwise create one
@@ -191,11 +186,10 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 
 	assert(currentArchetype->hasComponent(component)); // can't remove a component that isn't there
 	// See if there's already an archetype we know about:
-	std::shared_ptr<ArchetypeEdge> ae = currentArchetype->getRemoveEdge(component);
-	if (ae != nullptr)
+	if (currentArchetype->removeEdges().count(component))
 	{
 		assert(_entities[entity.id].archetype->components().size() >= 2); // Must be an archetype level beneath this one
-		destArchetype = ae->archetype;
+		destArchetype =  currentArchetype->removeEdges().at(component);
 	}
 	else
 	{
@@ -254,7 +248,7 @@ ArchetypeManager& EntityManager::archetypes()
 
 EntitySet EntityManager::getEntities(ComponentFilter filter)
 {
-	return _archetypes.getEntities(std::move(filter));
+	return {_archetypes.getArchetypes(filter), filter};
 }
 
 bool EntityManager::entityExists(EntityID entity) const
