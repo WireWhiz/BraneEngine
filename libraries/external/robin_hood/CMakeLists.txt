@@ -1,0 +1,1 @@
+target_include_directories(external_include_dirs INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
