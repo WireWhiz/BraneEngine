@@ -42,9 +42,11 @@ namespace Runtime
 		}
 
 		while (_running)
+		{
 			_timeline.run();
+			Logging::callListeners();
+		}
 
-		Logging::callListeners();
 	}
 
 	void stop()
