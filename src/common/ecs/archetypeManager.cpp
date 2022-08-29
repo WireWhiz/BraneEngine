@@ -10,6 +10,57 @@ ArchetypeManager::ArchetypeManager(ComponentManager& componentManager) : _compon
 	_chunkAllocator = std::make_shared<ChunkPool>();
 }
 
+Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
+{
+	size_t numComps = components.size();
+	assert(numComps > 0);
+	if (numComps > _archetypes.size())
+	{
+		return makeArchetype(components);
+	}
+	std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithComponent;
+	for(ComponentID c : components)
+	{
+		if(_compToArch.count(c))
+			archesWithComponent.push_back(&_compToArch[c]);
+		else
+			return makeArchetype(components);
+	}
+
+	//Find smallest, (basically we never want to use entityID as the iterator in the next for-each
+	size_t smallest = 0;
+	for(size_t i = 1; i < archesWithComponent.size(); ++i)
+		if(archesWithComponent[smallest]->size() > archesWithComponent[i]->size())
+			smallest = i;
+
+	Archetype* foundArch = nullptr;
+	for(auto* arch : *archesWithComponent[smallest])
+	{
+		if(arch->components().size() != components.size())
+			continue;
+		bool isFound = true;
+		for(size_t i = 0; i < archesWithComponent.size(); ++i)
+		{
+			if(i == smallest)
+				continue;
+			if(!archesWithComponent[i]->contains(arch))
+			{
+				isFound = false;
+				break;
+			}
+		}
+		if(isFound)
+		{
+			foundArch = arch;
+			break;
+		}
+	}
+	if(foundArch)
+		return foundArch;
+
+	return makeArchetype(components);
+}
+
 Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 {
 	assert(components.size() > 0);
@@ -50,7 +101,7 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 	// find edges to other archetypes higher than this one
 	if (_archetypes.size() > numComps)
 	{
-		for (size_t i = 0; i < _archetypes[numComps].size(); i++)
+		for(size_t i = 0; i < _archetypes[numComps].size(); i++)
 		{
 			ComponentID connectingComponent;
 			if (newArch->isChildOf(_archetypes[numComps][i].get(), connectingComponent))
@@ -62,66 +113,36 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 		}
 	}
 
-	//We do this pointer->size_t cast to take advantage of the custom hashing algorithms provided by robin_hood
-	static_assert(sizeof(size_t) == sizeof(Archetype*));
-	for(auto c : newArch->components())
-		_compToArch[c].insert((size_t)newArch);
+	for(auto c : components)
+		_compToArch[c].insert(newArch);
 
 	return newArch;
 }
 
-Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
+
+void ArchetypeManager::destroyArchetype(Archetype* archetype)
 {
-	size_t numComps = components.size();
-	assert(numComps > 0);
-	if (numComps > _archetypes.size())
-	{
-		return makeArchetype(components);
-	}
-	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithComponent;
-	for(auto c : components)
-	{
-		if(_compToArch.contains(c))
-		{
-			archesWithComponent.push_back(&_compToArch[(size_t)c]);
-		}
-		else
-			return makeArchetype(components);
-	}
+	assert(archetype);
+	for(auto c : archetype->components())
+		_compToArch[c].erase(archetype);
 
-	//Find smallest, (basically we never want to use entityID as the iterator in the next for-each
-	size_t smallest = 0;
-	for(size_t i = 1; i < archesWithComponent.size(); ++i)
-		if(archesWithComponent[smallest]->size() > archesWithComponent[i]->size())
-			smallest = i;
-
-	Archetype* foundArch = nullptr;
-	for(auto archBytes : *archesWithComponent[smallest])
+	for(auto& edge : archetype->addEdges())
+		edge.second->removeEdges().erase(edge.first);
+	for(auto& edge : archetype->removeEdges())
+		edge.second->addEdges().erase(edge.first);
+	auto& archesOfSameSize = _archetypes[archetype->components().size() - 1];
+	auto i = archesOfSameSize.begin();
+	auto end = archesOfSameSize.end();
+	while(i != end)
 	{
-		auto* arch = (Archetype*)archBytes;
-		if(arch->components().size() != components.size())
-			continue;
-		bool isFound = true;
-		for(size_t i = 0; i < archesWithComponent.size(); ++i)
+		if(i->get() == archetype)
 		{
-			if(i == smallest)
-				continue;
-			if(!archesWithComponent[i]->contains(archBytes))
-			{
-				isFound = false;
-				break;
-			}
+			archesOfSameSize.erase(i);
+			return;
 		}
-		if(isFound)
-		{
-			foundArch = arch;
-			break;
-		}
+		++i;
 	}
-	if(foundArch)
-		return foundArch;
-
-	return makeArchetype(components);
+	throw std::runtime_error("Could not find archetype to delete");
 }
 
 void ArchetypeManager::clear()
@@ -133,11 +154,11 @@ std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& f
 {
 	assert(filter.components().size() > 0);
 	std::vector<Archetype*> archetypes;
-	archetypes.reserve(256);
+	archetypes.reserve(64);
 
-	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithDesiredComponents;
+	std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithDesiredComponents;
 	archesWithDesiredComponents.reserve(filter.components().size());
-	std::vector<robin_hood::unordered_flat_set<size_t>*> archesWithExcludedComponents;
+	std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithExcludedComponents;
 	for(auto c : filter.components())
 	{
 		if(c.flags & ComponentFilterFlags_Exclude)
@@ -162,7 +183,7 @@ std::vector<Archetype*> ArchetypeManager::getArchetypes(const ComponentFilter& f
 		for(auto& cSet : archesWithExcludedComponents)
 			if(cSet->contains(arch))
 				goto nextArch;
-		archetypes.push_back((Archetype*)arch);
+		archetypes.push_back(arch);
 nextArch:
 		continue;
 	}

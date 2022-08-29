@@ -199,12 +199,16 @@ TEST(ECS, EntityManagerTest)
 	em.removeComponent(entity, vcd3.id);
 	em.removeComponent(entity, vcd1.id);
 
-	//We now should have some archetypes that we can fetch
+	//Make sure edges and automatic cleanup are working
 	EXPECT_EQ(em._archetypes._archetypes.size(), 4);
 	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
-	EXPECT_EQ(em._archetypes._archetypes[1].size(), 2);
-	EXPECT_EQ(em._archetypes._archetypes[2].size(), 3);
-	EXPECT_EQ(em._archetypes._archetypes[3].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[1].size(), 0);
+	EXPECT_EQ(em._archetypes._archetypes[2].size(), 0);
+	EXPECT_EQ(em._archetypes._archetypes[3].size(), 0);
+
+	em.destroyEntity(entity);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 0);
+
 	Runtime::cleanup();
 }
 

@@ -78,6 +78,9 @@ void EntityManager::destroyEntity(EntityID entity)
     {
         assert(e.index < e.archetype->size());
     }
+
+	if(archetype->size() == 0)
+		_archetypes.destroyArchetype(archetype);
 }
 
 Archetype* EntityManager::getEntityArchetype(EntityID entity) const
@@ -166,10 +169,16 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	else
 		newIndex = destArchetype->createEntity();
 
+	Archetype* oldArch = _entities[entity.id].archetype;
+	if(oldArch->size() == 0)
+		_archetypes.destroyArchetype(oldArch);
+
 	assert(newIndex < destArchetype->size());
 	_entities[entity.id].index = newIndex;
 	_entities[entity.id].archetype = destArchetype;
 	destArchetype->setComponentVersion(newIndex, component,  _systems.globalVersion++);
+
+
 }
 
 void EntityManager::removeComponent(EntityID entity, ComponentID component)
@@ -198,9 +207,7 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
 		//Remove the component definition for the component that we want to remove
 		compDefs.remove(component);
 		if (compDefs.size() > 0)
-		{
 			destArchetype = _archetypes.makeArchetype(compDefs);
-		}
 	}
 	size_t oldIndex = _entities[entity.id].index;
 	size_t newIndex = 0;
@@ -216,6 +223,9 @@ void EntityManager::removeComponent(EntityID entity, ComponentID component)
         }
 	}
 
+	Archetype* oldArch = _entities[entity.id].archetype;
+	if(oldArch->size() == 0)
+		_archetypes.destroyArchetype(oldArch);
 
 	_entities[entity.id].index = newIndex;
 	_entities[entity.id].archetype = destArchetype;
