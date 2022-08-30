@@ -235,7 +235,7 @@ TEST(ECS, ForEachTest)
 		entities[i] = e;
 	}
 
-	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 0);
 	EXPECT_EQ(em._archetypes._archetypes[1].size(), 1);
 
 	//Set the variables on all the entities with the first component
