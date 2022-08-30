@@ -82,7 +82,7 @@ void Archetype::setComponent(size_t entity, VirtualComponentView component)
 
 	size_t index = entity - chunk * _chunks[0]->maxCapacity();
 	assert(index < _chunks[chunk]->size());
-	_chunks[chunk]->getComponent(component.description()->id).setComponent(index, std::move(component));
+	_chunks[chunk]->getComponent(component.description()->id).setComponent(index, component);
 }
 
 bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingComponent) const
@@ -90,21 +90,15 @@ bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingCompon
 	connectingComponent = -1;
 	assert(_components.size() + 1 == parent->_components.size()); //Make sure this is a valid comparison
 	byte missCount = 0;
-	for (size_t i = 0; i - missCount < _components.size(); i++)
+	for(auto& c : parent->_components)
 	{
-		assert(i - missCount < _components.size());
-			
-		if (_components[i - missCount] != parent->_components[i])
+		if(!_components.contains(c))
 		{
-			connectingComponent = parent->_components[i];
-			if (++missCount > 1)
-			{
+			if(++missCount == 2)
 				return false;
-			}
+			connectingComponent = c;
 		}
 	}
-	if(connectingComponent == (ComponentID)-1)
-		connectingComponent = parent->_components[parent->_components.size() - 1];
 	return true;
 }
 
@@ -118,38 +112,14 @@ const std::vector<const ComponentDescription*>& Archetype::componentDescriptions
 	return _componentDescriptions;
 }
 
-std::shared_ptr<ArchetypeEdge> Archetype::getAddEdge(ComponentID component)
+robin_hood::unordered_flat_map<ComponentID, Archetype*>& Archetype::addEdges()
 {
-	for (auto & _addEdge : _addEdges)
-	{
-		if (component == _addEdge->component)
-		{
-			return _addEdge;
-		}
-	}
-	return nullptr;
+	return _addEdges;
 }
 
-std::shared_ptr<ArchetypeEdge> Archetype::getRemoveEdge(ComponentID component)
+robin_hood::unordered_flat_map<ComponentID, Archetype*>& Archetype::removeEdges()
 {
-	for (auto & _removeEdge : _removeEdges)
-	{
-		if (component == _removeEdge->component)
-		{
-			return _removeEdge;
-		}
-	}
-	return nullptr;
-}
-
-void Archetype::addAddEdge(ComponentID component, Archetype* archetype)
-{
-	_addEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
-}
-
-void Archetype::addRemoveEdge(ComponentID component, Archetype* archetype)
-{
-	_removeEdges.push_back(std::make_shared<ArchetypeEdge>(component, archetype));
+	return _removeEdges;
 }
 
 size_t Archetype::size() const
@@ -234,13 +204,6 @@ const std::vector<std::unique_ptr<Chunk>>& Archetype::chunks() const
 void Archetype::setComponentVersion(size_t entity, ComponentID component, uint32_t version)
 {
     getChunk(entity)->getComponent(component).version = version;
-}
-
-ArchetypeEdge::ArchetypeEdge(ComponentID component, Archetype* archetype)
-{
-	assert(archetype);
-	this->component = component;
-	this->archetype = archetype;
 }
 
 

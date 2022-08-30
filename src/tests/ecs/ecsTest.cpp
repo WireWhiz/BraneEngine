@@ -42,45 +42,6 @@ TEST(ECS, VirtualComponentComplexTypesTest)
 	EXPECT_EQ("Hello there! General Kenobi!", *vc.getVar<std::string>(0));
 }
 
-TEST(ECS, ComponentSetTest)
-{
-	ComponentSet cs;
-
-	cs.add(3);
-	cs.add(5);
-	cs.add(4);
-	cs.add(2);
-
-	EXPECT_EQ(cs[0], 2);
-	EXPECT_EQ(cs[1], 3);
-	EXPECT_EQ(cs[2], 4);
-	EXPECT_EQ(cs[3], 5);
-	EXPECT_TRUE(cs.contains(2));
-	EXPECT_TRUE(cs.contains(3));
-	EXPECT_FALSE(cs.contains(1));
-	EXPECT_FALSE(cs.contains(6));
-	EXPECT_TRUE(cs.contains(cs));
-
-	ComponentSet cs2 = cs;
-
-	cs2.add(1);
-	EXPECT_EQ(cs2[0], 1);
-	EXPECT_EQ(cs2[1], 2);
-	EXPECT_EQ(cs2[2], 3);
-	EXPECT_EQ(cs2[3], 4);
-	EXPECT_EQ(cs2[4], 5);
-
-	EXPECT_TRUE(cs2.contains(cs));
-
-	cs2.remove(2);
-	EXPECT_EQ(cs2[0], 1);
-	EXPECT_EQ(cs2[1], 3);
-
-	EXPECT_TRUE(cs.contains(cs));
-	EXPECT_FALSE(cs2.contains(cs));
-
-}
-
 TEST(ECS, ArchetypeTest)
 {
 	std::vector<VirtualType::Type> variables = {VirtualType::virtualString, VirtualType::virtualString};
@@ -238,12 +199,16 @@ TEST(ECS, EntityManagerTest)
 	em.removeComponent(entity, vcd3.id);
 	em.removeComponent(entity, vcd1.id);
 
-	//We now should have some archetypes that we can fetch
+	//Make sure edges and automatic cleanup are working
 	EXPECT_EQ(em._archetypes._archetypes.size(), 4);
 	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
-	EXPECT_EQ(em._archetypes._archetypes[1].size(), 2);
-	EXPECT_EQ(em._archetypes._archetypes[2].size(), 3);
-	EXPECT_EQ(em._archetypes._archetypes[3].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[1].size(), 0);
+	EXPECT_EQ(em._archetypes._archetypes[2].size(), 0);
+	EXPECT_EQ(em._archetypes._archetypes[3].size(), 0);
+
+	em.destroyEntity(entity);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 0);
+
 	Runtime::cleanup();
 }
 
@@ -270,7 +235,7 @@ TEST(ECS, ForEachTest)
 		entities[i] = e;
 	}
 
-	EXPECT_EQ(em._archetypes._archetypes[0].size(), 1);
+	EXPECT_EQ(em._archetypes._archetypes[0].size(), 0);
 	EXPECT_EQ(em._archetypes._archetypes[1].size(), 1);
 
 	//Set the variables on all the entities with the first component
@@ -310,7 +275,7 @@ TEST(ECS, ForEachTest)
 		EXPECT_EQ(74, c1->var3);
 		EXPECT_EQ(true, c2->var1);
 	});
-	long long time = sw.time();
+	long long time = sw.time<std::chrono::milliseconds>();
 	std::cout << "For Each on 50 entities took: " << time << std::endl;
 
 	std::cout << "Test done, checking values..." << std::endl;

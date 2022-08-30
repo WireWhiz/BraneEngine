@@ -28,6 +28,7 @@ enum ComponentFilterFlags_
 class ComponentFilter
 {
 	SystemContext* _system;
+	bool _chunkFlags = false;
 public:
 	struct Component
 	{
@@ -50,10 +51,11 @@ public:
 class EntitySet
 {
 	ComponentFilter _filter;
-	std::vector<ChunkComponentView*> _components;
+	std::vector<Archetype*> _archetypes;
 public:
-	EntitySet(std::vector<ChunkComponentView*> components, ComponentFilter filter);
+	EntitySet(std::vector<Archetype*> archetypes, ComponentFilter filter);
 	void forEachNative(const std::function<void(byte** components)>& f);
+	size_t archetypeCount() const;
 };
 
 

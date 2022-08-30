@@ -18,6 +18,7 @@ class ArchetypeManager
 	std::shared_ptr<ChunkPool> _chunkAllocator;
 	// Index 1: number of components, Index 2: archetype
 	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
+	robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
 	ComponentManager& _componentManager;
 public:
     class iterator{
@@ -38,8 +39,9 @@ public:
 	ArchetypeManager(ComponentManager& componentManager);
 	Archetype* getArchetype(const ComponentSet& components);
 	Archetype* makeArchetype(const ComponentSet& components);
+	void destroyArchetype(Archetype* archetype);
 
-	EntitySet getEntities(ComponentFilter filter);
+	std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
 
 	void removeEmpty();
 	void clear();

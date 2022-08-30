@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <functional>
-#include <unordered_map>
+#include "robin_hood.h"
 #include "common/utility/stackAllocate.h"
 #include "common/utility/sharedRecursiveMutex.h"
 #include "common/utility/threadPool.h"
@@ -21,7 +21,6 @@ struct ArchetypeEdge
 {
 	ComponentID component;
 	Archetype* archetype;
-	ArchetypeEdge(ComponentID component, Archetype* archetype);
 };
 
 class Archetype
@@ -32,10 +31,8 @@ public:
 	size_t _size = 0;
 	size_t _entitySize;
 
-	//Eventually move these to separate node class
-	std::vector<std::shared_ptr<ArchetypeEdge>> _addEdges;
-	std::vector<std::shared_ptr<ArchetypeEdge>> _removeEdges;
-	//
+	robin_hood::unordered_flat_map<ComponentID, Archetype*> _addEdges;
+	robin_hood::unordered_flat_map<ComponentID, Archetype*> _removeEdges;
 
 	ComponentSet _components;
 	std::vector<const ComponentDescription*> _componentDescriptions;
@@ -58,10 +55,8 @@ public:
 	bool isChildOf(const Archetype* parent, ComponentID& connectingComponent) const;
 	const ComponentSet& components() const;
 	const std::vector<const ComponentDescription*>& componentDescriptions();
-	std::shared_ptr<ArchetypeEdge> getAddEdge(ComponentID component);
-	std::shared_ptr<ArchetypeEdge> getRemoveEdge(ComponentID component);
-	void addAddEdge(ComponentID component, Archetype* archetype);
-	void addRemoveEdge(ComponentID component, Archetype* archetype);
+	robin_hood::unordered_flat_map<ComponentID, Archetype*>& addEdges();
+	robin_hood::unordered_flat_map<ComponentID, Archetype*>& removeEdges();
 	const std::vector<std::unique_ptr<Chunk>>& chunks() const;
 	size_t size() const;
 	size_t createEntity();

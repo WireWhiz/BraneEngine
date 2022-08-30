@@ -18,5 +18,11 @@ class Stopwatch
 	static std::chrono::high_resolution_clock::time_point _start;
 public:
 	Stopwatch();
-	long long time();
+
+	template<typename TimeType>
+	uint64_t time()
+	{
+		auto now = std::chrono::high_resolution_clock::now();
+		return std::chrono::duration_cast<TimeType>(now - _start).count();
+	}
 };

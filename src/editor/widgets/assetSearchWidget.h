@@ -10,6 +10,7 @@
 #include "assets/assetType.h"
 #include "assets/assetID.h"
 #include <filesystem>
+#include <vector>
 
 class BraneProject;
 class AssetSearchWidget

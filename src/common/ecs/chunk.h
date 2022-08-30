@@ -4,6 +4,7 @@
 #include <vector>
 #include "virtualType.h"
 #include "component.h"
+#include "robin_hood.h"
 
 class ChunkComponentView
 {
@@ -38,7 +39,7 @@ public:
 	size_t _size;
     size_t _maxCapacity;
     std::array<byte, N> _data;
-    std::vector<ChunkComponentView> _components;
+    robin_hood::unordered_flat_map<ComponentID, ChunkComponentView> _components;
 public:
 	ChunkBase()
 	{
@@ -61,48 +62,43 @@ public:
 
         for (auto& c : components)
         {
-            _components.emplace_back(componentDataStart, _maxCapacity, c);
+            _components.insert({c->id, ChunkComponentView{componentDataStart, _maxCapacity, c}});
             componentDataStart += c->size() * _maxCapacity;
         }
 	}
 
-	const std::vector<ChunkComponentView>& components()
+	const robin_hood::unordered_flat_map<ComponentID, ChunkComponentView>& components()
 	{
 		return _components;
 	}
 
 	bool hasComponent(uint32_t id)
 	{
-		for(auto& cv : _components)
-			if(cv.compID() == id)
-				return true;
-		return false;
+		return _components.contains(id);
 	}
 
 	ChunkComponentView& getComponent(uint32_t id)
 	{
-		for(auto& cv : _components)
-			if(cv.compID() == id)
-				return cv;
+		auto c = _components.find(id);
+		if(c != _components.end())
+			return c->second;
 		throw std::runtime_error("Tried to access component not contained by chunk");
 	}
 
 	bool tryGetComponent(uint32_t id, ChunkComponentView*& view)
 	{
-		for(auto& cv : _components)
-			if(cv.compID() == id)
-			{
-				view = &cv;
-				return true;
-			}
-		return false;
+		auto c = _components.find(id);
+		bool found = c != _components.end();
+		if(found)
+			view = &c->second;
+		return found;
 	}
 
 	size_t createEntity()
 	{
 		assert(_size < _maxCapacity);
 		for(auto& c : _components)
-			c.createComponent();
+			c.second.createComponent();
 		return _size++;
 	}
 
@@ -113,10 +109,10 @@ public:
 		for(auto& c : _components)
 		{
 			ChunkComponentView* oc = nullptr;
-			if(dest->tryGetComponent(c.compID(), oc))
+			if(dest->tryGetComponent(c.second.compID(), oc))
 			{
-				c.def()->move(c[sIndex].data(), (*oc)[dIndex].data());
-				oc->version = std::max(oc->version, c.version);
+				c.second.def()->move(c.second[sIndex].data(), (*oc)[dIndex].data());
+				oc->version = std::max(oc->version, c.second.version);
 			}
 		}
 	}
@@ -126,14 +122,14 @@ public:
 		assert(index < _size);
         --_size;
 		for(auto& c : _components){
-            c.erase(index);
-            assert(_size == c.size());
+            c.second.erase(index);
+            assert(_size == c.second.size());
         }
 	}
 
 	void clear()
 	{
-		_components.resize(0);
+		_components.clear();
 		_size = 0;
         _maxCapacity = 0;
 	}
