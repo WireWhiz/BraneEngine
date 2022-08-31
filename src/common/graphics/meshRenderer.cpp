@@ -30,7 +30,11 @@ namespace graphics{
          //TODO REFACTOR THIS!!! INEFFICIENT!!!
 		for(auto& mat :  _vkr.materials())
         {
-			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, getPipeline(mat.get()));
+
+			VkPipeline pipeline = getPipeline(mat.get());
+			if(!pipeline)
+				continue;
+			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
 			std::vector<RenderObject> meshes;
 			_em.systems().runUnmanagedSystem("fetchMRD", [&](SystemContext* ctx){
@@ -39,8 +43,6 @@ namespace graphics{
 				filter.addComponent(MeshRendererComponent::def()->id, ComponentFilterFlags_Const);
 				_em.getEntities(filter).forEachNative([this, &mat, &meshes](byte** components){
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
-                    if(mr->materials[0] != mat->asset()->runtimeID)
-                        return;
                     if(!_vkr.meshes().hasIndex(mr->mesh))
                     {
                         Runtime::error("No mesh at index " + std::to_string(mr->mesh) + "!");
@@ -49,12 +51,12 @@ namespace graphics{
 					Mesh* mesh = _vkr.meshes()[mr->mesh].get();
 					for (int j = 0; j < mesh->primitiveCount(); ++j)
 					{
+						if(mr->materials[j] != mat->asset()->runtimeID)
+							continue;
 						RenderObject ro{};
 						ro.mesh = mesh;
 						ro.primitive = j;
 						ro.transform = Transform::fromVirtual(components[0])->value;
-						//_renderCache[/*mr->materials[j]*/0].push_back(ro);
-						//TODO actually add in support for more than one material
 						meshes.push_back(ro);
 					}
 				});
@@ -110,8 +112,16 @@ namespace graphics{
 
 	VkPipeline MeshRenderer::getPipeline(const Material* mat)
 	{
+		VkPipeline pipeline = VK_NULL_HANDLE;
+		try{
+			pipeline = mat->pipeline(this);
+		}catch(const std::exception& e)
+		{
+			Runtime::warn("Tried to create pipeline from invalid material configuration: " + (std::string)e.what());
+			return VK_NULL_HANDLE;
+		}
 		if(!_cachedPipelines.count(mat))
-			_cachedPipelines.insert({mat, mat->pipeline(this)});
+			_cachedPipelines.insert({mat, pipeline});
 		return _cachedPipelines.at(mat);
 	}
 

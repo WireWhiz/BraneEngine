@@ -35,6 +35,7 @@ public:
 	void start() override;
 	void loadProject(const std::filesystem::path& filepath);
 	void createProject(const std::string& name, const std::filesystem::path& directory);
+	void reloadAsset(std::shared_ptr<EditorAsset> asset);
 	BraneProject& project();
 	JsonVersionTracker& jsonTracker();
 	AssetCache& cache();

@@ -67,7 +67,7 @@ public:
 		});
 		return asset;
 	}
-	void addAsset(Asset* asset);
+	void reloadAsset(Asset* asset);
 	bool hasAsset(const AssetID& id);
 
 

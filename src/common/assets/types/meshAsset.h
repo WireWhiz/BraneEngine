@@ -6,7 +6,7 @@
 
 class MeshAsset : public IncrementalAsset
 {
-	const uint32_t _trisPerIncrement = 1;
+	uint32_t _trisPerIncrement = 1;
 
     struct Primitive{
         uint32_t indexOffset;

@@ -30,16 +30,25 @@ const char numToHex[16] = {
 };
 
 template<typename T>
-std::string toHex(T num)
+std::string toHex(T num, bool keepLeadingZeros = false)
 {
+	if(num == 0)
+		return "0";
 	std::string hex;
 	hex.resize(sizeof(T) * 2);
 
-	for (uint8_t i = 0; i < sizeof(T); ++i)
+	for(uint8_t i = 0; i < sizeof(T); ++i)
 	{
 		uint8_t currentByte = ((uint8_t*)&num)[sizeof(T) - i - 1];
 		hex[i * 2 + 1]     = numToHex[currentByte % 16];
 		hex[i * 2] = numToHex[(currentByte / 16) % 16];
+	}
+	if(!keepLeadingZeros)
+	{
+		uint8_t leadingZeros = 0;
+		while(hex[leadingZeros] == '0')
+			++leadingZeros;
+		hex = hex.substr(leadingZeros);
 	}
 	return hex;
 }
@@ -51,8 +60,16 @@ std::string toHex(std::array<T, N>& array)
 	hex.reserve(array.size() * sizeof(T)  * 2);
 
 	for(auto& num : array)
-		hex += toHex(num);
-	return hex;
+			hex += toHex(num, false);
+
+	uint8_t leadingZeros = 0;
+	while(hex[leadingZeros] == '0')
+	{
+		++leadingZeros;
+		if(leadingZeros == sizeof(T) * 2)
+			return "0";
+	}
+	return hex.substr(leadingZeros);
 }
 
 template<typename T>
@@ -62,8 +79,15 @@ std::string toHex(std::vector<T>& vector)
 	hex.reserve(vector.size() * sizeof(T)  * 2);
 
 	for(auto& num : vector)
-		hex.append(toHex(num));
-	return hex;
+			hex.append(toHex(num, false));
+	uint8_t leadingZeros = 0;
+	while(hex[leadingZeros] == '0')
+	{
+		++leadingZeros;
+		if(leadingZeros == sizeof(T) * 2)
+			return "0";
+	}
+	return hex.substr(leadingZeros);
 }
 
 template<typename T>

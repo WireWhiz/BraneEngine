@@ -3,20 +3,13 @@
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "systems/transforms.h"
 #include "ecs/entity.h"
+#include "assembly.h"
+#include "types/materialAsset.h"
+#include "types/shaderAsset.h"
+#include "types/meshAsset.h"
 
 AssetManager::AssetManager()
 {
-}
-
-void AssetManager::addAsset(Asset* asset)
-{
-    AssetData data{};
-    data.asset = std::unique_ptr<Asset>(asset);
-    data.loadState = LoadState::loaded;
-
-    _assetLock.lock();
-	_assets.insert({asset->id, std::make_unique<AssetData>(std::move(data))});
-	_assetLock.unlock();
 }
 
 const char* AssetManager::name()
@@ -69,6 +62,10 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 	_assetLock.lock();
     for(auto&d : a->dependencies())
     {
+		//If the server address is empty, it means this asset is from the same origin as the parent.
+		if(d.id.serverAddress.empty())
+			d.id.serverAddress = a->id.serverAddress;
+
 		auto dep = _assets.find(d.id);
 		if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
 			unloadedDeps.push_back(d);
@@ -159,4 +156,33 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 }
 
 
+
+void AssetManager::reloadAsset(Asset* asset)
+{
+	std::scoped_lock lock(_assetLock);
+	if(!_assets.count(asset->id))
+		return;
+
+	// We move instead of just replacing the pointer to avoid breaking references
+	switch(asset->type.type())
+	{
+		case AssetType::mesh:
+			*dynamic_cast<MeshAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<MeshAsset*>(asset));
+			// TODO have this trigger a reload in the graphics module if it exists
+			break;
+		case AssetType::shader:
+			*dynamic_cast<ShaderAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<ShaderAsset*>(asset));
+			// TODO have this trigger a reload in the graphics module if it exists
+			break;
+		case AssetType::material:
+			*dynamic_cast<MaterialAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<MaterialAsset*>(asset));
+			// TODO have this trigger a reload in the graphics module if it exists
+			break;
+		case AssetType::assembly:
+			*dynamic_cast<Assembly*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<Assembly*>(asset));
+			break;
+		default:
+			Runtime::warn("Assembly manager attempted to reload asset of type " + asset->type.toString() + " but currently it isn't supported");
+	}
+}
 

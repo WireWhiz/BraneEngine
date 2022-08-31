@@ -270,7 +270,18 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 		renderer->mesh = mesh->runtimeID;
 		for(auto& mID : renderer->materials)
 		{
-			auto* material = am->getAsset<MaterialAsset>(_json["dependencies"]["materials"][mID].asString());
+			if(_json["dependencies"]["meshes"].size() <= mID || _json["dependencies"]["meshes"][mID] == "null")
+			{
+				mID = -1;
+				continue;
+			}
+			AssetID matAssetID = _json["dependencies"]["materials"][mID].asString();
+			if(matAssetID.isNull())
+			{
+				mID = -1;
+				continue;
+			}
+			auto* material = am->getAsset<MaterialAsset>(matAssetID);
 			mID = material->runtimeID;
 		}
 	}

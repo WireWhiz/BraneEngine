@@ -159,6 +159,15 @@ AssetCache& Editor::cache()
 	return _cache;
 }
 
+void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
+{
+	AssetID id = asset->json()["id"].asString();
+	_cache.deleteCachedAsset(id);
+	Asset* newAsset = asset->buildAsset(id);
+	Runtime::getModule<AssetManager>()->reloadAsset(newAsset);
+	delete newAsset;
+}
+
 //The editor specific fetch asset function
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
@@ -195,6 +204,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 		return asset;
 	}
 
+	if(id.serverAddress.empty())
+	{
+		asset.setError("Asset with id " + std::to_string(id.id) + " was not found and can not be remotely fetched since it lacks a server address");
+		return asset;
+	}
 	auto* nm = Runtime::getModule<NetworkManager>();
 	if(incremental)
 	{

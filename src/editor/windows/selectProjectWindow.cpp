@@ -11,10 +11,10 @@
 
 SelectProjectWindow::SelectProjectWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
+	_projectPath = std::filesystem::current_path().append("/Brane Projects/").string();
 	loadRecent();
 	_name = "Select Project";
 	//TODO store a default project folder in config or grab the documents folder from the OS
-	_projectPath = std::filesystem::current_path().append("/Brane Projects/").string();
 	_flags |= ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove;
 }
 
@@ -29,24 +29,30 @@ void SelectProjectWindow::displayContent()
 	ImGui::Text("Create New");
 	ImGui::PopFont();
 	ImGui::InputText("Name", &_projectName, ImGuiInputTextFlags_AutoSelectAll);
-	std::string pathStr = _projectPath.string();
 	if(ImGui::Button("Select##Directory"))
 	{
-		char* pathCStr = tinyfd_selectFolderDialog("Select Directory", _projectPath.string().c_str());
+		const char* pathCStr = tinyfd_selectFolderDialog("Select Directory", _projectPath.c_str());
 		if(pathCStr)
 			_projectPath = pathCStr;
 	}
 	ImGui::SameLine();
-	ImGui::InputText("Directory", &pathStr, ImGuiInputTextFlags_AutoSelectAll);
-	_projectPath = pathStr;
+	ImGui::InputText("Directory", &_projectPath, ImGuiInputTextFlags_AutoSelectAll);
 
 	if(ImGui::Button("Create"))
 	{
-		_recentProjects.insert(_recentProjects.begin(), {_projectName, (_projectPath / _projectName / (_projectName + ".brane")).string()});
-		_selectedProject = 0;
-		saveRecents();
-		Runtime::getModule<Editor>()->createProject(_projectName, _projectPath);
+		if(!std::filesystem::exists(std::filesystem::path{_projectPath} / _projectName / (_projectName + ".brane")))
+		{
+			_recentProjects.insert(_recentProjects.begin(), {_projectName, (std::filesystem::path{_projectPath} / _projectName / (_projectName + ".brane")).string()});
+			_selectedProject = 0;
+			saveRecents();
+			Runtime::getModule<Editor>()->createProject(_projectName, _projectPath);
+		}
+		else
+			_creationStatus = "Project already exists!";
+
 	}
+	if(!_creationStatus.empty())
+		ImGui::Text("%s", _creationStatus.c_str());
 	ImGui::Separator();
 
 	ImGui::PushFont(_ui.fonts()[1]);
@@ -93,13 +99,18 @@ void SelectProjectWindow::loadRecent()
 		Json::Value projects;
 		if(FileManager::readFile("cache/recentProjects.json", projects))
 		{
+			if(projects.isMember("lastPath"))
+				_projectPath = projects["lastPath"].asString();
 			for(auto& proj : projects["projects"])
 			{
+				if(!std::filesystem::exists(proj["path"].asString()))
+					continue;
 				RecentProject p;
 				p.name = proj["name"].asString();
 				if(p.name.empty())
 					p.name = "[No name found]";
 				p.path = proj["path"].asString();
+
 				_recentProjects.push_back(p);
 			}
 			return;
@@ -128,5 +139,7 @@ void SelectProjectWindow::saveRecents()
 		proj["path"] = p.path;
 		projects["projects"].append(proj);
 	}
+	projects["lastPath"] = _projectPath;
 	FileManager::writeFile("cache/recentProjects.json", projects);
 }
+

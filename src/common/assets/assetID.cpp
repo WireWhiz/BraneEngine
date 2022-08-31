@@ -74,21 +74,14 @@ AssetID::AssetID(const std::string& serverAddress, uint32_t id)
 	this->id = id;
 }
 
-bool AssetID::empty() const
+bool AssetID::isNull() const
 {
-    return this->serverAddress.empty();
+    return this->serverAddress == "null";
 }
 
 std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
 {
-	using std::size_t;
-	using std::hash;
-	using std::string;
 
-	// Compute individual hash values for first,
-	// second and third and combine them using XOR
-	// and bit shifting:
-
-	return (hash<string>()(k.serverAddress)
-		^ (hash<uint64_t>()(k.id) << 1));
+	return (std::hash<string>()(k.serverAddress)
+		^ (std::hash<uint64_t>()(k.id) << 1));
 }

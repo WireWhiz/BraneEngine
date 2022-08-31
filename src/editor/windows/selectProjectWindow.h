@@ -18,7 +18,8 @@ class SelectProjectWindow : public EditorWindow
 		std::string path;
 	};
 	std::string _projectName = "new project";
-	std::filesystem::path _projectPath = "";
+	std::string _projectPath;
+	std::string _creationStatus;
 
 	std::vector<RecentProject> _recentProjects;
 	int _selectedProject = -1;

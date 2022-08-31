@@ -335,9 +335,9 @@ namespace graphics
     Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
     {
         auto* am = Runtime::getModule<AssetManager>();
-        if(!asset->vertexShader.empty())
+        if(!asset->vertexShader.isNull())
             _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
-        if(!asset->fragmentShader.empty())
+        if(!asset->fragmentShader.isNull())
             _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
 
         //Position

@@ -13,7 +13,7 @@ public:
 	void parseString(const std::string& id);
 	uint32_t size();
 	std::string string() const;
-    bool empty() const;
+    bool isNull() const;
 
 	bool operator==(const AssetID& other) const;
 	bool operator!=(const AssetID& other) const;

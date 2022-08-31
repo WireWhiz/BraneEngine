@@ -168,6 +168,11 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
             renderer->mesh = mesh->runtimeID;
             for(auto& mID : renderer->materials)
             {
+				if(materials.size() <= mID || materials[mID] == AssetID::null)
+				{
+					mID = -1;
+					continue;
+				}
                 auto* material = am->getAsset<MaterialAsset>(materials[mID]);
                 mID = material->runtimeID;
             }
@@ -190,7 +195,8 @@ std::vector<AssetDependency> Assembly::dependencies() const
     for(auto& id : scripts)
         deps.push_back({id, false});
 	for(auto& id : materials)
-		deps.push_back({id, false});
+		if(!id.isNull())
+			deps.push_back({id, false});
     for(auto& id : meshes)
         deps.push_back({id, true});
     return deps;

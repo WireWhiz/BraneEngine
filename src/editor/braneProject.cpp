@@ -72,10 +72,10 @@ void BraneProject::create(const std::string& projectName, const std::filesystem:
 	_filepath = directory;
 	_filepath = _filepath / projectName / (projectName + ".brane");
 
-	save();
 	std::filesystem::create_directory(projectDirectory() / "assets");
 	std::filesystem::create_directory(projectDirectory() / "cache");
 	initLoaded();
+	save();
 }
 
 void BraneProject::save()
@@ -236,9 +236,9 @@ Editor& BraneProject::editor()
 AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, AssetType type)
 {
 	Json::Value& assets = _file.data()["assets"];
-	std::string testID = "localhost/" + toHex(_assetIdCounter);
+	std::string testID = "/" + toHex(_assetIdCounter);
 	while(assets.isMember(testID))
-		testID = "localhost/" + toHex(++_assetIdCounter);
+		testID = "/" + toHex(++_assetIdCounter);
 
 	assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
 	assets[testID]["type"] = type.toString();

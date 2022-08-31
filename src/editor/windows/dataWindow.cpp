@@ -227,7 +227,13 @@ void DataWindow::displayEntityAssetData()
 					{
 						while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
 							_focusedAsset->json().data()["dependencies"]["materials"].append("null");
+
 						_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
+						_editor.reloadAsset(_focusedAsset);
+						if(!matID.isNull())
+							Runtime::getModule<AssetManager>()->fetchAsset<MaterialAsset>(matID).then([this](auto* m){_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);});
+						else
+							_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);
 					}
 					ImGui::PopID();
 				}
@@ -237,7 +243,11 @@ void DataWindow::displayEntityAssetData()
 				Json::Value data = component;
 				auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->json().data());
 				if(res != UiChangeType::none)
+				{
 					_focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components/" + std::to_string(i), data, res == UiChangeType::finished);
+					if(res == UiChangeType::finished)
+						_editor.reloadAsset(_focusedAsset);
+				}
 			}
             ImGui::Unindent();
         }
@@ -249,7 +259,7 @@ void DataWindow::displayEntityAssetData()
     }
     if(ImGui::BeginPopup("add component"))
     {
-        ImGui::TextDisabled("Can't add components yet.. need to make server calls for this");
+        ImGui::TextDisabled("Can't add components yet.. because I'm lazy. Open an Issue and yell at me.");
         ImGui::EndPopup();
     }
 }
@@ -283,6 +293,7 @@ void DataWindow::displayMaterialData()
     if(AssetSelectWidget::draw(vertexID, AssetType::shader))
     {
 	    material->json().changeValue("vertexShader", vertexID.string());
+	    _editor.reloadAsset(_focusedAsset);
     };
     ImGui::SameLine();
     ImGui::Text("Vertex Shader");
@@ -290,6 +301,7 @@ void DataWindow::displayMaterialData()
     if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
 	    material->json().changeValue("fragmentShader", fragmentID.string());
+		_editor.reloadAsset(_focusedAsset);
     }
     ImGui::SameLine();
     ImGui::Text("Fragment Shader");

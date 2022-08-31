@@ -63,6 +63,12 @@ public:
     void openPopup(std::unique_ptr<GUIPopup>&& popup);
     void closePopup();
     void sendEvent(std::unique_ptr<GUIEvent>&& name);
+	template<typename T, typename... Args>
+	void sendEvent(Args&... args)
+	{
+		static_assert(std::is_base_of<GUIEvent, T>());
+		sendEvent(std::make_unique<T>(args...));
+	}
     template<typename T>
 	void addEventListener(const std::string& name, GUIWindow* window, std::function<void(const T*)> callback)
 	{

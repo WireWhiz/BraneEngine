@@ -8,7 +8,9 @@
 
 void Asset::serialize(OutputSerializer& s) const
 {
-	s << id << name << type.toString();
+	AssetID serverlessID = id;
+	serverlessID.serverAddress = "";
+	s << serverlessID << name << type.toString();
 }
 
 void Asset::deserialize(InputSerializer& s)
