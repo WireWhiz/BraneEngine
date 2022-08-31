@@ -7,16 +7,13 @@
 
 EditorMaterialAsset::EditorMaterialAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
-
-}
-
-Json::Value EditorMaterialAsset::defaultJson()
-{
-	Json::Value value = EditorAsset::defaultJson();
-	value["inputs"] = Json::arrayValue;
-	value["vertexShader"] = "null";//TODO default fragment and vertex shaders applied here
-	value["fragmentShader"] = "null";
-	return value;
+	// Generate default
+	if(!std::filesystem::exists(_file))
+	{
+		_json.data()["inputs"] = Json::arrayValue;
+		_json.data()["vertexShader"] = "null";//TODO default fragment and vertex shaders applied here
+		_json.data()["fragmentShader"] = "null";
+	}
 }
 
 Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const

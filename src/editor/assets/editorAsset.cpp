@@ -28,14 +28,14 @@ bool EditorAsset::unsavedChanged() const
 	return _json.dirty();
 }
 
-void EditorAsset::load()
+bool EditorAsset::load()
 {
 	try{
 		if(!FileManager::readFile(_file, _json.data()))
 		{
 			Runtime::log("Creating " + _file.string());
-			_json.data() = defaultJson();
-			return;
+			_json.data()["id"] = _project.newAssetID(_file, _type).string();
+			return false;
 		}
 		if(_json.data().get("id", "null").asString() == "null")
 			_json.data()["id"] = _project.newAssetID(_file, _type).string();
@@ -43,7 +43,9 @@ void EditorAsset::load()
 	{
 		Runtime::error("Could not parse " + _file.string() + "!\n" + e.what());
 		_json.data()["failedLoad"] = true;
+		return false;
 	}
+	return true;
 
 
 }
@@ -61,13 +63,6 @@ void EditorAsset::save()
 VersionedJson& EditorAsset::json()
 {
 	return _json;
-}
-
-Json::Value EditorAsset::defaultJson()
-{
-	Json::Value value;
-	value["id"] = _project.newAssetID(_file, _type).string();
-	return value;
 }
 
 EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, BraneProject& project)

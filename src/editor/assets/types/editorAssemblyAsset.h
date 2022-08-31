@@ -10,7 +10,6 @@
 
 class EditorAssemblyAsset : public EditorAsset
 {
-	Json::Value defaultJson() override;
 	Asset* buildAssembly() const;
 	Asset* buildMesh(const AssetID& id) const;
 public:

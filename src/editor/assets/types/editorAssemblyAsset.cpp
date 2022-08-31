@@ -17,17 +17,16 @@
 #include "assets/types/materialAsset.h"
 #include <regex>
 
-Json::Value EditorAssemblyAsset::defaultJson()
-{
-	Json::Value json = EditorAsset::defaultJson();
-	json["linked"] = false;
-	json["dependencies"]["meshes"] = Json::arrayValue;
-	json["dependencies"]["materials"] = Json::arrayValue;
-	return json;
-}
-
 EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
+	// Generate default
+	if(!std::filesystem::exists(_file))
+	{
+		_json.data()["linked"] = false;
+		_json.data()["dependencies"]["meshes"] = Json::arrayValue;
+		_json.data()["dependencies"]["materials"] = Json::arrayValue;
+	}
+
 	std::regex entityChange(R"((entities/)([0-9]+).*)");
 	_json.onChange([this, entityChange](const std::string& path){
 		if(std::regex_match(path, entityChange))

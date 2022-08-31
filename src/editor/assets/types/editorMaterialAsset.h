@@ -9,7 +9,6 @@
 
 class EditorMaterialAsset : public EditorAsset
 {
-	Json::Value defaultJson() override;
 public:
 	EditorMaterialAsset(const std::filesystem::path& file, BraneProject& project);
 	std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;

@@ -16,14 +16,11 @@ uint32_t _spirvHelperInitCount = 0;
 
 EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
-
-}
-
-Json::Value EditorShaderAsset::defaultJson()
-{
-	Json::Value value = EditorAsset::defaultJson();
-	value["source"] = "";
-	return value;
+	// Generate default
+	if(!std::filesystem::exists(_file))
+	{
+		_json.data()["source"] = "";
+	}
 }
 
 void EditorShaderAsset::updateSource(const std::filesystem::path& source)

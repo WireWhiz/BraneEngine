@@ -19,14 +19,13 @@ protected:
 	BraneProject& _project;
 	VersionedJson _json;
 	std::filesystem::path _file;
-	virtual Json::Value defaultJson();
 	AssetType _type;
 	std::string _name;
 public:
 	static EditorAsset* openUnknownAsset(const std::filesystem::path& path, BraneProject& project);
 	EditorAsset(const std::filesystem::path& file, BraneProject& project);
 	virtual ~EditorAsset() = default;
-	void load();
+	bool load();
 	virtual std::vector<std::pair<AssetID, AssetType>> containedAssets() const = 0;
 	virtual Asset* buildAsset(const AssetID& id) const = 0;
 	const AssetType& type() const;
