@@ -125,6 +125,7 @@ void EntityManager::addComponent(EntityID entity, ComponentID component)
 	if(hasComponent(entity, component))
 		return;
     assert(entityExists(entity));
+	assert(_components._components.hasIndex(component));
 	Archetype* destArchetype = nullptr;
 	if (hasArchetype(entity))
 	{

@@ -9,6 +9,10 @@
 #include "fileManager/fileManager.h"
 #include "editor/braneProject.h"
 #include "utility/hex.h"
+#include <mutex>
+
+std::mutex _spirvHelperLock;
+uint32_t _spirvHelperInitCount = 0;
 
 EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
@@ -42,7 +46,11 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 	ShaderAsset* shader = new ShaderAsset();
 	shader->id.parseString(_json["id"].asString());
 	shader->name = name();
-	graphics::SpirvHelper::Init();
+	_spirvHelperLock.lock();
+	if(_spirvHelperInitCount == 0)
+		graphics::SpirvHelper::Init();
+	_spirvHelperInitCount++;
+	_spirvHelperLock.unlock();
 	VkShaderStageFlagBits stageFlags;
 	if(fileSuffix == ".vert")
 	{
@@ -73,7 +81,11 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 		graphics::SpirvHelper::Finalize();
 		return nullptr;
 	}
-	graphics::SpirvHelper::Finalize();
+	_spirvHelperLock.lock();
+	_spirvHelperInitCount--;
+	if(_spirvHelperInitCount == 0)
+		graphics::SpirvHelper::Finalize();
+	_spirvHelperLock.unlock();
 
 	return shader;
 }

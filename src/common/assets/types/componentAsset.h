@@ -4,7 +4,7 @@
 #include <vector>
 #include "../asset.h"
 
-using ComponentID = uint16_t;
+using ComponentID = uint32_t;
 class ComponentAsset : public Asset
 {
 private:

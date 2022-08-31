@@ -11,7 +11,7 @@
 #include "system.h"*/
 #include "chunk.h"
 
-using ComponentID = uint16_t;
+using ComponentID = uint32_t;
 struct SystemContext;
 class ChunkComponentView;
 class Archetype;

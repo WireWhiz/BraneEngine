@@ -20,7 +20,7 @@
 #endif
 
 class ComponentAsset;
-using ComponentID = uint16_t;
+using ComponentID = uint32_t;
 
 class ComponentDescription
 {

@@ -58,7 +58,7 @@ void SelectProjectWindow::displayContent()
 	for(uint8_t i = 0; i < _recentProjects.size(); ++i)
 	{
 		auto& p = _recentProjects[i];
-		if(ImGui::Selectable(p.name.c_str())){
+		if(ImGui::Selectable(p.name.c_str(), _selectedProject == i)){
 			_selectedProject = i;
 		}
 		if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){

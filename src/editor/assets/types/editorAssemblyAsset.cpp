@@ -231,7 +231,8 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 	EntityID id = entityMap[index];
 
 	//Reset entity
-	for(auto c: em->getEntityArchetype(id)->components())
+	ComponentSet oldComponents = em->getEntityArchetype(id)->components();
+	for(ComponentID c: oldComponents)
 		if(c != 0) //Don't remove ID
 			em->removeComponent(id, c);
 
