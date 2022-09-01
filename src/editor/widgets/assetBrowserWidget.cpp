@@ -228,6 +228,16 @@ void AssetBrowserWidget::displayFiles()
 					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
 				ImGui::EndMenu();
 			}
+			if(ImGui::Selectable(ICON_FA_FOLDER "Open File Browser"))
+			{
+
+#ifdef WIN32
+				const std::string fileBrowser = "explorer ";
+#elif UNIX
+				const std::string fileBrowser = "dolphin ";
+#endif
+				system((fileBrowser + currentDirectory().string()).c_str());
+			}
 			if(_selectedFiles.x != -1)
 			{
 				ImGui::Separator();
