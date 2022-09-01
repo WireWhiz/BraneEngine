@@ -159,6 +159,11 @@ AssetCache& Editor::cache()
 	return _cache;
 }
 
+ShaderCompiler& Editor::shaderCompiler()
+{
+	return _shaderCompiler;
+}
+
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
 	AssetID id = asset->json()["id"].asString();

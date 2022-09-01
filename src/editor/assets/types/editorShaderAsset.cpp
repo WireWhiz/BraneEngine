@@ -10,9 +10,7 @@
 #include "editor/braneProject.h"
 #include "utility/hex.h"
 #include <mutex>
-
-std::mutex _spirvHelperLock;
-uint32_t _spirvHelperInitCount = 0;
+#include "editor/editor.h"
 
 EditorShaderAsset::EditorShaderAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
 {
@@ -43,46 +41,26 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 	ShaderAsset* shader = new ShaderAsset();
 	shader->id.parseString(_json["id"].asString());
 	shader->name = name();
-	_spirvHelperLock.lock();
-	if(_spirvHelperInitCount == 0)
-		graphics::SpirvHelper::Init();
-	_spirvHelperInitCount++;
-	_spirvHelperLock.unlock();
-	VkShaderStageFlagBits stageFlags;
 	if(fileSuffix == ".vert")
-	{
-		stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 		shader->shaderType = ShaderType::vertex;
-	}
 	else if(fileSuffix == ".frag")
-	{
-		stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 		shader->shaderType = ShaderType::fragment;
-	}
 	else
 	{
 		Runtime::error("Unknown shader file extension: " + fileSuffix);
 		return nullptr;
 	}
-	std::vector<char> shaderCode;
+	std::string shaderCode;
 	if(!FileManager::readFile(source, shaderCode))
 	{
 		Runtime::error("Failed to open shader source: " + source.string());
 		return nullptr;
 	}
-	//Add null termination char
-	shaderCode.resize(shaderCode.size() + 1, '\0');
-	if(!graphics::CompileGLSL(stageFlags, shaderCode.data(), shader->spirv))
+	if(!_project.editor().shaderCompiler().compileShader(shaderCode, shader))
 	{
-		Runtime::error("Shader compilation failed for " + source.string());
-		graphics::SpirvHelper::Finalize();
+		delete shader;
 		return nullptr;
 	}
-	_spirvHelperLock.lock();
-	_spirvHelperInitCount--;
-	if(_spirvHelperInitCount == 0)
-		graphics::SpirvHelper::Finalize();
-	_spirvHelperLock.unlock();
 
 	return shader;
 }

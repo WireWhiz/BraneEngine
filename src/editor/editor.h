@@ -12,6 +12,7 @@
 #include "braneProject.h"
 #include "utility/jsonVersioner.h"
 #include "assets/assetCache.h"
+#include "graphics/shaderCompiler.h"
 
 namespace net{
     class Connection;
@@ -28,6 +29,7 @@ class Editor : public Module
 	JsonVersionTracker _jsonTracker;
 	AssetCache _cache;
 	BraneProject _project;
+	ShaderCompiler _shaderCompiler;
 	void addMainWindows();
 	void drawMenu();
 public:
@@ -39,6 +41,7 @@ public:
 	BraneProject& project();
 	JsonVersionTracker& jsonTracker();
 	AssetCache& cache();
+	ShaderCompiler& shaderCompiler();
     std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 	static const char* name();
 };

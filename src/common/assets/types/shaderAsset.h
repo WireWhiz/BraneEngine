@@ -1,7 +1,7 @@
 #pragma once
 #include "../asset.h"
+#include "vulkan/vulkan_core.h"
 #include <vector>
-#include <vulkan/vulkan.hpp>
 
 enum class ShaderType
 {
