@@ -88,11 +88,10 @@ namespace graphics
         dynamicState.dynamicStateCount = 2;
         dynamicState.pDynamicStates = dynamicStates;
 
-
-        VkPushConstantRange push_constant{};
+        /*VkPushConstantRange push_constant{};
         push_constant.offset = 0;
-        push_constant.size = sizeof(MeshPushConstants);
-        push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        push_constant.size = 0;
+        push_constant.stageFlags = 0;*/
 
         buildDescriptorSetVars(swapChain);
 
@@ -100,8 +99,8 @@ namespace graphics
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
-        pipelineLayoutInfo.pushConstantRangeCount = 1;
-        pipelineLayoutInfo.pPushConstantRanges = &push_constant;
+        pipelineLayoutInfo.pushConstantRangeCount = 0;
+        pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
         if (vkCreatePipelineLayout(device->get(), &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS)
         {
@@ -296,7 +295,7 @@ namespace graphics
 		for (size_t i = 0; i < swapChainSize; i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites;
-			std::vector<VkDescriptorImageInfo> descriptorImages; // If we don't have this vector, referenced structs go out of scope
+			std::vector<VkDescriptorImageInfo> descriptorImages;
 			for (size_t i = 0; i < _textures.size(); i++)
 			{
 				VkDescriptorImageInfo newImageInfo{};
@@ -340,13 +339,31 @@ namespace graphics
         if(!asset->fragmentShader.isNull())
             _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
 
-        //Position
-        addBinding(0,sizeof(glm::vec3));
-        //Normal
-        addBinding(1, sizeof(glm::vec3));
-        //TODO create a way to set custom attributes
-        addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-        addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+		_transformBuffers.resize(vkr->swapChain()->size());
+	    for(auto& b : _transformBuffers)
+		{
+			b.setFlags(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			b.realocate(sizeof(glm::mat4) * 2);
+		}
+
+	    VkVertexInputBindingDescription transformBindingDesc{};
+	    transformBindingDesc.binding = 0;
+	    transformBindingDesc.stride = sizeof(glm::mat4);
+	    transformBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+	    _bindings.push_back(transformBindingDesc);
+
+
+        //Vertex Position
+        addBinding(1,sizeof(glm::vec3));
+        //Vertex Normal
+        addBinding(2, sizeof(glm::vec3));
+
+	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
+	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 1);
+	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2);
+	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3);
+	    addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+	    addAttribute(2, VK_FORMAT_R32G32B32_SFLOAT, 0);
 
         buildPipelineLayout(vkr->swapChain());
         initialize(vkr->swapChain()->size());
@@ -356,4 +373,10 @@ namespace graphics
     {
         return _asset;
     }
+
+	GraphicsBuffer& Material::transformBuffer(size_t frame)
+	{
+		assert(frame < _transformBuffers.size());
+		return _transformBuffers[frame];
+	}
 }

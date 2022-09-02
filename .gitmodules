@@ -35,3 +35,6 @@
 [submodule "libraries/external/repos/glslang"]
 	path = libraries/external/repos/glslang
 	url = https://github.com/KhronosGroup/glslang
+[submodule "libraries/external/repos/spirv-cross"]
+	path = libraries/external/repos/spirv-cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross/

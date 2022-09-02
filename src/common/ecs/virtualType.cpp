@@ -1,56 +1,38 @@
 #include "virtualType.h"
 #include <unordered_map>
 #include "common/utility/serializedData.h"
+#include "utility/enumNameMap.h"
 
 namespace VirtualType
 {
+	EnumNameMap<Type> names(
+	{
+            {virtualUnknown,    "unknown"},
+            {virtualEntityID,   "entityID"},
+            {virtualBool,       "bool"},
+            {virtualInt,        "int"},
+            {virtualInt64,      "int64"},
+            {virtualUInt,       "uint"},
+            {virtualUInt64,     "uint64"},
+            {virtualFloat,      "float"},
+            {virtualString,     "string"},
+            {virtualAssetID,    "assetID"},
+            {virtualVec3,       "vec3"},
+            {virtualQuat,       "quaternion"},
+            {virtualMat4,       "mat4"},
+            {virtualFloatArray, "floatArray"},
+            {virtualIntArray,   "intArray"},
+            {virtualUIntArray,  "uintArray"},
+            {virtualEntityIDArray,"entityIDArray"}
+    });
 	std::string typeToString(Type type)
 	{
-        //TODO: Change to switch block
-		static const std::unordered_map<Type, const std::string> _toStringMap = {
-				{virtualUnknown,    "unknown"},
-                {virtualEntityID,   "entityID"},
-				{virtualBool,       "bool"},
-				{virtualInt,        "int"},
-				{virtualInt64,      "int64"},
-				{virtualUInt,       "uint"},
-				{virtualUInt64,     "uint64"},
-				{virtualFloat,      "float"},
-				{virtualString,     "string"},
-				{virtualAssetID,    "assetID"},
-				{virtualVec3,       "vec3"},
-				{virtualQuat,       "quaternion"},
-				{virtualMat4,       "mat4"},
-				{virtualFloatArray, "floatArray"},
-				{virtualIntArray,   "intArray"},
-				{virtualUIntArray,  "uintArray"},
-                {virtualEntityIDArray,"entityIDArray"}
-		};
-		assert(_toStringMap.count(type));
-		return _toStringMap.at(type);
+		return names.toString(type);
 	}
 
 	Type stringToType(const std::string& type)
 	{
-		static const std::unordered_map<std::string, Type> _toStringMap = {
-				{"unknown",     virtualUnknown},
-				{"bool",        virtualBool},
-				{"int",         virtualInt},
-				{"int64",       virtualInt64},
-				{"uint",        virtualUInt},
-				{"uint64",      virtualUInt64},
-				{"float",       virtualFloat},
-				{"string",      virtualString},
-				{"assetID",     virtualAssetID},
-				{"vec3",        virtualVec3},
-				{"quaternion",  virtualQuat},
-				{"mat4",        virtualMat4},
-				{"floatArray", virtualFloatArray},
-				{"intArray",   virtualIntArray},
-				{"uintArray",  virtualUIntArray},
-		};
-		assert(_toStringMap.count(type));
-		return _toStringMap.at(type);
+		return names.toEnum(type);
 	}
 
 	size_t size(Type type)

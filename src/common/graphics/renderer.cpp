@@ -245,4 +245,18 @@ namespace graphics
 		_renderCallback(cmdBuffer);
 		endRenderPass(cmdBuffer);
 	}
+
+	bool RenderObject::operator==(const RenderObject& o) const
+	{
+		return mesh == o.mesh && primitive == o.primitive;
+	}
+
+
+}
+namespace std
+{
+	size_t hash<graphics::RenderObject>::operator()(const graphics::RenderObject& o) const
+	{
+		return hash<graphics::Mesh*>()(o.mesh) ^ o.primitive;
+	}
 }

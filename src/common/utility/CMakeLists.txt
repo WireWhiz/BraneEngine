@@ -5,7 +5,7 @@ set(SOURCES
 		threadPool.cpp
 		sharedRecursiveMutex.cpp
 		serializedData.cpp
-		jsonVersioner.cpp)
+		jsonVersioner.cpp enumNameMap.h)
 
 add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)
 

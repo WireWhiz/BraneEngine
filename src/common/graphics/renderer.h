@@ -11,11 +11,13 @@ namespace graphics
     class RenderTexture;
     class SwapChain;
 
+
+
 	struct RenderObject
 	{
 		Mesh* mesh;
 		size_t primitive;
-		glm::mat4x4 transform;
+		bool operator==(const RenderObject&) const;
 	};
 
 	class Renderer
@@ -67,5 +69,13 @@ namespace graphics
 		CustomRenderer(SwapChain& swapChain);
 		void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
 		void render(VkCommandBuffer cmdBuffer) override;
+	};
+}
+namespace std
+{
+	template<>
+	struct hash<graphics::RenderObject>
+	{
+		size_t operator()(const graphics::RenderObject&) const;
 	};
 }

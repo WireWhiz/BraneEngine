@@ -1,38 +1,27 @@
 #include "assetType.h"
+#include "utility/enumNameMap.h"
+
+const EnumNameMap<AssetType::Type> names(
+{
+         {AssetType::none,      "none"     },
+         {AssetType::component, "component"},
+         {AssetType::system,    "system"   },
+         {AssetType::mesh,      "mesh"     },
+         {AssetType::material,  "material" },
+         {AssetType::texture,   "texture"  },
+         {AssetType::player,    "player"   },
+         {AssetType::shader,    "shader"   },
+         {AssetType::assembly,  "assembly" }
+ });
 
 AssetType::Type AssetType::fromString(const std::string& type)
 {
-	static const std::unordered_map<std::string, AssetType::Type> _toEnumMap = {
-			{"",          AssetType::none     },
-			{"none",      AssetType::none     },
-			{"component", AssetType::component},
-			{"system",    AssetType::system   },
-            {"material",  AssetType::material },
-			{"mesh",      AssetType::mesh     },
-			{"texture",   AssetType::texture  },
-			{"player",    AssetType::player   },
-			{"shader",    AssetType::shader   },
-			{"assembly",  AssetType::assembly }
-	};
-	assert(_toEnumMap.count(type));
-	return _toEnumMap.at(type);
+	return names.toEnum(type);
 }
 
 const std::string& AssetType::toString(Type type)
 {
-	static const std::unordered_map<AssetType::Type, const std::string> _toStringMap = {
-			{AssetType::none,      "none"     },
-			{AssetType::component, "component"},
-			{AssetType::system,    "system"   },
-			{AssetType::mesh,      "mesh"     },
-            {AssetType::material,  "material" },
-			{AssetType::texture,   "texture"  },
-			{AssetType::player,    "player"   },
-			{AssetType::shader,    "shader"   },
-			{AssetType::assembly,  "assembly" }
-	};
-	assert(_toStringMap.count(type));
-	return _toStringMap.at(type);
+	return names.toString(type);
 }
 
 AssetType::AssetType()

@@ -197,7 +197,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 	{
 		ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
 			Asset* a = editorAsset->buildAsset(id);
-			assert(a);
+			if(!a)
+			{
+				asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
+				return;
+			}
 			_assetLock.lock();
 			_assets.at(id)->loadState = LoadState::awaitingDependencies;
 			_assetLock.unlock();

@@ -1,8 +1,3 @@
-set(SHADERC_SKIP_TESTS ON)
-set(SHADERC_SKIP_INSTALL ON)
-set(SHADERC_SKIP_EXAMPLES ON)
-set(SHADERC_ENABLE_SHARED_CRT ON)
-
 add_library(imgui STATIC
         imgui/imconfig.h
         imgui/imgui.cpp
@@ -44,10 +39,19 @@ if(BUILD_TESTS)
 endif()
 add_subdirectory(SQLite)
 
+option(SPIRV_CROSS_ENABLE_TESTS "Enable SPIRV-Cross tests." OFF)
+add_subdirectory(spirv-cross)
+set(SPIRV_HEADERS_SKIP_EXAMPLES ON)
 add_subdirectory(spirv-headers)
+set(SPIRV_SKIP_EXECUTABLES ON)
+set(SPIRV_SKIP_TESTS ON)
 add_subdirectory(spirv-tools)
 add_subdirectory(glslang)
 
+set(SHADERC_SKIP_TESTS ON)
+set(SHADERC_SKIP_INSTALL ON)
+set(SHADERC_SKIP_EXAMPLES ON)
+set(SHADERC_ENABLE_SHARED_CRT ON)
 add_subdirectory(shaderc)
 
 add_subdirectory(jsoncpp)
@@ -59,4 +63,5 @@ target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include
         ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include)
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
+        ${CMAKE_CURRENT_SOURCE_DIR})

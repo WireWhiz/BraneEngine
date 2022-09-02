@@ -27,7 +27,6 @@ namespace graphics{
             return;
         startRenderPass(cmdBuffer);
  		glm::mat4 cameraMatrix = perspectiveMatrix() * transformMatrix();
-         //TODO REFACTOR THIS!!! INEFFICIENT!!!
 		for(auto& mat :  _vkr.materials())
         {
 
@@ -36,12 +35,12 @@ namespace graphics{
 				continue;
 			vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-			std::vector<RenderObject> meshes;
+			robin_hood::unordered_node_map<RenderObject, std::vector<glm::mat4>> meshTransforms;
 			_em.systems().runUnmanagedSystem("fetchMRD", [&](SystemContext* ctx){
 				ComponentFilter filter(ctx);
 				filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
 				filter.addComponent(MeshRendererComponent::def()->id, ComponentFilterFlags_Const);
-				_em.getEntities(filter).forEachNative([this, &mat, &meshes](byte** components){
+				_em.getEntities(filter).forEachNative([this, &mat, &meshTransforms, cameraMatrix](byte** components){
 					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(components[1]);
                     if(!_vkr.meshes().hasIndex(mr->mesh))
                     {
@@ -56,46 +55,46 @@ namespace graphics{
 						RenderObject ro{};
 						ro.mesh = mesh;
 						ro.primitive = j;
-						ro.transform = Transform::fromVirtual(components[0])->value;
-						meshes.push_back(ro);
+						meshTransforms[{mesh, (size_t)j}].push_back(cameraMatrix * Transform::fromVirtual(components[0])->value);
 					}
 				});
 			});
-			for(auto& mesh : meshes)
+
+			auto& transformBuffer = mat->transformBuffer(_swapChain.currentFrame());
+
+			size_t transformCount = 0;
+	        for(auto& renderObject : meshTransforms)
+				transformCount += renderObject.second.size();
+
+			if(transformCount * sizeof(glm::mat4) > transformBuffer.size())
 			{
-				VkBuffer b = mesh.mesh->buffer();
-				std::vector<VkBuffer> vertexBuffers;
-				vertexBuffers.resize(2, b);
+				size_t newSize = transformBuffer.size() * 2;
+				while(transformCount * sizeof(glm::mat4) > newSize)
+					newSize *= 2;
+				transformBuffer.realocate(newSize);
+			}
+
+			size_t transformOffset = 0;
+			for(auto& renderObject : meshTransforms)
+			{
+				Mesh* mesh = renderObject.first.mesh;
+				size_t primitive = renderObject.first.primitive;
+				VkBuffer b = mesh->buffer();
+				std::vector<VkBuffer> vertexBuffers = {transformBuffer.get(), b, b};
 				std::vector<VkDeviceSize> vertexBufferOffsets = {
-						mesh.mesh->attributeBufferOffset(mesh.primitive, "POSITION"),
-						mesh.mesh->attributeBufferOffset(mesh.primitive, "NORMAL")
+						transformOffset,
+						mesh->attributeBufferOffset(primitive, "POSITION"),
+						mesh->attributeBufferOffset(primitive, "NORMAL")
 				};
-				for(auto offset : vertexBufferOffsets)
-				{
-					assert(offset < mesh.mesh->size());
-				}
-				mesh.mesh->updateData();
+
+				mesh->updateData();
+				transformBuffer.setData(renderObject.second, transformOffset);
+				transformOffset += renderObject.second.size() * sizeof(glm::mat4);
+
 				vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
-
-				vkCmdBindIndexBuffer(cmdBuffer, mesh.mesh->buffer(), mesh.mesh->indexBufferOffset(mesh.primitive), VK_INDEX_TYPE_UINT16);
-
+				vkCmdBindIndexBuffer(cmdBuffer, mesh->buffer(), mesh->indexBufferOffset(primitive), VK_INDEX_TYPE_UINT16);
 				vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->pipelineLayout(), 0, 1, mat->descriptorSet(_swapChain.currentFrame()), 0, nullptr);
-
-				MeshPushConstants constants{};
-				constants.render_matrix = cameraMatrix * mesh.transform;
-				constants.objectToWorld = mesh.transform;
-
-				static auto start = std::chrono::high_resolution_clock::now();
-				auto currentTime = std::chrono::high_resolution_clock::now();
-				float delta = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - start).count();
-
-				glm::mat4 lightPos = glm::translate(glm::mat4(1), glm::vec3{2, 2, -4});;
-				constants.lightPosition = lightPos * glm::vec4{1,1,1,1};
-
-				vkCmdPushConstants(cmdBuffer, mat->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(MeshPushConstants), &constants);
-
-
-				vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh.mesh->indexCount(mesh.primitive)), 1, 0, 0, 0);
+				vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh->indexCount(primitive)), renderObject.second.size(), 0, 0, 0);
 			}
 		}
 		endRenderPass(cmdBuffer);
@@ -113,11 +112,12 @@ namespace graphics{
 	VkPipeline MeshRenderer::getPipeline(const Material* mat)
 	{
 		VkPipeline pipeline = VK_NULL_HANDLE;
+		//TODO still want to refactor this
 		try{
 			pipeline = mat->pipeline(this);
 		}catch(const std::exception& e)
 		{
-			Runtime::warn("Tried to create pipeline from invalid material configuration: " + (std::string)e.what());
+			//Runtime::warn("Tried to create pipeline from invalid material configuration: " + (std::string)e.what());
 			return VK_NULL_HANDLE;
 		}
 		if(!_cachedPipelines.count(mat))

@@ -51,6 +51,11 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 			{
 				am->fetchAsset<Assembly>(_focusedAsset->json()["id"].asString()).then([this](Assembly* assembly){
 					_ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
+				}).onError([this](const std::string& error){
+					if(_focusedAsset)
+						Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
+					else
+						Runtime::warn("Could not load asset to render: " + error);
 				});
 			}
 		}
@@ -64,6 +69,15 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		t.value = glm::translate(glm::mat4(1), {0, 0, 0});
 		em.setComponent(root, t.toVirtual());
 		_entities = assembly->inject(em, root);
+		_entities.push_back(root);
+
+		//Second for index testing
+		EntityID root2 = em.createEntity();
+		em.addComponent<Transform>(root2);
+		t.value = glm::translate(glm::mat4(1), {2, 0, 0});
+		em.setComponent(root2, t.toVirtual());
+		auto entities2 = assembly->inject(em, root2);
+		_entities.insert(_entities.end(), entities2.begin(), entities2.end());
 		_entities.push_back(root);
 	});
 	_ui.addEventListener<EntityAssetReloadEvent>("entity asset reload", this, [this](const EntityAssetReloadEvent* event){

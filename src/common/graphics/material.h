@@ -25,6 +25,8 @@ namespace graphics
 		std::vector<VkVertexInputBindingDescription> _bindings;
 		std::vector<VkVertexInputAttributeDescription> _attributes;
 
+		std::vector<GraphicsBuffer> _transformBuffers;
+
 		VkDescriptorSetLayout _descriptorSetLayout = VK_NULL_HANDLE;
 		VkDescriptorPool _descriptorPool = VK_NULL_HANDLE;
 		std::vector<VkDescriptorSet> _descriptorSets;
@@ -39,6 +41,7 @@ namespace graphics
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildPipelineLayout(SwapChain* swapChain);
 		void initialize(size_t swapChainSize);
+		GraphicsBuffer& transformBuffer(size_t frame);
 		const ComponentDescription* component() const;
 		VkPipeline pipeline(Renderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
