@@ -111,18 +111,18 @@ namespace graphics{
 
 	VkPipeline MeshRenderer::getPipeline(const Material* mat)
 	{
-		VkPipeline pipeline = VK_NULL_HANDLE;
+		if(_cachedPipelines.count(mat))
+			return _cachedPipelines.at(mat);
 		//TODO still want to refactor this
 		try{
-			pipeline = mat->pipeline(this);
+			VkPipeline pipeline = mat->pipeline(this);
+			_cachedPipelines.insert({mat, pipeline});
+			return pipeline;
 		}catch(const std::exception& e)
 		{
 			//Runtime::warn("Tried to create pipeline from invalid material configuration: " + (std::string)e.what());
-			return VK_NULL_HANDLE;
 		}
-		if(!_cachedPipelines.count(mat))
-			_cachedPipelines.insert({mat, pipeline});
-		return _cachedPipelines.at(mat);
+		return VK_NULL_HANDLE;
 	}
 
 	MeshRenderer::~MeshRenderer()

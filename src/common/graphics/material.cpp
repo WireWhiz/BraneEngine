@@ -73,10 +73,8 @@ namespace graphics
     }
 	void Material::buildPipelineLayout(SwapChain* swapChain)
 	{
-        if (_pipelineLayout != VK_NULL_HANDLE)
-        {
+        if (_pipelineLayout)
             vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
-        }
 
         VkDynamicState dynamicStates[] = {
             VK_DYNAMIC_STATE_VIEWPORT,
