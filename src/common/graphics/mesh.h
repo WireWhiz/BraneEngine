@@ -11,14 +11,7 @@ class MeshAsset;
 
 namespace graphics
 {
-
     class GraphicsBuffer;
-	struct MeshPushConstants
-	{
-		glm::mat4x4 render_matrix;
-		glm::mat4x4 objectToWorld;
-		glm::vec4 lightPosition;
-	};
 
 	using MeshID = uint32_t;
 	class Mesh
@@ -49,6 +42,5 @@ namespace graphics
 
 		void lock();
 		void unlock();
-
 	};
 }

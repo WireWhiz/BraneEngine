@@ -23,10 +23,12 @@ public:
 	}
 	const std::string& toString(Enum e) const
 	{
+		assert(_enumToString.count(e));
 		return _enumToString.at(e);
 	}
 	Enum toEnum(const std::string& s) const
 	{
+		assert(_stringToEnum.count(s));
 		return _stringToEnum.at(s);
 	}
 };

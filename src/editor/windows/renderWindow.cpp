@@ -8,9 +8,10 @@
 #include "../editorEvents.h"
 #include "../assets/editorAsset.h"
 #include "graphics/graphics.h"
-#include "graphics/meshRenderer.h"
+#include "graphics/sceneRenderer.h"
 #include "graphics/material.h"
 #include "graphics/renderTarget.h"
+#include "graphics/pointLightComponent.h"
 
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
@@ -18,6 +19,7 @@
 #include <systems/transforms.h>
 #include "backends/imgui_impl_vulkan.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
+#include "ecs/nativeComponent.h"
 
 class RenderWindowAssetReady : public GUIEvent
 {
@@ -32,7 +34,7 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _name = "Render";
 	EntityManager& em = *Runtime::getModule<EntityManager>();
 	graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
-	_renderer = vkr.createRenderer<graphics::MeshRenderer>(&vkr, &em);
+	_renderer = vkr.createRenderer<graphics::SceneRenderer>(&vkr, &em);
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event){
@@ -70,15 +72,6 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		em.setComponent(root, t.toVirtual());
 		_entities = assembly->inject(em, root);
 		_entities.push_back(root);
-
-		//Second for index testing
-		EntityID root2 = em.createEntity();
-		em.addComponent<Transform>(root2);
-		t.value = glm::translate(glm::mat4(1), {2, 0, 0});
-		em.setComponent(root2, t.toVirtual());
-		auto entities2 = assembly->inject(em, root2);
-		_entities.insert(_entities.end(), entities2.begin(), entities2.end());
-		_entities.push_back(root);
 	});
 	_ui.addEventListener<EntityAssetReloadEvent>("entity asset reload", this, [this](const EntityAssetReloadEvent* event){
 		if(_focusedAsset && event->entity() < _entities.size())
@@ -96,6 +89,14 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedAsset = nullptr;
         _focusedEntity = event->id();
     });*/
+	_lightEntity = em.createEntity(ComponentSet({Transform::def()->id, PointLightComponent::def()->id}));
+	Transform lightTransform;
+	lightTransform.value = glm::translate(glm::mat4(1), {2,2,-2});
+	em.setComponent(_lightEntity, lightTransform.toVirtual());
+	PointLightComponent pointLight{};
+	pointLight.color = {1,1,1,10};
+	em.setComponent(_lightEntity, pointLight.toVirtual());
+
     ImGuizmo::AllowAxisFlip(false); // Maybe add this to the config at some point
 }
 
@@ -161,6 +162,28 @@ void RenderWindow::displayContent()
     if(ImGui::Button(_gizmoMode == ImGuizmo::MODE::WORLD ? ICON_FA_GLOBE : ICON_FA_OBJECT_GROUP)  || (hovered && ImGui::IsKeyPressed(ImGuiKey_Q, false)))
         _gizmoMode = _gizmoMode == ImGuizmo::MODE::WORLD ? ImGuizmo::MODE::LOCAL : ImGuizmo::MODE::WORLD;
 
+	ImGui::SameLine(0, 13);
+	if(ImGui::Button(ICON_FA_LIGHTBULB))
+	{
+		_focusedEntity = _lightEntity;
+		_focusedAssetEntity = -1;
+	}
+	ImGui::SameLine();
+	auto* em = Runtime::getModule<EntityManager>();
+	auto* light = em->getComponent<PointLightComponent>(_lightEntity);
+	if (ImGui::ColorButton("##ColorButton", *(ImVec4*)&light->color))
+	{
+		ImGui::OpenPopup("picker");
+	}
+	if (ImGui::BeginPopup("picker"))
+	{
+		ImGui::ColorPicker3("##picker", (float*)&light->color);
+		ImGui::EndPopup();
+	}
+	ImGui::SameLine();
+	ImGui::DragFloat("Brightness", &light->color.a, 0.5, 0, 0, "%.3f");
+
+
 
     auto window = ImGui::GetContentRegionAvail();
     _windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
@@ -218,7 +241,7 @@ void RenderWindow::displayContent()
             else if(_manipulating)
             {
                 _manipulating = false;
-                if(_focusedAsset)
+                if(_focusedAsset && _focusedAssetEntity != -1)
                 {
 					Json::Value components = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity]["components"];
 					assert(components != Json::nullValue);

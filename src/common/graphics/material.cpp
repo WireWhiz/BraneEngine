@@ -6,63 +6,36 @@
 #include "assets/types/shaderAsset.h"
 #include "shader.h"
 #include "mesh.h"
+#include "sceneRenderer.h"
 
 namespace graphics
 {
-    void Material::buildDescriptorSetVars(SwapChain* swapChain)
-    {
-        if (_descriptorSetLayout != VK_NULL_HANDLE)
-            return;
-        
-        //Create layout
-        std::vector<VkDescriptorSetLayoutBinding> bindings;
-        
+	Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
+	{
+		auto* am = Runtime::getModule<AssetManager>();
+		if(!asset->vertexShader.isNull())
+			_vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
+		if(!asset->fragmentShader.isNull())
+			_fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
 
-        for (size_t i = 1; i <= _textures.size(); i++)
-        {
-            VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-            samplerLayoutBinding.binding = i;
-            samplerLayoutBinding.descriptorCount = 1;
-            samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            samplerLayoutBinding.pImmutableSamplers = nullptr;
-            samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+		_transformBuffers.resize(vkr->swapChain()->size());
+		for(auto& b : _transformBuffers)
+		{
+			b.setFlags(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			b.realocate(sizeof(glm::mat4) * 2);
+		}
 
-            bindings.push_back(samplerLayoutBinding);
-        }
+		//Vertex Position
+		addBinding(0,sizeof(glm::vec3));
+		//Vertex Normal
+		addBinding(1, sizeof(glm::vec3));
 
-        
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        layoutInfo.pBindings = bindings.data();
+		addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
+		addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
 
-        if (vkCreateDescriptorSetLayout(device->get(), &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor set layout!");
-        }
-
-        //Create pool
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChain->size());
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChain->size());
-
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-
-        poolInfo.maxSets = static_cast<uint32_t>(swapChain->size());
-
-
-        if (vkCreateDescriptorPool(device->get(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS)
-        {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-
-        
-    }
+		buildPipelineLayout(vkr->swapChain());
+		initialize(vkr->swapChain()->size());
+	}
 
     Material::~Material()
     {
@@ -71,6 +44,83 @@ namespace graphics
 
         vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
     }
+
+	void Material::buildDescriptorSetVars(SwapChain* swapChain)
+	{
+		if (_descriptorSetLayout != VK_NULL_HANDLE)
+			return;
+
+		//Create layout
+		std::vector<VkDescriptorSetLayoutBinding> bindings;
+
+		VkDescriptorSetLayoutBinding renderDataBinding{};
+		renderDataBinding.binding = 0;
+		renderDataBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		renderDataBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		renderDataBinding.descriptorCount = 1;
+		bindings.push_back(renderDataBinding);
+
+		VkDescriptorSetLayoutBinding instanceDataBinding{};
+		instanceDataBinding.binding = 1;
+		instanceDataBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		instanceDataBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+		instanceDataBinding.descriptorCount = 1;
+		bindings.push_back(instanceDataBinding);
+
+		VkDescriptorSetLayoutBinding pointLightDataBinding{};
+		pointLightDataBinding.binding = 2;
+		pointLightDataBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		pointLightDataBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		pointLightDataBinding.descriptorCount = 1;
+		bindings.push_back(pointLightDataBinding);
+
+		for (size_t i = 1; i <= _textures.size(); i++)
+		{
+			VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+			samplerLayoutBinding.binding = bindings.size();
+			samplerLayoutBinding.descriptorCount = 1;
+			samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			samplerLayoutBinding.pImmutableSamplers = nullptr;
+			samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+
+			bindings.push_back(samplerLayoutBinding);
+		}
+
+		VkDescriptorSetLayoutCreateInfo layoutInfo{};
+		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		layoutInfo.pBindings = bindings.data();
+
+		if (vkCreateDescriptorSetLayout(device->get(), &layoutInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor set layout!");
+		}
+
+		//Create pool
+		std::array<VkDescriptorPoolSize, 3> poolSizes{};
+		poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(swapChain->size());
+		poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(swapChain->size());
+		poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[2].descriptorCount = static_cast<uint32_t>(swapChain->size());
+
+		VkDescriptorPoolCreateInfo poolInfo{};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+		poolInfo.pPoolSizes = poolSizes.data();
+
+		poolInfo.maxSets = static_cast<uint32_t>(swapChain->size());
+
+
+		if (vkCreateDescriptorPool(device->get(), &poolInfo, nullptr, &_descriptorPool) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create descriptor pool!");
+		}
+
+
+	}
 	void Material::buildPipelineLayout(SwapChain* swapChain)
 	{
         if (_pipelineLayout)
@@ -86,10 +136,10 @@ namespace graphics
         dynamicState.dynamicStateCount = 2;
         dynamicState.pDynamicStates = dynamicStates;
 
-        /*VkPushConstantRange push_constant{};
+        VkPushConstantRange push_constant{};
         push_constant.offset = 0;
-        push_constant.size = 0;
-        push_constant.stageFlags = 0;*/
+        push_constant.size = sizeof(uint32_t);
+        push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
         buildDescriptorSetVars(swapChain);
 
@@ -97,8 +147,8 @@ namespace graphics
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &_descriptorSetLayout;
-        pipelineLayoutInfo.pushConstantRangeCount = 0;
-        pipelineLayoutInfo.pPushConstantRanges = nullptr;
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &push_constant;
 
         if (vkCreatePipelineLayout(device->get(), &pipelineLayoutInfo, nullptr, &_pipelineLayout) != VK_SUCCESS)
         {
@@ -107,7 +157,7 @@ namespace graphics
 
         buildDescriptorSetVars(swapChain);
 	}
-    VkPipeline Material::pipeline(Renderer* renderer) const
+    VkPipeline Material::pipeline(SceneRenderer* renderer) const
     {
 	    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	    if (_geometryShader != nullptr)
@@ -290,22 +340,40 @@ namespace graphics
 		}
 
 
+
 		for (size_t i = 0; i < swapChainSize; i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites;
 			std::vector<VkDescriptorImageInfo> descriptorImages;
-			for (size_t i = 0; i < _textures.size(); i++)
+
+			VkDescriptorBufferInfo instanceDataInfo{};
+			instanceDataInfo.buffer = _transformBuffers[i].get();
+			instanceDataInfo.offset = 0;
+			instanceDataInfo.range = VK_WHOLE_SIZE;
+
+			VkWriteDescriptorSet instanceDataSet{};
+			instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			instanceDataSet.dstSet = _descriptorSets[i];
+			instanceDataSet.dstBinding = 1;
+			instanceDataSet.dstArrayElement = 0;
+			instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			instanceDataSet.descriptorCount = 1;
+			instanceDataSet.pBufferInfo = &instanceDataInfo;
+			descriptorWrites.push_back(instanceDataSet);
+
+
+			for (size_t image = 0; image < _textures.size(); image++)
 			{
 				VkDescriptorImageInfo newImageInfo{};
 				newImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				newImageInfo.imageView = _textures[i]->view();
-				newImageInfo.sampler = _textures[i]->sampler();
+				newImageInfo.imageView = _textures[image]->view();
+				newImageInfo.sampler = _textures[image]->sampler();
 				descriptorImages.push_back(newImageInfo);
 
 				VkWriteDescriptorSet newSet{};
 				newSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				newSet.dstSet = _descriptorSets[i];
-				newSet.dstBinding = i + 1;
+				newSet.dstBinding = image + 1;
 				newSet.dstArrayElement = 0;
 				newSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 				newSet.descriptorCount = 1;
@@ -329,44 +397,6 @@ namespace graphics
 		return _component;
 	}
 
-    Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
-    {
-        auto* am = Runtime::getModule<AssetManager>();
-        if(!asset->vertexShader.isNull())
-            _vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
-        if(!asset->fragmentShader.isNull())
-            _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
-
-		_transformBuffers.resize(vkr->swapChain()->size());
-	    for(auto& b : _transformBuffers)
-		{
-			b.setFlags(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-			b.realocate(sizeof(glm::mat4) * 2);
-		}
-
-	    VkVertexInputBindingDescription transformBindingDesc{};
-	    transformBindingDesc.binding = 0;
-	    transformBindingDesc.stride = sizeof(glm::mat4);
-	    transformBindingDesc.inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-	    _bindings.push_back(transformBindingDesc);
-
-
-        //Vertex Position
-        addBinding(1,sizeof(glm::vec3));
-        //Vertex Normal
-        addBinding(2, sizeof(glm::vec3));
-
-	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, 0);
-	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 1);
-	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 2);
-	    addAttribute(0, VK_FORMAT_R32G32B32A32_SFLOAT, sizeof(glm::vec4) * 3);
-	    addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	    addAttribute(2, VK_FORMAT_R32G32B32_SFLOAT, 0);
-
-        buildPipelineLayout(vkr->swapChain());
-        initialize(vkr->swapChain()->size());
-    }
-
     MaterialAsset* Material::asset() const
     {
         return _asset;
@@ -376,5 +406,65 @@ namespace graphics
 	{
 		assert(frame < _transformBuffers.size());
 		return _transformBuffers[frame];
+	}
+
+	void Material::reallocateTransformBuffer(size_t frame, size_t newSize)
+	{
+		assert(frame < _transformBuffers.size());
+		_transformBuffers[frame].realocate(newSize);
+
+		VkDescriptorBufferInfo instanceDataInfo{};
+		instanceDataInfo.buffer = _transformBuffers[frame].get();
+		instanceDataInfo.offset = 0;
+		instanceDataInfo.range = VK_WHOLE_SIZE;
+
+		VkWriteDescriptorSet instanceDataSet{};
+		instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		instanceDataSet.dstSet = _descriptorSets[frame];
+		instanceDataSet.dstBinding = 1;
+		instanceDataSet.dstArrayElement = 0;
+		instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		instanceDataSet.descriptorCount = 1;
+		instanceDataSet.pBufferInfo = &instanceDataInfo;
+
+		vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
+	}
+
+	void Material::bindTransformUniformBuffer(size_t frame, GraphicsBuffer& buffer)
+	{
+		VkDescriptorBufferInfo instanceDataInfo{};
+		instanceDataInfo.buffer = buffer.get();
+		instanceDataInfo.offset = 0;
+		instanceDataInfo.range = sizeof(glm::mat4);
+
+		VkWriteDescriptorSet instanceDataSet{};
+		instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		instanceDataSet.dstSet = _descriptorSets[frame];
+		instanceDataSet.dstBinding = 0;
+		instanceDataSet.dstArrayElement = 0;
+		instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		instanceDataSet.descriptorCount = 1;
+		instanceDataSet.pBufferInfo = &instanceDataInfo;
+
+		vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
+	}
+
+	void Material::bindPointLightBuffer(size_t frame, GraphicsBuffer& buffer)
+	{
+		VkDescriptorBufferInfo instanceDataInfo{};
+		instanceDataInfo.buffer = buffer.get();
+		instanceDataInfo.offset = 0;
+		instanceDataInfo.range = VK_WHOLE_SIZE;
+
+		VkWriteDescriptorSet instanceDataSet{};
+		instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		instanceDataSet.dstSet = _descriptorSets[frame];
+		instanceDataSet.dstBinding = 2;
+		instanceDataSet.dstArrayElement = 0;
+		instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		instanceDataSet.descriptorCount = 1;
+		instanceDataSet.pBufferInfo = &instanceDataInfo;
+
+		vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
 	}
 }

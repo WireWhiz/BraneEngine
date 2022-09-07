@@ -11,7 +11,7 @@ namespace graphics
 {
     class Shader;
     class VulkanRuntime;
-	class Renderer;
+	class SceneRenderer;
 	class Material
 	{
         MaterialAsset* _asset;
@@ -42,8 +42,11 @@ namespace graphics
 		void buildPipelineLayout(SwapChain* swapChain);
 		void initialize(size_t swapChainSize);
 		GraphicsBuffer& transformBuffer(size_t frame);
+		void reallocateTransformBuffer(size_t frame, size_t newSize);
+		void bindTransformUniformBuffer(size_t frame, GraphicsBuffer& buffer);
+		void bindPointLightBuffer(size_t frame, GraphicsBuffer& buffer);
 		const ComponentDescription* component() const;
-		VkPipeline pipeline(Renderer* renderer) const;
+		VkPipeline pipeline(SceneRenderer* renderer) const;
 		VkPipelineLayout pipelineLayout();
 		VkDescriptorSetLayout descriptorLayout();
 		VkDescriptorPool descriptorPool();

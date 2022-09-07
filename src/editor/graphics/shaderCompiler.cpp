@@ -35,12 +35,15 @@ bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std
 	shaderc::Compiler compiler;
 	shaderc::CompileOptions options;
 	options.SetOptimizationLevel(optimize ? shaderc_optimization_level_performance : shaderc_optimization_level_zero);
+	options.SetSourceLanguage(shaderc_source_language_glsl);
+	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
+	options.SetTargetSpirv(shaderc_spirv_version_1_5);
 
-	auto result = compiler.CompileGlslToSpv(glsl, kind, glsl.c_str(), options);
+	auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
 	if(result.GetCompilationStatus() != shaderc_compilation_status_success)
 	{
-		Runtime::error(result.GetErrorMessage());
+		Runtime::error("Could not compile shader:\n" + result.GetErrorMessage());
 		return false;
 	}
 	spirv = {result.begin(), result.end()};

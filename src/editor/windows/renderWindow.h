@@ -15,7 +15,7 @@
 
 namespace graphics{
     class RenderTexture;
-    class MeshRenderer;
+    class SceneRenderer;
     class SwapChain;
 }
 
@@ -23,7 +23,7 @@ class EditorAsset;
 class RenderWindow : public EditorWindow
 {
 	graphics::RenderTexture* _texture = nullptr;
-	graphics::MeshRenderer* _renderer;
+	graphics::SceneRenderer* _renderer;
 	std::vector<VkDescriptorSet> _imGuiBindings;
 	graphics::SwapChain* _swapChain;
 	VkExtent2D _windowSize = {0,0};
@@ -39,6 +39,8 @@ class RenderWindow : public EditorWindow
 	std::vector<EntityID> _entities;
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;
+
+	EntityID _lightEntity;
 
 	float zoom = -5;
 	glm::vec3 position = {0,0,0};

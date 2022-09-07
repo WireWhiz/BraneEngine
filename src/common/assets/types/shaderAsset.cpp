@@ -111,7 +111,7 @@ VkShaderStageFlagBits ShaderAsset::vulkanShaderType() const
 
 ShaderVariableData::Layout ShaderVariableData::layout() const
 {
-	if(columns == 0)
+	if(vecSize == 1)
 		return scalar;
 	if(columns == 1)
 	{
@@ -126,6 +126,7 @@ ShaderVariableData::Layout ShaderVariableData::layout() const
 		return mat4;
 	if(columns == 3)
 		return mat3;
+	return scalar;
 }
 
 
