@@ -17,8 +17,13 @@ TEST(assets, AssetIDTest)
 	aa.parseString("server.ip.goes.here/1234A");
 	EXPECT_EQ(aa.serverAddress, "server.ip.goes.here");
 	EXPECT_EQ(aa.id, 0x1234A);
-	EXPECT_EQ(aa.string(), "server.ip.goes.here/0001234A");
+	EXPECT_EQ(aa.string(), "server.ip.goes.here/1234A");
 	EXPECT_TRUE(aa == aa);
+	EXPECT_FALSE(aa.isNull());
+
+	AssetID null;
+	EXPECT_EQ(AssetID::null, null);
+	EXPECT_TRUE(null.isNull());
 }
 
 /*
