@@ -19,6 +19,7 @@ class ConsoleWindow : public EditorWindow
 	};
 	std::vector<CachedLog> _messages;
     size_t _listenerIndex;
+	bool _autoScroll = true;
     void displayContent() override;
 public:
     ConsoleWindow(GUI& ui, Editor& editor);

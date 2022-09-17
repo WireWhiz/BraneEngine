@@ -21,9 +21,9 @@ ConsoleWindow::ConsoleWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 
 void ConsoleWindow::displayContent()
 {
+	ImGui::Checkbox("Auto Scroll", &_autoScroll);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, {0,0,0,1});
     ImGui::BeginChild("messages");
-    //TODO autoscroll toggle
     const ImVec4 textColors[] = {
             {1,0,0,1},
             {1,1,0,1},
@@ -50,7 +50,8 @@ void ConsoleWindow::displayContent()
             ImGui::Dummy(size);
         ImGui::PopID();
     }
-    ImGui::SetScrollHereY(1.0f);
+	if(_autoScroll)
+        ImGui::SetScrollHereY(1.0f);
     ImGui::PopStyleVar();
     ImGui::PopFont();
     ImGui::PopStyleColor();
