@@ -52,6 +52,8 @@ public:
 	std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 	std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path& path);
 	std::string getAssetName(const AssetID& id);
+
+	std::vector<std::pair<AssetID, std::string>> getAssetHashes();
 };
 
 

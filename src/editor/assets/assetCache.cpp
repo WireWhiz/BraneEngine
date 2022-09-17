@@ -46,4 +46,9 @@ bool AssetCache::hasAsset(const AssetID& asset)
 	return std::filesystem::exists(getPath(asset));
 }
 
+std::string AssetCache::getAssetHash(const AssetID& asset)
+{
+	return FileManager::fileHash(getPath(asset));
+}
+
 

@@ -15,6 +15,7 @@
 #include "connection.h"
 #include "config/config.h"
 #include <shared_mutex>
+#include "robin_hood.h"
 
 class JobHandle;
 class Asset;
@@ -45,7 +46,7 @@ class NetworkManager : public Module
 	asio::ip::tcp::resolver _tcpResolver;
 
 	std::shared_mutex _serverLock;
-	std::unordered_map<std::string, std::unique_ptr<net::Connection>> _servers;
+	robin_hood::unordered_map<std::string, std::unique_ptr<net::Connection>> _servers;
 
 	std::shared_mutex _clientLock;
 	std::vector<std::unique_ptr<net::Connection>> _clients;
@@ -56,7 +57,7 @@ class NetworkManager : public Module
 	std::atomic_bool _running;
 
 	std::mutex _requestLock;
-	std::unordered_map<std::string, std::function<void(RequestCTX& ctx)> > _requestListeners;
+	robin_hood::unordered_map<std::string, std::function<void(RequestCTX& ctx)> > _requestListeners;
 
 	uint32_t _streamIDCounter = 1000;
 

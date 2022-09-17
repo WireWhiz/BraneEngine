@@ -23,6 +23,7 @@ public:
 	Asset* getAsset(const AssetID& asset);
 	void deleteCachedAsset(const AssetID& asset);
 
+	std::string getAssetHash(const AssetID& asset);
 };
 
 #endif //BRANEENGINE_ASSETCACHE_H

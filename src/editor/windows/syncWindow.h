@@ -9,6 +9,7 @@
 #include "editorWindow.h"
 #include <atomic>
 
+class Asset;
 class SyncWindow : public EditorWindow
 {
 	//Login variables
@@ -19,13 +20,21 @@ class SyncWindow : public EditorWindow
 	std::string _username;
 	std::string _password;
 	static std::string _feedbackMessage;
-	bool _saveUsername;
 	void drawSetupConnection();
 
 	//sync variables
 	static net::Connection* _syncServer;
 	void drawConnected();
 	void displayContent() override;
+
+	struct AssetDiff
+	{
+		AssetID id;
+	};
+	std::vector<AssetDiff> _assetDiffs;
+	std::atomic_int _assetDiffSynced = -1;
+	void syncAssets();
+	void updateAsset(Asset* asset);
 public:
 	SyncWindow(GUI& ui, Editor& editor);
 	static net::Connection* syncServer();

@@ -50,7 +50,7 @@ namespace net
 	{
 		_streamLock.lock();
 		assert(!_streamListeners.count(id));
-		_streamListeners.insert({id, {std::move(callback), std::move(onEnd)}});
+		_streamListeners.insert({id, std::make_pair(std::move(callback), std::move(onEnd))});
 		_streamLock.unlock();
 	}
 

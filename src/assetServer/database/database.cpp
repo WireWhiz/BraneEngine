@@ -22,7 +22,7 @@ Database::Database()
 {
 	int rc;
 	rc = sqlite3_open(Config::json()["data"]["database_path"].asCString(), &_db);
-	if( rc ){
+	if(rc){
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(_db));
 		sqlite3_close(_db);
 		throw std::runtime_error("Can't open database");
@@ -32,12 +32,10 @@ Database::Database()
 						  "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
-	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Filename FROM Assets WHERE AssetID = ?1", _db);
-	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Filename = ?4 WHERE AssetID = ?1", _db);
-	_insertAssetInfo.initialize("INSERT INTO Assets (Name, Type, Filename) VALUES (?1, ?2, ?3);", _db);
-    _moveAssets.initialize("UPDATE Assets SET Filename = ?2 || SUBSTR(Filename, LENGTH(?1), LENGTH(Filename)) WHERE Filename LIKE (?1 || '%')", _db);
+	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Hash FROM Assets WHERE AssetID = ?1", _db);
+	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Hash = ?4 WHERE AssetID = ?1", _db);
+	_insertAssetInfo.initialize("INSERT INTO Assets (AssetID, Name, Type, Hash) VALUES (?1, ?2, ?3, ?4);", _db);
 	_deleteAsset.initialize("DELETE FROM Assets WHERE AssetID = ?1", _db);
-	_fileToAssetID.initialize("SELECT AssetID FROM Assets WHERE Filename = ?1", _db);
 
 	_getAssetPermission.initialize("SELECT Level FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
 	_updateAssetPermission.initialize("INSERT INTO AssetPermissions (AssetID, UserID, Level) VALUES (?1, ?2, ?3) "
@@ -103,27 +101,27 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
 
 void Database::insertAssetInfo(AssetInfo& assetInfo)
 {
-	_insertAssetInfo.run(sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.filename);
-	_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
+	_insertAssetInfo.run(assetInfo.id, sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.hash);
+	/*_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
 		assetInfo.id = id;
-	});
+	});*/
 }
 
 AssetInfo Database::getAssetInfo(uint32_t id)
 {
 	AssetInfo asset{};
-	_getAssetInfo.run(static_cast<sqlINT>(id), [&asset](sqlINT assetID, sqlTEXT name, sqlTEXT type, sqlTEXT filename){
+	_getAssetInfo.run(static_cast<sqlINT>(id), [&asset](sqlINT assetID, sqlTEXT name, sqlTEXT type, sqlTEXT hash){
 		asset.id = assetID;
 		asset.name = std::move(name);
 		asset.type.set(type);
-		asset.filename = std::move(filename);
+		asset.hash = std::move(hash);
 	});
 	return asset;
 }
 
-void Database::insertAssetInfo(const AssetInfo& info)
+void Database::updateAssetInfo(const AssetInfo& info)
 {
-	_updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.toString(), info.filename);
+	_updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.toString(), info.hash);
 }
 
 AssetPermissionLevel Database::getAssetPermission(uint32_t assetID, uint32_t userID)
@@ -152,7 +150,6 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 		ai.id = std::stoi(columns[0].value);
 		ai.name = columns[1].value;
 		ai.type.set(columns[2].value);
-		ai.filename = columns[3].value;
 		assets.push_back(ai);
 	});
 	return assets;
@@ -227,21 +224,6 @@ std::string Database::randHex(size_t length)
 		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
 	}
 	return output.str();
-}
-
-bool Database::fileToAssetID(const std::string& path, AssetID& id)
-{
-	bool found = false;
-	_fileToAssetID.run(path, [&found, &id](sqlINT idInt){
-		id.id = idInt;
-		found = true;
-	});
-	return found;
-}
-
-void Database::moveAssets(const std::string& oldDir, const std::string& newDir)
-{
-    _moveAssets.run(oldDir, newDir);
 }
 
 std::vector<Database::AssetSearchResult> Database::searchAssets(int start, int count, std::string match,  AssetType type)

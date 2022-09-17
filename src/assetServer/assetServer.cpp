@@ -6,6 +6,7 @@
 #include "networking/networking.h"
 #include "assets/assetManager.h"
 #include "fileManager/fileManager.h"
+#include "utility/hex.h"
 
 AssetServer::AssetServer() :
 _nm(*Runtime::getModule<NetworkManager>()),
@@ -60,16 +61,7 @@ _db(*Runtime::getModule<Database>())
 		AssetID id;
 		rc.req >> id;
 		std::cout << "request for: " << id.string() << std::endl;
-
-        auto info = _db.getAssetInfo(id.id);
-        if(info.filename.empty())
-        {
-            rc.code = net::ResponseCode::denied;
-            rc.res << std::string("asset not found");
-            return;
-        }
-        SerializedData serializedAsset;
-        _fm.readFile(fullAssetPath(info.filename), rc.responseData.vector());
+        _fm.readFile(assetPath(id), rc.responseData.vector());
 	});
 
 	_nm.addRequestListener("incrementalAsset", [this](auto& rc){
@@ -113,64 +105,7 @@ _db(*Runtime::getModule<Database>())
 
 	});
 
-    _nm.addRequestListener("searchAssets", [this](auto& rc){
-        auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-        std::string match;
-        int start;
-        int count;
-        AssetType type;
-        rc.req >> start >> count >> match >> type;
-
-        auto results = _db.searchAssets(start, count, match, type);
-        rc.res << static_cast<uint32_t>(results.size());
-        std::string serverAddress = Config::json()["network"]["domain"].asString();
-        for(auto& r : results)
-        {
-            AssetID id(serverAddress, r.id);
-            rc.res << id << r.name << r.type;
-        }
-
-    });
-
-	_nm.addRequestListener("saveAsset",[this](auto& rc){
-		auto ctx = getContext(rc.sender);
-		if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-		std::string assetPath;       //desired asset path
-        rc.req >> assetPath;
-
-		if(!checkAssetPath(assetPath))
-		{
-            rc.code = net::ResponseCode::denied;
-			return;
-		}
-        Asset* asset = Asset::deserializeUnknown(rc.req);
-		std::string fullPath = fullAssetPath(assetPath + "/" + asset->name + "." + asset->type.toString());
-
-
-        if(asset->id.serverAddress.empty())
-        {
-            AssetInfo info{};
-            info.name = asset->name;
-            info.type = asset->type;
-            info.filename = assetPath + asset->name + "." + asset->type.toString();
-            _db.insertAssetInfo(info);
-            asset->id.id = info.id;
-            asset->id.serverAddress = Config::json()["network"]["domain"].asString();
-        }
-        _fm.writeAsset(asset, fullPath);
-        rc.res << asset->id;
-	});
-
-    _nm.addRequestListener("updateAsset",[this](auto& rc){
+    _nm.addRequestListener("updateAsset", [this](auto& rc){
         auto ctx = getContext(rc.sender);
         if(!validatePermissions(ctx, {"edit assets"}))
         {
@@ -178,119 +113,58 @@ _db(*Runtime::getModule<Database>())
             return;
         }
         Asset* asset = Asset::deserializeUnknown(rc.req);
+
         auto assetInfo = _db.getAssetInfo(asset->id.id);
 
-        if(assetInfo.filename.empty())
-        {
-            rc.code = net::ResponseCode::denied;
-            rc.res << "Could not find asset";
-            return;
-        }
+	    auto path = assetPath(asset->id);
+		bool assetExists = true;
+		if(assetInfo.hash.empty())
+		{
+			assetExists = false;
+		}
 
-        std::string fullPath = fullAssetPath(assetInfo.filename);
-        _fm.writeAsset(asset, fullPath);
+        _fm.writeAsset(asset, path);
+		assetInfo.id = asset->id.id;
+	    assetInfo.name = asset->name;
+	    assetInfo.type = asset->type;
+	    assetInfo.hash = FileManager::fileHash(path);
+
+		if(assetExists)
+			_db.updateAssetInfo(assetInfo);
+		else
+			_db.insertAssetInfo(assetInfo);
+
         rc.res << asset->id;
     });
 
-	addDirectoryRequestListeners();
+	_nm.addRequestListener("getAssetDiff", [this](auto& rc)
+	{
+		auto ctx = getContext(rc.sender);
+		if(!validatePermissions(ctx, {"edit assets"}))
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		uint32_t hashCount;
+		rc.req >> hashCount;
+		std::vector<std::pair<AssetID, std::string>> hashes(hashCount);
+		for(uint32_t h = 0; h < hashCount; ++h)
+			rc.req >> hashes[h].first >> hashes[h].second;
+
+		std::vector<AssetID> assetsWithDiff;
+		for(auto& h : hashes)
+		{
+			if(h.first.serverAddress != "")
+				continue;
+			auto info = _db.getAssetInfo(h.first.id);
+			if(info.hash != h.second)
+				assetsWithDiff.push_back(h.first);
+		}
+
+		rc.res << assetsWithDiff;
+	});
+
 	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
-}
-
-
-void AssetServer::addDirectoryRequestListeners()
-{
-	_nm.addRequestListener("directoryContents", [this](auto& rc){
-		auto ctx = getContext(rc.sender);
-		if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-		std::string dirPath;
-		rc.req>> dirPath;
-		if(!checkAssetPath(dirPath))
-		{
-            rc.code = net::ResponseCode::denied;
-			return;
-		}
-		auto contents = _fm.getDirectoryContents(fullAssetPath(dirPath));
-        rc.res << contents.directories << static_cast<uint16_t>(contents.files.size());
-		for(auto& f : contents.files)
-		{
-            rc.res << f;
-			AssetID id;
-			bool isAsset = _db.fileToAssetID(dirPath + f, id);
-            rc.res << isAsset;
-			if(isAsset)
-			{
-				id.serverAddress = Config::json()["network"]["domain"].asString();
-                rc.res << id;
-			}
-		}
-	});
-
-	_nm.addRequestListener("createDirectory", [this](auto& rc){
-		auto ctx = getContext(rc.sender);
-		if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-		std::string dirPath;
-		rc.req>> dirPath;
-		if(!checkAssetPath(dirPath))
-		{
-            rc.code = net::ResponseCode::denied;
-			return;
-		}
-		_fm.createDirectory(fullAssetPath(dirPath));
-	});
-
-	_nm.addRequestListener("moveDirectory", [this](auto& rc){
-		auto ctx = getContext(rc.sender);
-		if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-		std::string dirSrc, dirDest;
-		rc.req>> dirSrc >> dirDest;
-		if(!checkAssetPath(dirSrc) || !checkAssetPath(dirDest))
-		{
-            rc.code = net::ResponseCode::denied;
-			return;
-		}
-		_fm.moveFile(fullAssetPath(dirSrc), fullAssetPath(dirDest));
-        _db.moveAssets(dirSrc, dirDest);
-	});
-
-	_nm.addRequestListener("deleteFile", [this](auto& rc){
-		auto ctx = getContext(rc.sender);
-		if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-		std::string dirPath;
-		rc.req >> dirPath;
-		if(!checkAssetPath(dirPath))
-		{
-            rc.code = net::ResponseCode::denied;
-			return;
-		}
-		bool notRoot = false;
-		for (char c : dirPath)
-		{
-			if(std::isalpha(c) || std::isdigit(c))
-			{
-				notRoot = true;
-				break;
-			}
-		}
-		if(notRoot)
-			_fm.deleteFile(fullAssetPath(dirPath));
-		rc.res << notRoot;
-	});
 }
 
 void AssetServer::processMessages()
@@ -329,11 +203,12 @@ AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool increm
 {
 	AsyncData<Asset*> asset;
 	auto info = _db.getAssetInfo(id.id);
-	if(info.filename.empty())
+	std::filesystem::path path = assetPath(id);
+	if(!std::filesystem::exists(path))
 		asset.setError("Asset not found");
 	else
 	{
-		_fm.async_readUnknownAsset(fullAssetPath(info.filename)).then([this, asset, id](Asset* data){
+		_fm.async_readUnknownAsset(path).then([this, asset, id](Asset* data){
 			if(data)
 				asset.setData(data);
 			else
@@ -361,7 +236,7 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
 {
 	if(ctx.userID == 1)
 		return true; //Admin has all permissions;
-	for(auto p : permissions)
+	for(auto& p : permissions)
 	{
 		if(!ctx.permissions.count(p))
 			return false;
@@ -369,25 +244,9 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
 	return true;
 }
 
-bool AssetServer::checkAssetPath(const std::string& path)
+std::filesystem::path AssetServer::assetPath(const AssetID& id)
 {
-	return path.find('.') == std::string::npos;
-}
-
-std::string AssetServer::fullAssetPath(const std::string& suffix)
-{
-    std::string combined = Config::json()["data"]["asset_path"].asString() + "/" + suffix;
-    std::string output;
-    output.reserve(combined.size());
-    char lastChar = '\0';
-    for(char c : combined)
-    {
-        if(c != '/' || lastChar != '/')
-            output += c;
-        lastChar = c;
-    }
-
-    return output;
+    return std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (toHex(id.id) + ".bin");
 }
 
 //The asset server specific fetch asset function
@@ -408,12 +267,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 
 	auto* nm = Runtime::getModule<NetworkManager>();
 	auto* fm = Runtime::getModule<FileManager>();
-	auto* db = Runtime::getModule<Database>();
-	auto info = db->getAssetInfo(id.id);
-	if(!info.filename.empty())
+
+	auto path = std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (toHex(id.id) + ".bin");
+	if(!std::filesystem::exists(path))
 	{
-		std::string fullPath = Config::json()["data"]["asset_path"].asString() + "/" + info.filename;
-		fm->async_readUnknownAsset(fullPath).then([this, asset](Asset* ptr) {
+		fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
 			std::scoped_lock lock(_assetLock);
 			auto& d = _assets.at(ptr->id);
 			d->asset = std::unique_ptr<Asset>(ptr);

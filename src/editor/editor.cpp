@@ -19,6 +19,8 @@
 #include "assets/assetManager.h"
 #include "graphics/material.h"
 #include "graphics/graphics.h"
+#include "assets/types/materialAsset.h"
+#include "assets/types/shaderAsset.h"
 #include "networking/networking.h"
 #include "assets/editorAsset.h"
 #include "fileManager/fileWatcher.h"
@@ -169,8 +171,19 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 	AssetID id = asset->json()["id"].asString();
 	_cache.deleteCachedAsset(id);
 	Asset* newAsset = asset->buildAsset(id);
-	Runtime::getModule<AssetManager>()->reloadAsset(newAsset);
+	auto* am = Runtime::getModule<AssetManager>();
+	am->reloadAsset(newAsset);
 	delete newAsset;
+
+	switch(asset->type().type())
+	{
+		case AssetType::material:
+			Runtime::getModule<graphics::VulkanRuntime>()->reloadMaterial(am->getAsset<MaterialAsset>(id));
+			break;
+		case AssetType::shader:
+
+			break;
+	}
 }
 
 //The editor specific fetch asset function

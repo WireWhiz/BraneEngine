@@ -327,3 +327,20 @@ std::string BraneProject::getAssetName(const AssetID& id)
 		return "null";
 	return std::filesystem::path{_file["assets"][id.string()]["path"].asString()}.stem().string();
 }
+
+std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
+{
+	std::vector<std::pair<AssetID, std::string>> hashes;
+	auto ids = _file["assets"].getMemberNames();
+	for(auto& idStr : ids)
+	{
+		AssetID id = idStr;
+		if(!_editor.cache().hasAsset(id))
+		{
+			auto editorAsset = getEditorAsset(id);
+			_editor.cache().cacheAsset(editorAsset->buildAsset(id));
+		}
+		hashes.emplace_back(id, _editor.cache().getAssetHash(id));
+	}
+	return hashes;
+}

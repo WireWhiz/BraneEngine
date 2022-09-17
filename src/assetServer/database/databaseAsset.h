@@ -22,9 +22,9 @@ enum class AssetPermissionLevel
 struct AssetInfo
 {
 	uint32_t id;
-	std::string filename;
 	std::string name;
 	AssetType type;
+	std::string hash;
 };
 
 

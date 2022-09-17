@@ -4,7 +4,6 @@
 #include <asio/ts/internet.hpp>
 #include <asio/ssl.hpp>
 
-
 #include "message.h"
 #include <cstdint>
 #include <memory>
@@ -13,6 +12,7 @@
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>
 #include <shared_mutex>
+#include "robin_hood.h"
 
 namespace net
 {
@@ -45,10 +45,10 @@ namespace net
         AsyncQueue<OMessage> _obuffer;
 		AsyncQueue<IMessage> _ibuffer;
 		std::shared_mutex _streamLock;
-		std::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>> _streamListeners;
+		robin_hood::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>> _streamListeners;
 		uint32_t _reqIDCounter = 1000;
 		std::shared_mutex _responseLock;
-		std::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
+		robin_hood::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
 		IMessage _tempIn;
         std::function<void(Connection* connection, IMessage&& message)> _requestHandler;
 
