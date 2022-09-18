@@ -34,6 +34,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 		Runtime::log("Extracting shader attributes for " + name());
 		ShaderCompiler::ShaderAttributes attributes;
 		std::string glsl;
+		std::filesystem::path dir = std::filesystem::path{source}.remove_filename();
+		_project.editor().shaderCompiler().includeDir(dir.string());
 		if(FileManager::readFile(source, glsl) && _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), attributes))
 		{
 			Json::Value atr;
@@ -74,6 +76,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
 		}
 		else
 			Runtime::error("Failed extract attributes");
+
+		_project.editor().shaderCompiler().removeIncludeDir(dir.string());
 	}
 	save();
 }
@@ -101,11 +105,14 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 		return nullptr;
 	}
 	auto& compiler = _project.editor().shaderCompiler();
+	compiler.includeDir(source.remove_filename().string());
 	if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv))
 	{
 		delete shader;
+		compiler.removeIncludeDir(source.remove_filename().string());
 		return nullptr;
 	}
+	compiler.removeIncludeDir(source.remove_filename().string());
 
 	ShaderCompiler::ShaderAttributes attributes;
 	compiler.extractAttributes(shaderCode, shader->shaderType, attributes);

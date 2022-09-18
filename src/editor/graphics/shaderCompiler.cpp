@@ -3,9 +3,16 @@
 //
 
 #include "shaderCompiler.h"
+#include <filesystem>
 #include "assets/types/shaderAsset.h"
 #include "runtime/runtime.h"
 #include "spirv-cross/spirv_cross.hpp"
+#include "shaderc/glslc/src/file_includer.h"
+
+ShaderCompiler::ShaderCompiler()
+{
+	includeDir((std::filesystem::current_path() / "defaultAssets" / "shaders").string());
+}
 
 bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, bool optimize)
 {
@@ -38,6 +45,7 @@ bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std
 	options.SetSourceLanguage(shaderc_source_language_glsl);
 	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
 	options.SetTargetSpirv(shaderc_spirv_version_1_5);
+	options.SetIncluder(std::make_unique<glslc::FileIncluder>(&_fileFinder));
 
 	auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
@@ -151,3 +159,15 @@ bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shade
 
 	return true;
 }
+
+void ShaderCompiler::includeDir(const std::string& path)
+{
+	_fileFinder.search_path().push_back(path);
+}
+
+void ShaderCompiler::removeIncludeDir(const std::string& path)
+{
+	auto& dirs = _fileFinder.search_path();
+	dirs.erase(std::remove(dirs.begin(), dirs.end(), path), dirs.end());
+}
+

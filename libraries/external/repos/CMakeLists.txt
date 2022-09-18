@@ -64,4 +64,5 @@ target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include
         ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include
         ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc_util/include
         ${CMAKE_CURRENT_SOURCE_DIR})
