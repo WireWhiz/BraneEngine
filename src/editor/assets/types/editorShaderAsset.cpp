@@ -143,3 +143,33 @@ ShaderType EditorShaderAsset::shaderType() const
 	Runtime::error("Unknown shader file extension: " + ext.string());
 	return ShaderType::compute;
 }
+
+void EditorShaderAsset::createDefaultSource(ShaderType type)
+{
+	std::filesystem::path path = _file;
+	path.remove_filename();
+
+	std::filesystem::path source = std::filesystem::current_path() / "defaultAssets" / "shaders";
+	switch(type)
+	{
+		case ShaderType::vertex:
+			path /= name() + ".vert";
+			source /= "default.vert";
+			break;
+		case ShaderType::fragment:
+			path /= name() + ".frag";
+			source /= "default.frag";
+			break;
+		default:
+			Runtime::warn("Tried to create unimplemented shader type");
+			return;
+	}
+	std::error_code ec;
+	std::filesystem::copy_file(source, path, ec);
+	if(ec)
+	{
+		Runtime::error("Could not copy default shader code: " + ec.message());
+		return;
+	}
+	updateSource(path);
+}

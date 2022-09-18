@@ -174,6 +174,11 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 	if(!am->hasAsset(id))
 		return;
 	Asset* newAsset = asset->buildAsset(id);
+	if(!newAsset)
+	{
+		Runtime::error("Could not reload asset " + id.string() + "!");
+		return;
+	}
 	am->reloadAsset(newAsset);
 	delete newAsset;
 
@@ -181,7 +186,12 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 	{
 		case AssetType::material:
 		case AssetType::shader:
-			Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(am->getAsset<Asset>(id));
+			am->fetchAsset<Asset>(id).then([&am](Asset* asset){
+				//Manually fetch dependencies, since it skips that step if an asset is already fully loaded
+				am->fetchDependencies(asset, [asset](){
+					Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+				});
+			});
 			break;
 	}
 }

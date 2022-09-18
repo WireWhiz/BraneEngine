@@ -11,6 +11,7 @@
 #include "assets/assetID.h"
 #include <filesystem>
 #include <vector>
+#include <atomic>
 
 class BraneProject;
 class AssetSearchWidget

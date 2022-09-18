@@ -41,7 +41,6 @@ private:
 
 	//To account for different ways of fetching assets for different build targets, this function is defined multiple times
 	AsyncData<Asset*> fetchAssetInternal(const AssetID& id, bool incremental);
-	void fetchDependencies(Asset* asset, std::function<void()> callback);
 	void onAssetLoaded(Asset* asset);
 public:
 	AssetManager();
@@ -70,7 +69,7 @@ public:
 	void reloadAsset(Asset* asset);
 	bool hasAsset(const AssetID& id);
 
-
+	void fetchDependencies(Asset* asset, std::function<void()> callback);
     bool dependenciesLoaded(const Asset* asset) const;
 
 	static const char* name();

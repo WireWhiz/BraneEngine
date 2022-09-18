@@ -16,6 +16,7 @@
 #include "editor/editorEvents.h"
 #include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/editorShaderAsset.h"
 
 class CreateDirectoryPopup : public GUIPopup
 {
@@ -43,10 +44,24 @@ class CreateAssetPopup : public GUIPopup
 	AssetBrowserWidget& _widget;
 	AssetType _type;
 	std::string _assetName;
+
+	ShaderType _shaderType = ShaderType::fragment;
 	void drawBody() override
 	{
 		ImGui::Text("New %s:", _type.toString().c_str());
 		bool enter = ImGui::InputText("##name", &_assetName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+		if(_type == AssetType::shader)
+		{
+			const char* shaderTypes[] = {"null", "vertex", "fragment"};
+			if(ImGui::BeginCombo("Shader Type", shaderTypes[(uint8_t)_shaderType]))
+			{
+				if(ImGui::Selectable("fragment"))
+					_shaderType = ShaderType::fragment;
+				if(ImGui::Selectable("vertex"))
+					_shaderType = ShaderType::vertex;
+				ImGui::EndCombo();
+			}
+		}
 		if(enter || ImGui::Button("create"))
 		{
 			ImGui::CloseCurrentPopup();
@@ -56,6 +71,11 @@ class CreateAssetPopup : public GUIPopup
 			{
 				case AssetType::material:
 					asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"), editor->project());
+					break;
+				case AssetType::shader:
+					auto* shader = new EditorShaderAsset(_widget.currentDirectory() / (_assetName + ".shader"), editor->project());
+					shader->createDefaultSource(_shaderType);
+					asset = shader;
 					break;
 			}
 			if(!asset)
@@ -226,6 +246,8 @@ void AssetBrowserWidget::displayFiles()
 					_ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
 				if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
 					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
+				if(ImGui::Selectable(ICON_FA_FIRE " Shader"))
+					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::shader));
 				ImGui::EndMenu();
 			}
 			if(ImGui::Selectable(ICON_FA_FOLDER "Open File Browser"))

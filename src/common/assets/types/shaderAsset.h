@@ -4,13 +4,13 @@
 #include <vector>
 #include "utility/enumNameMap.h"
 
-enum class ShaderType
+enum class ShaderType : uint8_t
 {
-	null,
-	vertex,
-	fragment,
-	geometry,
-	compute
+	null     = 0,
+	vertex   = 1,
+	fragment = 2,
+	geometry = 3,
+	compute  = 4
 };
 
 struct ShaderVariableData
