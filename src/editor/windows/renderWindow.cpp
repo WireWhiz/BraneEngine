@@ -217,11 +217,41 @@ void RenderWindow::displayContent()
             if(_panning)
             {
                 ImVec2 mousePos = ImGui::GetMousePos();
-                rotation.x += (mousePos.y - _lastMousePos.y);
-                rotation.y += (mousePos.x - _lastMousePos.x);
+	            auto rq = rotationQuat();
+				if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
+				{
+					rotation.x += (mousePos.y - _lastMousePos.y);
+					rotation.y += (mousePos.x - _lastMousePos.x);
+					glm::vec3 movementVec{};
+					if(ImGui::IsKeyDown(ImGuiKey_W))
+						movementVec.z += 1;
+					if(ImGui::IsKeyDown(ImGuiKey_S))
+						movementVec.z -= 1;
+					if(ImGui::IsKeyDown(ImGuiKey_A))
+						movementVec.x -= 1;
+					if(ImGui::IsKeyDown(ImGuiKey_D))
+						movementVec.x += 1;
+					if(ImGui::IsKeyDown(ImGuiKey_Q))
+						movementVec.y -= 1;
+					if(ImGui::IsKeyDown(ImGuiKey_E))
+						movementVec.y += 1;
+					//TODO use delta time
+					position += rq * movementVec * (1.0f / 144.0f);
+				}
+				else
+				{
+					float mpp = (std::tan((3.14159f / 180.0f * _renderer->fov) / 2) * -zoom * 2) / _windowSize.height;
+					position += rq * glm::vec3{0.0f, (mousePos.y - _lastMousePos.y) * mpp, 0.0f};
+					position += rq * glm::vec3{-(mousePos.x - _lastMousePos.x) * mpp, 0.0f, 0.0f};
+				}
                 _lastMousePos = ImGui::GetMousePos();
             }
         }
+		if(ImGui::IsWindowHovered())
+		{
+			if(ImGui::IsKeyPressed(ImGuiKey_F) && (em->entityExists(_focusedEntity)))
+				position = em->getComponent<Transform>(_focusedEntity)->value[3];
+		}
         auto* em = Runtime::getModule<EntityManager>();
         if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
         {
