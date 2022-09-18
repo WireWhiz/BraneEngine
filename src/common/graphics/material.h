@@ -36,7 +36,10 @@ namespace graphics
 		void buildDescriptorSetVars(SwapChain* swapChain);
 	public:
         Material(MaterialAsset* asset, VulkanRuntime* vkr);
+		Material(const Material&) = delete;
+		Material(Material&&);
 		~Material();
+		Material& operator=(Material&&);
 		void addBinding(uint32_t binding, uint32_t stride);
 		void addAttribute(uint32_t binding, VkFormat format, uint32_t offset);
 		void buildPipelineLayout(SwapChain* swapChain);
@@ -52,6 +55,8 @@ namespace graphics
 		VkDescriptorPool descriptorPool();
 		VkDescriptorSet const* descriptorSet(size_t frame) const;
         MaterialAsset* asset() const;
+		Shader* vertexShader() const;
+		Shader* fragmentShader() const;
 		
 	};
 

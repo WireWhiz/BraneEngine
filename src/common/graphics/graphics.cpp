@@ -18,7 +18,7 @@
 #include "shader.h"
 #include "assets/types/shaderAsset.h"
 #include "assets/types/materialAsset.h"
-
+#include "sceneRenderer.h"
 
 namespace graphics
 {
@@ -26,6 +26,8 @@ namespace graphics
     {
         while(!_newAssets.empty())
             processAsset(_newAssets.pop_front());
+	    while(!_reloadAssets.empty())
+		    reloadAsset(_reloadAssets.pop_front(), false);
 		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
 			return;
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
@@ -505,4 +507,76 @@ namespace graphics
                 assert(false);
         }
     }
+
+
+	void VulkanRuntime::reloadShader(ShaderAsset* shader)
+	{
+		vkDeviceWaitIdle(device());
+		for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
+		{
+			if((*s)->asset() == shader)
+			{
+				shader->runtimeID = s.index();
+				*(*s) = std::move(Shader(shader));
+
+				for(auto & m : _materials)
+				{
+					if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get())
+					{
+						(*m) = Material(m->asset(), this);
+						for(auto& r : _renderers)
+						{
+							auto sr = dynamic_cast<SceneRenderer*>(r.get());
+							if(sr)
+								sr->reloadMaterial(m.get());
+						}
+					}
+				}
+				break;
+			}
+		}
+	}
+
+	void VulkanRuntime::reloadMaterial(MaterialAsset* material)
+	{
+		vkDeviceWaitIdle(device());
+		for(auto m = _materials.begin(); m != _materials.end(); ++m)
+		{
+			if((*m)->asset() == material)
+			{
+				material->runtimeID = m.index();
+				*(*m) = Material(material, this);
+				for(auto& r : _renderers)
+				{
+					auto sr = dynamic_cast<SceneRenderer*>(r.get());
+					if(sr)
+						sr->reloadMaterial((*m).get());
+				}
+				break;
+			}
+		}
+	}
+
+	void VulkanRuntime::reloadAsset(Asset* graphicalAsset, bool async)
+	{
+		if(async)
+		{
+			_reloadAssets.push_back(graphicalAsset);
+			return;
+		}
+		switch(graphicalAsset->type.type())
+		{
+			case AssetType::shader:
+				reloadShader((ShaderAsset*)graphicalAsset);
+				break;
+			case AssetType::material:
+				reloadMaterial((MaterialAsset*)graphicalAsset);
+				break;
+			default:
+				Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' cannot be reloaded by the graphics runtime");
+				assert(false);
+		}
+	}
+
+
 }

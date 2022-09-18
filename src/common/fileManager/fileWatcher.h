@@ -18,7 +18,7 @@ class FileWatcher
 public:
 	void watchDirectory(const std::filesystem::path& directory);
 	void addFileWatcher(const std::string& ext, std::function<void(const std::filesystem::path& file)> callback);
-	void scanForChanges();
+	void scanForChanges(bool callbacks = true);
 };
 
 

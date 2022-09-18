@@ -39,6 +39,8 @@ namespace graphics{
 		void render(VkCommandBuffer cmdBuffer) override;
         glm::mat4 transformMatrix() const;
         glm::mat4 perspectiveMatrix() const;
+
+		void reloadMaterial(Material* material);
 	};
 }
 

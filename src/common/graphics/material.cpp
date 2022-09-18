@@ -37,13 +37,70 @@ namespace graphics
 		initialize(vkr->swapChain()->size());
 	}
 
+	Material::Material(Material&& o)
+	{
+		_asset = o._asset;
+
+		_geometryShader = o._geometryShader;
+		_vertexShader = o._vertexShader;
+		_fragmentShader = o._fragmentShader;
+
+		_textures = std::move(o._textures);
+		_bindings = std::move(o._bindings);
+		_attributes = std::move(o._attributes);
+		_transformBuffers = std::move(o._transformBuffers);
+		_descriptorSets = std::move(_descriptorSets);
+		_component = o._component;
+
+		_descriptorSetLayout = o._descriptorSetLayout;
+		_descriptorPool = o._descriptorPool;
+		_pipelineLayout = o._pipelineLayout;
+		o._descriptorSetLayout = VK_NULL_HANDLE;
+		o._descriptorPool = VK_NULL_HANDLE;
+		o._pipelineLayout = VK_NULL_HANDLE;
+	}
+
     Material::~Material()
     {
-        vkDestroyDescriptorSetLayout(device->get(), _descriptorSetLayout, nullptr);
-        vkDestroyDescriptorPool(device->get(), _descriptorPool, nullptr);
+		if(_pipelineLayout)
+		{
+			vkDestroyDescriptorSetLayout(device->get(), _descriptorSetLayout, nullptr);
+			vkDestroyDescriptorPool(device->get(), _descriptorPool, nullptr);
 
-        vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
+			vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
+		}
     }
+
+	Material& Material::operator=(Material&& o)
+	{
+		if(_pipelineLayout)
+		{
+			vkDestroyDescriptorSetLayout(device->get(), _descriptorSetLayout, nullptr);
+			vkDestroyDescriptorPool(device->get(), _descriptorPool, nullptr);
+
+			vkDestroyPipelineLayout(device->get(), _pipelineLayout, nullptr);
+		}
+		_asset = o._asset;
+
+		_geometryShader = o._geometryShader;
+		_vertexShader = o._vertexShader;
+		_fragmentShader = o._fragmentShader;
+
+		_textures = std::move(o._textures);
+		_bindings = std::move(o._bindings);
+		_attributes = std::move(o._attributes);
+		_transformBuffers = std::move(o._transformBuffers);
+		_descriptorSets = std::move(o._descriptorSets);
+		_component = o._component;
+
+		_descriptorSetLayout = o._descriptorSetLayout;
+		_descriptorPool = o._descriptorPool;
+		_pipelineLayout = o._pipelineLayout;
+		o._descriptorSetLayout = VK_NULL_HANDLE;
+		o._descriptorPool = VK_NULL_HANDLE;
+		o._pipelineLayout = VK_NULL_HANDLE;
+		return *this;
+	}
 
 	void Material::buildDescriptorSetVars(SwapChain* swapChain)
 	{
@@ -157,8 +214,10 @@ namespace graphics
 
         buildDescriptorSetVars(swapChain);
 	}
+
     VkPipeline Material::pipeline(SceneRenderer* renderer) const
     {
+
 	    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 	    if (_geometryShader != nullptr)
 		    shaderStages.push_back(_geometryShader->stageInfo());
@@ -339,8 +398,6 @@ namespace graphics
 			}
 		}
 
-
-
 		for (size_t i = 0; i < swapChainSize; i++)
 		{
 			std::vector<VkWriteDescriptorSet> descriptorWrites;
@@ -466,5 +523,15 @@ namespace graphics
 		instanceDataSet.pBufferInfo = &instanceDataInfo;
 
 		vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
+	}
+
+	Shader* Material::vertexShader() const
+	{
+		return _vertexShader;
+	}
+
+	Shader* Material::fragmentShader() const
+	{
+		return _fragmentShader;
 	}
 }

@@ -155,48 +155,38 @@ void BraneProject::initLoaded()
 		std::filesystem::path assetPath = path;
 		assetPath.replace_extension(".shader");
 
-		bool isOpen = false;
-		EditorShaderAsset* shaderAsset;
-		if(_openAssets.count(assetPath.string()))
-		{
-			shaderAsset = (EditorShaderAsset*)_openAssets.at(assetPath.string()).get();
-			isOpen = true;
-		}
-		else
-			shaderAsset = new EditorShaderAsset(assetPath, *this);
+		bool isOpen = _openAssets.count(assetPath.string());
+		if(!isOpen)
+			_openAssets.insert({assetPath.string(), std::make_shared<EditorShaderAsset>(assetPath, *this)});
+		std::shared_ptr<EditorShaderAsset> shaderAsset = std::dynamic_pointer_cast<EditorShaderAsset>(_openAssets.at(assetPath.string()));
 
 		shaderAsset->updateSource(path);
 
-		registerAssetLocation(shaderAsset);
-		_editor.cache().deleteCachedAsset(shaderAsset->json()["id"].asString());
+		registerAssetLocation(shaderAsset.get());
+		_editor.reloadAsset(shaderAsset);
 
 		if(!isOpen)
-			delete shaderAsset;
+			_openAssets.erase(assetPath.string());
 	});
 	_fileWatcher->addFileWatcher(".frag", [this](const std::filesystem::path& path){
 		Runtime::log("loading vertex shader: " + path.string());
 		std::filesystem::path assetPath = path;
 		assetPath.replace_extension(".shader");
 
-		bool isOpen = false;
-		EditorShaderAsset* shaderAsset;
-		if(_openAssets.count(assetPath.string()))
-		{
-			shaderAsset = (EditorShaderAsset*)_openAssets.at(assetPath.string()).get();
-			isOpen = true;
-		}
-		else
-			shaderAsset = new EditorShaderAsset(assetPath, *this);
+		bool isOpen = _openAssets.count(assetPath.string());
+		if(!isOpen)
+			_openAssets.insert({assetPath.string(), std::make_shared<EditorShaderAsset>(assetPath, *this)});
+		std::shared_ptr<EditorShaderAsset> shaderAsset = std::dynamic_pointer_cast<EditorShaderAsset>(_openAssets.at(assetPath.string()));
 
 		shaderAsset->updateSource(path);
 
-		registerAssetLocation(shaderAsset);
-		_editor.cache().deleteCachedAsset(shaderAsset->json()["id"].asString());
+		registerAssetLocation(shaderAsset.get());
+		_editor.reloadAsset(shaderAsset);
 
 		if(!isOpen)
-			delete shaderAsset;
+			_openAssets.erase(assetPath.string());
 	});
-	_fileWatcher->scanForChanges();
+	_fileWatcher->scanForChanges(false);
 	_loaded = true;
 }
 

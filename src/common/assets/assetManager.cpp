@@ -169,19 +169,16 @@ void AssetManager::reloadAsset(Asset* asset)
 	switch(asset->type.type())
 	{
 		case AssetType::mesh:
-			*dynamic_cast<MeshAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<MeshAsset*>(asset));
-			// TODO have this trigger a reload in the graphics module if it exists
+			*(MeshAsset*)(_assets.at(asset->id)->asset.get()) = *(MeshAsset*)(asset);
 			break;
 		case AssetType::shader:
-			*dynamic_cast<ShaderAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<ShaderAsset*>(asset));
-			// TODO have this trigger a reload in the graphics module if it exists
+			*(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = *(ShaderAsset*)(asset);
 			break;
 		case AssetType::material:
-			*dynamic_cast<MaterialAsset*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<MaterialAsset*>(asset));
-			// TODO have this trigger a reload in the graphics module if it exists
+			*(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = *(MaterialAsset*)(asset);
 			break;
 		case AssetType::assembly:
-			*dynamic_cast<Assembly*>(_assets.at(asset->id)->asset.get()) = std::move(*dynamic_cast<Assembly*>(asset));
+			*(Assembly*)(_assets.at(asset->id)->asset.get()) = *(Assembly*)(asset);
 			break;
 		default:
 			Runtime::warn("Assembly manager attempted to reload asset of type " + asset->type.toString() + " but currently it isn't supported");

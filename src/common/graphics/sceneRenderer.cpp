@@ -195,4 +195,14 @@ namespace graphics{
 		buffer.setData(static_cast<uint32_t>(lights.size()), 0);
 		buffer.setData(lights, 16);
 	}
+
+	void SceneRenderer::reloadMaterial(Material* material)
+	{
+		auto pipeline = _cachedPipelines.find(material);
+		if(pipeline != _cachedPipelines.end())
+		{
+			vkDestroyPipeline(graphics::device->get(), pipeline->second, nullptr);
+			_cachedPipelines.erase(pipeline);
+		}
+	}
 }

@@ -36,6 +36,7 @@ namespace graphics
 		std::vector<VkCommandBuffer> _drawBuffers;
 
         AsyncQueue<Asset*> _newAssets;
+		AsyncQueue<Asset*> _reloadAssets;
         staticIndexVector<std::unique_ptr<Shader>> _shaders;
 		staticIndexVector<std::unique_ptr<Material>> _materials;
 		staticIndexVector<std::unique_ptr<Texture>> _textures;
@@ -97,8 +98,13 @@ namespace graphics
         size_t addMaterial(MaterialAsset* material);
         size_t addMesh(MeshAsset* mesh);
 
+		void reloadShader(ShaderAsset* shader);
+		void reloadMaterial(MaterialAsset* material);
+
         // Add asset may be called from any thread
         void addAsset(Asset* graphicalAsset);
+		void reloadAsset(Asset* graphicalAsset, bool async = true);
+
         const staticIndexVector<std::unique_ptr<Material>>& materials();
         Shader* getShader(size_t runtimeID);
 

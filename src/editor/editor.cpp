@@ -170,18 +170,18 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
 	AssetID id = asset->json()["id"].asString();
 	_cache.deleteCachedAsset(id);
-	Asset* newAsset = asset->buildAsset(id);
 	auto* am = Runtime::getModule<AssetManager>();
+	if(!am->hasAsset(id))
+		return;
+	Asset* newAsset = asset->buildAsset(id);
 	am->reloadAsset(newAsset);
 	delete newAsset;
 
 	switch(asset->type().type())
 	{
 		case AssetType::material:
-			Runtime::getModule<graphics::VulkanRuntime>()->reloadMaterial(am->getAsset<MaterialAsset>(id));
-			break;
 		case AssetType::shader:
-
+			Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(am->getAsset<Asset>(id));
 			break;
 	}
 }

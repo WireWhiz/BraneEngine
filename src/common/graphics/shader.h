@@ -15,7 +15,11 @@ namespace graphics
         VkShaderModule _shader;
 	public:
         Shader(ShaderAsset* asset);
+		Shader(const Shader&) = delete;
+		Shader(Shader&&);
+		Shader& operator=(Shader&&);
 		~Shader();
+		ShaderAsset* asset() const;
 		VkShaderModule get();
 		VkShaderStageFlagBits type();
 		VkPipelineShaderStageCreateInfo stageInfo();

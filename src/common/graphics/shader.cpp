@@ -16,10 +16,30 @@ namespace graphics
             throw std::runtime_error("Could not create shader module!");
         }
     }
+
+	Shader::Shader(Shader&& o)
+	{
+		_asset = o._asset;
+		_shader = o._shader;
+		o._shader = VK_NULL_HANDLE;
+	}
+
     Shader::~Shader()
 	{
-		vkDestroyShaderModule(device->get(), _shader, nullptr);
+		if(_shader)
+			vkDestroyShaderModule(device->get(), _shader, nullptr);
 	}
+
+	Shader& Shader::operator=(Shader&& o)
+	{
+		if(_shader)
+			vkDestroyShaderModule(device->get(), _shader, nullptr);
+		_asset = o._asset;
+		_shader = o._shader;
+		o._shader = VK_NULL_HANDLE;
+		return *this;
+	}
+
     VkShaderModule Shader::get()
 	{
 		return _shader;
@@ -38,6 +58,11 @@ namespace graphics
 		shaderStageInfo.pName = "main";
 
 		return shaderStageInfo;
+	}
+
+	ShaderAsset* Shader::asset() const
+	{
+		return _asset;
 	}
 
 }

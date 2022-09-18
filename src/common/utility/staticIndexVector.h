@@ -131,6 +131,10 @@ public:
         {
             return _ref[_index];
         };
+		size_t index() const
+		{
+			return _index;
+		}
 
         using iterator_category = std::forward_iterator_tag;
         using reference = T&;
@@ -178,6 +182,10 @@ public:
         {
             return _ref[_index];
         };
+	    size_t index() const
+	    {
+		    return _index;
+	    }
 
         using iterator_category = std::forward_iterator_tag;
         using reference = T&;

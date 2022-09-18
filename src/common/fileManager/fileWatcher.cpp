@@ -14,7 +14,7 @@ void FileWatcher::addFileWatcher(const std::string& ext, std::function<void(cons
 	_fileWatchers.insert({ext, callback});
 }
 
-void FileWatcher::scanForChanges()
+void FileWatcher::scanForChanges(bool callbacks)
 {
 	for(auto& wd : _watchedDirectories)
 	{
@@ -29,7 +29,8 @@ void FileWatcher::scanForChanges()
 				auto currentUpdate = std::filesystem::last_write_time(file.path());
 				if(lastUpdate != currentUpdate)
 				{
-					_fileWatchers[ext](file.path());
+					if(callbacks)
+						_fileWatchers[ext](file.path());
 					_lastUpdate[file.path().string()] = currentUpdate;
 				}
 
