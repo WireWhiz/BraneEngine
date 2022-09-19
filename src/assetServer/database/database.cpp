@@ -158,9 +158,9 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 std::string Database::assetName(AssetID& id)
 {
 	std::string name = "name not found";
-	if(id.serverAddress != "native")
+	if(id.address() != "native")
 	{
-		std::string sqlCall ="SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id);
+		std::string sqlCall ="SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id());
 		rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
 			name = columns[0].value;
 		});

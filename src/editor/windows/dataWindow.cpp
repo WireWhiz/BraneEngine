@@ -222,7 +222,7 @@ void DataWindow::displayEntityAssetData()
 					Json::ArrayIndex matIndex = component["members"][1]["value"][mat].asUInt();
 					ImGui::Text("Material %u (Assembly index %u)", mat, matIndex);
 					ImGui::SameLine();
-					AssetID matID = _focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString();
+					AssetID matID(_focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString());
 					if(AssetSelectWidget::draw(matID, AssetType::material))
 					{
 						while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
@@ -230,7 +230,7 @@ void DataWindow::displayEntityAssetData()
 
 						_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
 						_editor.reloadAsset(_focusedAsset);
-						if(!matID.isNull())
+						if(!matID.null())
 							Runtime::getModule<AssetManager>()->fetchAsset<MaterialAsset>(matID).then([this](auto* m){_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);});
 						else
 							_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);
@@ -289,7 +289,7 @@ void DataWindow::displayEntityData()
 void DataWindow::displayMaterialData()
 {
     auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
-    AssetID vertexID = material->json()["vertexShader"].asString();
+    AssetID vertexID(material->json()["vertexShader"].asString());
     if(AssetSelectWidget::draw(vertexID, AssetType::shader))
     {
 	    material->json().changeValue("vertexShader", vertexID.string());
@@ -297,7 +297,7 @@ void DataWindow::displayMaterialData()
     };
     ImGui::SameLine();
     ImGui::Text("Vertex Shader");
-    AssetID fragmentID = material->json()["fragmentShader"].asString();
+    AssetID fragmentID(material->json()["fragmentShader"].asString());
     if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
 	    material->json().changeValue("fragmentShader", fragmentID.string());

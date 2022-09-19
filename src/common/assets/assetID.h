@@ -1,31 +1,53 @@
 #pragma once
 #include <string>
+#include <string_view>
 #include <iostream>
 
 class AssetID
 {
+	std::string _string = "null";
+	std::string::size_type _delimiter = std::string::npos;
+	uint32_t _idCache = -1;
 public:
 	AssetID() = default;
-	AssetID(const std::string& id);
+	AssetID(const AssetID&) = delete;
+	AssetID(AssetID&&);
+	explicit AssetID(const std::string& id);
+	explicit AssetID(std::string&& id);
 	AssetID(const std::string& serverAddress, uint32_t id);
-	uint32_t id = 0;
-	std::string serverAddress = "null";
-	void parseString(const std::string& id);
-	uint32_t size();
-	std::string string() const;
-    bool isNull() const;
+	uint32_t id() const;
+	std::string_view idStr() const;
+	void setID(uint32_t newID);
+	std::string_view address() const;
+	void setAddress(std::string_view newAddress);
+	const std::string& string() const;
+    bool null() const;
+	void setNull();
+	AssetID copy() const;
 
+	AssetID& operator=(AssetID&&) noexcept;
+	AssetID& operator=(std::string&& id);
+	AssetID& operator=(const std::string& id);
 	bool operator==(const AssetID& other) const;
 	bool operator!=(const AssetID& other) const;
 	friend std::ostream& operator << (std::ostream& os, const AssetID& id);
-	static const AssetID null;
 };
 
-
+class HashedAssetID
+{
+	size_t _hash;
+	uint32_t _id;
+	uint32_t _strLen;
+public:
+	HashedAssetID(const AssetID& id);
+	bool operator!=(const HashedAssetID& hash) const;
+	bool operator==(const HashedAssetID& hash) const;
+	size_t hash() const;
+};
 
 template <>
-struct std::hash<AssetID>
+struct std::hash<HashedAssetID>
 {
-	size_t operator()(const AssetID& k) const; 
+	size_t operator()(const HashedAssetID& k) const;
 };
 

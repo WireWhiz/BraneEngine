@@ -89,27 +89,30 @@ void Client::addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vk
 AsyncData<Asset*> Client::fetchAssetCallback(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	_nm.async_connectToAssetServer(id.serverAddress, Config::json()["network"]["tcp_port"].asUInt(), [this, id, incremental, asset](bool connected){
-		if(!connected)
-		{
-			asset.setError("Could not connect to server: " + id.serverAddress);
-			std::cerr << "Could not get asset: " << id << std::endl;
-			return;
-		}
-		if (incremental)
-		{
-			_nm.async_requestAssetIncremental(id).then([this, asset, id](Asset* data){
-				asset.setData(data);
+	_nm.async_connectToAssetServer(id.address, Config::json()["network"]["tcp_port"].asUInt(),
+	                               [this, id, incremental, asset](bool connected)
+	                               {
+		                               if (!connected)
+		                               {
+			                               asset.setError("Could not connect to server: " + id.address);
+			                               std::cerr << "Could not get asset: " << id << std::endl;
+			                               return;
+		                               }
+		                               if (incremental)
+		                               {
+			                               _nm.async_requestAssetIncremental(id).then([this, asset, id](Asset* data)
+			                                                                          {
+				                                                                          asset.setData(data);
 
-			});
-		}
-		else
-		{
-			AsyncData<Asset*> assetToSave;
-			_nm.async_requestAsset(id).then([this, asset, id](Asset* data){
-				asset.setData(data);
-			});
-		}
-	});;
+			                                                                          });
+		                               } else
+		                               {
+			                               AsyncData<Asset*> assetToSave;
+			                               _nm.async_requestAsset(id).then([this, asset, id](Asset* data)
+			                                                               {
+				                                                               asset.setData(data);
+			                                                               });
+		                               }
+	                               });;
 	return asset;
 }

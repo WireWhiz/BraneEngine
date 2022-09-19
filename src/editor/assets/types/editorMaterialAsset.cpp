@@ -29,5 +29,7 @@ Asset* EditorMaterialAsset::buildAsset(const AssetID& id) const
 
 std::vector<std::pair<AssetID, AssetType>> EditorMaterialAsset::containedAssets() const
 {
-	return {{_json["id"].asString(), AssetType::material}};
+	std::vector<std::pair<AssetID, AssetType>> deps;
+	deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::material);
+	return std::move(deps);
 }

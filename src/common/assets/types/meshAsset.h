@@ -30,7 +30,7 @@ public:
         std::vector<bool> vertexSent;
     };
 
-	size_t runtimeID = -1;
+	uint32_t runtimeID = -1;
 	bool meshUpdated;
 
 	MeshAsset();

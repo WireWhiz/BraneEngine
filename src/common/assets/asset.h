@@ -12,7 +12,7 @@ class OutputSerializer;
 
 struct AssetDependency
 {
-    AssetID id;
+    const AssetID& id;
     bool streamable = false;
 };
 
@@ -24,6 +24,9 @@ public:
     AssetID id;
     AssetType type;
 
+	Asset() = default;
+	Asset(Asset&&) = default;
+	Asset& operator=(Asset&&) = default;
     virtual ~Asset() = default;
     static Asset* deserializeUnknown(InputSerializer& s);
 	virtual void serialize(OutputSerializer& s) const;

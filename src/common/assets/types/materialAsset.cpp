@@ -23,11 +23,11 @@ MaterialAsset::MaterialAsset()
 std::vector<AssetDependency> MaterialAsset::dependencies() const
 {
     std::vector<AssetDependency> deps;
-    if(vertexShader != AssetID::null)
+    if(!vertexShader.null())
         deps.push_back({vertexShader, false});
-    if(fragmentShader != AssetID::null)
+    if(!fragmentShader.null())
         deps.push_back({fragmentShader, false});
-    if(inputComponent != AssetID::null)
+    if(!inputComponent.null())
         deps.push_back({inputComponent, false});
     return deps;
 }

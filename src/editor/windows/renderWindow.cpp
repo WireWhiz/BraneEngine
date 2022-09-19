@@ -25,7 +25,7 @@ class RenderWindowAssetReady : public GUIEvent
 {
 	AssetID _id;
 public:
-	RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
+	RenderWindowAssetReady(const AssetID& id) : _id(id.copy()), GUIEvent("render window asset ready"){};
 	const AssetID& id() const {return _id;}
 };
 
@@ -51,7 +51,7 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		{
 			if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
 			{
-				am->fetchAsset<Assembly>(_focusedAsset->json()["id"].asString()).then([this](Assembly* assembly){
+				am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString())).then([this](Assembly* assembly){
 					_ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
 				}).onError([this](const std::string& error){
 					if(_focusedAsset)
@@ -65,6 +65,7 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 	_ui.addEventListener<RenderWindowAssetReady>("render window asset ready", this, [this, &em](const RenderWindowAssetReady* event){
 		auto* am = Runtime::getModule<AssetManager>();
 		Assembly* assembly = am->getAsset<Assembly>(event->id());
+		assert(assembly);
 		EntityID root = em.createEntity();
 		em.addComponent<Transform>(root);
 		Transform t;

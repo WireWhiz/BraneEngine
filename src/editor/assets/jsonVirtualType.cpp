@@ -82,7 +82,7 @@ void JsonVirtualType::toVirtual(byte* data, const Json::Value& source, VirtualTy
 			*getVirtual<std::string>(data) = source.asString();
 			break;
 		case VirtualType::virtualAssetID:
-			getVirtual<AssetID>(data)->parseString(source.asString());
+			*getVirtual<AssetID>(data) = source.asString();
 			break;
 		case VirtualType::virtualVec3:
 			*getVirtual<glm::vec3>(data) = fromJson<glm::vec3>(source);

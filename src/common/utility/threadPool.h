@@ -32,9 +32,11 @@ struct Job
 {
 	std::function<void()> f;
 	std::shared_ptr<JobHandle> handle;
-	void operator=(const Job& job);
-	Job(std::function<void()> f, std::shared_ptr<JobHandle> handle);
-	Job() {};
+	Job(std::function<void()>&& f, std::shared_ptr<JobHandle> handle);
+	Job(const Job&) = delete;
+	Job(Job&&) = default;
+	Job& operator=(Job&&) = default;
+	Job() = default;
 };
 
 class ThreadPool
@@ -58,7 +60,8 @@ public:
 	static void cleanup();
 	static std::shared_ptr<JobHandle> addStaticThread(std::function<void()> function);
 	static void addStaticTimedThread(std::function<void()> function, std::chrono::seconds interval);
-	static std::shared_ptr<JobHandle> enqueue(std::function<void()> function);
+	static std::shared_ptr<JobHandle> enqueue(const std::function<void()>& function);
+	static std::shared_ptr<JobHandle> enqueue(std::function<void()>&& function);
 	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle>);
 	static std::shared_ptr<JobHandle> enqueueBatch(std::vector<std::function<void()>> functions);
 };

@@ -168,7 +168,7 @@ ShaderCompiler& Editor::shaderCompiler()
 
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
-	AssetID id = asset->json()["id"].asString();
+	AssetID id(asset->json()["id"].asString());
 	_cache.deleteCachedAsset(id);
 	auto* am = Runtime::getModule<AssetManager>();
 	if(!am->hasAsset(id))
@@ -199,15 +199,17 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 //The editor specific fetch asset function
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
-	assert(id != AssetID::null);
+	assert(!id.null());
 	AsyncData<Asset*> asset;
 
 	Editor* editor = Runtime::getModule<Editor>();
+
 	if(editor->cache().hasAsset(id))
 	{
-		ThreadPool::enqueue([this, editor, asset, id]()
+		std::shared_ptr<AssetID> idPtr = std::make_shared<AssetID>(id.copy());
+		ThreadPool::enqueue([this, editor, asset, idPtr]()
         {
-            Asset* cachedAsset = editor->cache().getAsset(id);
+            Asset* cachedAsset = editor->cache().getAsset(*idPtr);
             fetchDependencies(cachedAsset, [asset, cachedAsset]() mutable{
                 asset.setData(cachedAsset);
             });
@@ -218,15 +220,16 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 	std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
 	if(editorAsset)
 	{
-		ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
-			Asset* a = editorAsset->buildAsset(id);
+		std::shared_ptr<AssetID> idPtr = std::make_shared<AssetID>(id.copy());
+		ThreadPool::enqueue([this, editorAsset, editor, asset, idPtr](){
+			Asset* a = editorAsset->buildAsset(*idPtr);
 			if(!a)
 			{
-				asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
+				asset.setError("Could not build " + idPtr->string() + " from " + editorAsset->name());
 				return;
 			}
 			_assetLock.lock();
-			_assets.at(id)->loadState = LoadState::awaitingDependencies;
+			_assets.at(*idPtr)->loadState = LoadState::awaitingDependencies;
 			_assetLock.unlock();
 			fetchDependencies(a, [editor, asset, a]() mutable{
 				editor->cache().cacheAsset(a);
@@ -236,9 +239,9 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 		return asset;
 	}
 
-	if(id.serverAddress.empty())
+	if(id.address().empty())
 	{
-		asset.setError("Asset with id " + std::to_string(id.id) + " was not found and can not be remotely fetched since it lacks a server address");
+		asset.setError("Asset with id " + std::string(id.idStr()) + " was not found and can not be remotely fetched since it lacks a server address");
 		return asset;
 	}
 	auto* nm = Runtime::getModule<NetworkManager>();

@@ -23,8 +23,7 @@ void AssetManager::addNativeComponent(EntityManager& em)
 {
     static_assert(std::is_base_of<NativeComponent<T>, T>());
     ComponentDescription* description = T::constructDescription();
-    AssetID id = AssetID("native", static_cast<uint32_t>(_nativeComponentID++));
-    ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), T::getMemberNames(), id);
+    ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), T::getMemberNames(), AssetID("native", static_cast<uint32_t>(_nativeComponentID++)));
     asset->name = T::getComponentName();
     asset->componentID = em.components().registerComponent(description);
 
@@ -59,18 +58,21 @@ bool AssetManager::hasAsset(const AssetID& id)
 void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 {
 	assert(a);
-	assert(a->id != AssetID::null);
-	std::vector<AssetDependency> unloadedDeps;
+	assert(!a->id.null());
+	std::vector<std::pair<AssetID, bool>> unloadedDeps;
 	_assetLock.lock();
-    for(auto&d : a->dependencies())
+    for(AssetDependency&d : a->dependencies())
     {
-		//If the server address is empty, it means this asset is from the same origin as the parent.
-		if(d.id.serverAddress.empty())
-			d.id.serverAddress = a->id.serverAddress;
-
 		auto dep = _assets.find(d.id);
 		if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
-			unloadedDeps.push_back(d);
+		{
+			std::pair<AssetID, bool> depPair = {d.id.copy(), d.streamable};
+			//If the server address is empty, it means this asset is from the same origin as the parent.
+			if(depPair.first.address().empty())
+				depPair.first.setAddress(a->id.address());
+
+			unloadedDeps.push_back(std::move(depPair));
+		}
     }
 	_assetLock.unlock();
 	if(unloadedDeps.empty())
@@ -86,7 +88,7 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 	_assetLock.unlock();
     for(auto& d : unloadedDeps)
     {
-        fetchAsset(d.id, d.streamable).then([this, data, callbackPtr](Asset* asset)
+        fetchAsset(d.first, d.second).then([this, data, callbackPtr](Asset* asset)
         {
             Runtime::log("Loaded: " + asset->name);
 	        _assetLock.lock();
@@ -94,8 +96,8 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 	        _assetLock.unlock();
 	        if(remaining == 0)
 		        (*callbackPtr)();
-        }).onError([d](const std::string& message){
-            Runtime::error("Unable to fetch: " + d.id.string());
+        }).onError([a](const std::string& message){
+            Runtime::error("Unable to fetch dependency of " + a->id.string());
         });
     }
 }
@@ -119,7 +121,7 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 		if(assetData->loadState >= LoadState::usable)
 			asset.setData(assetData->asset.get());
 		else
-			_awaitingLoad[id].push_back([id, asset](Asset* a){
+			_awaitingLoad[id].push_back([asset](Asset* a){
 				asset.setData(a);
 			});
 		_assetLock.unlock();
@@ -169,16 +171,16 @@ void AssetManager::reloadAsset(Asset* asset)
 	switch(asset->type.type())
 	{
 		case AssetType::mesh:
-			*(MeshAsset*)(_assets.at(asset->id)->asset.get()) = *(MeshAsset*)(asset);
+			*(MeshAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MeshAsset*)(asset));
 			break;
 		case AssetType::shader:
-			*(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = *(ShaderAsset*)(asset);
+			*(ShaderAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(ShaderAsset*)(asset));
 			break;
 		case AssetType::material:
-			*(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = *(MaterialAsset*)(asset);
+			*(MaterialAsset*)(_assets.at(asset->id)->asset.get()) = std::move(*(MaterialAsset*)(asset));
 			break;
 		case AssetType::assembly:
-			*(Assembly*)(_assets.at(asset->id)->asset.get()) = *(Assembly*)(asset);
+			*(Assembly*)(_assets.at(asset->id)->asset.get()) = std::move(*(Assembly*)(asset));
 			break;
 		default:
 			Runtime::warn("Assembly manager attempted to reload asset of type " + asset->type.toString() + " but currently it isn't supported");

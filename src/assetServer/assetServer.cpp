@@ -114,7 +114,7 @@ _db(*Runtime::getModule<Database>())
         }
         Asset* asset = Asset::deserializeUnknown(rc.req);
 
-        auto assetInfo = _db.getAssetInfo(asset->id.id);
+        auto assetInfo = _db.getAssetInfo(asset->id.id());
 
 	    auto path = assetPath(asset->id);
 		bool assetExists = true;
@@ -124,7 +124,7 @@ _db(*Runtime::getModule<Database>())
 		}
 
         _fm.writeAsset(asset, path);
-		assetInfo.id = asset->id.id;
+		assetInfo.id = asset->id.id();
 	    assetInfo.name = asset->name;
 	    assetInfo.type = asset->type;
 	    assetInfo.hash = FileManager::fileHash(path);
@@ -154,11 +154,11 @@ _db(*Runtime::getModule<Database>())
 		std::vector<AssetID> assetsWithDiff;
 		for(auto& h : hashes)
 		{
-			if(h.first.serverAddress != "")
+			if(h.first.address() != "")
 				continue;
-			auto info = _db.getAssetInfo(h.first.id);
+			auto info = _db.getAssetInfo(h.first.id());
 			if(info.hash != h.second)
-				assetsWithDiff.push_back(h.first);
+				assetsWithDiff.push_back(std::move(h.first));
 		}
 
 		rc.res << assetsWithDiff;
@@ -202,17 +202,17 @@ const char* AssetServer::name()
 AsyncData<Asset*> AssetServer::fetchAssetCallback(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	auto info = _db.getAssetInfo(id.id);
+	auto info = _db.getAssetInfo(id.id());
 	std::filesystem::path path = assetPath(id);
 	if(!std::filesystem::exists(path))
 		asset.setError("Asset not found");
 	else
 	{
-		_fm.async_readUnknownAsset(path).then([this, asset, id](Asset* data){
+		_fm.async_readUnknownAsset(path).then([this, asset](Asset* data){
 			if(data)
 				asset.setData(data);
 			else
-				asset.setError("Could not read asset: " + std::to_string(id.id));
+				asset.setError("Could not read requested asset");
 		});
 	}
 
@@ -246,7 +246,7 @@ bool AssetServer::validatePermissions(AssetServer::ConnectionContext& ctx, const
 
 std::filesystem::path AssetServer::assetPath(const AssetID& id)
 {
-    return std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (toHex(id.id) + ".bin");
+    return std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (std::string(id.idStr()) + ".bin");
 }
 
 //The asset server specific fetch asset function
@@ -268,7 +268,7 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 	auto* nm = Runtime::getModule<NetworkManager>();
 	auto* fm = Runtime::getModule<FileManager>();
 
-	auto path = std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (toHex(id.id) + ".bin");
+	auto path = std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (std::string(id.idStr()) + ".bin");
 	if(!std::filesystem::exists(path))
 	{
 		fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
@@ -305,7 +305,7 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 	else
 	{
 		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
-			AssetID id = ptr->id;
+			AssetID& id = ptr->id;
 			auto& d = _assets.at(id);
 			d->loadState = LoadState::awaitingDependencies;
 			d->asset = std::unique_ptr<Asset>(ptr);
@@ -317,7 +317,7 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 				return;
 			}
 			d->loadState = LoadState::awaitingDependencies;
-			fetchDependencies(d->asset.get(), [this, id, asset]() mutable{
+			fetchDependencies(d->asset.get(), [this, &id, asset]() mutable{
 				auto& d = _assets.at(id);
 				d->loadState = LoadState::loaded;
 				d->asset->onDependenciesLoaded();

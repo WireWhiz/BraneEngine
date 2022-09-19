@@ -123,9 +123,10 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
 	AsyncData<Asset*> asset;
 
 	_serverLock.lock_shared();
-	if(!_servers.count(id.serverAddress))
-		throw std::runtime_error("No connection with " + id.serverAddress);
-	net::Connection* server = _servers[id.serverAddress].get();
+	std::string address(id.address());
+	if(!_servers.count(address))
+		throw std::runtime_error("No connection with " + address);
+	net::Connection* server = _servers[address].get();
 	_serverLock.unlock_shared();
 
 	Runtime::log("async requesting: " + id.string());
@@ -151,9 +152,10 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
 	AsyncData<IncrementalAsset*> asset;
 
 	_serverLock.lock_shared();
-    if(!_servers.count(id.serverAddress))
-        throw std::runtime_error("No connection with " + id.serverAddress);
-	net::Connection* server = _servers[id.serverAddress].get();
+	std::string address(id.address());
+    if(!_servers.count(address))
+        throw std::runtime_error("No connection with " + address);
+	net::Connection* server = _servers[address].get();
 	_serverLock.unlock_shared();
 
 	Runtime::log("async requesting incremental: " + id.string());

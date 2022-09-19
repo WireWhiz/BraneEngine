@@ -140,7 +140,7 @@ VirtualComponent EditorAssemblyAsset::jsonToComponent(Json::Value component)
 	auto* am = Runtime::getModule<AssetManager>();
 	auto* em = Runtime::getModule<EntityManager>();
 
-	auto compID = am->getAsset<ComponentAsset>(component["id"].asString())->componentID;
+	auto compID = am->getAsset<ComponentAsset>(AssetID(component["id"].asString()))->componentID;
 	auto* description = em->components().getComponentDef(compID);
 
 	VirtualComponent output(description);
@@ -155,11 +155,12 @@ VirtualComponent EditorAssemblyAsset::jsonToComponent(Json::Value component)
 
 std::vector<std::pair<AssetID, AssetType>> EditorAssemblyAsset::containedAssets() const
 {
-	std::vector<std::pair<AssetID, AssetType>> assets = {{_json["id"].asString(), AssetType::assembly}};
+	std::vector<std::pair<AssetID, AssetType>> assets;
+	assets.emplace_back(AssetID(_json["id"].asString()), AssetType::assembly);
 	if(_json["linked"].asBool())
 	{
 		for(auto& mesh : _json["linkedMeshes"])
-			assets.push_back({mesh["id"].asString(), AssetType::mesh});
+			assets.emplace_back(AssetID(mesh["id"].asString()), AssetType::mesh);
 	}
 	return assets;
 }
@@ -218,7 +219,7 @@ Asset* EditorAssemblyAsset::buildAssembly() const
 		}
 	}
 	for(auto* def : components)
-		assembly->components.emplace_back(def->asset->id);
+		assembly->components.push_back(def->asset->id.copy());
 
 	return assembly;
 }
@@ -265,7 +266,7 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 	{
 		auto* renderer = em->getComponent<MeshRendererComponent>(id);
 		auto* am = Runtime::getModule<AssetManager>();
-		auto* mesh = am->getAsset<MeshAsset>(_json["dependencies"]["meshes"][renderer->mesh].asString());
+		auto* mesh = am->getAsset<MeshAsset>(AssetID(_json["dependencies"]["meshes"][renderer->mesh].asString()));
 		renderer->mesh = mesh->runtimeID;
 		for(auto& mID : renderer->materials)
 		{
@@ -274,8 +275,8 @@ void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>
 				mID = -1;
 				continue;
 			}
-			AssetID matAssetID = _json["dependencies"]["materials"][mID].asString();
-			if(matAssetID.isNull())
+			AssetID matAssetID(_json["dependencies"]["materials"][mID].asString());
+			if(matAssetID.null())
 			{
 				mID = -1;
 				continue;
@@ -311,7 +312,7 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
 
 	auto* mesh = new MeshAsset();
 	mesh->name = meshData["name"].asString();
-	mesh->id = id;
+	mesh->id = id.copy();
 
 	for(auto& primitive : meshData["primitives"])
 	{

@@ -13,9 +13,9 @@ namespace graphics
 	Material::Material(MaterialAsset* asset, VulkanRuntime* vkr) : _asset(asset)
 	{
 		auto* am = Runtime::getModule<AssetManager>();
-		if(!asset->vertexShader.isNull())
+		if(!asset->vertexShader.null())
 			_vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
-		if(!asset->fragmentShader.isNull())
+		if(!asset->fragmentShader.null())
 			_fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
 
 		_transformBuffers.resize(vkr->swapChain()->size());

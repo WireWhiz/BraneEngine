@@ -121,7 +121,7 @@ UiChangeType VirtualVariableWidgets::displayVirtualVariable(const char* name, Vi
             if(ImGui::IsItemDeactivatedAfterEdit())
                 changed = UiChangeType::finished;
             if(ImGui::IsItemDeactivatedAfterEdit())
-                ((AssetID*)data)->parseString(id);
+                *((AssetID*)data) = id;
         }
             break;
         case VirtualType::virtualVec3:

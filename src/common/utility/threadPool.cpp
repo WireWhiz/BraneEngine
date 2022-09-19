@@ -23,7 +23,7 @@ int ThreadPool::threadRuntime()
 			if (_workAvailable.wait_until(lock, std::chrono::system_clock::now() + std::chrono::milliseconds(200), []
 			{ return !_jobs.empty(); }))
 			{
-				job = _jobs.front();
+				job = std::move(_jobs.front());
 				_jobs.pop();
 			} else
 				continue;
@@ -91,15 +91,21 @@ void ThreadPool::cleanup()
 	
 }
 
-std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
+std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()>&& function)
 {
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 	handle->_instances = 1;
 	_queueMutex.lock();
-	_jobs.push(Job( std::move(function), handle));
+	_jobs.push(Job(std::move(function), handle));
 	_queueMutex.unlock();
 	_workAvailable.notify_one();
 	return handle;
+}
+
+std::shared_ptr<JobHandle> ThreadPool::enqueue(const std::function<void()>& function)
+{
+	std::function<void()> copy(function);
+	return enqueue(std::move(copy));
 }
 
 void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHandle> handle)
@@ -186,14 +192,8 @@ void JobHandle::enqueueNext()
 		ThreadPool::enqueue(_next);
 }
 
-void Job::operator=(const Job& job)
+Job::Job(std::function<void()>&& f, std::shared_ptr<JobHandle> handle)
 {
-	f = job.f;
-	handle = job.handle;
-}
-
-Job::Job(std::function<void()> f, std::shared_ptr<JobHandle> handle)
-{
-	this->f = f;
+	this->f = std::move(f);
 	this->handle = handle;
 }

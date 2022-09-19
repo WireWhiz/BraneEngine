@@ -204,7 +204,7 @@ public:
 	{
 		std::string idString;
 		s >> idString;
-		id.parseString(idString);
+		id = std::move(idString);
 
 		return s;
 	}
@@ -218,7 +218,7 @@ public:
 		{
 			std::string idString;
 			s >> idString;
-			ids[i].parseString(idString);
+			ids[i] = std::move(idString);
 		}
 
 

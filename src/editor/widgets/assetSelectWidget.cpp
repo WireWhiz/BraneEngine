@@ -17,7 +17,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
     bool changed = false;
     ImGui::PushID(&id);
     std::string name;
-    if(id == AssetID::null)
+    if(id.null())
         name = "null";
     else
         name = Runtime::getModule<Editor>()->project().getAssetName(id);
@@ -36,7 +36,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
         }
         if(ImGui::IsKeyPressed(ImGuiKey_Delete))
         {
-            id = AssetID::null;
+            id.setNull();
             changed = true;
         }
     }
@@ -44,7 +44,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
 	{
 		if(_searchWidget->draw())
 		{
-			id = _searchWidget->currentSelected();
+			id = _searchWidget->currentSelected().copy();
 			changed = true;
 			ImGui::CloseCurrentPopup();
 		}

@@ -52,7 +52,6 @@ bool AssetSearchWidget::draw()
 
 const AssetID& AssetSearchWidget::currentSelected()
 {
-	if(_selected < 0)
-		return AssetID::null;
+	assert(_selected >= 0);
 	return _searchResults[_selected].first;
 }

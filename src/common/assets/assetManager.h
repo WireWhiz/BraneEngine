@@ -28,12 +28,12 @@ public:
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
         LoadState loadState = LoadState::unloaded;
-        std::unordered_set<AssetID> usedBy;
+        std::unordered_set<HashedAssetID> usedBy;
     };
 private:
 	std::mutex _assetLock;
-	std::unordered_map<AssetID, std::unique_ptr<AssetData>> _assets;
-	std::unordered_map<AssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+	std::unordered_map<HashedAssetID, std::unique_ptr<AssetData>> _assets;
+	std::unordered_map<HashedAssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
 
     size_t _nativeComponentID = 0;
     template<typename T>

@@ -2,56 +2,44 @@
 #include "assetID.h"
 #include <utility/hex.h>
 #include <cassert>
+#include "robin_hood.h"
 
-const AssetID AssetID::null("null");
+AssetID::AssetID(const std::string& serverAddress, uint32_t id)
+{
+	_string = serverAddress + "/" + toHex(id);
+	_delimiter = serverAddress.size();
+	_idCache = id;
+}
+
+AssetID::AssetID(std::string&& id)
+{
+	assert(id == "null" || id.find('/') != std::string::npos);
+	_string = std::move(id);
+	_delimiter = _string.find('/');
+	_idCache = fromHex<uint32_t>(std::string_view{_string.data() + (_delimiter + 1), _string.size() - (_delimiter + 1)});
+}
 
 AssetID::AssetID(const std::string& id)
 {
-	parseString(id);
+	assert(id == "null" || id.find('/') != std::string::npos);
+	_string = id;
+	_delimiter = _string.find('/');
+	_idCache = fromHex<uint32_t>(std::string_view{_string.data() + (_delimiter + 1), _string.size() - (_delimiter + 1)});
 }
 
-void AssetID::parseString(const std::string& id)
+const std::string& AssetID::string() const
 {
-	if(id == "null"){
-		serverAddress = "null";
-		return;
-	}
-	std::string strings[2] = {"", ""};
-	uint8_t strIndex = 0;
-	for (size_t i = 0; i < id.size(); i++)
-	{
-		if (id[i] != '/')
-			strings[strIndex] += id[i];
-		else
-		{
-			strIndex++;
-			assert(strIndex < 2);
-		}
-	}
-	serverAddress = strings[0];
-	this->id = fromHex<uint32_t>(strings[1]);
-}
-
-std::string AssetID::string() const
-{
-	if(serverAddress == "null")
-		return "null";
-	return serverAddress + '/' + toHex(id);
+	return _string;
 }
 
 bool AssetID::operator==(const AssetID& other) const
 {
-
-	if (id != other.id)
-		return false;
-	return serverAddress == other.serverAddress;
+	return _string != other._string;
 }
 
 bool AssetID::operator!=(const AssetID& other) const
 {
-	if (id != other.id)
-		return true;
-	return serverAddress != other.serverAddress;
+	return _string != other._string;
 }
 
 std::ostream& operator<<(std::ostream& os, const AssetID& id)
@@ -60,28 +48,121 @@ std::ostream& operator<<(std::ostream& os, const AssetID& id)
 	return os;
 }
 
-uint32_t AssetID::size()
+bool AssetID::null() const
 {
-	uint32_t size = 3; //Separating lines
-	size += serverAddress.size();
-	size += sizeof(id) * 2;
-	return size;
+    return _delimiter == std::string::npos;
 }
 
-AssetID::AssetID(const std::string& serverAddress, uint32_t id)
+AssetID& AssetID::operator=(std::string&& id)
 {
-	this->serverAddress = serverAddress;
-	this->id = id;
+	assert(id == "null" || id.find('/') != std::string::npos);
+	_string = std::move(id);
+	_delimiter = _string.find('/');
+	_idCache = fromHex<uint32_t>({_string.data() + (_delimiter + 1), _string.size() - (_delimiter + 1)});
+	return *this;
 }
 
-bool AssetID::isNull() const
+AssetID& AssetID::operator=(const std::string& id)
 {
-    return this->serverAddress == "null";
+	assert(id == "null" || id.find('/') != std::string::npos);
+	_string = id;
+	_delimiter = _string.find('/');
+	_idCache = fromHex<uint32_t>({_string.data() + (_delimiter + 1), _string.size() - (_delimiter + 1)});
+	return *this;
 }
 
-std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
+AssetID AssetID::copy() const
 {
+	return std::move(AssetID(_string));
+}
 
-	return (std::hash<string>()(k.serverAddress)
-		^ (std::hash<uint64_t>()(k.id) << 1));
+uint32_t AssetID::id() const
+{
+	assert(!null());
+	return _idCache;
+}
+
+std::string_view AssetID::address() const
+{
+	assert(!null());
+	return {_string.data(), _delimiter - 1};
+}
+
+void AssetID::setID(uint32_t newID)
+{
+	if(null())
+	{
+		_string = "/";
+		_delimiter = 0;
+	}
+	_string = _string.replace(_string.begin() + static_cast<std::string::difference_type>(_delimiter + 1), _string.end(), toHex(newID));
+}
+
+void AssetID::setAddress(std::string_view newAddress)
+{
+	if(null())
+	{
+		_string = "/";
+		_delimiter = 0;
+	}
+	_string = _string.replace(_string.begin(), _string.begin() + static_cast<std::string::difference_type>(_delimiter), newAddress);
+	_delimiter = newAddress.size();
+}
+
+void AssetID::setNull()
+{
+	_string = "null";
+	_delimiter = std::string::npos;
+}
+
+std::string_view AssetID::idStr() const
+{
+	assert(!null());
+	return {_string.data() + _delimiter + 1, _string.size() - (_delimiter + 1)};
+}
+
+AssetID& AssetID::operator=(AssetID&& o) noexcept
+{
+	_string = std::move(o._string);
+	_delimiter = o._delimiter;
+	_idCache = o._idCache;
+	o._string = "null";
+	o._delimiter = std::string::npos;
+	return *this;
+}
+
+AssetID::AssetID(AssetID&& o)
+{
+	_string = std::move(o._string);
+	_delimiter = o._delimiter;
+	_idCache = o._idCache;
+	o._string = "null";
+	o._delimiter = std::string::npos;
+}
+
+std::size_t std::hash<HashedAssetID>::operator()(const HashedAssetID& k) const
+{
+	return k.hash();
+}
+
+HashedAssetID::HashedAssetID(const AssetID& id)
+{
+	_hash = robin_hood::hash<std::string>()(id.string());
+	_id = id.id();
+	_strLen = id.string().length();
+}
+
+bool HashedAssetID::operator!=(const HashedAssetID& hash) const
+{
+	return _hash != hash._hash || _id != hash._id || _strLen != hash._strLen;
+}
+
+bool HashedAssetID::operator==(const HashedAssetID& hash) const
+{
+	return !(_hash != hash._hash);
+}
+
+size_t HashedAssetID::hash() const
+{
+	return _hash;
 }

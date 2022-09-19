@@ -145,7 +145,7 @@ void BraneProject::initLoaded()
 		assembly->linkToGLTF(path);
 
 		registerAssetLocation(assembly);
-		_editor.cache().deleteCachedAsset(assembly->json()["id"].asString());
+		_editor.cache().deleteCachedAsset(AssetID{assembly->json()["id"].asString()});
 
 		if(!isOpen)
 			delete assembly;
@@ -233,7 +233,7 @@ AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, Asset
 	assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
 	assets[testID]["type"] = type.toString();
 
-	return testID;
+	return AssetID(testID);
 }
 
 FileWatcher* BraneProject::fileWatcher()
@@ -248,7 +248,7 @@ void BraneProject::registerAssetLocation(const EditorAsset* asset)
 	Json::Value& assets = _file.data()["assets"];
 	for(std::pair<AssetID, AssetType>& a : asset->containedAssets())
 	{
-		assert(a.first != AssetID::null);
+		assert(!a.first.null());
 		assets[a.first.string()]["path"] = std::filesystem::relative(asset->file(), projectDirectory() / "assets").string();
 		assets[a.first.string()]["type"] = a.second.toString();
 	}
@@ -324,13 +324,13 @@ std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
 	auto ids = _file["assets"].getMemberNames();
 	for(auto& idStr : ids)
 	{
-		AssetID id = idStr;
+		AssetID id(idStr);
 		if(!_editor.cache().hasAsset(id))
 		{
 			auto editorAsset = getEditorAsset(id);
 			_editor.cache().cacheAsset(editorAsset->buildAsset(id));
 		}
-		hashes.emplace_back(id, _editor.cache().getAssetHash(id));
+		hashes.emplace_back(std::move(id), _editor.cache().getAssetHash(id));
 	}
 	return hashes;
 }

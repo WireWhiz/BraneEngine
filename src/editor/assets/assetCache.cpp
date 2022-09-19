@@ -15,7 +15,7 @@ void AssetCache::setProject(BraneProject* project)
 std::filesystem::path AssetCache::getPath(const AssetID& id)
 {
 	assert(_project);
-	return _project->projectDirectory() / "cache" / ( toHex(id.id) + ".bin");
+	return _project->projectDirectory() / "cache" / (std::string(id.idStr()) + ".bin");
 }
 
 void AssetCache::cacheAsset(const Asset* asset)

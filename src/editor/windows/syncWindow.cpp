@@ -185,7 +185,7 @@ void SyncWindow::syncAssets()
 	}
 	for(auto& asset : _assetDiffs)
 	{
-		ImGui::PushID(asset.id.id);
+		ImGui::PushID(asset.id.id());
 		ImGui::Selectable(_editor.project().getAssetName(asset.id).c_str());
 		if(ImGui::IsItemHovered())
 			ImGui::SetTooltip("%s", asset.id.string().c_str());
@@ -208,11 +208,11 @@ void SyncWindow::updateAsset(Asset* asset)
 	SerializedData assetData;
 	OutputSerializer s(assetData);
 	asset->serialize(s);
-	AssetID id = asset->id;
+	AssetID* id = &asset->id;
 	_syncServer->sendRequest("updateAsset", std::move(assetData), [id](auto ec, InputSerializer res){
 		if(ec == net::ResponseCode::success)
-			Runtime::log("Asset " + id.string() + " updated");
+			Runtime::log("Asset " + id->string() + " updated");
 		else
-			Runtime::error("Failed to update asset " + id.string());
+			Runtime::error("Failed to update asset " + id->string());
 	});
 }

@@ -15,7 +15,7 @@ public:
 
 	ComponentAsset();
 	ComponentAsset(const ComponentAsset&) = delete;
-	ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID id);
+	ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id);
 	~ComponentAsset() override;
 	const std::vector<VirtualType::Type>& members() const;
 	const std::vector<std::string>& memberNames() const;

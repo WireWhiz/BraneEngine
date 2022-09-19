@@ -94,7 +94,7 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 	std::string fileSuffix = source.extension().string();
 
 	ShaderAsset* shader = new ShaderAsset();
-	shader->id.parseString(_json["id"].asString());
+	shader->id = _json["id"].asString();
 	shader->name = name();
 	shader->shaderType = shaderType();
 
@@ -127,7 +127,9 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 
 std::vector<std::pair<AssetID, AssetType>> EditorShaderAsset::containedAssets() const
 {
-	return {{_json["id"].asString(), AssetType::shader}};
+	std::vector<std::pair<AssetID, AssetType>> deps;
+	deps.emplace_back(AssetID{_json["id"].asString()}, AssetType::shader);
+	return std::move(deps);
 }
 
 ShaderType EditorShaderAsset::shaderType() const
