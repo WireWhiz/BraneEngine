@@ -94,6 +94,7 @@ template<typename T>
 T fromHex(std::string_view hex)
 {
 	T num = 0;
+	T pow = 1;
 
 	for (uint8_t i = 0; i < hex.size(); ++i)
 	{
@@ -103,7 +104,9 @@ T fromHex(std::string_view hex)
 			currentNum = c - 48;
 		else if(64 < c && c < 71)
 			currentNum = c - 65 + 10;
-		num += currentNum * std::pow(16, i);
+
+		num += currentNum * pow;
+		pow *= 16;
 	}
 	return num;
 }
