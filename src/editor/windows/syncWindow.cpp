@@ -10,6 +10,8 @@
 #include "ui/IconsFontAwesome6.h"
 #include "assets/asset.h"
 #include "assets/assetManager.h"
+#include "ui/gui.h"
+#include "ui/guiPopup.h"
 
 std::atomic_bool SyncWindow::_loggedIn = false;
 std::atomic_bool SyncWindow::_loggingIn = false;
@@ -130,7 +132,7 @@ void SyncWindow::drawConnected()
 		}
 		if(ImGui::BeginTabItem("Users"))
 		{
-			ImGui::TextDisabled("Work in progress");
+			drawUsers();
 			ImGui::EndTabItem();
 		}
 		ImGui::EndTabBar();
@@ -153,6 +155,11 @@ void SyncWindow::syncAssets()
 				s << h.first << h.second;
 
 			_syncServer->sendRequest("getAssetDiff", std::move(assetHashes), [this](auto code, InputSerializer res){
+				if(code != net::ResponseCode::success)
+				{
+					Runtime::error("Could not retrieve asset differences!");
+					return;
+				}
 				uint32_t diffs;
 				res >> diffs;
 				_assetDiffs.resize(diffs);
@@ -215,4 +222,184 @@ void SyncWindow::updateAsset(Asset* asset)
 		else
 			Runtime::error("Failed to update asset " + id->string());
 	});
+}
+
+class DeleteUserPopup : public GUIPopup
+{
+	std::string _username;
+	uint32_t _userID;
+	uint32_t _clicks = 4;
+	SyncWindow& _window;
+	void drawBody() override
+	{
+		ImGui::Text("Remove %s?", _username.c_str());
+		if(ImGui::Button("Yes"))
+			--_clicks;
+		ImGui::SameLine();
+		if(ImGui::Button("No"))
+			ImGui::CloseCurrentPopup();
+		ImGui::TextDisabled("%u clicks remaining", _clicks);
+		if(_clicks == 0)
+		{
+			SerializedData data;
+			OutputSerializer s(data);
+			s << _userID;
+			std::string username = _username;
+			auto& win = _window;
+			_window.syncServer()->sendRequest("adminDeleteUser", std::move(data), [username, &win](auto ec, InputSerializer s){
+				if(ec != net::ResponseCode::success)
+					Runtime::log("Couldn't delete " + username);
+				win.refreshUsers();
+			});
+			ImGui::CloseCurrentPopup();
+		}
+	}
+public:
+	DeleteUserPopup(std::string username, uint32_t userID, SyncWindow& window) : _username(std::move(username)), _userID(userID), _window(window), GUIPopup("Delete User"){};
+};
+
+class EditPasswordPopup : public GUIPopup
+{
+	net::Connection* _server;
+	uint32_t _userID;
+	std::string _newPassword1;
+	std::string _newPassword2;
+
+	std::string _result;
+	void drawBody() override
+	{
+		ImGui::Text("Change Password");
+		ImGui::InputText("New password",    &_newPassword1, ImGuiInputTextFlags_Password);
+		ImGui::InputText("Repeat password", &_newPassword2, ImGuiInputTextFlags_Password);
+		bool valid = true;
+		if(_newPassword1.size() < 8)
+		{
+			ImGui::TextDisabled("Password must be at least 8 characters long");
+			valid = false;
+		}
+		else if(_newPassword1 != _newPassword2)
+		{
+			ImGui::TextDisabled("Passwords do not match");
+			valid = false;
+		}
+		ImGui::BeginDisabled(!valid);
+		if(ImGui::Button("Save"))
+		{
+			SerializedData data;
+			OutputSerializer s(data);
+			s << _userID << _newPassword1;
+			_result = "saving";
+			_server->sendRequest("adminChangePassword", std::move(data), [this](auto rc, InputSerializer s){
+				switch(rc)
+				{
+					case net::ResponseCode::success:
+						_result = "success!";
+						break;
+					case net::ResponseCode::denied:
+						_result = "access denied";
+						break;
+					default:
+						_result = "error";
+				}
+			});
+		}
+		ImGui::EndDisabled();
+		if(!_result.empty())
+			ImGui::Text("%s", _result.c_str());
+	}
+public:
+	EditPasswordPopup(uint32_t userID, net::Connection* server) : _userID(userID), _server(server), GUIPopup("Edit Password"){};
+};
+
+void SyncWindow::drawUsers()
+{
+	_ui.pushHeaderFont();
+	ImGui::Text("Users");
+	ImGui::PopFont();
+	if(ImGui::InputText("Search", &_userFilter))
+	{
+		_usersSynced = -1;
+	}
+
+	if(_usersSynced == -1)
+	{
+		getUsers(_userFilter);
+	}
+
+	ImGui::BeginChild("Users", {0, std::max(400.0f, ImGui::GetContentRegionAvail().y / 2.0f)});
+	if(_usersSynced == 1)
+	{
+		for(auto& user : _users)
+		{
+			if(ImGui::CollapsingHeader(user.name.c_str()))
+			{
+				ImGui::Indent();
+				ImGui::PushID(user.id);
+				ImGui::TextDisabled("id: %u", user.id);
+				ImGui::InputText("username", &user.name);
+				if(ImGui::Button("Change Password"))
+					_ui.openPopup(std::make_unique<EditPasswordPopup>(user.id, _syncServer));
+				if(ImGui::Button("Save"))
+				{
+					Runtime::warn("Changing user data not supported yet");
+				}
+				ImGui::SameLine();
+				if(ImGui::Button("Delete"))
+					_ui.openPopup(std::make_unique<DeleteUserPopup>(user.name, user.id, *this));
+				ImGui::PopID();
+				ImGui::Unindent();
+			}
+		}
+	}
+	ImGui::EndChild();
+	ImGui::Separator();
+	_ui.pushHeaderFont();
+	ImGui::Text("Create User");
+	ImGui::PopFont();
+	ImGui::InputText("Username", &_newUser.name);
+	ImGui::InputText("Password", &_newUserPassword);
+	if(ImGui::Button("Create"))
+	{
+		SerializedData data;
+		OutputSerializer s(data);
+		s << _newUser.name;
+		s << _newUserPassword;
+		_syncServer->sendRequest("newUser", std::move(data), [this](auto ec, InputSerializer s){
+			if(ec == net::ResponseCode::success)
+			{
+				Runtime::log("User " + _newUser.name + " created!");
+				_usersSynced = -1;
+			}
+		});
+	}
+}
+
+void SyncWindow::getUsers(const std::string& filter)
+{
+	SerializedData data;
+	OutputSerializer s(data);
+	s << filter;
+	_syncServer->sendRequest("searchUsers", std::move(data), [this](auto ec, InputSerializer res){
+		if(ec != net::ResponseCode::success)
+		{
+			Runtime::error("Couldn't search users, error: " + std::to_string((uint8_t)ec));
+			return;
+		}
+		uint32_t userCount;
+		res >> userCount;
+		_users.clear();
+		_users.resize(userCount);
+		for(uint32_t i = 0; i < userCount; ++i)
+			res >> _users[i].id >> _users[i].name;
+
+		_usersSynced = 1;
+	});
+
+	_usersSynced = 0;
+
+}
+
+void SyncWindow::refreshUsers()
+{
+	_usersSynced = -1;
 }

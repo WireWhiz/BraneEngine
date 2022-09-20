@@ -33,51 +33,80 @@ _db(*Runtime::getModule<Database>())
 		});
 	}
 
+	createListeners();
+
+	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
+}
+
+AssetServer::~AssetServer()
+{
+
+}
+
+void AssetServer::createListeners()
+{
+	_nm.addRequestListener("newUser", [this](auto& rc)
+	{
+		auto ctx = getContext(rc.sender);
+		std::string username;
+		std::string newPassword;
+		rc.req >> username >> newPassword;
+		_db.createUser(username, newPassword);
+
+		Runtime::log("Created new user " + username);
+	});
+
 	_nm.addRequestListener("login", [this](auto& rc){
 		auto& ctx = getContext(rc.sender);
 		if(ctx.authenticated)
 			return;
-        rc.code = net::ResponseCode::denied;
-        std::string username, password;
-        rc.req >> username >> password;
-        if(_db.authenticate(username, password))
-        {
-            ctx.authenticated = true;
-            ctx.username = username;
-            ctx.userID = _db.getUserID(username);
-            ctx.permissions = _db.userPermissions(ctx.userID);
-            rc.code = net::ResponseCode::success;
-        }
+		rc.code = net::ResponseCode::denied;
+		std::string username, password;
+		rc.req >> username >> password;
+		if(_db.authenticate(username, password))
+		{
+			ctx.authenticated = true;
+			ctx.username = username;
+			ctx.userID = _db.getUserID(username);
+			ctx.permissions = _db.userPermissions(ctx.userID);
+			rc.code = net::ResponseCode::success;
+		}
 
 	});
 
+	createAssetListeners();
+	createEditorListeners();
+}
+
+void AssetServer::createAssetListeners()
+{
 	_nm.addRequestListener("asset", [this](auto& rc){
 		auto ctx = getContext(rc.sender);
 		if(!ctx.authenticated)
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
 		AssetID id;
 		rc.req >> id;
 		std::cout << "request for: " << id.string() << std::endl;
-        _fm.readFile(assetPath(id), rc.responseData.vector());
+		_fm.readFile(assetPath(id), rc.responseData.vector());
 	});
 
 	_nm.addRequestListener("incrementalAsset", [this](auto& rc){
 		auto ctx = getContext(rc.sender);
 		if(!ctx.authenticated)
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
 		AssetID id;
 		uint32_t streamID;
 		rc.req >> id >> streamID;
 		std::cout << "request for: " << id.string() << std::endl;
 
 		Asset* asset = _am.getAsset<Asset>(id);
-        auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
+		auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
 		auto f = [this, ctxPtr, streamID](Asset* asset) mutable
 		{
 			auto* ia = dynamic_cast<IncrementalAsset*>(asset);
@@ -92,7 +121,7 @@ _db(*Runtime::getModule<Database>())
 				assetSender.streamID = streamID;
 				assetSender.connection = ctxPtr->sender;
 				_senders.push_back(std::move(assetSender));
-                ctxPtr = nullptr;
+				ctxPtr = nullptr;
 			}
 			else
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
@@ -104,39 +133,11 @@ _db(*Runtime::getModule<Database>())
 			_am.fetchAsset<Asset>(id).then(f);
 
 	});
+}
 
-    _nm.addRequestListener("updateAsset", [this](auto& rc){
-        auto ctx = getContext(rc.sender);
-        if(!validatePermissions(ctx, {"edit assets"}))
-        {
-            rc.code = net::ResponseCode::denied;
-            return;
-        }
-        Asset* asset = Asset::deserializeUnknown(rc.req);
-
-        auto assetInfo = _db.getAssetInfo(asset->id.id());
-
-	    auto path = assetPath(asset->id);
-		bool assetExists = true;
-		if(assetInfo.hash.empty())
-		{
-			assetExists = false;
-		}
-
-        _fm.writeAsset(asset, path);
-		assetInfo.id = asset->id.id();
-	    assetInfo.name = asset->name;
-	    assetInfo.type = asset->type;
-	    assetInfo.hash = FileManager::fileHash(path);
-
-		if(assetExists)
-			_db.updateAssetInfo(assetInfo);
-		else
-			_db.insertAssetInfo(assetInfo);
-
-        rc.res << asset->id;
-    });
-
+void AssetServer::createEditorListeners()
+{
+	/** Asset syncing **/
 	_nm.addRequestListener("getAssetDiff", [this](auto& rc)
 	{
 		auto ctx = getContext(rc.sender);
@@ -164,7 +165,82 @@ _db(*Runtime::getModule<Database>())
 		rc.res << assetsWithDiff;
 	});
 
-	Runtime::timeline().addTask("send asset data", [this]{processMessages();}, "networking");
+	_nm.addRequestListener("updateAsset", [this](auto& rc){
+		auto ctx = getContext(rc.sender);
+		if(!validatePermissions(ctx, {"edit assets"}))
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		Asset* asset = Asset::deserializeUnknown(rc.req);
+
+		auto assetInfo = _db.getAssetInfo(asset->id.id());
+
+		auto path = assetPath(asset->id);
+		bool assetExists = true;
+		if(assetInfo.hash.empty())
+		{
+			assetExists = false;
+		}
+
+		_fm.writeAsset(asset, path);
+		assetInfo.id = asset->id.id();
+		assetInfo.name = asset->name;
+		assetInfo.type = asset->type;
+		assetInfo.hash = FileManager::fileHash(path);
+
+		if(assetExists)
+			_db.updateAssetInfo(assetInfo);
+		else
+			_db.insertAssetInfo(assetInfo);
+
+		rc.res << asset->id;
+	});
+
+	/** User management **/
+	_nm.addRequestListener("searchUsers", [this](auto& rc)
+	{
+		auto ctx = getContext(rc.sender);
+		if(!validatePermissions(ctx, {"view users"}))
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		std::string filter;
+		rc.req >> filter;
+		auto users = _db.searchUsers(0, 0, filter);
+		rc.res << static_cast<uint32_t>(users.size());
+		for(auto& user : users)
+			rc.res << user.id << user.username;
+	});
+
+	_nm.addRequestListener("adminChangePassword", [this](auto& rc)
+	{
+		auto ctx = getContext(rc.sender);
+		if(!validatePermissions(ctx, {"manage users"}))
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		uint32_t userID;
+		std::string newPassword;
+		rc.req >> userID >> newPassword;
+		_db.setPassword(userID, newPassword);
+	});
+
+	_nm.addRequestListener("adminDeleteUser", [this](auto& rc)
+	{
+		auto ctx = getContext(rc.sender);
+		if(!validatePermissions(ctx, {"manage users"}))
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		uint32_t userID;
+		rc.req >> userID;
+		_db.deleteUser(userID);
+		Runtime::log("Deleted user " + std::to_string(userID));
+	});
 }
 
 void AssetServer::processMessages()
@@ -187,11 +263,6 @@ void AssetServer::processMessages()
 			return true;
 		}
 	});
-}
-
-AssetServer::~AssetServer()
-{
-
 }
 
 const char* AssetServer::name()

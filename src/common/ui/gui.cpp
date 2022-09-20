@@ -318,4 +318,14 @@ void GUI::clearWindows()
 	}
 }
 
+void GUI::pushHeaderFont() const
+{
+	ImGui::PushFont(_fonts[1]);
+}
+
+void GUI::pushMonoFont() const
+{
+	ImGui::PushFont(_fonts[2]);
+}
+
 

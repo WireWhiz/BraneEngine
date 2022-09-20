@@ -32,6 +32,14 @@ Database::Database()
 						  "INNER JOIN Logins ON Logins.UserID = Users.UserID WHERE lower(Users.Username)=lower(?1);", _db);
 	_userIDCall.initialize("SELECT UserID FROM Users WHERE lower(Username)=lower(?1);", _db);
 
+	_createUser.initialize("INSERT INTO Users (Username) VALUES (?1)", _db);
+	_createPassword.initialize("INSERT INTO Logins (UserID, Password, Salt) VALUES (?1, ?2, ?3)", _db);
+	_setPassword.initialize("UPDATE Logins SET Password=?2, Salt=?3 WHERE UserID = ?1", _db);
+
+	_deleteUser.initialize("DELETE FROM Users WHERE UserID = ?1", _db);
+	_deleteUserLogin.initialize("DELETE FROM Logins WHERE UserID = ?1", _db);
+	_deleteUserPermissions.initialize("DELETE FROM UserPermissions WHERE UserID = ?1", _db);
+
 	_getAssetInfo.initialize("SELECT AssetID, Name, Type, Hash FROM Assets WHERE AssetID = ?1", _db);
 	_updateAssetInfo.initialize("UPDATE Assets SET Name = ?2, Type = ?3, Hash = ?4 WHERE AssetID = ?1", _db);
 	_insertAssetInfo.initialize("INSERT INTO Assets (AssetID, Name, Type, Hash) VALUES (?1, ?2, ?3, ?4);", _db);
@@ -42,6 +50,7 @@ Database::Database()
 	                      " ON CONFLICT DO UPDATE SET Level = ?3 WHERE AssetID = ?1 AND UserID = ?2", _db);
 	_deleteAssetPermission.initialize("DELETE FROM AssetPermissions WHERE AssetID = ?1 AND UserID = ?2", _db);
     _searchAssets.initialize("SELECT AssetID, Name, Type FROM Assets WHERE Name LIKE ?3 AND Type LIKE ?4 ORDER BY Name LIMIT ?2 OFFSET ?1", _db);
+	_searchUsers.initialize("SELECT UserID, Username FROM Users WHERE Username LIKE ?3 ORDER BY Username LIMIT ?2 OFFSET ?1", _db);
 
 	rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns)
 	{
@@ -157,18 +166,11 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 
 std::string Database::assetName(AssetID& id)
 {
-	std::string name = "name not found";
-	if(id.address() != "native")
-	{
-		std::string sqlCall ="SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id());
-		rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
-			name = columns[0].value;
-		});
-	}
-	else
-	{
-
-	}
+	std::string name = "not found";
+	std::string sqlCall ="SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id());
+	rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns){
+		name = columns[0].value;
+	});
 	return name;
 }
 
@@ -195,7 +197,7 @@ bool Database::authenticate(const std::string& username, const std::string& pass
 std::string Database::hashPassword(const std::string& password, const std::string& salt)
 {
 	size_t hashIterations = Config::json()["security"].get("hash_iterations", 10000).asLargestInt();
-	unsigned char hash[SHA256_DIGEST_LENGTH];
+	std::vector<uint8_t> hash(SHA256_DIGEST_LENGTH);
 	std::string output = password;
 	for (int i = 0; i < hashIterations; ++i)
 	{
@@ -203,27 +205,17 @@ std::string Database::hashPassword(const std::string& password, const std::strin
 		SHA256_CTX sha256;
 		SHA256_Init(&sha256);
 		SHA256_Update(&sha256, output.c_str(), output.size());
-		SHA256_Final(hash, &sha256);
-		std::stringstream ss;
-		for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-		{
-			ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-		}
-		output = ss.str();
+		SHA256_Final(hash.data(), &sha256);
+		output = toHex(hash, true);
 	}
 	return output;
 }
 
 std::string Database::randHex(size_t length)
 {
-	uint8_t* buffer = new uint8_t[length];
-	RAND_bytes(buffer, static_cast<int>(length));
-	std::stringstream output;
-	for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-	{
-		output << std::hex << std::setw(2) << std::setfill('0') << (int)buffer[i];
-	}
-	return output.str();
+	std::vector<uint8_t> buffer(length);
+	RAND_bytes(buffer.data(), static_cast<int>(length));
+	return toHex(buffer, true);
 }
 
 std::vector<Database::AssetSearchResult> Database::searchAssets(int start, int count, std::string match,  AssetType type)
@@ -237,6 +229,45 @@ std::vector<Database::AssetSearchResult> Database::searchAssets(int start, int c
         results.push_back(AssetSearchResult{static_cast<uint32_t>(id), std::move(name), AssetType::fromString(type)});
     });
     return results;
+}
+
+std::vector<Database::UserSearchResult> Database::searchUsers(int start, int count, std::string match)
+{
+	std::vector<UserSearchResult> results;
+	if(count == 0)
+		count = 1000;
+	match = "%" + match + "%";
+	_searchUsers.run(start, count, match, [&results](sqlINT id, sqlTEXT username){
+		results.push_back({(uint32_t)id, std::move(username)});
+	});
+	return results;
+}
+
+void Database::setPassword(uint32_t user, const std::string& password)
+{
+	std::string salt = randHex(SHA256_DIGEST_LENGTH);
+	std::string hashedPassword = hashPassword(password, salt);
+	_setPassword.run((int)user, hashedPassword, salt);
+}
+
+void Database::createUser(const std::string& username, const std::string& password)
+{
+	_createUser.run(username);
+	uint32_t userID = 0;
+	_getLastInserted.run("Users", [&userID](sqlINT id){
+		userID = id;
+	});
+
+	std::string salt = randHex(SHA256_DIGEST_LENGTH);
+	std::string hashedPassword = hashPassword(password, salt);
+	_createPassword.run((int)userID, hashedPassword, salt);
+}
+
+void Database::deleteUser(uint32_t user)
+{
+	_deleteUserPermissions.run((sqlINT)user);
+	_deleteUserLogin.run((sqlINT)user);
+	_deleteUser.run((sqlINT)user);
 }
 
 

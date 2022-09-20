@@ -10,6 +10,9 @@ namespace Runtime
 	std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
 	Timeline _timeline;
 	std::atomic_bool _running = true;
+	uint32_t _tickRate = 0;
+	std::chrono::high_resolution_clock::time_point _lastUpdate;
+	float _deltaTime = 1;
 
 	void addModule(const std::string& name, Module* m)
 	{
@@ -34,6 +37,11 @@ namespace Runtime
 		Logging::pushLog(message, Logging::LogLevel::error);
 	}
 
+	void setTickRate(uint32_t tickRate)
+	{
+		_tickRate = tickRate;
+	}
+
 	void run()
 	{
 		for (auto& m : _modules)
@@ -45,6 +53,16 @@ namespace Runtime
 		{
 			_timeline.run();
 			Logging::callListeners();
+			auto now = std::chrono::high_resolution_clock::now();
+			auto updatePeriod = std::chrono::duration_cast<std::chrono::microseconds>(now - _lastUpdate);
+			_deltaTime = (float)updatePeriod.count() / 1000000.0f;
+			_lastUpdate = now;
+
+			if(_tickRate != 0 && updatePeriod.count() < 1000000 / _tickRate)
+			{
+				std::chrono::microseconds minTime(1000000 / _tickRate);
+				std::this_thread::sleep_for(minTime - updatePeriod);
+			}
 		}
 
 	}
@@ -59,6 +77,11 @@ namespace Runtime
 		}
 
 		_running = false;
+	}
+
+	float deltaTime()
+	{
+		return _deltaTime;
 	}
 
 	bool hasModule(const std::string& name)
@@ -78,6 +101,7 @@ namespace Runtime
 	{
 		Logging::init();
 		ThreadPool::init(4);
+		_lastUpdate = std::chrono::high_resolution_clock::now();
 	}
 
 	void cleanup()

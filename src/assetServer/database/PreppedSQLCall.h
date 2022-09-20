@@ -116,6 +116,7 @@ public:
 		int res = sqlite3_prepare_v2(db, sql.data(), sql.size(), &stmt, nullptr);
 		if(res != SQLITE_OK)
 		{
+			Runtime::error("Could not initialize prepared sql call: " + sql + "\nsqlite returned: " + std::to_string(res));
 			throw std::runtime_error("Could not initialize prepared sql call: " + sql + "\nsqlite returned: " + std::to_string(res));
 		}
 	}
@@ -127,9 +128,9 @@ public:
 		int result = SQLITE_ROW;
 		while(result == SQLITE_ROW)
 			result = sqlite3_step(stmt);
+		sqlite3_reset(stmt);
 		if(result != SQLITE_DONE)
 			throw std::runtime_error("Prepared SQL statement failed with return value: " + std::to_string(result));
-		sqlite3_reset(stmt);
 	}
 
 	template<typename Runnable>
@@ -154,9 +155,9 @@ public:
 				std::apply(f, columns);
 			}
 		}
+		sqlite3_reset(stmt);
 		if(result != SQLITE_DONE)
 			throw std::runtime_error("Prepared SQL statement failed with return value: " + std::to_string(result));
-		sqlite3_reset(stmt);
 	}
 };
 

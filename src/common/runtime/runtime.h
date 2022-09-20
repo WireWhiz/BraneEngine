@@ -47,8 +47,10 @@ namespace Runtime
 	void warn(const std::string& message);
 	void error(const std::string& message);
 
+	void setTickRate(uint32_t tickRate);
 	void run();
 	void stop();
+	float deltaTime();
 };
 
 

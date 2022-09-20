@@ -35,8 +35,10 @@ void NetworkManager::connectToAssetServer(std::string ip, uint16_t port)
 void NetworkManager::async_connectToAssetServer(const std::string& address, uint16_t port, const std::function<void(bool)>& callback)
 {
 	_serverLock.lock_shared();
-	if(_servers.count(address))
+	auto server = _servers.find(address);
+	if (server != _servers.end())
 	{
+		if(_servers.at(address))
 		callback(true);
 		_serverLock.unlock_shared();
 		return;

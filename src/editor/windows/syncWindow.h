@@ -35,8 +35,24 @@ class SyncWindow : public EditorWindow
 	std::atomic_int _assetDiffSynced = -1;
 	void syncAssets();
 	void updateAsset(Asset* asset);
+
+	std::atomic_int _usersSynced = -1;
+	std::string _userFilter;
+	struct UserInfo
+	{
+		uint32_t id;
+		std::string name;
+		std::set<std::string> permissions;
+		bool synced;
+	};
+	std::vector<UserInfo> _users;
+	UserInfo _newUser;
+	std::string _newUserPassword;
+	void drawUsers();
+	void getUsers(const std::string& filter);
 public:
 	SyncWindow(GUI& ui, Editor& editor);
+	void refreshUsers();
 	static net::Connection* syncServer();
 };
 

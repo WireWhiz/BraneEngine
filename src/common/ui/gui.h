@@ -90,6 +90,9 @@ public:
 	{
 		return _fonts;
 	}
+
+	void pushHeaderFont() const;
+	void pushMonoFont() const;
 };
 
 

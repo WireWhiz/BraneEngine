@@ -26,6 +26,7 @@ int main()
 	Runtime::addModule<Database>();
 	Runtime::addModule<AssetServer>();
 
+	Runtime::setTickRate(30);
 	Runtime::run();
 	Runtime::cleanup();
 	return 0;

@@ -46,6 +46,11 @@ class AssetServer : public Module
 	std::filesystem::path AssetServer::assetPath(const AssetID& id);
 
 	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
+
+	void createListeners();
+	void createAssetListeners();
+	void createEditorListeners();
+
 	ConnectionContext& getContext(net::Connection* connection);
 	bool validatePermissions(ConnectionContext& ctx, const std::vector<std::string>& permissions);
 
