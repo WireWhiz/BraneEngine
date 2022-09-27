@@ -20,6 +20,7 @@
 #include "backends/imgui_impl_vulkan.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "ecs/nativeComponent.h"
+#include "editor/assets/assemblyReloadManager.h"
 
 class RenderWindowAssetReady : public GUIEvent
 {
@@ -38,11 +39,12 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 	_renderer->setClearColor({.2,.2,.2,1});
 	_swapChain = vkr.swapChain();
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event){
-        if(!_entities.empty())
+        if(!_assemblies.empty())
         {
-			for(auto& e : _entities)
-				em.destroyEntity(e);
-			_entities.resize(0);
+	        auto* arm = Runtime::getModule<AssemblyReloadManager>();
+			for(auto& e : _assemblies)
+				arm->destroy(e.assembly, e.root);
+	        _assemblies.resize(0);
 		}
 		auto* am = Runtime::getModule<AssetManager>();
         _focusedAsset = event->asset();
@@ -64,32 +66,27 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     });
 	_ui.addEventListener<RenderWindowAssetReady>("render window asset ready", this, [this, &em](const RenderWindowAssetReady* event){
 		auto* am = Runtime::getModule<AssetManager>();
-		Assembly* assembly = am->getAsset<Assembly>(event->id());
+		auto* arm = Runtime::getModule<AssemblyReloadManager>();
+		auto* assembly = am->getAsset<Assembly>(event->id());
 		assert(assembly);
-		EntityID root = em.createEntity();
-		em.addComponent<Transform>(root);
-		Transform t;
-		t.value = glm::translate(glm::mat4(1), {0, 0, 0});
-		em.setComponent(root, t.toVirtual());
-		_entities = assembly->inject(em, root);
-		_entities.push_back(root);
+		EntityID root = arm->instantiate(assembly);
+		_assemblies.push_back(AssemblyContex{assembly, root});
 	});
-	_ui.addEventListener<EntityAssetReloadEvent>("entity asset reload", this, [this](const EntityAssetReloadEvent* event){
-		if(_focusedAsset && event->entity() < _entities.size())
+	_ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
+		if(!_focusedAsset)
+			return;
+		auto* am = Runtime::getModule<AssetManager>();
+		auto* arm = Runtime::getModule<AssemblyReloadManager>();
+		auto* assembly = am->getAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString()));
+		if(assembly)
 		{
-			dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->updateEntity(event->entity(), _entities);
+			_focusedAssetEntity = event->entity();
+			_focusedEntity = arm->getEntity(assembly, 0, event->entity());
 		}
 	});
-    _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
-        _focusedAssetEntity = event->entity();
-        _focusedEntity = _entities[event->entity()];
-    });
-    /*_ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
-        if(_focusedAsset)
-            _focusedAsset->setPreviewEntities(false);
-        _focusedAsset = nullptr;
+    _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
         _focusedEntity = event->id();
-    });*/
+    });
 	_lightEntity = em.createEntity(ComponentSet({Transform::def()->id, PointLightComponent::def()->id}));
 	Transform lightTransform;
 	lightTransform.value = glm::translate(glm::mat4(1), {2,2,-2});
@@ -278,6 +275,7 @@ void RenderWindow::displayContent()
 					assert(components != Json::nullValue);
 					if(em->hasComponent<TRS>(_focusedEntity))
 					{
+						size_t i = 0;
 						for(auto& member : components)
 						{
 							if(member["id"] == TRS::def()->asset->id.string())
@@ -285,10 +283,12 @@ void RenderWindow::displayContent()
 								member = EditorAssemblyAsset::componentToJson(em->getComponent<TRS>(_focusedEntity)->toVirtual());
 								break;
 							}
+							++i;
 						}
 					}
 	                if(em->hasComponent<Transform>(_focusedEntity))
 	                {
+		                size_t i = 0;
 		                for(auto& member : components)
 		                {
 			                if(member["id"] == Transform::def()->asset->id.string())
@@ -296,6 +296,7 @@ void RenderWindow::displayContent()
 				                member = EditorAssemblyAsset::componentToJson(em->getComponent<Transform>(_focusedEntity)->toVirtual());
 				                break;
 			                }
+			                ++i;
 		                }
 	                }
                     _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components", components);

@@ -85,7 +85,7 @@ uint32_t AssetID::id() const
 std::string_view AssetID::address() const
 {
 	assert(!null());
-	return {_string.data(), _delimiter - 1};
+	return {_string.data(), _delimiter};
 }
 
 void AssetID::setID(uint32_t newID)

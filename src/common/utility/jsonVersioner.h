@@ -17,7 +17,17 @@ namespace Json
 	std::string getPathComponent(const std::string& path, uint32_t index);
 }
 
-class JsonChange
+class JsonChangeBase
+{
+	VersionedJson* _json = nullptr;
+public:
+	JsonChangeBase(VersionedJson*  json);
+	const VersionedJson* json();
+	virtual void undo() = 0;
+	virtual void redo() = 0;
+};
+
+class JsonChange : public JsonChangeBase
 {
 	VersionedJson* _json = nullptr;
 	std::string _path;
@@ -26,21 +36,29 @@ class JsonChange
 public:
 	JsonChange(const std::string& path, Json::Value newValue, VersionedJson*  json);
 	JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson*  json);
-	const VersionedJson* json();
-	void undo();
-	void redo();
+	void undo() override;
+	void redo() override;
+};
+
+class MultiJsonChange : public JsonChangeBase
+{
+public:
+	std::vector<std::unique_ptr<JsonChangeBase>> changes;
+	MultiJsonChange(VersionedJson* json);
+	void undo() override;
+	void redo() override;
 };
 
 class JsonVersionTracker
 {
-	std::deque<std::unique_ptr<JsonChange>> _changes;
-	std::deque<std::unique_ptr<JsonChange>>::iterator _currentChange;
+	std::deque<std::unique_ptr<JsonChangeBase>> _changes;
+	std::deque<std::unique_ptr<JsonChangeBase>>::iterator _currentChange;
 
 	//TODO add this to config
 	size_t maxChanges = 200;
 public:
 	JsonVersionTracker();
-	void recordChange(std::unique_ptr<JsonChange> change);
+	void recordChange(std::unique_ptr<JsonChangeBase> change);
 	void clearChanges(const VersionedJson* json);
 	void undo();
 	void redo();
@@ -59,11 +77,15 @@ class VersionedJson
 		Json::Value before;
 	};
 	std::unique_ptr<UncompletedChange> _uncompletedChange;
+	std::unique_ptr<MultiJsonChange> _multiChange;
 	friend class JsonChange;
 public:
 	VersionedJson(JsonVersionTracker& tkr);
 	void initialize(const Json::Value& value);
 	void changeValue(const std::string& path, const Json::Value& newValue, bool changeComplete = true);
+	void beginMultiChange();
+	void endMultiChange();
+
 	void onChange(const std::function<void(const std::string& path)>& f);
 	void markClean();
 	bool dirty() const;

@@ -11,10 +11,10 @@
 #include <shared_mutex>
 
 using ChunkCallbackID = uint32_t;
-using ChunkLODCallback = std::function<void(const WorldChunk* chunk, uint32_t newLOD)>;
+using ChunkLODCallback = std::function<void(const WorldChunk* chunk, uint32_t oldLOD, uint32_t newLOD)>;
 #define NullLOD uint32_t(-1)
 
-class ChunkLoader
+class ChunkLoader : public Module
 {
 	struct ChunkContext
 	{
@@ -31,6 +31,8 @@ public:
 	ChunkCallbackID addOnLODChangeCallback(ChunkLODCallback callback);
 	void removeOnLODChangeCallback(ChunkCallbackID id);
 	void setChunkLOD(const AssetID& chunk, uint32_t lod);
+
+	static const char* name();
 };
 
 

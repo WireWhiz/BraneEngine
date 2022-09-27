@@ -19,6 +19,7 @@
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/assemblyReloadManager.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -218,39 +219,6 @@ void DataWindow::displayAssemblyData()
 
 void DataWindow::displayMeshData()
 {
-	/*MeshAsset* mesh = static_cast<MeshAsset*>(_focusedAsset->asset());
-	ImGui::Text("Primitives %u", mesh->primitiveCount());
-	uint32_t vertices = 0;
-	uint32_t tris = 0;
-	for (int i = 0; i < mesh->primitiveCount(); ++i)
-	{
-			vertices += mesh->vertexCount(i);
-			tris += mesh->indexCount(i);
-	}
-	tris /= 3;
-	ImGui::Text("Total vertices: %u", vertices);
-	ImGui::Text("Total triangles: %u", tris);
-    for (size_t i = 0; i < mesh->primitiveCount(); ++i)
-    {
-        ImGui::Separator();
-        ImGui::PushID(i);
-        ImGui::PushFont(_ui.fonts()[1]);
-        ImGui::Text("Primitive %d", i);
-        ImGui::PopFont();
-        ImGui::Text("Vertices: %u", mesh->vertexCount(i));
-        ImGui::Text("Triangles: %u", mesh->indexCount(i) / 3);
-        if(ImGui::CollapsingHeader("Vertices"))
-        {
-            ImGui::Indent(16);
-            const byte* poses = &mesh->packedData()[mesh->attributeOffset(i, "POSITION")];
-            for(size_t j = 0; j < mesh->vertexCount(i); ++j)
-            {
-                ImGui::InputFloat3(std::to_string(j).c_str(), (float*)(poses + j * sizeof(float) * 3), "%.3f", ImGuiInputTextFlags_ReadOnly);
-            }
-            ImGui::Unindent(16);
-        }
-        ImGui::PopID();
-    }*/
 
 }
 
@@ -321,12 +289,19 @@ void DataWindow::displayEntityAssetData()
 						while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
 							_focusedAsset->json().data()["dependencies"]["materials"].append("null");
 
-						_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
-						_editor.reloadAsset(_focusedAsset);
+						auto am = Runtime::getModule<AssetManager>();
 						if(!matID.null())
-							Runtime::getModule<AssetManager>()->fetchAsset<MaterialAsset>(matID).then([this](auto* m){_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);});
+						{
+							am->fetchAsset<MaterialAsset>(matID).then([this, matIndex, matIDStr = matID.string()](auto* m){
+								_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matIDStr);
+								_editor.reloadAsset(_focusedAsset);
+							});
+						}
 						else
-							_ui.sendEvent<EntityAssetReloadEvent>(_focusedAssetEntity);
+						{
+							_focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
+							_editor.reloadAsset(_focusedAsset);
+						}
 					}
 					ImGui::PopID();
 				}

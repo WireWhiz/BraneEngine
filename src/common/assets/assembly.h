@@ -35,12 +35,13 @@ public:
 	std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
     std::vector<AssetID> materials;
 	std::vector<EntityAsset> entities;
+	uint32_t rootIndex = 0;
 	void serialize(OutputSerializer& message) const override;
 	void deserialize(InputSerializer& message) override;
 
     std::vector<AssetDependency> dependencies() const override;
     void onDependenciesLoaded() override;
-	std::vector<EntityID> inject(EntityManager& em, EntityID rootID);
+	EntityID inject(EntityManager& em, std::vector<EntityID>* entityMap = nullptr);
 };
 
 

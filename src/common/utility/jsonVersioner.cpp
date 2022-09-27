@@ -6,13 +6,23 @@
 #include <iostream>
 #include "jsonVersioner.h"
 
+
+JsonChangeBase::JsonChangeBase(VersionedJson* json)
+{
+	_json = json;
+}
+
+const VersionedJson* JsonChangeBase::json()
+{
+	return _json;
+}
+
 JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, Json::resolvePath(path, json->_root), std::move(newValue), json)
 {
 }
 
-JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(path), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json)
+JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(path), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json), JsonChangeBase(json)
 {
-	redo();
 }
 
 void JsonChange::undo()
@@ -31,13 +41,9 @@ void JsonChange::redo()
 		_json->_onChange(_path);
 }
 
-const VersionedJson* JsonChange::json()
+void JsonVersionTracker::recordChange(std::unique_ptr<JsonChangeBase> change)
 {
-	return _json;
-}
-
-void JsonVersionTracker::recordChange(std::unique_ptr<JsonChange> change)
-{
+	change->redo();
 	if(_currentChange != _changes.end())
 		_changes.erase(_currentChange, _changes.end());
 	_changes.push_back(std::move(change));
@@ -109,12 +115,18 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 	if(_uncompletedChange)
 	{
 		assert(_uncompletedChange->path == path);
-		_tkr.recordChange(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
+		if(_multiChange)
+			_multiChange->changes.push_back(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
+		else
+			_tkr.recordChange(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
 		_uncompletedChange = nullptr;
 		return;
 	}
 
-	_tkr.recordChange(std::make_unique<JsonChange>(path, newValue, this));
+	if(_multiChange)
+		_multiChange->changes.push_back(std::make_unique<JsonChange>(path, newValue, this));
+	else
+		_tkr.recordChange(std::make_unique<JsonChange>(path, newValue, this));
 
 }
 
@@ -151,6 +163,22 @@ const Json::Value& VersionedJson::operator[](const char* p) const
 void VersionedJson::onChange(const std::function<void(const std::string& path)>& f)
 {
 	_onChange = f;
+}
+
+void VersionedJson::beginMultiChange()
+{
+	_multiChange = std::make_unique<MultiJsonChange>(this);
+}
+
+void VersionedJson::endMultiChange()
+{
+	assert(_multiChange);
+	if(_multiChange->changes.size() > 1)
+		_tkr.recordChange(std::move(_multiChange));
+	else if(_multiChange->changes.size() == 1)
+		_tkr.recordChange(std::move(_multiChange->changes[0]));
+
+	_multiChange = nullptr;
 }
 
 Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
@@ -202,4 +230,21 @@ std::string Json::getPathComponent(const std::string& path, uint32_t index)
 		}
 	}
 	return {path.begin() + begin, path.end()};
+}
+
+MultiJsonChange::MultiJsonChange(VersionedJson* json) : JsonChangeBase(json)
+{
+
+}
+
+void MultiJsonChange::undo()
+{
+	for(size_t i = 1; i <= changes.size(); ++i)
+		changes[changes.size() - i]->undo();
+}
+
+void MultiJsonChange::redo()
+{
+	for(auto& change : changes)
+		change->redo();
 }

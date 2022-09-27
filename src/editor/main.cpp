@@ -6,6 +6,7 @@
 #include <runtime/runtime.h>
 #include <runtime/module.h>
 #include "assets/assetManager.h"
+#include "assets/assemblyReloadManager.h"
 #include "fileManager/fileManager.h"
 #include "networking/networking.h"
 #include "systems/transforms.h"
@@ -30,6 +31,7 @@ int main(int argc, char** argv)
 	Runtime::addModule<Transforms>();
 	Runtime::addModule<graphics::VulkanRuntime>();
 	Runtime::addModule<GUI>();
+	Runtime::addModule<AssemblyReloadManager>();
 	Runtime::addModule<Editor>();
 
 	Runtime::run();

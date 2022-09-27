@@ -127,6 +127,17 @@ void AssetServer::createAssetListeners()
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
 		};
 
+		_nm.addRequestListener("defaultChunk", [this](auto& rc){
+			auto ctx = getContext(rc.sender);
+			if(!ctx.authenticated)
+			{
+				rc.code = net::ResponseCode::denied;
+				return;
+			}
+			AssetID defaultChunk(Config::json()["default_assets"]["chunk"].asString());
+			rc.res << defaultChunk;
+		});
+
 		if(asset)
 			f(asset);
 		else

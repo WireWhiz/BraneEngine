@@ -16,14 +16,9 @@ namespace graphics
 
 class Client : public Module
 {
-	AssetManager& _am;
-	NetworkManager& _nm;
-
-	void addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vkr);
-	AsyncData<Asset*> fetchAssetCallback(const AssetID& id, bool incremental);
-
+	robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
 public:
 	Client();
-
+	void start() override;
 	static const char* name();
 };

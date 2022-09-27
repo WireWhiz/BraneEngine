@@ -93,7 +93,7 @@ std::vector<ComponentID> Assembly::EntityAsset::runtimeComponentIDs()
 void Assembly::serialize(OutputSerializer& message) const
 {
 	Asset::serialize(message);
-	message << components << scripts << meshes << materials;
+	message << components << scripts << meshes << materials << rootIndex;
 	message << (uint32_t)entities.size();
 	for (uint32_t i = 0; i < entities.size(); ++i)
 	{
@@ -107,7 +107,7 @@ void Assembly::deserialize(InputSerializer& message)
 	AssetManager& am = *Runtime::getModule<AssetManager>();
 
 	Asset::deserialize(message);
-	message >> components >> scripts >> meshes >> materials;
+	message >> components >> scripts >> meshes >> materials >> rootIndex;
 	uint32_t size;
 	message.readSafeArraySize(size);
 	entities.resize(size);
@@ -122,18 +122,15 @@ Assembly::Assembly()
 	type.set(AssetType::Type::assembly);
 }
 
-std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
+EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef)
 {
 	std::vector<EntityID> entityMap(entities.size());
 	for (size_t i = 0; i < entities.size(); ++i)
 	{
 		EntityAsset& entity = entities[i];
 		entityMap[i] = em.createEntity(entity.runtimeComponentIDs());
-		if(!em.hasComponent(entityMap[i], LocalTransform::def()->id))
-		{
-            Transforms::setParent(entityMap[i], rootID, em);
-		}
 	}
+	EntityID rootID = entityMap[rootIndex];
 
 	for (size_t i = 0; i < entities.size(); ++i)
 	{
@@ -179,7 +176,9 @@ std::vector<EntityID>  Assembly::inject(EntityManager& em, EntityID rootID)
         }
 #endif
 	}
-    return entityMap;
+	if(entityMapRef)
+		*entityMapRef = std::move(entityMap);
+    return rootID;
 }
 
 void Assembly::onDependenciesLoaded()

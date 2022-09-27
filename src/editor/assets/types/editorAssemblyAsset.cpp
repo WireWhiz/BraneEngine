@@ -15,6 +15,7 @@
 #include "ui/gui.h"
 #include "editor/editorEvents.h"
 #include "assets/types/materialAsset.h"
+#include "editor/assets/assemblyReloadManager.h"
 #include <regex>
 
 EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, BraneProject& project) : EditorAsset(file, project)
@@ -32,12 +33,28 @@ EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, Bran
 		_json.data()["entities"].append(rootEntity);
 	}
 
-	std::regex entityChange(R"((entities/)([0-9]+).*)");
-	_json.onChange([this, entityChange](const std::string& path){
-		if(std::regex_match(path, entityChange))
+	std::regex entityComponentChange(R"((entities/)([0-9]+)(/components).*)");
+	std::regex entityParentChange(R"((entities/)([0-9]+)(/parent).*)");
+	_json.onChange([this, entityComponentChange, entityParentChange](const std::string& path){
+		auto* am = Runtime::getModule<AssetManager>();
+		auto* assembly = am->getAsset<Assembly>(AssetID{_json["id"].asString()});
+		if(assembly)
 		{
-			auto index = std::stoi(Json::getPathComponent(path, 1));
-			Runtime::getModule<GUI>()->sendEvent(std::make_unique<EntityAssetReloadEvent>(index));
+			if(std::regex_match(path, entityComponentChange))
+			{
+				Json::ArrayIndex entity = std::stoi(Json::getPathComponent(path, 1));
+				size_t componentIndex = 0;
+				for(auto& component : _json["entities"][entity]["components"])
+				{
+					auto* arm = Runtime::getModule<AssemblyReloadManager>();
+					arm->updateEntityComponent(assembly, entity, jsonToComponent(_json["entities"][entity]["components"][Json::ArrayIndex(componentIndex++)]));
+				};
+			}
+			if(std::regex_match(path, entityParentChange))
+			{
+				Json::ArrayIndex entity = std::stoi(Json::getPathComponent(path, 1));
+				Runtime::getModule<AssemblyReloadManager>()->updateEntityParent(assembly, entity, _json["entities"][entity]["parent"].asUInt());
+			}
 		}
 	});
 }
@@ -175,6 +192,7 @@ Asset* EditorAssemblyAsset::buildAssembly() const
 	auto* assembly = new Assembly();
 	assembly->name = name();
 	assembly->id = _json["id"].asString();
+	assembly->rootIndex = _json["rootEntity"].asUInt();
 
 	for(auto& mesh : _json["dependencies"]["meshes"])
 		assembly->meshes.emplace_back(mesh.asString());
@@ -227,70 +245,6 @@ Asset* EditorAssemblyAsset::buildAssembly() const
 		assembly->components.push_back(def->asset->id.copy());
 
 	return assembly;
-}
-
-void EditorAssemblyAsset::updateEntity(size_t index, const std::vector<EntityID>& entityMap) const
-{
-	assert(index < entityMap.size());
-	auto em = Runtime::getModule<EntityManager>();
-	EntityID id = entityMap[index];
-
-	//Reset entity
-	ComponentSet oldComponents = em->getEntityArchetype(id)->components();
-	for(ComponentID c: oldComponents)
-		if(c != 0) //Don't remove ID
-			em->removeComponent(id, c);
-
-	std::vector<VirtualComponent> components;
-
-	const Json::Value& entityData = _json["entities"][(Json::ArrayIndex)index];
-	if(entityData.isMember("parent") || entityData.isMember("children"))
-		em->addComponent<Transform>(id);
-	if(entityData.isMember("parent"))
-		Transforms::setParent(id, entityMap[entityData["parent"].asUInt()], *em);
-
-	if(entityData.isMember("children"))
-	{
-		Children cc;
-		for(auto& c : entityData["children"])
-			cc.children.push_back(entityMap[c.asUInt()]);
-		components.emplace_back(cc.toVirtual());
-	}
-	for(auto& comp : entityData["components"])
-	{
-		components.push_back(jsonToComponent(comp));
-	}
-
-	for(auto& comp : components)
-	{
-		em->addComponent(id, comp.description()->id);
-		em->setComponent(id, comp);
-	}
-
-	if(em->hasComponent<MeshRendererComponent>(id))
-	{
-		auto* renderer = em->getComponent<MeshRendererComponent>(id);
-		auto* am = Runtime::getModule<AssetManager>();
-		auto* mesh = am->getAsset<MeshAsset>(AssetID(_json["dependencies"]["meshes"][renderer->mesh].asString()));
-		renderer->mesh = mesh->runtimeID;
-		for(auto& mID : renderer->materials)
-		{
-			if(_json["dependencies"]["meshes"].size() <= mID || _json["dependencies"]["meshes"][mID] == "null")
-			{
-				mID = -1;
-				continue;
-			}
-			AssetID matAssetID(_json["dependencies"]["materials"][mID].asString());
-			if(matAssetID.null())
-			{
-				mID = -1;
-				continue;
-			}
-			auto* material = am->getAsset<MaterialAsset>(matAssetID);
-			mID = material->runtimeID;
-		}
-	}
-
 }
 
 Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
@@ -350,4 +304,16 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
 
 	}
 	return mesh;
+}
+
+void EditorAssemblyAsset::updateEntityComponent(size_t entity, size_t component) const
+{
+	auto* am = Runtime::getModule<AssetManager>();
+	auto* assembly = am->getAsset<Assembly>(AssetID{_json["id"].asString()});
+	if(assembly)
+	{
+
+		auto* arm = Runtime::getModule<AssemblyReloadManager>();
+		arm->updateEntityComponent(assembly, entity, jsonToComponent(_json["entities"][Json::ArrayIndex(entity)]["components"][Json::ArrayIndex(component)]));
+	};
 }

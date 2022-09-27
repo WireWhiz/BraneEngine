@@ -3,6 +3,9 @@
 #include "assets/assetManager.h"
 #include "graphics/graphics.h"
 #include "client.h"
+#include "ecs/entity.h"
+#include "chunk/chunkLoader.h"
+#include "systems/transforms.h"
 
 int main()
 {
@@ -20,7 +23,9 @@ int main()
 	Runtime::addModule<NetworkManager>();
 	Runtime::addModule<AssetManager>();
 	Runtime::addModule<EntityManager>();
+	Runtime::addModule<ChunkLoader>();
 	Runtime::addModule<graphics::VulkanRuntime>();
+	Runtime::addModule<Transforms>();
 	Runtime::addModule<Client>();
 
 	Runtime::run();

@@ -20,7 +20,7 @@ public:
 	Asset* buildAsset(const AssetID& id) const override;
 
 	void linkToGLTF(const std::filesystem::path& file);
-	void updateEntity(size_t index, const std::vector<EntityID>& entityMap) const;
+	void updateEntityComponent(size_t entity, size_t component) const;
 };
 
 

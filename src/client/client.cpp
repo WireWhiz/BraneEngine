@@ -12,107 +12,102 @@
 #include <utility/threadPool.h>
 #include <asio.hpp>
 #include "networking/connection.h"
+#include "chunk/chunkLoader.h"
+#include "assets/chunk.h"
 
 const char* Client::name()
 {
 	return "client";
 }
 
-Client::Client() :
-_am(*Runtime::getModule<AssetManager>()),
-_nm(*Runtime::getModule<NetworkManager>())
+Client::Client()
 {
-	_am.setFetchCallback([this](auto id, auto incremental){return fetchAssetCallback(id, incremental);});
 
-	EntityManager& em = *Runtime::getModule<EntityManager>();
-	graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
 
-	addAssetPreprocessors(_am, vkr);
-
-	ComponentSet headRootComponents;
-	headRootComponents.add(AssemblyRoot::def()->id);
-	headRootComponents.add(Transform::def()->id);
-	EntityID testHead = em.createEntity(headRootComponents);
-
-	AssemblyRoot testHeadRoot{};
-	testHeadRoot.id = AssetID("localhost/0000000000000F5F");
-
-	em.setComponent(testHead, testHeadRoot.toVirtual());
-
-	Transform tc{};
-	tc.value = glm::scale(glm::mat4(1), {0.5, 0.5, 0.5});
-	em.setComponent(testHead, tc.toVirtual());
-
-	auto* mat = new graphics::Material();
-	mat->setVertex(vkr.loadShader(0));
-	mat->setFragment(vkr.loadShader(1));
-	//mat->addTextureDescriptor(vkr.loadTexture(0));
-	mat->addBinding(0,sizeof(glm::vec3));
-	mat->addBinding(1, sizeof(glm::vec3));
-	mat->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	mat->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	vkr.addMaterial(mat);
-
-	graphics::Material* mat2 = new graphics::Material();
-	mat2->setVertex(vkr.loadShader(0));
-	mat2->setFragment(vkr.loadShader(2));
-	//mat->addTextureDescriptor(vkr.loadTexture(0));
-	mat2->addBinding(0,sizeof(glm::vec3));
-	mat2->addBinding(1, sizeof(glm::vec3));
-	mat2->addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-	mat2->addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
 }
 
-void Client::addAssetPreprocessors(AssetManager& am, graphics::VulkanRuntime& vkr)
+void Client::start()
 {
-	am.addAssetPreprocessor(AssetType::assembly, [&am, &vkr](Asset* asset){
-		auto assembly = (Assembly*)asset;
-		for(auto& entity : assembly->entities)
-		{
-			for(auto& component : entity.components)
-			{
-				if(component.description() == MeshRendererComponent::def())
-				{
-					MeshRendererComponent* mr = MeshRendererComponent::fromVirtual(component.data());
-					auto* meshAsset = am.getAsset<MeshAsset>(AssetID(assembly->meshes[mr->mesh]));
-					if(meshAsset->pipelineID == -1)
-						vkr.addMesh(meshAsset);
-					mr->mesh = meshAsset->pipelineID;
+	auto* nm = Runtime::getModule<NetworkManager>();
+	auto* am = Runtime::getModule<AssetManager>();
+	auto* cl = Runtime::getModule<ChunkLoader>();
+	auto* em = Runtime::getModule<EntityManager>();
 
-					//TODO: process materials here as well
+	cl->addOnLODChangeCallback([this, em, am](const WorldChunk* chunk, uint32_t oldLod, uint32_t newLod)
+	{
+		if(oldLod != NullLOD)
+		{
+			for(auto& lod : chunk->LODs)
+			{
+				if(lod.min > newLod || lod.max < newLod)
+				{
+					assert(_chunkRoots.contains(lod.assembly));
+					Runtime::getModule<Transforms>()->destroyRecursive(_chunkRoots.at(lod.assembly));
+					_chunkRoots.erase(lod.assembly);
+				}
+			}
+		}
+		if(newLod != NullLOD)
+		{
+			for(auto& lod : chunk->LODs)
+			{
+				if(lod.min <= newLod && newLod <= lod.max)
+				{
+					am->fetchAsset<Assembly>(lod.assembly).then([this, em](Assembly* assembly){
+						assembly->inject(em);
+						_chunkRoots.insert(lod.assembly);
+					});
 				}
 			}
 		}
 	});
+
+	nm->addRequestListener("loadChunk", [am](auto& rc){
+		AssetID chunkID;
+		rc.req >> chunkID;
+		am->fetchAsset<WorldChunk>(chunkID).then([](WorldChunk* chunk){
+			Runtime::getModule<ChunkLoader>()->loadChunk(chunk);
+			Runtime::log("Loaded chunk " + chunk->id.string());
+		});
+		Runtime::log("Was requested to load chunk " + chunkID.string());
+	});
+	nm->addRequestListener("unloadChunk", [](auto& rc){
+		Runtime::log("Was requested to unload chunk");
+	});
+
+
 }
 
-AsyncData<Asset*> Client::fetchAssetCallback(const AssetID& id, bool incremental)
+AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	_nm.async_connectToAssetServer(id.address, Config::json()["network"]["tcp_port"].asUInt(),
-	                               [this, id, incremental, asset](bool connected)
-	                               {
-		                               if (!connected)
-		                               {
-			                               asset.setError("Could not connect to server: " + id.address);
-			                               std::cerr << "Could not get asset: " << id << std::endl;
-			                               return;
-		                               }
-		                               if (incremental)
-		                               {
-			                               _nm.async_requestAssetIncremental(id).then([this, asset, id](Asset* data)
-			                                                                          {
-				                                                                          asset.setData(data);
-
-			                                                                          });
-		                               } else
-		                               {
-			                               AsyncData<Asset*> assetToSave;
-			                               _nm.async_requestAsset(id).then([this, asset, id](Asset* data)
-			                                                               {
-				                                                               asset.setData(data);
-			                                                               });
-		                               }
-	                               });;
+	if(id.address().empty())
+	{
+		asset.setError("Asset with id " + std::string(id.idStr()) + " was not found and can not be remotely fetched since it lacks a server address");
+		return asset;
+	}
+	auto* nm = Runtime::getModule<NetworkManager>();
+	if(incremental)
+	{
+		nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
+			asset.setData(ptr);
+		});
+	}
+	else
+	{
+		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
+			_assetLock.lock();
+			_assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
+			_assetLock.unlock();
+			if(dependenciesLoaded(ptr))
+			{
+				asset.setData(ptr);
+				return;
+			}
+			fetchDependencies(ptr, [ptr, asset]() mutable{
+				asset.setData(ptr);
+			});
+		});
+	}
 	return asset;
 }

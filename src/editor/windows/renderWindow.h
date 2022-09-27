@@ -19,6 +19,7 @@ namespace graphics{
     class SwapChain;
 }
 
+class Assembly;
 class EditorAsset;
 class RenderWindow : public EditorWindow
 {
@@ -36,7 +37,12 @@ class RenderWindow : public EditorWindow
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
 	std::shared_ptr<EditorAsset> _focusedAsset;
-	std::vector<EntityID> _entities;
+	struct AssemblyContex
+	{
+		Assembly* assembly;
+		EntityID root;
+	};
+	std::vector<AssemblyContex> _assemblies;
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;
 

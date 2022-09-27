@@ -21,6 +21,7 @@
   },
   "default_assets" :
   {
-    "material" : "defaults/shaded.material"
+    "material" : "defaults/shaded.material",
+    "chunk" : "/2"
   }
 }
