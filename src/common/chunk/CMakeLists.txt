@@ -1,2 +1,3 @@
 add_library(chunks STATIC
-        chunkManager.cpp)
+        chunkLoader.cpp)
+target_link_libraries(chunks PUBLIC include_dir ecs assets runtime utility)

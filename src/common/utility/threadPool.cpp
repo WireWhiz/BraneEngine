@@ -1,6 +1,8 @@
 #include "threadPool.h"
 #include <runtime/runtime.h>
 
+#include <memory>
+
 std::thread::id ThreadPool::main_thread_id;
 size_t ThreadPool::_instances;
 std::vector<std::thread> ThreadPool::_threads;
@@ -29,18 +31,17 @@ int ThreadPool::threadRuntime()
 				continue;
 		}
 #if NDEBUG
-		try
-			{
+		try{
 #endif
 		job.f();
 #if NDEBUG
 
 		}
-			catch (const std::exception& e)
-			{
-				std::cerr << "Thread Error: " << e.what() << std::endl;
+		catch (const std::exception& e)
+		{
+			std::cerr << "Thread Error: " << e.what() << std::endl;
 
-			}
+		}
 #endif
 		job.handle->_instances -= 1;
 		if(job.handle->_instances == 0)
@@ -71,15 +72,15 @@ void ThreadPool::init(size_t minThreads)
 void ThreadPool::cleanup()
 {
 	_instances--;
-	if (_instances == 0)
+	if(_instances == 0)
 	{
 		_running = false;
-		for (size_t i = 0; i < _threads.size(); i++)
+		for(auto & _thread : _threads)
 		{
 			try
 			{
-				if(_threads[i].joinable())
-					_threads[i].join();
+				if(_thread.joinable())
+					_thread.join();
 			}
 			catch (const std::exception& e)
 			{
@@ -91,28 +92,22 @@ void ThreadPool::cleanup()
 	
 }
 
-std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()>&& function)
+std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
 {
 	std::shared_ptr<JobHandle> handle = std::make_shared<JobHandle>();
 	handle->_instances = 1;
 	_queueMutex.lock();
-	_jobs.push(Job(std::move(function), handle));
+	_jobs.push({std::move(function), handle});
 	_queueMutex.unlock();
 	_workAvailable.notify_one();
 	return handle;
 }
 
-std::shared_ptr<JobHandle> ThreadPool::enqueue(const std::function<void()>& function)
+void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHandle>& sharedHandle)
 {
-	std::function<void()> copy(function);
-	return enqueue(std::move(copy));
-}
-
-void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHandle> handle)
-{
-	handle->_instances += 1;
+	sharedHandle->_instances += 1;
 	_queueMutex.lock();
-	_jobs.push(Job( std::move(function), handle));
+	_jobs.push({std::move(function), sharedHandle});
 	_queueMutex.unlock();
 	_workAvailable.notify_one();
 }
@@ -125,7 +120,7 @@ std::shared_ptr<JobHandle>  ThreadPool::enqueueBatch(std::vector<std::function<v
 	for(auto& function : functions)
 	{
 		handle->_instances += 1;
-		_jobs.push(Job(std::move(function), handle));
+		_jobs.push({std::move(function), handle});
 	}
 	_queueMutex.unlock();
 
@@ -161,6 +156,12 @@ void ThreadPool::addStaticTimedThread(std::function<void()> function, std::chron
 	});
 }
 
+std::shared_ptr<ConditionJob> ThreadPool::conditionalEnqueue(std::function<void()> function, size_t conditionCount)
+{
+	assert(conditionCount != 0);
+	return std::make_shared<ConditionJob>(ConditionJob{std::move(function), conditionCount});
+}
+
 bool JobHandle::finished()
 {
 	return _instances == 0;
@@ -178,9 +179,9 @@ JobHandle::JobHandle()
 	_instances = 0;
 }
 
-std::shared_ptr<JobHandle> JobHandle::next(std::function<void()> f)
+std::shared_ptr<JobHandle> JobHandle::then(std::function<void()> f)
 {
-	_next = f;
+	_next = std::move(f);
 	if(!_nextHandle)
 		_nextHandle = std::make_shared<JobHandle>();
 	return _nextHandle;
@@ -189,11 +190,11 @@ std::shared_ptr<JobHandle> JobHandle::next(std::function<void()> f)
 void JobHandle::enqueueNext()
 {
 	if(_next)
-		ThreadPool::enqueue(_next);
+		ThreadPool::enqueue(_next, _nextHandle);
 }
 
-Job::Job(std::function<void()>&& f, std::shared_ptr<JobHandle> handle)
+void ConditionJob::signal()
 {
-	this->f = std::move(f);
-	this->handle = handle;
+	if(--conditionCount == 0)
+		ThreadPool::enqueue(std::move(f));
 }

@@ -40,6 +40,8 @@ void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, 
 	Children* children = em.getComponent<Children>(parent);
 	children->children.push_back(entity);
 
+	if(!em.hasComponent<Transform>(entity))
+		em.addComponent<Transform>(entity);
 	auto* t = em.getComponent<Transform>(entity);
 	if(!keepOffset)
 	{

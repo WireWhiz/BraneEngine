@@ -18,6 +18,7 @@ public:
 		shader = 5,
 		material = 6,
 		assembly = 7,
+		chunk = 8,
 		player = 9
 	};
 

@@ -17,6 +17,8 @@
 #include "editor/assets/editorAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
 #include "editor/assets/types/editorShaderAsset.h"
+#include "imgui_internal.h"
+#include "editor/assets/types/editorChunkAsset.h"
 
 class CreateDirectoryPopup : public GUIPopup
 {
@@ -69,6 +71,9 @@ class CreateAssetPopup : public GUIPopup
 			Editor* editor = Runtime::getModule<Editor>();
 			switch(_type.type())
 			{
+				case AssetType::chunk:
+					asset = new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"), editor->project());
+					break;
 				case AssetType::material:
 					asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"), editor->project());
 					break;
@@ -154,6 +159,7 @@ void AssetBrowserWidget::setDirectory(FileManager::Directory* dir)
     _currentDir->setParentsOpen();
 	FileManager::refreshDirectoryTree(dir, _rootPath);
     _contents = FileManager::getDirectoryContents(_rootPath / _currentDir->path());
+	_selectedFiles = {-1, -1};
 }
 
 void AssetBrowserWidget::displayFiles()
@@ -175,9 +181,9 @@ void AssetBrowserWidget::displayFiles()
 			FileType type = getFileType(file);
 
 	        ImGui::PushID(file.path().c_str());
-            if (ImGui::Selectable("##", isSelected, ImGuiSelectableFlags_AllowDoubleClick, {0,0}))
+            if(ImGui::Selectable("##", isSelected, ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, {0,0}))
             {
-				if(ImGui::IsMouseDoubleClicked(0))
+				if(ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 				{
 					if(type == FileType::asset && _allowEdits)
 					{
@@ -201,6 +207,8 @@ void AssetBrowserWidget::displayFiles()
 				else
 					_selectedFiles = {std::min(_firstSelected, i), std::max(_firstSelected, i)};
             }
+	        if(ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right) && _selectedFiles.x == _selectedFiles.y)
+		        _selectedFiles = {i,i};
 			ImGui::SameLine(0,0);
 	        ImVec4 iconColor = {1,0,0,1};
 
@@ -244,26 +252,42 @@ void AssetBrowserWidget::displayFiles()
 			{
 				if(ImGui::Selectable(ICON_FA_FOLDER " Directory"))
 					_ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
+				if(ImGui::Selectable(ICON_FA_CUBE " Chunk"))
+					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::chunk));
 				if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
 					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
 				if(ImGui::Selectable(ICON_FA_FIRE " Shader"))
 					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::shader));
 				ImGui::EndMenu();
 			}
-			if(ImGui::Selectable(ICON_FA_FOLDER "Open File Browser"))
+			if(ImGui::Selectable(ICON_FA_FOLDER " Show In File Browser"))
 			{
 
 #ifdef WIN32
-				const std::string fileBrowser = "explorer ";
-#elif UNIX
-				const std::string fileBrowser = "dolphin ";
+				const std::string fileBrowser = "explorer \"";
+#elif __unix__
+				const std::string fileBrowser = "dolphin \"";
 #endif
-				system((fileBrowser + currentDirectory().string()).c_str());
+				system((fileBrowser + currentDirectory().string() + "\"").c_str());
 			}
 			if(_selectedFiles.x != -1)
 			{
 				ImGui::Separator();
-				if(ImGui::Selectable(ICON_FA_TRASH "Delete"))
+				if(_selectedFiles.x == _selectedFiles.y)
+				{
+					if(getFileType(_contents[_selectedFiles.x]) == FileType::source && ImGui::Selectable(ICON_FA_UP_RIGHT_FROM_SQUARE " Edit"))
+					{
+#ifdef WIN32
+						const std::string osCommand = R"(start "" ")";
+#elif __unix__
+						const std::string osCommand = "xdg-open \"";
+#endif
+						auto path = currentDirectory() / _contents[_selectedFiles.x].path();
+						system((osCommand + path.string() + "\"").c_str());
+					}
+				}
+
+				if(ImGui::Selectable(ICON_FA_TRASH " Delete"))
 				{
 					Runtime::warn("TODO delete assets from project file");
 					for(size_t i = _selectedFiles.x; i <= _selectedFiles.y; ++i)
@@ -334,6 +358,8 @@ const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
 		return ICON_FA_FIRE;
 	if(ext == ".material")
 		return ICON_FA_SPRAY_CAN_SPARKLES;
+	if(ext == ".chunk")
+		return ICON_FA_CUBE;
 	if(ext == ".assembly")
 		return ICON_FA_BOXES_STACKED;
 	if(ext == ".gltf" || ext == ".glb")
@@ -352,7 +378,7 @@ AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesyst
 	if(file.is_regular_file())
 	{
 		auto ext = file.path().extension();
-		if(ext == ".shader" || ext == ".assembly" || ext == ".material")
+		if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material")
 			return FileType::asset;
 		if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
 			return FileType::source;

@@ -5,5 +5,5 @@ add_library(editorAssets STATIC
         editorAsset.cpp
         types/editorShaderAsset.cpp
         types/editorAssemblyAsset.cpp
-        jsonVirtualType.cpp assetCache.cpp assetCache.h types/editorMaterialAsset.cpp types/editorMaterialAsset.h)
+        jsonVirtualType.cpp assetCache.cpp assetCache.h types/editorMaterialAsset.cpp types/editorMaterialAsset.h types/editorChunkAsset.cpp types/editorChunkAsset.h)
 target_link_libraries(editorAssets PUBLIC jsoncpp_static include_dir)

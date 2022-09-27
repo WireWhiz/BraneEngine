@@ -24,7 +24,7 @@ class JobHandle
 public:
 	bool finished();
 	void finish();
-	std::shared_ptr<JobHandle> next(std::function<void ()> f);
+	std::shared_ptr<JobHandle> then(std::function<void ()> f);
 	JobHandle();
 };
 
@@ -32,11 +32,17 @@ struct Job
 {
 	std::function<void()> f;
 	std::shared_ptr<JobHandle> handle;
-	Job(std::function<void()>&& f, std::shared_ptr<JobHandle> handle);
 	Job(const Job&) = delete;
 	Job(Job&&) = default;
 	Job& operator=(Job&&) = default;
 	Job() = default;
+};
+
+struct ConditionJob
+{
+	std::function<void()> f;
+	size_t conditionCount;
+	void signal();
 };
 
 class ThreadPool
@@ -60,10 +66,10 @@ public:
 	static void cleanup();
 	static std::shared_ptr<JobHandle> addStaticThread(std::function<void()> function);
 	static void addStaticTimedThread(std::function<void()> function, std::chrono::seconds interval);
-	static std::shared_ptr<JobHandle> enqueue(const std::function<void()>& function);
-	static std::shared_ptr<JobHandle> enqueue(std::function<void()>&& function);
-	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle>);
+	static std::shared_ptr<JobHandle> enqueue(std::function<void()> function);
+	static void enqueue(std::function<void()> function, std::shared_ptr<JobHandle>& sharedHandle);
 	static std::shared_ptr<JobHandle> enqueueBatch(std::vector<std::function<void()>> functions);
+	static std::shared_ptr<ConditionJob> conditionalEnqueue(std::function<void()> function, size_t conditionCount);
 };
 
 #define ASSERT_MAIN_THREAD() assert(std::this_thread::get_id() == ThreadPool::main_thread_id)

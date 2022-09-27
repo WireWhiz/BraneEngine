@@ -11,7 +11,8 @@ const EnumNameMap<AssetType::Type> names(
          {AssetType::texture,   "texture"  },
          {AssetType::player,    "player"   },
          {AssetType::shader,    "shader"   },
-         {AssetType::assembly,  "assembly" }
+         {AssetType::assembly,  "assembly" },
+         {AssetType::chunk,     "chunk"    },
  });
 
 AssetType::Type AssetType::fromString(const std::string& type)

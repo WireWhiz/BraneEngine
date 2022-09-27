@@ -11,6 +11,7 @@
 #include "editor/editor.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/editorChunkAsset.h"
 
 const std::string endToken = "\n/* Do not edit past this line */\n";
 
@@ -74,6 +75,8 @@ EditorAsset* EditorAsset::openUnknownAsset(const std::filesystem::path& path, Br
 		return new EditorMaterialAsset(path, project);
 	if(ext == ".assembly")
 		return new EditorAssemblyAsset(path, project);
+	if(ext == ".chunk")
+		return new EditorChunkAsset(path, project);
 	return nullptr;
 }
 

@@ -35,6 +35,7 @@ class DataWindow : public EditorWindow
 	void displayEntityData();
 	void displayEntityAssetData();
 
+	void displayChunkData();
 	void displayAssemblyData();
 	void displayMeshData();
     void displayMaterialData();

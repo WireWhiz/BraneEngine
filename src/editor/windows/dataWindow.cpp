@@ -24,7 +24,6 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Data Inspector";
 	ui.addEventListener<FocusAssetEvent>("focus asset", this, [this](const FocusAssetEvent* event){
-        auto editor = Runtime::getModule<Editor>();
         _focusedAsset = event->asset();
 		_focusMode = FocusMode::asset;
 		_focusedAssetEntity = -1;
@@ -77,8 +76,13 @@ void DataWindow::displayAssetData()
 			case AssetType::material:
 				displayMaterialData();
 				break;
+			case AssetType::chunk:
+				displayChunkData();
+				break;
 			default:
+				ImGui::PushTextWrapPos();
 				ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->type().toString().c_str(), _focusedAsset->name().c_str());
+				ImGui::PopTextWrapPos();
 		}
 	}catch(const std::exception& e)
 	{
@@ -90,6 +94,96 @@ void DataWindow::displayAssetData()
 
 }
 
+void DataWindow::displayChunkData()
+{
+	ImGui::Text("LODs:");
+
+	ImGui::Indent();
+	int lodIndex = 0;
+	auto& lods = _focusedAsset->json()["LODs"];
+	int removedLOD = -1;
+	for(auto& lod : lods)
+	{
+		ImGui::PushID(lodIndex);
+		ImGui::TextDisabled("%d", lodIndex);
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(60);
+		int dragInt[2] = {lod["min"].asInt(), lod["max"].asInt()};
+		if(ImGui::DragInt2("##Range", dragInt))
+		{
+			if(dragInt[0] < 0)
+				dragInt[0] = 0;
+			if(dragInt[1] < 0)
+				dragInt[1] = 0;
+			if(dragInt[0] > dragInt[1])
+				dragInt[1] = dragInt[0];
+			Json::Value newLod = lod;
+			newLod["min"] = dragInt[0];
+			newLod["max"] = dragInt[1];
+			_focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+		}
+		ImGui::SameLine();
+		AssetID assembly(lods[lodIndex]["assembly"].asString());
+		ImGui::SetNextItemWidth(160);
+		if(AssetSelectWidget::draw(assembly, AssetType::assembly))
+		{
+			Json::Value newLod = lod;
+			newLod["assembly"] = assembly.string();
+			_focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+		}
+		if(assembly.null())
+		{
+			ImGui::SameLine();
+			if(ImGui::Button("Create Assembly"))
+			{
+				std::filesystem::path lodPath = _focusedAsset->file();
+				lodPath.replace_filename(_focusedAsset->name() + "_LOD" + std::to_string(lodIndex) + ".assembly");
+
+				auto* lodAssembly = new EditorAssemblyAsset(lodPath, _editor.project());
+
+				Json::Value newLod = lod;
+				newLod["assembly"] = lodAssembly->json()["id"];
+				_focusedAsset->json().changeValue("LODs/" + std::to_string(lodIndex), newLod);
+				lodAssembly->save();
+				delete lodAssembly;
+			}
+		}
+		if(lods.size() > 1)
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - 13);
+			if(ImGui::Button("-", {15, 0}))
+				removedLOD = lodIndex;
+		}
+
+		ImGui::PopID();
+		++lodIndex;
+	}
+	if(removedLOD != -1)
+	{
+		Json::Value newLODList;
+		for(Json::ArrayIndex i = 0; i < lods.size(); ++i)
+		{
+			if(i != removedLOD)
+				newLODList.append(lods[i]);
+		}
+		_focusedAsset->json().changeValue("LODs", newLODList);
+	}
+
+	ImGui::Unindent();
+	ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - 13);
+	if(ImGui::Button("+", {15, 0}))
+	{
+		Json::Value newLODList = _focusedAsset->json()["LODs"];
+		Json::Value newLod;
+		newLod["min"] = 0;
+		newLod["max"] = 0;
+		newLod["assembly"] = "null";
+		newLODList.append(newLod);
+		_focusedAsset->json().changeValue("LODs", newLODList);
+	}
+}
+
 void DataWindow::displayAssemblyData()
 {
 	if(_focusedAssetEntity < _focusedAsset->json()["entities"].size())
@@ -97,7 +191,6 @@ void DataWindow::displayAssemblyData()
 		displayEntityAssetData();
 		return;
 	}
-	AssetManager& am = *Runtime::getModule<AssetManager>();
 	if(ImGui::CollapsingHeader("Dependencies")){
 		ImGui::Indent();
 		if(ImGui::CollapsingHeader("Materials")){

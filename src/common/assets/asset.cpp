@@ -5,6 +5,7 @@
 #include "types/materialAsset.h"
 #include "assembly.h"
 #include "types/shaderAsset.h"
+#include "chunk.h"
 
 void Asset::serialize(OutputSerializer& s) const
 {
@@ -43,7 +44,8 @@ Asset* Asset::assetFromType(AssetType type)
 			return new MaterialAsset();
 		case AssetType::assembly:
 			return new Assembly();
-			break;
+		case AssetType::chunk:
+			return new WorldChunk();
 		case AssetType::player:
 			assert("Not implemented" && false);
 			break;

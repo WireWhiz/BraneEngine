@@ -104,18 +104,21 @@ bool EntityManager::hasComponent(EntityID entity, ComponentID component) const
 
 VirtualComponentView EntityManager::getComponent(EntityID entity, ComponentID component) const
 {
+	assert(entityExists(entity));
 	assert(getEntityArchetype(entity)->hasComponent(component));
 	return getEntityArchetype(entity)->getComponent(_entities[entity.id].index, component);
 }
 
 void EntityManager::setComponent(EntityID entity, const VirtualComponent& component)
 {
+	assert(entityExists(entity));
 	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity.id].index, component);
 }
 
 void EntityManager::setComponent(EntityID entity, const VirtualComponentView& component)
 {
+	assert(entityExists(entity));
 	assert(getEntityArchetype(entity)->hasComponent(component.description()->id));
 	getEntityArchetype(entity)->setComponent(_entities[entity.id].index, component);
 }

@@ -25,6 +25,11 @@ EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, Bran
 		_json.data()["linked"] = false;
 		_json.data()["dependencies"]["meshes"] = Json::arrayValue;
 		_json.data()["dependencies"]["materials"] = Json::arrayValue;
+		_json.data()["dependencies"]["components"].append(EntityName::def()->asset->id.string());
+		Json::Value rootEntity;
+		rootEntity["name"] = "root";
+		rootEntity["components"] = Json::arrayValue;
+		_json.data()["entities"].append(rootEntity);
 	}
 
 	std::regex entityChange(R"((entities/)([0-9]+).*)");

@@ -34,7 +34,7 @@ const std::string& AssetID::string() const
 
 bool AssetID::operator==(const AssetID& other) const
 {
-	return _string != other._string;
+	return _string == other._string;
 }
 
 bool AssetID::operator!=(const AssetID& other) const

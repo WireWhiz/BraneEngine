@@ -8,11 +8,21 @@
 #include "common/ecs/component.h"
 #include "assembly.h"
 
-class WorldChunk : public Assembly
+class WorldChunk : public Asset
 {
 public:
-	std::vector<AssetID> dependencies; // Any systems in dependencies will be automatically loaded
-	std::vector<EntityAsset> data;
+	struct LOD
+	{
+		AssetID assembly;
+		uint32_t max = -1;
+		uint32_t min = -1;
+	};
+	std::vector<LOD> LODs;
+	uint32_t maxLOD = -1;
+	WorldChunk();
+
+	virtual void serialize(OutputSerializer& s) const;
+	virtual void deserialize(InputSerializer& s);
 };
 
 
