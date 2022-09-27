@@ -2,18 +2,12 @@
 	path = libraries/external/repos/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "libraries/external/repos/asmjit"]
-	path = libraries/external/repos/asmjit
-	url = https://github.com/asmjit/asmjit
 [submodule "libraries/external/repos/asio"]
 	path = libraries/external/repos/asio
 	url = https://github.com/chriskohlhoff/asio/
 [submodule "libraries/external/repos/glm"]
 	path = libraries/external/repos/glm
 	url = https://github.com/g-truc/glm
-[submodule "libraries/external/repos/entt"]
-	path = libraries/external/repos/entt
-	url = https://github.com/skypjack/entt/
 [submodule "libraries/external/repos/gtest"]
 	path = libraries/external/repos/gtest
 	url = https://github.com/google/googletest
@@ -29,6 +23,7 @@
 [submodule "libraries/external/repos/spirv-tools"]
 	path = libraries/external/repos/spirv-tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools
+	branch = stable
 [submodule "libraries/external/repos/spirv-headers"]
 	path = libraries/external/repos/spirv-headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers

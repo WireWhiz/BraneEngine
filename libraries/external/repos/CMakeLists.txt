@@ -30,10 +30,7 @@ target_link_libraries(imguizmo PUBLIC imgui)
 
 add_library(external_include_dirs INTERFACE)
 
-add_subdirectory(asmjit)
-target_compile_definitions(asmjit PUBLIC ASMJIT_EMBED)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-
 if(BUILD_TESTS)
     add_subdirectory(gtest)
 endif()
@@ -49,18 +46,16 @@ add_subdirectory(spirv-tools)
 add_subdirectory(glslang)
 
 set(SHADERC_SKIP_TESTS ON)
-set(SHADERC_SKIP_INSTALL ON)
 set(SHADERC_SKIP_EXAMPLES ON)
 set(SHADERC_ENABLE_SHARED_CRT ON)
+set(SHADERC_SKIP_COPYRIGHT_CHECK ON)
 add_subdirectory(shaderc)
 
 add_subdirectory(jsoncpp)
 
 target_include_directories(external_include_dirs INTERFACE
         ${CMAKE_CURRENT_SOURCE_DIR}/asio/asio/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/asmjit/src
         ${CMAKE_CURRENT_SOURCE_DIR}/glm
-        ${CMAKE_CURRENT_SOURCE_DIR}/entt/single_include
         ${CMAKE_CURRENT_SOURCE_DIR}/gtest/googletest/include
         ${CMAKE_CURRENT_SOURCE_DIR}/jsoncpp/include
         ${CMAKE_CURRENT_SOURCE_DIR}/shaderc/libshaderc/include
