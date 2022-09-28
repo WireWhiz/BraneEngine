@@ -187,3 +187,43 @@ void AssetManager::reloadAsset(Asset* asset)
 	}
 }
 
+std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
+{
+	std::scoped_lock lock(_assetLock);
+	std::vector<const Asset*> assets;
+	switch(type.type())
+	{
+		case AssetType::none:
+			break;
+		case AssetType::component:
+			assets = {
+				EntityIDComponent::def()->asset,
+				EntityName::def()->asset,
+				Transform::def()->asset,
+				LocalTransform::def()->asset,
+				Children::def()->asset,
+				TRS::def()->asset,
+				MeshRendererComponent::def()->asset,
+				PointLightComponent::def()->asset
+			};
+			break;
+		case AssetType::system:
+			break;
+		case AssetType::mesh:
+			break;
+		case AssetType::texture:
+			break;
+		case AssetType::shader:
+			break;
+		case AssetType::material:
+			break;
+		case AssetType::assembly:
+			break;
+		case AssetType::chunk:
+			break;
+		case AssetType::player:
+			break;
+	}
+	return assets;
+}
+

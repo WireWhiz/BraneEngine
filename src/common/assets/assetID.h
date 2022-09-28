@@ -10,7 +10,7 @@ class AssetID
 	uint32_t _idCache = -1;
 public:
 	AssetID() = default;
-	AssetID(const AssetID&) = delete;
+	AssetID(const AssetID&) = default;
 	AssetID(AssetID&&);
 	explicit AssetID(const std::string& id);
 	explicit AssetID(std::string&& id);

@@ -311,7 +311,10 @@ void JsonArrayChange::redo()
 void JsonArrayChange::insertValue()
 {
 	auto& array = Json::resolvePath(_path, _json->data());
-	array.insert(_index, _value);
+	if(array.size() == _index)
+		array.append(_value);
+	else
+		array.insert(_index, _value);
 }
 
 void JsonArrayChange::removeValue()

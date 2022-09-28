@@ -72,6 +72,8 @@ public:
 	void fetchDependencies(Asset* asset, std::function<void()> callback);
     bool dependenciesLoaded(const Asset* asset) const;
 
+	std::vector<const Asset*> nativeAssets(AssetType type);
+
 	static const char* name();
 	void start() override;
 };

@@ -18,6 +18,7 @@ namespace VirtualType
             {virtualString,     "string"},
             {virtualAssetID,    "assetID"},
             {virtualVec3,       "vec3"},
+            {virtualVec4,       "vec4"},
             {virtualQuat,       "quaternion"},
             {virtualMat4,       "mat4"},
             {virtualFloatArray, "floatArray"},

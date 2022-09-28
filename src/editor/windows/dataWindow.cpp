@@ -20,6 +20,7 @@
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "editor/assets/types/editorMaterialAsset.h"
 #include "editor/assets/assemblyReloadManager.h"
+#include "ui/guiPopup.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -223,6 +224,31 @@ void DataWindow::displayMeshData()
 
 }
 
+class AddAssetComponentPopup : public GUIPopup
+{
+	AssetSearchWidget _search;
+	std::shared_ptr<EditorAssemblyAsset> _focusedAsset;
+	Json::ArrayIndex _focusedEntity;
+	void drawBody() override
+	{
+		if(_search.draw())
+		{
+			auto asset = _focusedAsset;
+			auto entity = _focusedEntity;
+			Runtime::getModule<AssetManager>()->fetchAsset<ComponentAsset>(_search.currentSelected()).then([asset, entity](ComponentAsset* component){
+				auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
+				VirtualComponent newComp(compDef);
+				asset->json().appendValue("entities/" + std::to_string(entity) + "/components", EditorAssemblyAsset::componentToJson(newComp));
+			});
+			ImGui::CloseCurrentPopup();
+		}
+	}
+public:
+	AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity) :
+		_focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component), GUIPopup("add component"){};
+
+};
+
 void DataWindow::displayEntityAssetData()
 {
 	auto& entityAsset = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
@@ -323,12 +349,7 @@ void DataWindow::displayEntityAssetData()
 	}
     if(ImGui::Button("Add Component", {ImGui::GetContentRegionAvail().x, 0}))
     {
-        ImGui::OpenPopup("add component");
-    }
-    if(ImGui::BeginPopup("add component"))
-    {
-        ImGui::TextDisabled("Can't add components yet.. because I'm lazy. Open an Issue and yell at me.");
-        ImGui::EndPopup();
+        _ui.openPopup(std::make_unique<AddAssetComponentPopup>(std::dynamic_pointer_cast<EditorAssemblyAsset>(_focusedAsset), _focusedAssetEntity));
     }
 
 	if(deleteComponent != -1)

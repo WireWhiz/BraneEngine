@@ -25,6 +25,13 @@ const ComponentDescription* ComponentManager::getComponentDef(ComponentID id)
 	return _components[id].get();
 }
 
+const ComponentDescription* ComponentManager::getComponentDef(ComponentAsset* asset)
+{
+	if(asset->componentID == ComponentID(-1))
+		asset->componentID = registerComponent(new ComponentDescription(asset));
+	return getComponentDef(asset->componentID);
+}
+
 void ComponentManager::eraseComponent(ComponentID id)
 {
 	if(_externalComponents.count(id))

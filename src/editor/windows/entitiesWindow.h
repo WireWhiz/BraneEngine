@@ -16,7 +16,8 @@ class EntitiesWindow : public EditorWindow
     std::shared_ptr<EditorAsset> _asset;
 	EntityManager* _em;
     size_t _selected = -1;
-    void displayAssetEntity(uint32_t index);
+	void parentEntity(uint32_t entity, uint32_t newParent, uint32_t childIndex = 0);
+    void displayAssetEntities(uint32_t index, bool isLastChild = true);
     void displayContent() override;
 public:
     EntitiesWindow(GUI& ui, Editor& editor);

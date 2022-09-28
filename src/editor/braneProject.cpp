@@ -290,9 +290,14 @@ void BraneProject::refreshAssets()
 	}
 }
 
+
+
 std::vector<std::pair<AssetID, std::filesystem::path>> BraneProject::searchAssets(const std::string& query, AssetType type)
 {
 	std::vector<std::pair<AssetID, std::filesystem::path>> assets;
+	auto nativeAssets = Runtime::getModule<AssetManager>()->nativeAssets(type);
+	for(auto& asset : nativeAssets)
+		assets.emplace_back(asset->id, asset->name);
 	try{
 		for(auto& assetID : _file["assets"].getMemberNames())
 		{
@@ -308,6 +313,9 @@ std::vector<std::pair<AssetID, std::filesystem::path>> BraneProject::searchAsset
 		Runtime::warn("Error searching assets, may be a problem with the project file: " + (std::string)e.what());
 	}
 
+	std::sort(assets.begin(), assets.end(), [](auto& a, auto& b){
+		return a.second.stem() < b.second.stem();
+	});
 	return assets;
 }
 

@@ -11,7 +11,7 @@ private:
 	std::vector<VirtualType::Type> _members;
 	std::vector<std::string> _memberNames;
 public:
-	ComponentID componentID;
+	ComponentID componentID = -1;
 
 	ComponentAsset();
 	ComponentAsset(const ComponentAsset&) = delete;

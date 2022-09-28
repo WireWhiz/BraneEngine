@@ -29,17 +29,21 @@ void EntitiesWindow::displayContent()
     if(_asset && _asset->type() == AssetType::assembly)
     {
 	    _asset->json().beginMultiChange();
-		displayAssetEntity(_asset->json()["rootEntity"].asUInt());
+	    displayAssetEntities(_asset->json()["rootEntity"].asUInt());
 	    _asset->json().endMultiChange();
     }
     ImGui::PopStyleVar();
     ImGui::Spacing();
 }
 
-void EntitiesWindow::displayAssetEntity(uint32_t index)
+void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 {
 	auto& entity = _asset->json()["entities"][index];
 	const bool hasChildren = entity.isMember("children") && entity["children"].size() > 0;
+	const bool isRoot = _asset->json()["rootEntity"].asUInt() == index;
+	const float reorderHeight = 4;
+	const float indentSpacing = ImGui::GetStyle().IndentSpacing;
+	const float reorderWidth = ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - indentSpacing - 5;
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	if(!hasChildren)
@@ -51,53 +55,119 @@ void EntitiesWindow::displayAssetEntity(uint32_t index)
         name = entity["name"].asString();
     else
         name = "Unnamed " + std::to_string(index);
+
 	bool nodeOpen = ImGui::TreeNodeEx(name.c_str(), flags);
 	if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()){
         _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(index));
         _selected = index;
     }
-	bool isRoot = _asset->json()["rootEntity"].asUInt() == _selected;
+
 	if(!isRoot && ImGui::BeginDragDropSource())
 	{
 		ImGui::SetDragDropPayload("assetEntity", &index, sizeof(uint32_t));
+		ImGui::Text("%s", name.c_str());
 		ImGui::EndDragDropSource();
 	}
 
-	if(ImGui::BeginDragDropTarget())
+	ImRect dropRectMain;
+	dropRectMain.Min = {ImGui::GetCursorPosX() + indentSpacing - 2,  ImGui::GetItemRectMin().y};
+	if(!nodeOpen)
+		dropRectMain.Min.x += indentSpacing;
+	dropRectMain.Max = {dropRectMain.Min.x + reorderWidth, ImGui::GetItemRectMax().y};
+	if(ImGui::BeginDragDropTargetCustom(dropRectMain, index * 3 + 1))
 	{
 		if(const ImGuiPayload* droppedEntityPayload  = ImGui::AcceptDragDropPayload("assetEntity"))
 		{
 			uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
-			Json::Value droppedEntity = _asset->json()["entities"][droppedIndex];
-			if(droppedEntity.isMember("parent"))
-			{
-				auto& parentEntity = _asset->json()["entities"][droppedEntity["parent"].asUInt()];
-				Json::Value newChildren = Json::arrayValue;
-				for(auto& child : parentEntity["children"])
-				{
-					if(child.asUInt() != droppedIndex)
-						newChildren.append(child);
-				}
-				_asset->json().changeValue("entities/" + std::to_string(droppedEntity["parent"].asUInt()) + "/children", newChildren);
-			}
-
-			Json::Value newChildren = entity["children"];
-			newChildren.append(droppedIndex);
-			_asset->json().changeValue("entities/" + std::to_string(index) + "/children", newChildren);
-			_asset->json().changeValue("entities/" + std::to_string(droppedIndex) + "/parent", index);
+			parentEntity(droppedIndex, index);
 		}
 		ImGui::EndDragDropTarget();
 	}
+
+	if(!isRoot)
+	{
+		ImRect dropAboveRect;
+		dropAboveRect.Min = {dropRectMain.Min.x, dropRectMain.Min.y - reorderHeight};
+		dropAboveRect.Max = {dropAboveRect.Min.x + reorderWidth, dropRectMain.Min.y};
+		if(ImGui::BeginDragDropTargetCustom(dropAboveRect, index * 3))
+		{
+			if(const ImGuiPayload* droppedEntityPayload  = ImGui::AcceptDragDropPayload("assetEntity"))
+			{
+				uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
+				Json::ArrayIndex parentIndex = entity["parent"].asUInt();
+				Json::ArrayIndex currentIndex = 0;
+				for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+				{
+					if(child.asUInt() == index)
+						break;
+					++currentIndex;
+				}
+				parentEntity(droppedIndex, parentIndex, currentIndex);
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		if(isLastChild)
+		{
+			ImRect dropBelowRect;
+			dropBelowRect.Min = {dropRectMain.Min.x, dropRectMain.Max.y};
+			dropBelowRect.Max = {dropBelowRect.Min.x + reorderWidth, dropBelowRect.Min.y + reorderHeight};
+			if(ImGui::BeginDragDropTargetCustom(dropBelowRect, index * 3 + 2))
+			{
+				if(const ImGuiPayload* droppedEntityPayload  = ImGui::AcceptDragDropPayload("assetEntity"))
+				{
+					uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
+					Json::ArrayIndex parentIndex = entity["parent"].asUInt();
+					Json::ArrayIndex currentIndex = 0;
+					for(auto& child : _asset->json()["entities"][parentIndex]["children"])
+					{
+						if(child.asUInt() == index)
+							break;
+						++currentIndex;
+					}
+					parentEntity(droppedIndex, parentIndex, currentIndex + 1);
+				}
+				ImGui::EndDragDropTarget();
+			}
+		}
+	}
+
+
+
 
 	if(nodeOpen)
 	{
 		if (hasChildren)
 		{
+			size_t childIndex = 0;
 			for(auto& child : entity["children"])
-				displayAssetEntity(child.asUInt());
+				displayAssetEntities(child.asUInt(), ++childIndex == entity["children"].size());
 		}
 
 		ImGui::TreePop();
 	}
+}
 
+void EntitiesWindow::parentEntity(uint32_t entityIndex, uint32_t newParentIndex, uint32_t childIndex)
+{
+	Json::Value entity = _asset->json()["entities"][entityIndex];
+	if(entity.isMember("parent"))
+	{
+		Json::ArrayIndex parentIndex = entity["parent"].asUInt();
+		auto& parentEntity = _asset->json()["entities"][parentIndex];
+		Json::ArrayIndex oldChildIndex = 0;
+		for(auto& child : parentEntity["children"])
+		{
+			if(child.asUInt() == entityIndex)
+				break;
+			++oldChildIndex;
+		}
+		_asset->json().removeIndex("entities/" + std::to_string(entity["parent"].asUInt()) + "/children", oldChildIndex);
+
+		if(parentIndex == newParentIndex && oldChildIndex < childIndex)
+			--childIndex;
+	}
+
+	_asset->json().insertIndex("entities/" + std::to_string(newParentIndex) + "/children", childIndex, entityIndex);
+	_asset->json().changeValue("entities/" + std::to_string(entityIndex) + "/parent", newParentIndex);
 }

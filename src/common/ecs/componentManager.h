@@ -16,6 +16,7 @@ public:
 	ComponentID createComponent(const std::vector<VirtualType::Type>& component, const std::string& name);
 	ComponentID registerComponent(ComponentDescription* componentDescription);
 	const ComponentDescription* getComponentDef(ComponentID id);
+	const ComponentDescription* getComponentDef(ComponentAsset* id);
 	void eraseComponent(ComponentID id);
 };
 
