@@ -19,6 +19,7 @@ namespace Json
 
 class JsonChangeBase
 {
+protected:
 	VersionedJson* _json = nullptr;
 public:
 	JsonChangeBase(VersionedJson*  json);
@@ -29,7 +30,6 @@ public:
 
 class JsonChange : public JsonChangeBase
 {
-	VersionedJson* _json = nullptr;
 	std::string _path;
 	Json::Value _before;
 	Json::Value _after;
@@ -47,6 +47,24 @@ public:
 	MultiJsonChange(VersionedJson* json);
 	void undo() override;
 	void redo() override;
+};
+
+class JsonArrayChange : public JsonChangeBase
+{
+	std::string _path;
+	Json::ArrayIndex _index;
+	Json::Value _value;
+	bool _inserting = true;
+	void insertValue();
+	void removeValue();
+public:
+	JsonArrayChange(std::string path, Json::ArrayIndex index, Json::Value value, bool inserting, VersionedJson* json);
+	Json::ArrayIndex index() const;
+	bool inserting() const;
+	const Json::Value& value() const;
+	void undo() override;
+	void redo() override;
+
 };
 
 class JsonVersionTracker
@@ -70,7 +88,7 @@ class VersionedJson
 	Json::Value _root;
 	uint32_t _version = 0;
 	uint32_t _lastCleanedVersion = 0;
-	std::function<void(const std::string& path)> _onChange;
+	std::function<void(const std::string& path, JsonChangeBase* change, bool undo)> _onChange;
 
 	struct UncompletedChange{
 		std::string path;
@@ -78,15 +96,20 @@ class VersionedJson
 	};
 	std::unique_ptr<UncompletedChange> _uncompletedChange;
 	std::unique_ptr<MultiJsonChange> _multiChange;
+	friend class JsonChangeBase;
 	friend class JsonChange;
+	friend class JsonArrayChange;
 public:
 	VersionedJson(JsonVersionTracker& tkr);
 	void initialize(const Json::Value& value);
 	void changeValue(const std::string& path, const Json::Value& newValue, bool changeComplete = true);
+	void insertIndex(const std::string& path, Json::ArrayIndex index, const Json::Value& newValue);
+	void removeIndex(const std::string& path, Json::ArrayIndex index);
+	void appendValue(const std::string& path, const Json::Value& newValue);
 	void beginMultiChange();
 	void endMultiChange();
 
-	void onChange(const std::function<void(const std::string& path)>& f);
+	void onChange(const std::function<void(const std::string& path, JsonChangeBase* change, bool undo)>& f);
 	void markClean();
 	bool dirty() const;
 	Json::Value& data();

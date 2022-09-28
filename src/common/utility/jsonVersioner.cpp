@@ -21,7 +21,7 @@ JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJ
 {
 }
 
-JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(path), _before(std::move(oldValue)), _after(std::move(newValue)), _json(json), JsonChangeBase(json)
+JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Value newValue, VersionedJson* json) : _path(path), _before(std::move(oldValue)), _after(std::move(newValue)), JsonChangeBase(json)
 {
 }
 
@@ -30,7 +30,7 @@ void JsonChange::undo()
 	Json::resolvePath(_path, _json->_root) = _before;
 	--_json->_version;
 	if(_json->_onChange)
-		_json->_onChange(_path);
+		_json->_onChange(_path, this, true);
 }
 
 void JsonChange::redo()
@@ -38,7 +38,7 @@ void JsonChange::redo()
 	Json::resolvePath(_path, _json->_root) = _after;
 	++_json->_version;
 	if(_json->_onChange)
-		_json->_onChange(_path);
+		_json->_onChange(_path, this, false);
 }
 
 void JsonVersionTracker::recordChange(std::unique_ptr<JsonChangeBase> change)
@@ -108,7 +108,7 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 		}
 		Json::resolvePath(path, _root) = newValue;
 		if(_onChange)
-			_onChange(path);
+			_onChange(path, nullptr, false);
 		return;
 	}
 
@@ -160,7 +160,7 @@ const Json::Value& VersionedJson::operator[](const char* p) const
 	return _root[p];
 }
 
-void VersionedJson::onChange(const std::function<void(const std::string& path)>& f)
+void VersionedJson::onChange(const std::function<void(const std::string& path, JsonChangeBase* change, bool undo)>& f)
 {
 	_onChange = f;
 }
@@ -179,6 +179,33 @@ void VersionedJson::endMultiChange()
 		_tkr.recordChange(std::move(_multiChange->changes[0]));
 
 	_multiChange = nullptr;
+}
+
+void VersionedJson::insertIndex(const std::string& path, Json::ArrayIndex index, const Json::Value& newValue)
+{
+	auto change = std::make_unique<JsonArrayChange>(path, index, newValue, true, this);
+	if(_multiChange)
+		_multiChange->changes.push_back(std::move(change));
+	else
+		_tkr.recordChange(std::move(change));
+}
+
+void VersionedJson::removeIndex(const std::string& path, Json::ArrayIndex index)
+{
+	auto change = std::make_unique<JsonArrayChange>(path, index, Json::resolvePath(path, _root)[index], false, this);
+	if(_multiChange)
+		_multiChange->changes.push_back(std::move(change));
+	else
+		_tkr.recordChange(std::move(change));
+}
+
+void VersionedJson::appendValue(const std::string& path, const Json::Value& newValue)
+{
+	auto change = std::make_unique<JsonArrayChange>(path, Json::resolvePath(path, _root).size(), newValue, true, this);
+	if(_multiChange)
+		_multiChange->changes.push_back(std::move(change));
+	else
+		_tkr.recordChange(std::move(change));
 }
 
 Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
@@ -247,4 +274,69 @@ void MultiJsonChange::redo()
 {
 	for(auto& change : changes)
 		change->redo();
+}
+
+JsonArrayChange::JsonArrayChange(std::string path, Json::ArrayIndex index, Json::Value value, bool inserting, VersionedJson* json) : JsonChangeBase(json)
+{
+	_path = std::move(path);
+	_index = index;
+	_value = std::move(value);
+	_inserting = inserting;
+}
+
+void JsonArrayChange::undo()
+{
+	if(_inserting)
+		removeValue();
+	else
+		insertValue();
+
+	--_json->_version;
+	if(_json->_onChange)
+		_json->_onChange(_path, this, true);
+}
+
+void JsonArrayChange::redo()
+{
+	if(_inserting)
+		insertValue();
+	else
+		removeValue();
+
+	++_json->_version;
+	if(_json->_onChange)
+		_json->_onChange(_path, this, false);
+}
+
+void JsonArrayChange::insertValue()
+{
+	auto& array = Json::resolvePath(_path, _json->data());
+	array.insert(_index, _value);
+}
+
+void JsonArrayChange::removeValue()
+{
+	auto& array = Json::resolvePath(_path, _json->data());
+	Json::Value newArray;
+	for(Json::ArrayIndex i = 0; i < array.size(); ++i)
+	{
+		if(i != _index)
+			newArray.append(array[i]);
+	}
+	array = newArray;
+}
+
+Json::ArrayIndex JsonArrayChange::index() const
+{
+	return _index;
+}
+
+bool JsonArrayChange::inserting() const
+{
+	return _inserting;
+}
+
+const Json::Value& JsonArrayChange::value() const
+{
+	return _value;
 }

@@ -62,7 +62,9 @@ void DataWindow::displayAssetData()
 	ImGui::Text("%s", _focusedAsset->name().c_str());
     ImGui::PopFont();
 	ImGui::TextDisabled("%s", _focusedAsset->type().toString().c_str());
+#ifdef NDEBUG
 	try{
+#endif
 		switch(_focusedAsset->type().type())
 		{
 			case AssetType::shader:
@@ -85,13 +87,12 @@ void DataWindow::displayAssetData()
 				ImGui::Text("Asset Type %s not implemented yet. If you want to edit %s go to the GitHub and open an issue to put pressure on me.", _focusedAsset->type().toString().c_str(), _focusedAsset->name().c_str());
 				ImGui::PopTextWrapPos();
 		}
+#ifdef NDEBUG
 	}catch(const std::exception& e)
 	{
 		ImGui::TextColored({1,0,0,1}, "Error displaying asset: %s", e.what());
-#ifndef NDEBUG
-		throw e;
-#endif
 	}
+#endif
 
 }
 
@@ -231,6 +232,7 @@ void DataWindow::displayEntityAssetData()
 	ImGui::PopFont();
 	ImGui::TextDisabled("Index: %llu", _focusedAssetEntity);
 	ImGui::Separator();
+	int deleteComponent = -1;
 	for (Json::ArrayIndex i = 0; i < entityAsset["components"].size(); ++i)
     {
         auto& component = entityAsset["components"][i];
@@ -240,14 +242,12 @@ void DataWindow::displayEntityAssetData()
         bool displaying = ImGui::CollapsingHeader(component["name"].asCString(), ImGuiTreeNodeFlags_DefaultOpen);
         if(ImGui::BeginPopupContextItem("comp actions"))
         {
-            /*bool relationalComponent = component.description() == LocalTransform::def() || component.description() == Children::def();
-            bool transform = component.description() == Transform::def();
-            bool entityHasChildren = entityAsset.hasComponent(Children::def());
-            if(!relationalComponent && !(transform && entityHasChildren))
+            bool transform = component["name"] == "transform";
+            if(!transform)
             {
                 if(ImGui::Selectable(ICON_FA_TRASH "delete"))
-                    _focusedAsset->removeComponent(_focusedAssetEntity, i);
-            }*/
+	                deleteComponent = i;
+            }
             ImGui::EndPopup();
         }
         /*if(ImGui::BeginDragDropSource())
@@ -330,6 +330,9 @@ void DataWindow::displayEntityAssetData()
         ImGui::TextDisabled("Can't add components yet.. because I'm lazy. Open an Issue and yell at me.");
         ImGui::EndPopup();
     }
+
+	if(deleteComponent != -1)
+		_focusedAsset->json().removeIndex("entities/" + std::to_string(_focusedAssetEntity) + "/components", deleteComponent);
 }
 
 void DataWindow::displayEntityData()

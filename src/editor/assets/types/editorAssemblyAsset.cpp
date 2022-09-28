@@ -35,20 +35,32 @@ EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, Bran
 
 	std::regex entityComponentChange(R"((entities/)([0-9]+)(/components).*)");
 	std::regex entityParentChange(R"((entities/)([0-9]+)(/parent).*)");
-	_json.onChange([this, entityComponentChange, entityParentChange](const std::string& path){
+	_json.onChange([this, entityComponentChange, entityParentChange](const std::string& path, JsonChangeBase* change, bool undo){
 		auto* am = Runtime::getModule<AssetManager>();
 		auto* assembly = am->getAsset<Assembly>(AssetID{_json["id"].asString()});
+		auto* arrayChange = dynamic_cast<JsonArrayChange*>(change);
 		if(assembly)
 		{
 			if(std::regex_match(path, entityComponentChange))
 			{
 				Json::ArrayIndex entity = std::stoi(Json::getPathComponent(path, 1));
-				size_t componentIndex = 0;
-				for(auto& component : _json["entities"][entity]["components"])
+				auto* arm = Runtime::getModule<AssemblyReloadManager>();
+				if(arrayChange)
 				{
-					auto* arm = Runtime::getModule<AssemblyReloadManager>();
-					arm->updateEntityComponent(assembly, entity, jsonToComponent(_json["entities"][entity]["components"][Json::ArrayIndex(componentIndex++)]));
-				};
+					bool insert = arrayChange->inserting() != undo;
+					if(insert)
+						arm->addEntityComponent(assembly, entity, jsonToComponent(arrayChange->value()));
+					else
+						arm->removeEntityComponent(assembly, entity, am->getAsset<ComponentAsset>(AssetID(arrayChange->value()["id"].asString()))->componentID);
+				}
+				else
+				{
+					size_t componentIndex = 0;
+					for(auto& component : _json["entities"][entity]["components"])
+					{
+						arm->updateEntityComponent(assembly, entity, jsonToComponent(_json["entities"][entity]["components"][Json::ArrayIndex(componentIndex++)]));
+					};
+				}
 			}
 			if(std::regex_match(path, entityParentChange))
 			{

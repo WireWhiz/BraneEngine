@@ -71,8 +71,7 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
 			for(auto& child : children->children)
 				child = i.entities[child.id];
 		}
-		else
-			_em->setComponent(i.entities[index], newData);
+		_em->setComponent(i.entities[index], newData);
 		_em->markComponentChanged(i.entities[index], newData.description()->id);
 	}
 }
@@ -87,12 +86,13 @@ void AssemblyReloadManager::updateEntityParent(Assembly* assembly, size_t entity
 
 void AssemblyReloadManager::addEntityComponent(Assembly* assembly, size_t index, VirtualComponentView component)
 {
-	std::scoped_lock lock(m);
-	for(auto& i : _instances[assembly])
 	{
-		_em->addComponent(i.entities[index], component.description()->id);
-		_em->setComponent(i.entities[index], component);
+		std::scoped_lock lock(m);
+		for (auto& i: _instances[assembly])
+			_em->addComponent(i.entities[index], component.description()->id);
 	}
+	updateEntityComponent(assembly, index, component);
+
 }
 
 void AssemblyReloadManager::removeEntityComponent(Assembly* assembly, size_t index, ComponentID compID)
