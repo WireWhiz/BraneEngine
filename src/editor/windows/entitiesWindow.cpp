@@ -12,6 +12,7 @@
 #include "editor/assets/editorAsset.h"
 #include "assets/assetManager.h"
 #include "editor/assets/assemblyReloadManager.h"
+#include "editor/assets/types/editorAssemblyAsset.h"
 
 EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -21,6 +22,9 @@ EntitiesWindow::EntitiesWindow(GUI& ui, Editor& editor) : EditorWindow(ui, edito
         _selected = -1;
 		_asset = event->asset();
 	});
+	ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
+		_selected = event->entity();
+	});
 }
 
 void EntitiesWindow::displayContent()
@@ -28,9 +32,9 @@ void EntitiesWindow::displayContent()
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 13);
     if(_asset && _asset->type() == AssetType::assembly)
     {
-	    _asset->json().beginMultiChange();
+		_asset->json().beginMultiChange();
 	    displayAssetEntities(_asset->json()["rootEntity"].asUInt());
-	    _asset->json().endMultiChange();
+		_asset->json().endMultiChange();
     }
     ImGui::PopStyleVar();
     ImGui::Spacing();
@@ -38,13 +42,15 @@ void EntitiesWindow::displayContent()
 
 void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 {
+	auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_asset.get());
 	auto& entity = _asset->json()["entities"][index];
-	const bool hasChildren = entity.isMember("children") && entity["children"].size() > 0;
+	const bool hasChildren = entity.isMember("children") && !entity["children"].empty();
 	const bool isRoot = _asset->json()["rootEntity"].asUInt() == index;
 	const float reorderHeight = 4;
 	const float indentSpacing = ImGui::GetStyle().IndentSpacing;
 	const float reorderWidth = ImGui::GetWindowContentRegionWidth() - ImGui::GetCursorPosX() - indentSpacing - 5;
 
+	ImGui::PushID(index);
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow;
 	if(!hasChildren)
 		flags |= ImGuiTreeNodeFlags_Leaf;
@@ -61,6 +67,15 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
         _ui.sendEvent(std::make_unique<FocusEntityAssetEvent>(index));
         _selected = index;
     }
+
+	if(ImGui::BeginPopupContextItem())
+	{
+		if(ImGui::Selectable(ICON_FA_CIRCLE_PLUS " Create Entity"))
+			assembly->createEntity(index);
+		if(!isRoot && ImGui::Selectable(ICON_FA_TRASH_CAN " Delete Entity"))
+			assembly->deleteEntity(index);
+		ImGui::EndPopup();
+	}
 
 	if(!isRoot && ImGui::BeginDragDropSource())
 	{
@@ -79,7 +94,7 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 		if(const ImGuiPayload* droppedEntityPayload  = ImGui::AcceptDragDropPayload("assetEntity"))
 		{
 			uint32_t droppedIndex = *(uint32_t*)droppedEntityPayload->Data;
-			parentEntity(droppedIndex, index);
+			assembly->parentEntity(droppedIndex, index, 0);
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -102,7 +117,7 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 						break;
 					++currentIndex;
 				}
-				parentEntity(droppedIndex, parentIndex, currentIndex);
+				assembly->parentEntity(droppedIndex, parentIndex, currentIndex);
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -125,15 +140,12 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 							break;
 						++currentIndex;
 					}
-					parentEntity(droppedIndex, parentIndex, currentIndex + 1);
+					assembly->parentEntity(droppedIndex, parentIndex, currentIndex + 1);
 				}
 				ImGui::EndDragDropTarget();
 			}
 		}
 	}
-
-
-
 
 	if(nodeOpen)
 	{
@@ -146,28 +158,6 @@ void EntitiesWindow::displayAssetEntities(uint32_t index, bool isLastChild)
 
 		ImGui::TreePop();
 	}
-}
+	ImGui::PopID();
 
-void EntitiesWindow::parentEntity(uint32_t entityIndex, uint32_t newParentIndex, uint32_t childIndex)
-{
-	Json::Value entity = _asset->json()["entities"][entityIndex];
-	if(entity.isMember("parent"))
-	{
-		Json::ArrayIndex parentIndex = entity["parent"].asUInt();
-		auto& parentEntity = _asset->json()["entities"][parentIndex];
-		Json::ArrayIndex oldChildIndex = 0;
-		for(auto& child : parentEntity["children"])
-		{
-			if(child.asUInt() == entityIndex)
-				break;
-			++oldChildIndex;
-		}
-		_asset->json().removeIndex("entities/" + std::to_string(entity["parent"].asUInt()) + "/children", oldChildIndex);
-
-		if(parentIndex == newParentIndex && oldChildIndex < childIndex)
-			--childIndex;
-	}
-
-	_asset->json().insertIndex("entities/" + std::to_string(newParentIndex) + "/children", childIndex, entityIndex);
-	_asset->json().changeValue("entities/" + std::to_string(entityIndex) + "/parent", newParentIndex);
 }

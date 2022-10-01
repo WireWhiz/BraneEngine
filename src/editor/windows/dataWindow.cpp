@@ -21,6 +21,7 @@
 #include "editor/assets/types/editorMaterialAsset.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "ui/guiPopup.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -235,10 +236,10 @@ class AddAssetComponentPopup : public GUIPopup
 		{
 			auto asset = _focusedAsset;
 			auto entity = _focusedEntity;
-			Runtime::getModule<AssetManager>()->fetchAsset<ComponentAsset>(_search.currentSelected()).then([asset, entity](ComponentAsset* component){
+			Runtime::getModule<AssetManager>()->fetchAsset<ComponentAsset>(_search.currentSelected()).then([this, asset, entity](ComponentAsset* component){
 				auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
 				VirtualComponent newComp(compDef);
-				asset->json().appendValue("entities/" + std::to_string(entity) + "/components", EditorAssemblyAsset::componentToJson(newComp));
+				_focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
 			});
 			ImGui::CloseCurrentPopup();
 		}
@@ -251,10 +252,14 @@ public:
 
 void DataWindow::displayEntityAssetData()
 {
+	auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
 	auto& entityAsset = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity];
 	ImGui::PushFont(_ui.fonts()[1]);
-	if(entityAsset.isMember("name"))
-		ImGui::Text("%s", entityAsset["name"].asCString());
+	std::string entityName = entityAsset["name"].asString();
+	ImGui::InputText("##EntityName", &entityName);
+	if(ImGui::IsItemDeactivatedAfterEdit())
+		_focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/name", entityName);
+
 	ImGui::PopFont();
 	ImGui::TextDisabled("Index: %llu", _focusedAssetEntity);
 	ImGui::Separator();
@@ -338,9 +343,12 @@ void DataWindow::displayEntityAssetData()
 				auto res = VirtualVariableWidgets::displayAssetComponentData(data, _focusedAsset->json().data());
 				if(res != UiChangeType::none)
 				{
-					_focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components/" + std::to_string(i), data, res == UiChangeType::finished);
+					assembly->updateEntityComponent(_focusedAssetEntity, i, data, res != UiChangeType::finished);
 					if(res == UiChangeType::finished)
+					{
+
 						_editor.reloadAsset(_focusedAsset);
+					}
 				}
 			}
             ImGui::Unindent();
@@ -353,7 +361,7 @@ void DataWindow::displayEntityAssetData()
     }
 
 	if(deleteComponent != -1)
-		_focusedAsset->json().removeIndex("entities/" + std::to_string(_focusedAssetEntity) + "/components", deleteComponent);
+		assembly->removeEntityComponent(_focusedAssetEntity, deleteComponent);
 }
 
 void DataWindow::displayEntityData()

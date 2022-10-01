@@ -64,7 +64,7 @@ public:
     void closePopup();
     void sendEvent(std::unique_ptr<GUIEvent>&& name);
 	template<typename T, typename... Args>
-	void sendEvent(Args&... args)
+	void sendEvent(const Args&... args)
 	{
 		static_assert(std::is_base_of<GUIEvent, T>());
 		sendEvent(std::make_unique<T>(args...));

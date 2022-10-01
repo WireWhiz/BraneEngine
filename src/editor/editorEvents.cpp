@@ -28,12 +28,12 @@ std::shared_ptr<EditorAsset> FocusAssetEvent::asset() const
 	return _asset;
 }
 
-FocusEntityAssetEvent::FocusEntityAssetEvent(size_t index) : GUIEvent("focus entity asset")
+FocusEntityAssetEvent::FocusEntityAssetEvent(int index) : GUIEvent("focus entity asset")
 {
 	_index = index;
 }
 
-size_t FocusEntityAssetEvent::entity() const
+int FocusEntityAssetEvent::entity() const
 {
 	return _index;
 }

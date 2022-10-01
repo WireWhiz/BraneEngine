@@ -81,7 +81,7 @@ void AssemblyReloadManager::updateEntityParent(Assembly* assembly, size_t entity
 	std::scoped_lock lock(m);
 	assert(assembly->rootIndex != entity);
 	for(auto& i : _instances[assembly])
-		Transforms::setParent(i.entities[entity], i.entities[parent], *_em);
+		Transforms::setParent(i.entities[entity], i.entities[parent], *_em, false);
 }
 
 void AssemblyReloadManager::addEntityComponent(Assembly* assembly, size_t index, VirtualComponentView component)
@@ -102,13 +102,12 @@ void AssemblyReloadManager::removeEntityComponent(Assembly* assembly, size_t ind
 		_em->removeComponent(i.entities[index], compID);
 }
 
-void AssemblyReloadManager::insertEntity(Assembly* assembly, size_t parentIndex, size_t index)
+void AssemblyReloadManager::insertEntity(Assembly* assembly, size_t index)
 {
 	std::scoped_lock lock(m);
 	for(auto& i : _instances[assembly])
 	{
 		EntityID newEnt = _em->createEntity();
-		Transforms::setParent(newEnt, i.entities[parentIndex], *_em);
 		i.entities.insert(i.entities.begin() + index, newEnt);
 	}
 }
@@ -129,10 +128,10 @@ void AssemblyReloadManager::reorderEntity(Assembly* assembly, size_t before, siz
 void AssemblyReloadManager::removeEntity(Assembly* assembly, size_t index)
 {
 	std::scoped_lock lock(m);
-	auto t = Runtime::getModule<Transforms>();
 	for(auto& i : _instances[assembly])
 	{
-		t->destroyRecursive(i.entities[index]);
+		Transforms::removeParent(i.entities[index], *_em, false);
+		_em->destroyEntity(i.entities[index]);
 		i.entities.erase(i.entities.begin() + index);
 	}
 }

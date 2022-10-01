@@ -6,6 +6,78 @@
 #include <iostream>
 #include "jsonVersioner.h"
 
+Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
+{
+	Json::Value* value = &root;
+	std::vector<std::string> components;
+	uint32_t begin = 0;
+	for(uint32_t end = 1; end < path.size(); ++end)
+	{
+		if(path[end] == '/' && begin < end)
+		{
+			components.emplace_back(path.begin() + begin, path.begin() + end);
+			begin = end + 1;
+		}
+	}
+	if(begin < path.size())
+		components.emplace_back(path.begin() + begin, path.end());
+	for(auto& comp : components)
+	{
+		bool isIndex = true;
+		for(char c : comp)
+		{
+			if(!std::isdigit(c))
+			{
+				isIndex = false;
+				break;
+			}
+		}
+		if(!isIndex)
+			value = &(*value)[comp];
+		else
+			value = &(*value)[std::stoi(comp)];
+	}
+
+	return *value;
+}
+
+std::string Json::getPathComponent(const std::string& path, uint32_t index)
+{
+	uint32_t begin = 0;
+	uint32_t searchIndex = 0;
+	for(uint32_t end = 1; end < path.size(); ++end)
+	{
+		if(path[end] == '/' && begin < end)
+		{
+			if(searchIndex++ == index)
+				return {path.begin() + begin, path.begin() + end};
+			begin = end + 1;
+		}
+	}
+	return {path.begin() + begin, path.end()};
+}
+
+void Json::insertArrayValue(const Value& value, ArrayIndex index, Value& array)
+{
+	assert(array.isArray());
+	if(array.size() == index)
+		array.append(value);
+	else
+		assert(array.insert(index, value));
+}
+
+void Json::eraseArrayValue(ArrayIndex index, Value& array)
+{
+	assert(array.isArray());
+	assert(index < array.size());
+	Json::Value newArray;
+	for(Json::ArrayIndex i = 0; i < array.size(); ++i)
+	{
+		if(i != index)
+			newArray.append(array[i]);
+	}
+	array = std::move(newArray);
+}
 
 JsonChangeBase::JsonChangeBase(VersionedJson* json)
 {
@@ -17,7 +89,7 @@ const VersionedJson* JsonChangeBase::json()
 	return _json;
 }
 
-JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, Json::resolvePath(path, json->_root), std::move(newValue), json)
+JsonChange::JsonChange(const std::string& path, Json::Value newValue, VersionedJson* json) : JsonChange(path, Json::nullValue, std::move(newValue), json)
 {
 }
 
@@ -29,16 +101,28 @@ void JsonChange::undo()
 {
 	Json::resolvePath(_path, _json->_root) = _before;
 	--_json->_version;
-	if(_json->_onChange)
-		_json->_onChange(_path, this, true);
 }
 
 void JsonChange::redo()
 {
-	Json::resolvePath(_path, _json->_root) = _after;
+	auto& value = Json::resolvePath(_path, _json->_root);
+	if(_before.isNull())
+		_before = value;
+	assert(!_before.isNull());
+
+	value = _after;
+
 	++_json->_version;
-	if(_json->_onChange)
-		_json->_onChange(_path, this, false);
+}
+
+const Json::Value& JsonChange::before() const
+{
+	return _before;
+}
+
+const Json::Value& JsonChange::after() const
+{
+	return _after;
 }
 
 void JsonVersionTracker::recordChange(std::unique_ptr<JsonChangeBase> change)
@@ -107,24 +191,22 @@ void VersionedJson::changeValue(const std::string& path, const Json::Value& newV
 			_uncompletedChange->before = Json::resolvePath(path, _root);
 		}
 		Json::resolvePath(path, _root) = newValue;
-		if(_onChange)
-			_onChange(path, nullptr, false);
 		return;
 	}
 
 	if(_uncompletedChange)
 	{
 		assert(_uncompletedChange->path == path);
-		if(_multiChange)
-			_multiChange->changes.push_back(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
+		if(!_multiChanges.empty())
+			_multiChanges.top()->changes.push_back(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
 		else
 			_tkr.recordChange(std::make_unique<JsonChange>(path, _uncompletedChange->before, newValue, this));
 		_uncompletedChange = nullptr;
 		return;
 	}
 
-	if(_multiChange)
-		_multiChange->changes.push_back(std::make_unique<JsonChange>(path, newValue, this));
+	if(!_multiChanges.empty())
+		_multiChanges.top()->changes.push_back(std::make_unique<JsonChange>(path, newValue, this));
 	else
 		_tkr.recordChange(std::make_unique<JsonChange>(path, newValue, this));
 
@@ -160,114 +242,66 @@ const Json::Value& VersionedJson::operator[](const char* p) const
 	return _root[p];
 }
 
-void VersionedJson::onChange(const std::function<void(const std::string& path, JsonChangeBase* change, bool undo)>& f)
+void VersionedJson::beginMultiChange(bool dontReverse)
 {
-	_onChange = f;
-}
-
-void VersionedJson::beginMultiChange()
-{
-	_multiChange = std::make_unique<MultiJsonChange>(this);
+	_multiChanges.push(std::make_unique<MultiJsonChange>(dontReverse, this));
 }
 
 void VersionedJson::endMultiChange()
 {
-	assert(_multiChange);
-	if(_multiChange->changes.size() > 1)
-		_tkr.recordChange(std::move(_multiChange));
-	else if(_multiChange->changes.size() == 1)
-		_tkr.recordChange(std::move(_multiChange->changes[0]));
-
-	_multiChange = nullptr;
+	assert(!_multiChanges.empty());
+	auto change = std::move(_multiChanges.top());
+	_multiChanges.pop();
+	if(change->changes.empty())
+		return;
+	if(change->changes.size() == 1)
+	{
+		recordChange(std::move(change->changes[0]));
+		return;
+	}
+	recordChange(std::move(change));
 }
 
 void VersionedJson::insertIndex(const std::string& path, Json::ArrayIndex index, const Json::Value& newValue)
 {
-	auto change = std::make_unique<JsonArrayChange>(path, index, newValue, true, this);
-	if(_multiChange)
-		_multiChange->changes.push_back(std::move(change));
-	else
-		_tkr.recordChange(std::move(change));
+	recordChange(std::make_unique<JsonArrayChange>(path, index, newValue, true, this));
 }
 
 void VersionedJson::removeIndex(const std::string& path, Json::ArrayIndex index)
 {
-	auto change = std::make_unique<JsonArrayChange>(path, index, Json::resolvePath(path, _root)[index], false, this);
-	if(_multiChange)
-		_multiChange->changes.push_back(std::move(change));
-	else
-		_tkr.recordChange(std::move(change));
+	recordChange(std::make_unique<JsonArrayChange>(path, index, Json::nullValue, false, this));
 }
 
 void VersionedJson::appendValue(const std::string& path, const Json::Value& newValue)
 {
-	auto change = std::make_unique<JsonArrayChange>(path, Json::resolvePath(path, _root).size(), newValue, true, this);
-	if(_multiChange)
-		_multiChange->changes.push_back(std::move(change));
+	recordChange(std::make_unique<JsonArrayChange>(path, Json::resolvePath(path, _root).size(), newValue, true, this));
+}
+
+void VersionedJson::recordChange(std::unique_ptr<JsonChangeBase>&& change)
+{
+	if(!_multiChanges.empty())
+		_multiChanges.top()->changes.push_back(std::move(change));
 	else
 		_tkr.recordChange(std::move(change));
 }
 
-Json::Value& Json::resolvePath(const std::string& path, Json::Value& root)
-{
-	Json::Value* value = &root;
-	std::vector<std::string> components;
-	uint32_t begin = 0;
-	for(uint32_t end = 1; end < path.size(); ++end)
-	{
-		if(path[end] == '/' && begin < end)
-		{
-			components.emplace_back(path.begin() + begin, path.begin() + end);
-			begin = end + 1;
-		}
-	}
-	if(begin < path.size())
-		components.emplace_back(path.begin() + begin, path.end());
-	for(auto& comp : components)
-	{
-		bool isIndex = true;
-		for(char c : comp)
-		{
-			if(!std::isdigit(c))
-			{
-				isIndex = false;
-				break;
-			}
-		}
-		if(!isIndex)
-			value = &(*value)[comp];
-		else
-			value = &(*value)[std::stoi(comp)];
-	}
-
-	return *value;
-}
-
-std::string Json::getPathComponent(const std::string& path, uint32_t index)
-{
-	uint32_t begin = 0;
-	uint32_t searchIndex = 0;
-	for(uint32_t end = 1; end < path.size(); ++end)
-	{
-		if(path[end] == '/' && begin < end)
-		{
-			if(searchIndex++ == index)
-				return {path.begin() + begin, path.begin() + end};
-			begin = end + 1;
-		}
-	}
-	return {path.begin() + begin, path.end()};
-}
-
-MultiJsonChange::MultiJsonChange(VersionedJson* json) : JsonChangeBase(json)
+MultiJsonChange::MultiJsonChange(bool dontReverse, VersionedJson* json) : dontReverse(dontReverse), JsonChangeBase(json)
 {
 
 }
 
 void MultiJsonChange::undo()
 {
-	for(size_t i = 1; i <= changes.size(); ++i)
-		changes[changes.size() - i]->undo();
+	if(!dontReverse)
+	{
+		for(size_t i = 1; i <= changes.size(); ++i)
+			changes[changes.size() - i]->undo();
+	}
+	else
+	{
+		for(auto& change : changes)
+			change->undo();
+	}
 }
 
 void MultiJsonChange::redo()
@@ -292,8 +326,6 @@ void JsonArrayChange::undo()
 		insertValue();
 
 	--_json->_version;
-	if(_json->_onChange)
-		_json->_onChange(_path, this, true);
 }
 
 void JsonArrayChange::redo()
@@ -304,29 +336,23 @@ void JsonArrayChange::redo()
 		removeValue();
 
 	++_json->_version;
-	if(_json->_onChange)
-		_json->_onChange(_path, this, false);
 }
 
 void JsonArrayChange::insertValue()
 {
 	auto& array = Json::resolvePath(_path, _json->data());
-	if(array.size() == _index)
-		array.append(_value);
-	else
-		array.insert(_index, _value);
+	Json::insertArrayValue(_value, _index, array);
 }
 
 void JsonArrayChange::removeValue()
 {
 	auto& array = Json::resolvePath(_path, _json->data());
-	Json::Value newArray;
-	for(Json::ArrayIndex i = 0; i < array.size(); ++i)
-	{
-		if(i != _index)
-			newArray.append(array[i]);
-	}
-	array = newArray;
+	assert(array.isArray());
+	assert(_index < array.size());
+	if(_value.isNull())
+		_value = array[_index];
+
+	Json::eraseArrayValue(_index, array);
 }
 
 Json::ArrayIndex JsonArrayChange::index() const

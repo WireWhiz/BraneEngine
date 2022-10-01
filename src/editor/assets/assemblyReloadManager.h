@@ -31,7 +31,7 @@ public:
 	void updateEntityParent(Assembly* assembly, size_t entity, size_t parent);
 	void addEntityComponent(Assembly* assembly, size_t index, VirtualComponentView component);
 	void removeEntityComponent(Assembly* assembly, size_t index, ComponentID compID);
-	void insertEntity(Assembly* assembly, size_t parentIndex, size_t index);
+	void insertEntity(Assembly* assembly, size_t index);
 	void reorderEntity(Assembly* assembly, size_t before, size_t after);
 	void removeEntity(Assembly* assembly, size_t index);
 	static const char* name();

@@ -57,10 +57,10 @@ public:
 
 class FocusEntityAssetEvent : public GUIEvent
 {
-	size_t _index;
+	int _index;
 public:
-	FocusEntityAssetEvent(size_t index);
-	size_t entity() const;
+	FocusEntityAssetEvent(int index);
+	int entity() const;
 };
 
 class FocusEntityEvent : public GUIEvent

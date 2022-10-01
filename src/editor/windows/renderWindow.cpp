@@ -81,7 +81,10 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 		if(assembly)
 		{
 			_focusedAssetEntity = event->entity();
-			_focusedEntity = arm->getEntity(assembly, 0, event->entity());
+			if(event->entity() >= 0)
+				_focusedEntity = arm->getEntity(assembly, 0, event->entity());
+			else
+				_focusedEntity = EntityID();
 		}
 	});
     _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
@@ -245,6 +248,7 @@ void RenderWindow::displayContent()
                 _lastMousePos = ImGui::GetMousePos();
             }
         }
+
 		if(ImGui::IsWindowHovered())
 		{
 			if(ImGui::IsKeyPressed(ImGuiKey_F) && (em->entityExists(_focusedEntity)))
@@ -271,35 +275,17 @@ void RenderWindow::displayContent()
                 _manipulating = false;
                 if(_focusedAsset && _focusedAssetEntity != -1)
                 {
-					Json::Value components = _focusedAsset->json()["entities"][(Json::ArrayIndex)_focusedAssetEntity]["components"];
-					assert(components != Json::nullValue);
+	                auto* assembly = dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get());
+					assembly->json().beginMultiChange();
 					if(em->hasComponent<TRS>(_focusedEntity))
 					{
-						size_t i = 0;
-						for(auto& member : components)
-						{
-							if(member["id"] == TRS::def()->asset->id.string())
-							{
-								member = EditorAssemblyAsset::componentToJson(em->getComponent<TRS>(_focusedEntity)->toVirtual());
-								break;
-							}
-							++i;
-						}
+						assembly->updateEntityComponent(_focusedAssetEntity, em->getComponent<TRS>(_focusedEntity)->toVirtual());
 					}
 	                if(em->hasComponent<Transform>(_focusedEntity))
 	                {
-		                size_t i = 0;
-		                for(auto& member : components)
-		                {
-			                if(member["id"] == Transform::def()->asset->id.string())
-			                {
-				                member = EditorAssemblyAsset::componentToJson(em->getComponent<Transform>(_focusedEntity)->toVirtual());
-				                break;
-			                }
-			                ++i;
-		                }
+		                assembly->updateEntityComponent(_focusedAssetEntity, em->getComponent<Transform>(_focusedEntity)->toVirtual());
 	                }
-                    _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/components", components);
+					assembly->json().endMultiChange();
                 }
             }
         }

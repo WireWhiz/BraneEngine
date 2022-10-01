@@ -29,9 +29,12 @@ void Transforms::start()
 
 void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, bool keepOffset)
 {
+	assert(em.entityExists(entity) && em.entityExists(parent));
+	removeParent(entity, em, false);
 	if(!em.hasComponent<LocalTransform>(entity))
 		em.addComponent<LocalTransform>(entity);
 	auto* localTransform = em.getComponent<LocalTransform>(entity);
+
 	localTransform->parent = parent;
 
 	if(!em.hasComponent<Children>(parent))
@@ -58,28 +61,33 @@ void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, 
 		em.markComponentChanged(entity, TRS::def()->id);
 }
 
-void Transforms::removeParent(EntityID entity, EntityManager& em)
+void Transforms::removeParent(EntityID entity, EntityManager& em, bool removeLocalTransform)
 {
-	EntityID parent = *em.getComponent(entity, LocalTransform::def()->id).getVar<EntityID>(1);
-	em.removeComponent(entity, LocalTransform::def()->id);
+	if(!em.hasComponent<LocalTransform>(entity))
+		return;
+	EntityID parent = em.getComponent<LocalTransform>(entity)->parent;
+	if(removeLocalTransform)
+		em.removeComponent(entity, LocalTransform::def()->id);
+	if(!em.entityExists(parent))
+		return;
+	Children* children = em.getComponent<Children>(parent);
 
-	VirtualComponent children = em.getComponent(parent, Children::def()->id);
-	auto* carray = children.getVar<inlineUIntArray>(0);
-	if(carray->size() > 1)
+	if(children->children.size() == 1)
 	{
-		for(size_t i = 0; i < carray->size(); ++i)
-		{
-			if((*carray)[i] == entity.id)
-			{
-				carray->erase(entity.id);
-				break;
-			}
-		}
-		em.setComponent(parent, children);
+		em.removeComponent<Children>(parent);
+		return;
 	}
-	else
-		em.removeComponent(parent, Children::def()->id);
 
+	size_t eraseIndex = 0;
+	for(auto& child : children->children)
+	{
+		if(child == entity)
+		{
+			children->children.erase(eraseIndex);
+			break;
+		}
+		++eraseIndex;
+	}
 }
 
 void Transforms::updateTRSFromMatrix(EntityID entity, glm::mat4 value)
