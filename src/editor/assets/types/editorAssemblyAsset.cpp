@@ -3,7 +3,6 @@
 //
 
 #include "editorAssemblyAsset.h"
-#include "fileManager/fileManager.h"
 #include "editor/braneProject.h"
 #include "../gltfLoader.h"
 #include "assets/assetManager.h"
@@ -14,7 +13,6 @@
 #include "assets/assembly.h"
 #include "ui/gui.h"
 #include "editor/editorEvents.h"
-#include "assets/types/materialAsset.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include <regex>
 
@@ -39,16 +37,12 @@ EditorAssemblyAsset::EditorAssemblyAsset(const std::filesystem::path& file, Bran
 		_json.data()["linked"] = false;
 		_json.data()["dependencies"]["meshes"] = Json::arrayValue;
 		_json.data()["dependencies"]["materials"] = Json::arrayValue;
-		_json.data()["dependencies"]["components"].append(EntityName::def()->asset->id.string());
 		Json::Value rootEntity;
 		rootEntity["name"] = "root";
 		Transform t;
 		rootEntity["components"].append(EditorAssemblyAsset::componentToJson(t.toVirtual()));
 		_json.data()["entities"].append(rootEntity);
 	}
-
-	std::regex entityComponentChange(R"((entities/)([0-9]+)(/components).*)");
-	std::regex entityParentChange(R"((entities/)([0-9]+)(/parent).*)");
 }
 
 void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
@@ -305,13 +299,17 @@ public:
 	void redo() override
 	{
 		JsonArrayChange::redo();
+
+		uint32_t parentIndex = _value["parent"].asUInt();
+		Json::insertArrayValue(_index, 0, _json->data()["entities"][parentIndex]["children"]);
+
 		auto* am = Runtime::getModule<AssetManager>();
 		auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
 		if (assembly)
 		{
 			auto* arm = Runtime::getModule<AssemblyReloadManager>();
 			arm->insertEntity(assembly, _index);
-			arm->updateEntityParent(assembly, _index, _value["parent"].asUInt());
+			arm->updateEntityParent(assembly, _index, parentIndex);
 			for (auto& component: _value["components"])
 				arm->addEntityComponent(assembly, _index, EditorAssemblyAsset::jsonToComponent(component));
 		}
@@ -320,6 +318,10 @@ public:
 	void undo() override
 	{
 		JsonArrayChange::undo();
+
+		uint32_t parentIndex = _value["parent"].asUInt();
+		Json::eraseArrayValue(0, _json->data()["entities"][parentIndex]["children"]);
+
 		auto* am = Runtime::getModule<AssetManager>();
 		auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
 		if (assembly)

@@ -137,7 +137,11 @@ glm::mat4 Transforms::getParentTransform(EntityID parent, EntityManager& em)
     if(!em.entityExists(parent))
         return glm::mat4(1);
 	if(!em.hasComponent<LocalTransform>(parent))
-		return em.getComponent<Transform>(parent)->value;
+	{
+		if(em.hasComponent<Transform>(parent))
+			return em.getComponent<Transform>(parent)->value;
+		return glm::mat4(1);
+	}
 	auto* gt = em.getComponent<Transform>(parent);
 	if(!gt->dirty)
 		return gt->value;

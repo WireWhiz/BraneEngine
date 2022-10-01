@@ -59,8 +59,7 @@ std::string Json::getPathComponent(const std::string& path, uint32_t index)
 
 void Json::insertArrayValue(const Value& value, ArrayIndex index, Value& array)
 {
-	assert(array.isArray());
-	if(array.size() == index)
+	if(array.isNull() || array.size() == index)
 		array.append(value);
 	else
 		assert(array.insert(index, value));
