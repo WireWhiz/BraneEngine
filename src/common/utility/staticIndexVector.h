@@ -17,55 +17,55 @@ class staticIndexVector
         T object;
         bool isUsed = false;
     };
-	std::vector<Element> _data;
-	std::stack<size_t> _unused;
-	size_t _size = 0;
+    std::vector<Element> _data;
+    std::stack<size_t> _unused;
+    size_t _size = 0;
 
 public:
-	size_t push(const T& element)
-	{
-		size_t index;
-		if(!_unused.empty())
-		{
-			index = _unused.top();
-			_data[index].object = element;
-			_data[index].isUsed = true;
-			_unused.pop();
-		}
-		else
-		{
-			index = _data.size();
-			_data.push_back({element, true});
-		}
-		_size++;
-		return index;
-	}
+    size_t push(const T& element)
+    {
+        size_t index;
+        if(!_unused.empty())
+        {
+            index = _unused.top();
+            _data[index].object = element;
+            _data[index].isUsed = true;
+            _unused.pop();
+        }
+        else
+        {
+            index = _data.size();
+            _data.push_back({element, true});
+        }
+        _size++;
+        return index;
+    }
 
-	size_t push(T&& element)
-	{
-		size_t index;
-		if(!_unused.empty())
-		{
-			index = _unused.top();
+    size_t push(T&& element)
+    {
+        size_t index;
+        if(!_unused.empty())
+        {
+            index = _unused.top();
             _data[index].object = std::move(element);
             _data[index].isUsed = true;
-			_unused.pop();
-		}
-		else
-		{
-			index = _data.size();
-			_data.push_back({std::move(element), true});
-		}
-		_size++;
-		return index;
-	}
+            _unused.pop();
+        }
+        else
+        {
+            index = _data.size();
+            _data.push_back({std::move(element), true});
+        }
+        _size++;
+        return index;
+    }
 
-	void remove(size_t index)
-	{
-		_unused.push(index);
-		_data[index].isUsed = false;
-		_size--;
-	}
+    void remove(size_t index)
+    {
+        _unused.push(index);
+        _data[index].isUsed = false;
+        _size--;
+    }
 
     bool hasIndex(size_t index) const
     {
@@ -74,30 +74,30 @@ public:
         return  _data[index].isUsed;
     }
 
-	size_t size() const
-	{
-		return _size;
-	}
+    size_t size() const
+    {
+        return _size;
+    }
 
-	void clear()
-	{
-		_size = 0;
-		while(!_unused.empty())
-			_unused.pop();
-		_data.clear();
-	}
+    void clear()
+    {
+        _size = 0;
+        while(!_unused.empty())
+            _unused.pop();
+        _data.clear();
+    }
 
-	const T& operator [](size_t index) const
-	{
-		assert(index < _data.size() && _data[index].isUsed);
-		return _data[index].object;
-	}
-
-	T& operator [](size_t index)
-	{
+    const T& operator [](size_t index) const
+    {
         assert(index < _data.size() && _data[index].isUsed);
-		return _data[index].object;
-	}
+        return _data[index].object;
+    }
+
+    T& operator [](size_t index)
+    {
+        assert(index < _data.size() && _data[index].isUsed);
+        return _data[index].object;
+    }
 
     class iterator
     {
@@ -131,17 +131,17 @@ public:
         {
             return _ref[_index];
         };
-		size_t index() const
-		{
-			return _index;
-		}
+        size_t index() const
+        {
+            return _index;
+        }
 
         using iterator_category = std::forward_iterator_tag;
         using reference = T&;
         using pointer = T*;
     };
 
-	iterator begin()
+    iterator begin()
     {
         return {*this, 0};
     }
@@ -182,10 +182,10 @@ public:
         {
             return _ref[_index];
         };
-	    size_t index() const
-	    {
-		    return _index;
-	    }
+        size_t index() const
+        {
+            return _index;
+        }
 
         using iterator_category = std::forward_iterator_tag;
         using reference = T&;

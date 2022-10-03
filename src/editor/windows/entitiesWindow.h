@@ -14,11 +14,11 @@ class Assembly;
 class EntitiesWindow : public EditorWindow
 {
     std::shared_ptr<EditorAsset> _asset;
-	EntityManager* _em;
+    EntityManager* _em;
     size_t _selected = -1;
-	int _deletedEntity = -1;
-	int _createdEntityParent = -1;
-	void childEntityIndexes(uint32_t entity, std::vector<uint32_t>& children);
+    int _deletedEntity = -1;
+    int _createdEntityParent = -1;
+    void childEntityIndexes(uint32_t entity, std::vector<uint32_t>& children);
     void displayAssetEntities(uint32_t index, bool isLastChild = true);
     void displayContent() override;
 public:

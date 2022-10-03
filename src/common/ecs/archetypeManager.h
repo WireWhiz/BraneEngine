@@ -12,14 +12,14 @@ class ComponentManager;
 class ArchetypeManager
 {
 #ifdef TEST_BUILD
-	public:
+    public:
 #endif
 
-	std::shared_ptr<ChunkPool> _chunkAllocator;
-	// Index 1: number of components, Index 2: archetype
-	std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
-	robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
-	ComponentManager& _componentManager;
+    std::shared_ptr<ChunkPool> _chunkAllocator;
+    // Index 1: number of components, Index 2: archetype
+    std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
+    robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
+    ComponentManager& _componentManager;
 public:
     class iterator{
         ArchetypeManager& _ref;
@@ -36,15 +36,15 @@ public:
         using pointer = Archetype*;
     };
 
-	ArchetypeManager(ComponentManager& componentManager);
-	Archetype* getArchetype(const ComponentSet& components);
-	Archetype* makeArchetype(const ComponentSet& components);
-	void destroyArchetype(Archetype* archetype);
+    ArchetypeManager(ComponentManager& componentManager);
+    Archetype* getArchetype(const ComponentSet& components);
+    Archetype* makeArchetype(const ComponentSet& components);
+    void destroyArchetype(Archetype* archetype);
 
-	std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
+    std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
 
-	void removeEmpty();
-	void clear();
+    void removeEmpty();
+    void clear();
     iterator begin();
     iterator end();
 };

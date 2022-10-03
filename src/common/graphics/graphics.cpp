@@ -26,13 +26,13 @@ namespace graphics
     {
         while(!_newAssets.empty())
         {
-			auto asset = _newAssets.pop_front();
-	        processAsset(asset.first, asset.second);
+            auto asset = _newAssets.pop_front();
+            processAsset(asset.first, asset.second);
         }
-	    while(!_reloadAssets.empty())
-		    reloadAsset(_reloadAssets.pop_front(), false);
-		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
-			return;
+        while(!_reloadAssets.empty())
+            reloadAsset(_reloadAssets.pop_front(), false);
+        if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
+            return;
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
 
         VkResult result = _swapChain->acquireNextImage();
@@ -40,10 +40,10 @@ namespace graphics
         {
             vkDeviceWaitIdle(_device->get());
             _swapChain->resize();
-			for(auto& r : _renderers)
-				if(r->targetingSwapChain())
-					r->setTargetAsSwapChain(r->depthTexture());
-			result = _swapChain->acquireNextImage();
+            for(auto& r : _renderers)
+                if(r->targetingSwapChain())
+                    r->setTargetAsSwapChain(r->depthTexture());
+            result = _swapChain->acquireNextImage();
         }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
             throw std::runtime_error("failed to acquire swap chain image!");
@@ -61,10 +61,10 @@ namespace graphics
 
         vkBeginCommandBuffer(drawBuffer, &beginInfo);
 
-	    for (size_t i = _renderers.size() - 1; i < _renderers.size(); --i)
-	    {
-		    _renderers[i]->render(drawBuffer);
-	    }
+        for (size_t i = _renderers.size() - 1; i < _renderers.size(); --i)
+        {
+            _renderers[i]->render(drawBuffer);
+        }
 
         vkEndCommandBuffer(drawBuffer);
 
@@ -103,26 +103,26 @@ namespace graphics
         presentInfo.pImageIndices = &_swapChain->currentFrame();
         presentInfo.pResults = nullptr; // Optional
         result = vkQueuePresentKHR(_device->presentQueue(), &presentInfo);
-		if(result == VK_SUBOPTIMAL_KHR)
-		{
-			vkDeviceWaitIdle(_device->get());
-			_swapChain->resize();
-			for(auto& r : _renderers)
-				if(r->targetingSwapChain())
-					r->setTargetAsSwapChain(r->depthTexture());
-		}
+        if(result == VK_SUBOPTIMAL_KHR)
+        {
+            vkDeviceWaitIdle(_device->get());
+            _swapChain->resize();
+            for(auto& r : _renderers)
+                if(r->targetingSwapChain())
+                    r->setTargetAsSwapChain(r->depthTexture());
+        }
     }
 
-	size_t VulkanRuntime::addTexture(Texture* texture)
+    size_t VulkanRuntime::addTexture(Texture* texture)
     {
         return _textures.push(std::unique_ptr<Texture>(texture));
     }
     size_t VulkanRuntime::addMesh(MeshAsset* mesh)
     {
-		uint32_t index = _meshes.size();
-		mesh->runtimeID = index;
+        uint32_t index = _meshes.size();
+        mesh->runtimeID = index;
         _meshes.push(std::make_unique<Mesh>(mesh));
-		return index;
+        return index;
     }
 
     void VulkanRuntime::init()
@@ -147,7 +147,7 @@ namespace graphics
 
         _renderers.clear();
         _materials.clear();
-		_shaders.clear();
+        _shaders.clear();
         _textures.clear();
         _meshes.clear();
         
@@ -360,12 +360,12 @@ namespace graphics
             if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
                 Runtime::warn("Vulkan: " + std::string(pCallbackData->pMessage));
             else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-	            Runtime::error("Vulkan: " + std::string(pCallbackData->pMessage));
+                Runtime::error("Vulkan: " + std::string(pCallbackData->pMessage));
             else
                 Runtime::log("Vulkan: "  + std::string(pCallbackData->pMessage));
 #ifndef NDEBUG
-			if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
-				throw std::runtime_error("Vulkan debug error");
+            if(messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+                throw std::runtime_error("Vulkan debug error");
 #endif
         }
         return VK_FALSE;
@@ -384,18 +384,18 @@ namespace graphics
         _validationLayersEnabled = false;
 #endif
         init();
-	    EntityManager* em = Runtime::getModule<EntityManager>();
+        EntityManager* em = Runtime::getModule<EntityManager>();
 
-		Runtime::timeline().addTask("draw", [this, em]{
-			updateWindow();
-			if(_window->closed())
-			{
+        Runtime::timeline().addTask("draw", [this, em]{
+            updateWindow();
+            if(_window->closed())
+            {
 
-				Runtime::stop();
-				return;
-			}
-			draw(*em);
-		}, "draw");
+                Runtime::stop();
+                return;
+            }
+            draw(*em);
+        }, "draw");
     }
 
     VulkanRuntime::~VulkanRuntime()
@@ -436,38 +436,38 @@ namespace graphics
         return id;
     }
 
-	size_t VulkanRuntime::addMaterial(MaterialAsset* materialAsset)
-	{
-		auto id = _materials.push(std::make_unique<Material>(materialAsset, this));
+    size_t VulkanRuntime::addMaterial(MaterialAsset* materialAsset)
+    {
+        auto id = _materials.push(std::make_unique<Material>(materialAsset, this));
         materialAsset->runtimeID = id;
         return id;
-	}
+    }
 
-	Material* VulkanRuntime::getMaterial(size_t id)
-	{
-		return _materials[id].get();
-	}
+    Material* VulkanRuntime::getMaterial(size_t id)
+    {
+        return _materials[id].get();
+    }
 
-	const char* VulkanRuntime::name()
-	{
-		return "graphics";
-	}
+    const char* VulkanRuntime::name()
+    {
+        return "graphics";
+    }
 
 
-	SwapChain* VulkanRuntime::swapChain()
-	{
-		return _swapChain;
-	}
+    SwapChain* VulkanRuntime::swapChain()
+    {
+        return _swapChain;
+    }
 
-	const staticIndexVector<std::unique_ptr<Material>>& VulkanRuntime::materials()
-	{
-		return _materials;
-	}
+    const staticIndexVector<std::unique_ptr<Material>>& VulkanRuntime::materials()
+    {
+        return _materials;
+    }
 
-	const staticIndexVector<std::unique_ptr<Mesh>>& VulkanRuntime::meshes()
-	{
-		return _meshes;
-	}
+    const staticIndexVector<std::unique_ptr<Mesh>>& VulkanRuntime::meshes()
+    {
+        return _meshes;
+    }
 
     void VulkanRuntime::removeRenderer(Renderer* renderer)
     {
@@ -489,28 +489,28 @@ namespace graphics
 
     uint32_t VulkanRuntime::addAsset(Asset* graphicalAsset)
     {
-		auto shader = dynamic_cast<ShaderAsset*>(graphicalAsset);
-		auto material = dynamic_cast<MaterialAsset*>(graphicalAsset);
-		auto mesh = dynamic_cast<MeshAsset*>(graphicalAsset);
-		assert(shader || material || mesh);
-		uint32_t runtimeID;
-		if(shader)
-		{
-			runtimeID = _shaders.size();
-			_shaders.push(0);
-		}
-	    if(material)
-	    {
-		    runtimeID = _materials.size();
-		    _materials.push(0);
-	    }
-	    if(mesh)
-	    {
-		    runtimeID = _meshes.size();
-		    _meshes.push(0);
-	    }
-	    _newAssets.push_back({runtimeID, graphicalAsset});
-		return runtimeID;
+        auto shader = dynamic_cast<ShaderAsset*>(graphicalAsset);
+        auto material = dynamic_cast<MaterialAsset*>(graphicalAsset);
+        auto mesh = dynamic_cast<MeshAsset*>(graphicalAsset);
+        assert(shader || material || mesh);
+        uint32_t runtimeID;
+        if(shader)
+        {
+            runtimeID = _shaders.size();
+            _shaders.push(0);
+        }
+        if(material)
+        {
+            runtimeID = _materials.size();
+            _materials.push(0);
+        }
+        if(mesh)
+        {
+            runtimeID = _meshes.size();
+            _meshes.push(0);
+        }
+        _newAssets.push_back({runtimeID, graphicalAsset});
+        return runtimeID;
     }
 
     void VulkanRuntime::processAsset(uint32_t runtimeID, Asset* graphicalAsset)
@@ -518,16 +518,16 @@ namespace graphics
         switch(graphicalAsset->type.type())
         {
             case AssetType::mesh:
-				assert(_meshes[runtimeID] == nullptr);
-	            _meshes[runtimeID] = std::make_unique<Mesh>(dynamic_cast<MeshAsset*>(graphicalAsset));
+                assert(_meshes[runtimeID] == nullptr);
+                _meshes[runtimeID] = std::make_unique<Mesh>(dynamic_cast<MeshAsset*>(graphicalAsset));
                 break;
             case AssetType::shader:
-	            assert(_shaders[runtimeID] == nullptr);
-	            _shaders[runtimeID] = std::make_unique<Shader>(dynamic_cast<ShaderAsset*>(graphicalAsset));
+                assert(_shaders[runtimeID] == nullptr);
+                _shaders[runtimeID] = std::make_unique<Shader>(dynamic_cast<ShaderAsset*>(graphicalAsset));
                 break;
             case AssetType::material:
-	            assert(_materials[runtimeID] == nullptr);
-		        _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
+                assert(_materials[runtimeID] == nullptr);
+                _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
                 break;
             default:
                 Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");
@@ -536,74 +536,74 @@ namespace graphics
     }
 
 
-	void VulkanRuntime::reloadShader(ShaderAsset* shader)
-	{
-		vkDeviceWaitIdle(device());
-		for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
-		{
-			if((*s)->asset() == shader)
-			{
-				shader->runtimeID = s.index();
-				*(*s) = std::move(Shader(shader));
+    void VulkanRuntime::reloadShader(ShaderAsset* shader)
+    {
+        vkDeviceWaitIdle(device());
+        for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
+        {
+            if((*s)->asset() == shader)
+            {
+                shader->runtimeID = s.index();
+                *(*s) = std::move(Shader(shader));
 
-				for(auto & m : _materials)
-				{
-					if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get())
-					{
-						(*m) = Material(m->asset(), this);
-						for(auto& r : _renderers)
-						{
-							auto sr = dynamic_cast<SceneRenderer*>(r.get());
-							if(sr)
-								sr->reloadMaterial(m.get());
-						}
-					}
-				}
-				break;
-			}
-		}
-	}
+                for(auto & m : _materials)
+                {
+                    if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get())
+                    {
+                        (*m) = Material(m->asset(), this);
+                        for(auto& r : _renderers)
+                        {
+                            auto sr = dynamic_cast<SceneRenderer*>(r.get());
+                            if(sr)
+                                sr->reloadMaterial(m.get());
+                        }
+                    }
+                }
+                break;
+            }
+        }
+    }
 
-	void VulkanRuntime::reloadMaterial(MaterialAsset* material)
-	{
-		vkDeviceWaitIdle(device());
-		for(auto m = _materials.begin(); m != _materials.end(); ++m)
-		{
-			if((*m)->asset() == material)
-			{
-				material->runtimeID = m.index();
-				*(*m) = Material(material, this);
-				for(auto& r : _renderers)
-				{
-					auto sr = dynamic_cast<SceneRenderer*>(r.get());
-					if(sr)
-						sr->reloadMaterial((*m).get());
-				}
-				break;
-			}
-		}
-	}
+    void VulkanRuntime::reloadMaterial(MaterialAsset* material)
+    {
+        vkDeviceWaitIdle(device());
+        for(auto m = _materials.begin(); m != _materials.end(); ++m)
+        {
+            if((*m)->asset() == material)
+            {
+                material->runtimeID = m.index();
+                *(*m) = Material(material, this);
+                for(auto& r : _renderers)
+                {
+                    auto sr = dynamic_cast<SceneRenderer*>(r.get());
+                    if(sr)
+                        sr->reloadMaterial((*m).get());
+                }
+                break;
+            }
+        }
+    }
 
-	void VulkanRuntime::reloadAsset(Asset* graphicalAsset, bool async)
-	{
-		if(async)
-		{
-			_reloadAssets.push_back(graphicalAsset);
-			return;
-		}
-		switch(graphicalAsset->type.type())
-		{
-			case AssetType::shader:
-				reloadShader((ShaderAsset*)graphicalAsset);
-				break;
-			case AssetType::material:
-				reloadMaterial((MaterialAsset*)graphicalAsset);
-				break;
-			default:
-				Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' cannot be reloaded by the graphics runtime");
-				assert(false);
-		}
-	}
+    void VulkanRuntime::reloadAsset(Asset* graphicalAsset, bool async)
+    {
+        if(async)
+        {
+            _reloadAssets.push_back(graphicalAsset);
+            return;
+        }
+        switch(graphicalAsset->type.type())
+        {
+            case AssetType::shader:
+                reloadShader((ShaderAsset*)graphicalAsset);
+                break;
+            case AssetType::material:
+                reloadMaterial((MaterialAsset*)graphicalAsset);
+                break;
+            default:
+                Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' cannot be reloaded by the graphics runtime");
+                assert(false);
+        }
+    }
 
 
 }

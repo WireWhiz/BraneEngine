@@ -187,7 +187,7 @@ namespace graphics
     Texture::Texture(const unsigned char* pixels, uint32_t width, uint32_t height)
     {
         loadFromPixels(pixels, width, height);
-	}
+    }
     Texture::~Texture()
     {
         if(_sampler != VK_NULL_HANDLE)

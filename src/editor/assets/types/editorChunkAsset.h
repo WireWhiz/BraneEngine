@@ -9,12 +9,12 @@
 
 class EditorChunkAsset : public EditorAsset
 {
-	Asset* buildAssembly() const;
-	Asset* buildMesh(const AssetID& id) const;
+    Asset* buildAssembly() const;
+    Asset* buildMesh(const AssetID& id) const;
 public:
-	EditorChunkAsset(const std::filesystem::path& file, BraneProject& project);
-	std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
-	Asset* buildAsset(const AssetID& id) const override;
+    EditorChunkAsset(const std::filesystem::path& file, BraneProject& project);
+    std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
+    Asset* buildAsset(const AssetID& id) const override;
 };
 
 

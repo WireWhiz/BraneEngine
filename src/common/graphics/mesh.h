@@ -13,34 +13,34 @@ namespace graphics
 {
     class GraphicsBuffer;
 
-	using MeshID = uint32_t;
-	class Mesh
-	{
-	private:
-		bool _locked;
-		GraphicsBuffer* _stagingBuffer;
-		GraphicsBuffer* _dataBuffer;
-		MeshAsset* _meshAsset;
+    using MeshID = uint32_t;
+    class Mesh
+    {
+    private:
+        bool _locked;
+        GraphicsBuffer* _stagingBuffer;
+        GraphicsBuffer* _dataBuffer;
+        MeshAsset* _meshAsset;
 
-	public:
+    public:
 
 
-		Mesh(MeshAsset* meshAsset);
-		~Mesh();
+        Mesh(MeshAsset* meshAsset);
+        ~Mesh();
 
-		MeshAsset* meshAsset();
-		VkBuffer buffer() const;
-		VkDeviceSize indexBufferOffset(uint32_t primitive) const;
+        MeshAsset* meshAsset();
+        VkBuffer buffer() const;
+        VkDeviceSize indexBufferOffset(uint32_t primitive) const;
         VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string& name) const;
 
-		uint32_t size() const;
+        uint32_t size() const;
         uint32_t indexCount(uint32_t primitive) const;
-		uint32_t vertexCount(uint32_t primitive) const;
-		uint32_t primitiveCount() const;
+        uint32_t vertexCount(uint32_t primitive) const;
+        uint32_t primitiveCount() const;
 
-		void updateData();
+        void updateData();
 
-		void lock();
-		void unlock();
-	};
+        void lock();
+        void unlock();
+    };
 }

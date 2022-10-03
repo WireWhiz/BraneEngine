@@ -9,14 +9,14 @@
 
 template<typename T>
 bool strCaseCompare(const T& a, const T& b){
-	for(size_t i = 0; i < a.size() && i < b.size(); i++)
-	{
-		char ac = std::tolower(a[i]);
-		char bc = std::tolower(b[i]);
-		if(ac != bc)
-			return ac < bc;
-	}
-	return a.size() < b.size();
+    for(size_t i = 0; i < a.size() && i < b.size(); i++)
+    {
+        char ac = std::tolower(a[i]);
+        char bc = std::tolower(b[i]);
+        if(ac != bc)
+            return ac < bc;
+    }
+    return a.size() < b.size();
 }
 
 #endif //BRANEENGINE_STRCASECOMPARE_H

@@ -10,38 +10,38 @@
 
 class EntityManager;
 namespace graphics{
-	class VulkanRuntime;
-	class SceneRenderer : public Renderer
-	{
-		VulkanRuntime& _vkr;
-		EntityManager& _em;
-		std::unordered_map<const Material*, VkPipeline> _cachedPipelines;
+    class VulkanRuntime;
+    class SceneRenderer : public Renderer
+    {
+        VulkanRuntime& _vkr;
+        EntityManager& _em;
+        std::unordered_map<const Material*, VkPipeline> _cachedPipelines;
 
-		void rebuild() override;
-		VkPipeline getPipeline(const Material* mat);
-		std::vector<GraphicsBuffer> _renderDataBuffers;
-		std::vector<GraphicsBuffer> _pointLights;
+        void rebuild() override;
+        VkPipeline getPipeline(const Material* mat);
+        std::vector<GraphicsBuffer> _renderDataBuffers;
+        std::vector<GraphicsBuffer> _pointLights;
 
-		struct alignas(16) PointLightData
-		{
-			alignas(16) glm::vec3 position;
-			alignas(16) glm::vec4 color;
-		};
+        struct alignas(16) PointLightData
+        {
+            alignas(16) glm::vec3 position;
+            alignas(16) glm::vec4 color;
+        };
 
-		void updateLights(size_t frame, std::vector<PointLightData>& lights);
+        void updateLights(size_t frame, std::vector<PointLightData>& lights);
 
-	public:
-		glm::vec3 position;
-		glm::quat rotation;
-		float fov = 45;
-		SceneRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em);
-		~SceneRenderer() override;
-		void render(VkCommandBuffer cmdBuffer) override;
+    public:
+        glm::vec3 position;
+        glm::quat rotation;
+        float fov = 45;
+        SceneRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em);
+        ~SceneRenderer() override;
+        void render(VkCommandBuffer cmdBuffer) override;
         glm::mat4 transformMatrix() const;
         glm::mat4 perspectiveMatrix() const;
 
-		void reloadMaterial(Material* material);
-	};
+        void reloadMaterial(Material* material);
+    };
 }
 
 

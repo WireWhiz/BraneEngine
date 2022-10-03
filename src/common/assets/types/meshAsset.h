@@ -6,7 +6,7 @@
 
 class MeshAsset : public IncrementalAsset
 {
-	uint32_t _trisPerIncrement = 60;
+    uint32_t _trisPerIncrement = 60;
 
     struct Primitive{
         uint32_t indexOffset;
@@ -31,11 +31,11 @@ public:
     };
 
 
-	MeshAsset();
+    MeshAsset();
 
 #ifdef CLIENT
-	uint32_t runtimeID = -1;
-	bool meshUpdated;
+    uint32_t runtimeID = -1;
+    bool meshUpdated;
     void onDependenciesLoaded() override;
 #endif
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);
@@ -60,15 +60,15 @@ public:
     uint32_t attributeOffset(size_t primitive, const std::string& name) const;
     uint32_t vertexCount(uint32_t primitive) const;
 
-	void serialize(OutputSerializer& s) const override;
-	void deserialize(InputSerializer& s) override;
-	void serializeHeader(OutputSerializer& s) const override;
-	void deserializeHeader(InputSerializer& s) override;
+    void serialize(OutputSerializer& s) const override;
+    void deserialize(InputSerializer& s) override;
+    void serializeHeader(OutputSerializer& s) const override;
+    void deserializeHeader(InputSerializer& s) override;
     std::unique_ptr<SerializationContext> createContext() const override;
-	bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const override;
-	void deserializeIncrement(InputSerializer& sData) override;
+    bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const override;
+    void deserializeIncrement(InputSerializer& sData) override;
 
 
-	size_t meshSize() const;
+    size_t meshSize() const;
     size_t primitiveCount() const;
 };

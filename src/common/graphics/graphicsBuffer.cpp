@@ -55,28 +55,28 @@ namespace graphics
         _submitted = true;
     }
 
-	GraphicsBuffer::GraphicsBuffer()
-	{
-		_size = 0;
-		_usageFlags = 0;
-		_memFlags = 0;
-		_buffer = VK_NULL_HANDLE;
-		_memory = VK_NULL_HANDLE;
-	}
+    GraphicsBuffer::GraphicsBuffer()
+    {
+        _size = 0;
+        _usageFlags = 0;
+        _memFlags = 0;
+        _buffer = VK_NULL_HANDLE;
+        _memory = VK_NULL_HANDLE;
+    }
 
     GraphicsBuffer::GraphicsBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags)
     {
         assert(size > 0);
-		_usageFlags = usage;
-		_memFlags = memFlags;
-		realocate(size);
+        _usageFlags = usage;
+        _memFlags = memFlags;
+        realocate(size);
     }
 
     GraphicsBuffer::~GraphicsBuffer()
     {
-		if(_buffer)
+        if(_buffer)
             vkDestroyBuffer(device->get(), _buffer, nullptr);
-		if(_memory)
+        if(_memory)
             vkFreeMemory(device->get(), _memory, nullptr);
     }
 
@@ -94,7 +94,7 @@ namespace graphics
     {
         assert(startIndex >= 0);
         assert(startIndex + size <= _size);
-		assert(_memory);
+        assert(_memory);
 
         void* dataPtr;
         vkMapMemory(device->get(), _memory, startIndex, size, 0, &dataPtr);
@@ -104,7 +104,7 @@ namespace graphics
 
     void GraphicsBuffer::copy(GraphicsBuffer* src, VkCommandBuffer commandBuffer, VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset)
     {
-	    assert(_memory);
+        assert(_memory);
         VkBufferCopy copyRegion{};
         copyRegion.srcOffset = srcOffset;
         copyRegion.dstOffset = dstOffset;
@@ -112,45 +112,45 @@ namespace graphics
         vkCmdCopyBuffer(commandBuffer, src->get(), _buffer, 1, &copyRegion);
     }
 
-	void GraphicsBuffer::realocate(VkDeviceSize newSize)
-	{
-		if(_buffer)
-			vkDestroyBuffer(device->get(), _buffer, nullptr);
-		if(_memory)
-			vkFreeMemory(device->get(), _memory, nullptr);
+    void GraphicsBuffer::realocate(VkDeviceSize newSize)
+    {
+        if(_buffer)
+            vkDestroyBuffer(device->get(), _buffer, nullptr);
+        if(_memory)
+            vkFreeMemory(device->get(), _memory, nullptr);
 
-		VkBufferCreateInfo bufferInfo{};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = newSize;
-		bufferInfo.usage = _usageFlags;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = newSize;
+        bufferInfo.usage = _usageFlags;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		if (vkCreateBuffer(device->get(), &bufferInfo, nullptr, &_buffer) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to create vertex buffer!");
-		}
+        if (vkCreateBuffer(device->get(), &bufferInfo, nullptr, &_buffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
 
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(device->get(), _buffer, &memRequirements);
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(device->get(), _buffer, &memRequirements);
 
-		VkMemoryAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		allocInfo.allocationSize = memRequirements.size;
-		allocInfo.memoryTypeIndex = device->findMemoryType(memRequirements.memoryTypeBits, _memFlags);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = device->findMemoryType(memRequirements.memoryTypeBits, _memFlags);
 
-		if (vkAllocateMemory(device->get(), &allocInfo, nullptr, &_memory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("failed to allocate vertex buffer memory!");
-		}
-		vkBindBufferMemory(device->get(), _buffer, _memory, 0);
-		_size = newSize;
-	}
+        if (vkAllocateMemory(device->get(), &allocInfo, nullptr, &_memory) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
+        vkBindBufferMemory(device->get(), _buffer, _memory, 0);
+        _size = newSize;
+    }
 
-	void GraphicsBuffer::setFlags(VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags)
-	{
-		_usageFlags = usage;
-		_memFlags = memFlags;
-	}
+    void GraphicsBuffer::setFlags(VkBufferUsageFlags usage, VkMemoryPropertyFlags memFlags)
+    {
+        _usageFlags = usage;
+        _memFlags = memFlags;
+    }
 
 
 }

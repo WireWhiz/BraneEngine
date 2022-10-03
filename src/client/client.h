@@ -10,16 +10,16 @@
 class AssetManager;
 namespace graphics
 {
-	class SceneRenderer;
+    class SceneRenderer;
 }
 
 
 class Client : public Module
 {
-	robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
-	graphics::SceneRenderer* _renderer;
+    robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
+    graphics::SceneRenderer* _renderer;
 public:
-	Client();
-	void start() override;
-	static const char* name();
+    Client();
+    void start() override;
+    static const char* name();
 };

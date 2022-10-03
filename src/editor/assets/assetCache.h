@@ -14,16 +14,16 @@ class AssetID;
 class BraneProject;
 class AssetCache
 {
-	BraneProject* _project = nullptr;
-	std::filesystem::path getPath(const AssetID& id);
+    BraneProject* _project = nullptr;
+    std::filesystem::path getPath(const AssetID& id);
 public:
-	void setProject(BraneProject* project);
-	void cacheAsset(const Asset* asset);
-	bool hasAsset(const AssetID& asset);
-	Asset* getAsset(const AssetID& asset);
-	void deleteCachedAsset(const AssetID& asset);
+    void setProject(BraneProject* project);
+    void cacheAsset(const Asset* asset);
+    bool hasAsset(const AssetID& asset);
+    Asset* getAsset(const AssetID& asset);
+    void deleteCachedAsset(const AssetID& asset);
 
-	std::string getAssetHash(const AssetID& asset);
+    std::string getAssetHash(const AssetID& asset);
 };
 
 #endif //BRANEENGINE_ASSETCACHE_H

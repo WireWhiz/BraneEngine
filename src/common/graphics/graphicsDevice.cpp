@@ -63,10 +63,10 @@ namespace graphics
         createInfo.enabledExtensionCount = static_cast<uint32_t>(_deviceExtensions.size());
         createInfo.ppEnabledExtensionNames = _deviceExtensions.data();
 
-	    VkPhysicalDeviceVulkan11Features features{};
-	    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-		features.shaderDrawParameters = true;
-		createInfo.pNext = &features;
+        VkPhysicalDeviceVulkan11Features features{};
+        features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+        features.shaderDrawParameters = true;
+        createInfo.pNext = &features;
 
         if (_validationLayersEnabled)
         {

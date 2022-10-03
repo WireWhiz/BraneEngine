@@ -15,13 +15,13 @@ class Assembly;
 
 class DataWindow : public EditorWindow
 {
-	enum class FocusMode{
-		asset,
-		entity
-	};
-	FocusMode _focusMode;
-	std::shared_ptr<EditorAsset> _focusedAsset;
-	size_t _focusedAssetEntity = 0;
+    enum class FocusMode{
+        asset,
+        entity
+    };
+    FocusMode _focusMode;
+    std::shared_ptr<EditorAsset> _focusedAsset;
+    size_t _focusedAssetEntity = 0;
 
     struct DraggedComponent
     {
@@ -30,14 +30,14 @@ class DataWindow : public EditorWindow
         size_t componentIndex;
     };
 
-	EntityID _focusedEntity;
-	void displayAssetData();
-	void displayEntityData();
-	void displayEntityAssetData();
+    EntityID _focusedEntity;
+    void displayAssetData();
+    void displayEntityData();
+    void displayEntityAssetData();
 
-	void displayChunkData();
-	void displayAssemblyData();
-	void displayMeshData();
+    void displayChunkData();
+    void displayAssemblyData();
+    void displayMeshData();
     void displayMaterialData();
     void displayContent() override;
 public:

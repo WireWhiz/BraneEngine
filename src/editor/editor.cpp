@@ -27,23 +27,23 @@
 
 void Editor::start()
 {
-	_ui = Runtime::getModule<GUI>();
-	_selectProjectWindow = _ui->addWindow<SelectProjectWindow>(*this);
+    _ui = Runtime::getModule<GUI>();
+    _selectProjectWindow = _ui->addWindow<SelectProjectWindow>(*this);
 
-	_ui->setMainMenuCallback([this](){drawMenu();});
-	_ui->addEventListener<GUIEvent>("projectLoaded", nullptr, [this](auto evt){
-		if(_selectProjectWindow)
-		{
-			_selectProjectWindow = nullptr;
-			_ui->clearWindows();
-			addMainWindows();
-		}
-	});
+    _ui->setMainMenuCallback([this](){drawMenu();});
+    _ui->addEventListener<GUIEvent>("projectLoaded", nullptr, [this](auto evt){
+        if(_selectProjectWindow)
+        {
+            _selectProjectWindow = nullptr;
+            _ui->clearWindows();
+            addMainWindows();
+        }
+    });
 }
 
 const char* Editor::name()
 {
-	return "editor";
+    return "editor";
 }
 
 void Editor::addMainWindows()
@@ -54,48 +54,48 @@ void Editor::addMainWindows()
     auto* entities = _ui->addWindow<EntitiesWindow>(*this);
     auto* renderer = _ui->addWindow<RenderWindow>(*this);
 
-	ImGuiID root = ImGui::GetID("DockingRoot");
-	ImGui::DockBuilderRemoveNode(root);
-	root = ImGui::DockBuilderAddNode(root, ImGuiDockNodeFlags_DockSpace |  ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
-	ImGui::DockBuilderSetNodeSize(root, ImGui::GetCurrentContext()->CurrentViewport->WorkSize);
+    ImGuiID root = ImGui::GetID("DockingRoot");
+    ImGui::DockBuilderRemoveNode(root);
+    root = ImGui::DockBuilderAddNode(root, ImGuiDockNodeFlags_DockSpace |  ImGuiDockNodeFlags_NoWindowMenuButton | ImGuiDockNodeFlags_NoCloseButton);
+    ImGui::DockBuilderSetNodeSize(root, ImGui::GetCurrentContext()->CurrentViewport->WorkSize);
 
-	ImGuiID assetDataNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Right, .2f, nullptr, &root);
-	ImGuiID consoleWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Down, .2f, nullptr, &root);
-	ImGuiID entitiesWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Left, .2f, nullptr, &root);
+    ImGuiID assetDataNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Right, .2f, nullptr, &root);
+    ImGuiID consoleWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Down, .2f, nullptr, &root);
+    ImGuiID entitiesWindowNode = ImGui::DockBuilderSplitNode(root, ImGuiDir_Left, .2f, nullptr, &root);
 
-	ImGui::DockBuilderDockWindow(dataWindow->name().c_str(), assetDataNode);
-	ImGui::DockBuilderDockWindow(console->name().c_str(), consoleWindowNode);
-	ImGui::DockBuilderDockWindow(assetBrowser->name().c_str(), consoleWindowNode);
-	ImGui::DockBuilderDockWindow(entities->name().c_str(), entitiesWindowNode);
-	ImGui::DockBuilderDockWindow(renderer->name().c_str(), root);
+    ImGui::DockBuilderDockWindow(dataWindow->name().c_str(), assetDataNode);
+    ImGui::DockBuilderDockWindow(console->name().c_str(), consoleWindowNode);
+    ImGui::DockBuilderDockWindow(assetBrowser->name().c_str(), consoleWindowNode);
+    ImGui::DockBuilderDockWindow(entities->name().c_str(), entitiesWindowNode);
+    ImGui::DockBuilderDockWindow(renderer->name().c_str(), root);
 
-	//Attempt at recreating the (for some reason commented out) ImGuiDockNodeFlags_NoCentralNode
-	ImGui::DockBuilderGetNode(root)->MergedFlags ^= ImGuiDockNodeFlags_CentralNode;
-	ImGui::DockBuilderGetNode(root)->UpdateMergedFlags();
+    //Attempt at recreating the (for some reason commented out) ImGuiDockNodeFlags_NoCentralNode
+    ImGui::DockBuilderGetNode(root)->MergedFlags ^= ImGuiDockNodeFlags_CentralNode;
+    ImGui::DockBuilderGetNode(root)->UpdateMergedFlags();
 
-	ImGui::DockBuilderFinish(root);
+    ImGui::DockBuilderFinish(root);
 
 
-	Runtime::log("Main layout loaded");
+    Runtime::log("Main layout loaded");
 }
 
 void Editor::drawMenu()
 {
-	if(ImGui::BeginMainMenuBar())
-	{
-		if(ImGui::BeginMenu("File"))
-		{
+    if(ImGui::BeginMainMenuBar())
+    {
+        if(ImGui::BeginMenu("File"))
+        {
             ImGui::Selectable("Create Asset");
-			ImGui::EndMenu();
-		}
-		if(ImGui::BeginMenu("Window"))
-		{
+            ImGui::EndMenu();
+        }
+        if(ImGui::BeginMenu("Window"))
+        {
             if(ImGui::Selectable("Entities"))
                 _ui->addWindow<EntitiesWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Asset Browser"))
                 _ui->addWindow<AssetBrowserWindow>(*this)->resizeDefault();
-			if(ImGui::Selectable("Sync Window"))
-				_ui->addWindow<SyncWindow>(*this)->resizeDefault();
+            if(ImGui::Selectable("Sync Window"))
+                _ui->addWindow<SyncWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Render Preview"))
                 _ui->addWindow<RenderWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Console"))
@@ -104,166 +104,166 @@ void Editor::drawMenu()
                 _ui->addWindow<DataWindow>(*this)->resizeDefault();
             if(ImGui::Selectable("Memory Manager"))
                 _ui->addWindow<MemoryManagerWindow>(*this)->resizeDefault();
-			ImGui::EndMenu();
-		}
-		ImGui::EndMainMenuBar();
-	}
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
 
-	if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-	{
-		if(ImGui::IsKeyPressed(ImGuiKey_Z))
-		{
-			if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
-				_jsonTracker.undo();
-			else
-				_jsonTracker.redo();
-		}
-		else if(ImGui::IsKeyPressed(ImGuiKey_Y))
-			_jsonTracker.redo();
-		else if(ImGui::IsKeyPressed(ImGuiKey_S))
-			_project.save();
-	}
+    if(ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+    {
+        if(ImGui::IsKeyPressed(ImGuiKey_Z))
+        {
+            if(!ImGui::IsKeyDown(ImGuiKey_ModShift))
+                _jsonTracker.undo();
+            else
+                _jsonTracker.redo();
+        }
+        else if(ImGui::IsKeyPressed(ImGuiKey_Y))
+            _jsonTracker.redo();
+        else if(ImGui::IsKeyPressed(ImGuiKey_S))
+            _project.save();
+    }
 }
 
 BraneProject& Editor::project()
 {
-	return _project;
+    return _project;
 }
 
 void Editor::loadProject(const std::filesystem::path& filepath)
 {
-	_project.load(filepath);
-	Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this](){
-		if(_project.fileWatcher())
-			_project.fileWatcher()->scanForChanges();
-	});
-	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
+    _project.load(filepath);
+    Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this](){
+        if(_project.fileWatcher())
+            _project.fileWatcher()->scanForChanges();
+    });
+    _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
 void Editor::createProject(const std::string& name, const std::filesystem::path& directory)
 {
-	_project.create(name, directory);
-	_ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
+    _project.create(name, directory);
+    _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 
 JsonVersionTracker& Editor::jsonTracker()
 {
-	return _jsonTracker;
+    return _jsonTracker;
 }
 
 Editor::Editor() : _project(*this)
 {
-	_cache.setProject(&_project);
+    _cache.setProject(&_project);
 }
 
 AssetCache& Editor::cache()
 {
-	return _cache;
+    return _cache;
 }
 
 ShaderCompiler& Editor::shaderCompiler()
 {
-	return _shaderCompiler;
+    return _shaderCompiler;
 }
 
 void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
 {
-	AssetID id(asset->json()["id"].asString());
-	_cache.deleteCachedAsset(id);
-	auto* am = Runtime::getModule<AssetManager>();
-	if(!am->hasAsset(id))
-		return;
-	Asset* newAsset = asset->buildAsset(id);
-	if(!newAsset)
-	{
-		Runtime::error("Could not reload asset " + id.string() + "!");
-		return;
-	}
-	am->reloadAsset(newAsset);
-	delete newAsset;
+    AssetID id(asset->json()["id"].asString());
+    _cache.deleteCachedAsset(id);
+    auto* am = Runtime::getModule<AssetManager>();
+    if(!am->hasAsset(id))
+        return;
+    Asset* newAsset = asset->buildAsset(id);
+    if(!newAsset)
+    {
+        Runtime::error("Could not reload asset " + id.string() + "!");
+        return;
+    }
+    am->reloadAsset(newAsset);
+    delete newAsset;
 
-	switch(asset->type().type())
-	{
-		case AssetType::material:
-		case AssetType::shader:
-			am->fetchAsset<Asset>(id).then([&am](Asset* asset){
-				//Manually fetch dependencies, since it skips that step if an asset is already fully loaded
-				am->fetchDependencies(asset, [asset](){
-					Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
-				});
-			});
-			break;
-	}
+    switch(asset->type().type())
+    {
+        case AssetType::material:
+        case AssetType::shader:
+            am->fetchAsset<Asset>(id).then([&am](Asset* asset){
+                //Manually fetch dependencies, since it skips that step if an asset is already fully loaded
+                am->fetchDependencies(asset, [asset](){
+                    Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+                });
+            });
+            break;
+    }
 }
 
 //The editor specific fetch asset function
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
-	assert(!id.null());
-	AsyncData<Asset*> asset;
+    assert(!id.null());
+    AsyncData<Asset*> asset;
 
-	Editor* editor = Runtime::getModule<Editor>();
+    Editor* editor = Runtime::getModule<Editor>();
 
-	if(editor->cache().hasAsset(id))
-	{
-		ThreadPool::enqueue([this, editor, asset, id]()
+    if(editor->cache().hasAsset(id))
+    {
+        ThreadPool::enqueue([this, editor, asset, id]()
         {
             Asset* cachedAsset = editor->cache().getAsset(id);
             fetchDependencies(cachedAsset, [asset, cachedAsset]() mutable{
                 asset.setData(cachedAsset);
             });
         });
-		return asset;
-	}
+        return asset;
+    }
 
-	std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
-	if(editorAsset)
-	{
-		ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
-			Asset* a = editorAsset->buildAsset(id);
-			if(!a)
-			{
-				asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
-				return;
-			}
-			_assetLock.lock();
-			_assets.at(id)->loadState = LoadState::awaitingDependencies;
-			_assetLock.unlock();
-			fetchDependencies(a, [editor, asset, a]() mutable{
-				editor->cache().cacheAsset(a);
-				asset.setData(a);
-			});
-		});
-		return asset;
-	}
+    std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
+    if(editorAsset)
+    {
+        ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
+            Asset* a = editorAsset->buildAsset(id);
+            if(!a)
+            {
+                asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
+                return;
+            }
+            _assetLock.lock();
+            _assets.at(id)->loadState = LoadState::awaitingDependencies;
+            _assetLock.unlock();
+            fetchDependencies(a, [editor, asset, a]() mutable{
+                editor->cache().cacheAsset(a);
+                asset.setData(a);
+            });
+        });
+        return asset;
+    }
 
-	if(id.address().empty())
-	{
-		asset.setError("Asset with id " + std::string(id.idStr()) + " was not found and can not be remotely fetched since it lacks a server address");
-		return asset;
-	}
-	auto* nm = Runtime::getModule<NetworkManager>();
-	if(incremental)
-	{
-		nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
-			asset.setData(ptr);
-		});
-	}
-	else
-	{
-		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
-			_assetLock.lock();
-			_assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
-			_assetLock.unlock();
-			if(dependenciesLoaded(ptr))
-			{
-				asset.setData(ptr);
-				return;
-			}
-			fetchDependencies(ptr, [ptr, asset]() mutable{
-				asset.setData(ptr);
-			});
-		});
-	}
-	return asset;
+    if(id.address().empty())
+    {
+        asset.setError("Asset with id " + std::string(id.idStr()) + " was not found and can not be remotely fetched since it lacks a server address");
+        return asset;
+    }
+    auto* nm = Runtime::getModule<NetworkManager>();
+    if(incremental)
+    {
+        nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
+            asset.setData(ptr);
+        });
+    }
+    else
+    {
+        nm->async_requestAsset(id).then([this, asset](Asset* ptr){
+            _assetLock.lock();
+            _assets.at(ptr->id)->loadState = LoadState::awaitingDependencies;
+            _assetLock.unlock();
+            if(dependenciesLoaded(ptr))
+            {
+                asset.setData(ptr);
+                return;
+            }
+            fetchDependencies(ptr, [ptr, asset]() mutable{
+                asset.setData(ptr);
+            });
+        });
+    }
+    return asset;
 }

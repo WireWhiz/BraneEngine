@@ -17,7 +17,7 @@ public:
     std::vector<AssetDependency> dependencies() const override;
 
 #ifdef CLIENT
-	uint32_t runtimeID = -1;
+    uint32_t runtimeID = -1;
     void onDependenciesLoaded() override;
 #endif
 };

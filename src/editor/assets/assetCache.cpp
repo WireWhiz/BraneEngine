@@ -9,46 +9,46 @@
 
 void AssetCache::setProject(BraneProject* project)
 {
-	_project = project;
+    _project = project;
 }
 
 std::filesystem::path AssetCache::getPath(const AssetID& id)
 {
-	assert(_project);
-	return _project->projectDirectory() / "cache" / (std::string(id.idStr()) + ".bin");
+    assert(_project);
+    return _project->projectDirectory() / "cache" / (std::string(id.idStr()) + ".bin");
 }
 
 void AssetCache::cacheAsset(const Asset* asset)
 {
-	FileManager::writeAsset(asset, getPath(asset->id));
+    FileManager::writeAsset(asset, getPath(asset->id));
 }
 
 void AssetCache::deleteCachedAsset(const AssetID& asset)
 {
-	std::filesystem::path path = getPath(asset);
-	if(!std::filesystem::exists(path))
-		return;
+    std::filesystem::path path = getPath(asset);
+    if(!std::filesystem::exists(path))
+        return;
 
-	FileManager::deleteFile(path);
+    FileManager::deleteFile(path);
 }
 
 Asset* AssetCache::getAsset(const AssetID& asset)
 {
-	std::filesystem::path path = getPath(asset);
-	if(!std::filesystem::exists(path))
-		return nullptr;
+    std::filesystem::path path = getPath(asset);
+    if(!std::filesystem::exists(path))
+        return nullptr;
 
-	return FileManager::readUnknownAsset(path);
+    return FileManager::readUnknownAsset(path);
 }
 
 bool AssetCache::hasAsset(const AssetID& asset)
 {
-	return std::filesystem::exists(getPath(asset));
+    return std::filesystem::exists(getPath(asset));
 }
 
 std::string AssetCache::getAssetHash(const AssetID& asset)
 {
-	return FileManager::fileHash(getPath(asset));
+    return FileManager::fileHash(getPath(asset));
 }
 
 

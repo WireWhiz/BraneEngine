@@ -34,33 +34,33 @@ public:
 class AssetReloadEvent : public GUIEvent
 {
 public:
-	AssetReloadEvent();
+    AssetReloadEvent();
 };
 
 class EntityAssetReloadEvent : public GUIEvent
 {
-	size_t _entity;
+    size_t _entity;
 public:
-	EntityAssetReloadEvent(size_t entity);
-	size_t entity() const;
+    EntityAssetReloadEvent(size_t entity);
+    size_t entity() const;
 
 };
 
 class EditorAsset;
 class FocusAssetEvent : public GUIEvent
 {
-	std::shared_ptr<EditorAsset> _asset;
+    std::shared_ptr<EditorAsset> _asset;
 public:
-	FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
-	std::shared_ptr<EditorAsset> asset() const;
+    FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
+    std::shared_ptr<EditorAsset> asset() const;
 };
 
 class FocusEntityAssetEvent : public GUIEvent
 {
-	int _index;
+    int _index;
 public:
-	FocusEntityAssetEvent(int index);
-	int entity() const;
+    FocusEntityAssetEvent(int index);
+    int entity() const;
 };
 
 class FocusEntityEvent : public GUIEvent

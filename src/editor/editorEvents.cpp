@@ -20,22 +20,22 @@ ServerDirectory* DirectoryUpdateEvent::directory() const
 
 FocusAssetEvent::FocusAssetEvent(std::shared_ptr<EditorAsset> asset) : GUIEvent("focus asset")
 {
-	_asset = std::move(asset);
+    _asset = std::move(asset);
 }
 
 std::shared_ptr<EditorAsset> FocusAssetEvent::asset() const
 {
-	return _asset;
+    return _asset;
 }
 
 FocusEntityAssetEvent::FocusEntityAssetEvent(int index) : GUIEvent("focus entity asset")
 {
-	_index = index;
+    _index = index;
 }
 
 int FocusEntityAssetEvent::entity() const
 {
-	return _index;
+    return _index;
 }
 
 FocusEntityEvent::FocusEntityEvent(EntityID id) : GUIEvent("focus entity")
@@ -50,12 +50,12 @@ EntityID FocusEntityEvent::id() const
 
 EntityAssetReloadEvent::EntityAssetReloadEvent(size_t entity) : GUIEvent("entity asset reload")
 {
-	_entity = entity;
+    _entity = entity;
 }
 
 size_t EntityAssetReloadEvent::entity() const
 {
-	return _entity;
+    return _entity;
 }
 
 AssetReloadEvent::AssetReloadEvent() : GUIEvent("asset reload")

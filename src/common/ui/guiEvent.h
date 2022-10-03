@@ -11,11 +11,11 @@
 class GUIWindow;
 class GUIEvent
 {
-	std::string _name;
+    std::string _name;
 public:
-	GUIEvent(std::string name);
-	virtual ~GUIEvent() = default;
-	const std::string& name() const;
+    GUIEvent(std::string name);
+    virtual ~GUIEvent() = default;
+    const std::string& name() const;
 };
 
 struct GUIEventListener

@@ -20,7 +20,7 @@ class AssetSearchWidget
     size_t _searchIncrement;
     AssetType _assetType;
 
-	BraneProject* _project;
+    BraneProject* _project;
     std::vector<std::pair<AssetID, std::filesystem::path>> _searchResults;
     int _selected = -1;
 public:

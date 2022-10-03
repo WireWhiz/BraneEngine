@@ -16,10 +16,10 @@
 class ScheduledTask
 {
     std::function<void()> _task;
-	std::string _name;
+    std::string _name;
 public:
-	[[nodiscard]] const std::string& name() const;
-	ScheduledTask(const std::string& name, std::function<void()> task);
+    [[nodiscard]] const std::string& name() const;
+    ScheduledTask(const std::string& name, std::function<void()> task);
     void run();
 };
 
@@ -38,14 +38,14 @@ public:
 
 class Timeline
 {
-	std::list<ScheduledBlock> _blocks;
+    std::list<ScheduledBlock> _blocks;
 public:
     void addBlock(const std::string& name);
-	void addBlockBefore(const std::string& name, const std::string& before);
-	void addBlockAfter(const std::string& name, const std::string& before);
+    void addBlockBefore(const std::string& name, const std::string& before);
+    void addBlockAfter(const std::string& name, const std::string& before);
     ScheduledBlock* getTimeBlock(const std::string& name);
     void addTask(const std::string& name, std::function<void()> task, const std::string& timeBlock);
-	void run();
+    void run();
 };
 
 

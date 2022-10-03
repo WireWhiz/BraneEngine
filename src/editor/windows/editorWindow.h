@@ -12,9 +12,9 @@ class Editor;
 class EditorWindow : public GUIWindow
 {
 protected:
-	Editor& _editor;
+    Editor& _editor;
 public:
-	EditorWindow(GUI& ui, Editor& editor);
+    EditorWindow(GUI& ui, Editor& editor);
 };
 
 

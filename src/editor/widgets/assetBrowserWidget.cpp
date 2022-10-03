@@ -22,88 +22,88 @@
 
 class CreateDirectoryPopup : public GUIPopup
 {
-	AssetBrowserWidget& _widget;
-	std::string _dirName = "new dir";
-	void drawBody() override
-	{
-		ImGui::Text("Create Directory:");
-		bool enter = ImGui::InputText("##name", &_dirName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
-		if (enter || ImGui::Button("create"))
-		{
-			ImGui::CloseCurrentPopup();
-			FileManager::createDirectory(_widget.currentDirectory() / _dirName);
-			_widget.reloadCurrentDirectory();
-		}
-	}
+    AssetBrowserWidget& _widget;
+    std::string _dirName = "new dir";
+    void drawBody() override
+    {
+        ImGui::Text("Create Directory:");
+        bool enter = ImGui::InputText("##name", &_dirName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+        if (enter || ImGui::Button("create"))
+        {
+            ImGui::CloseCurrentPopup();
+            FileManager::createDirectory(_widget.currentDirectory() / _dirName);
+            _widget.reloadCurrentDirectory();
+        }
+    }
 public:
-	CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")
-	{
-	}
+    CreateDirectoryPopup(AssetBrowserWidget& widget) : _widget(widget), GUIPopup("Create Directory")
+    {
+    }
 };
 
 class CreateAssetPopup : public GUIPopup
 {
-	AssetBrowserWidget& _widget;
-	AssetType _type;
-	std::string _assetName;
+    AssetBrowserWidget& _widget;
+    AssetType _type;
+    std::string _assetName;
 
-	ShaderType _shaderType = ShaderType::fragment;
-	void drawBody() override
-	{
-		ImGui::Text("New %s:", _type.toString().c_str());
-		bool enter = ImGui::InputText("##name", &_assetName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
-		if(_type == AssetType::shader)
-		{
-			const char* shaderTypes[] = {"null", "vertex", "fragment"};
-			if(ImGui::BeginCombo("Shader Type", shaderTypes[(uint8_t)_shaderType]))
-			{
-				if(ImGui::Selectable("fragment"))
-					_shaderType = ShaderType::fragment;
-				if(ImGui::Selectable("vertex"))
-					_shaderType = ShaderType::vertex;
-				ImGui::EndCombo();
-			}
-		}
-		if(enter || ImGui::Button("create"))
-		{
-			ImGui::CloseCurrentPopup();
-			EditorAsset* asset = nullptr;
-			Editor* editor = Runtime::getModule<Editor>();
-			switch(_type.type())
-			{
-				case AssetType::chunk:
-					asset = new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"), editor->project());
-					break;
-				case AssetType::material:
-					asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"), editor->project());
-					break;
-				case AssetType::shader:
-					auto* shader = new EditorShaderAsset(_widget.currentDirectory() / (_assetName + ".shader"), editor->project());
-					shader->createDefaultSource(_shaderType);
-					asset = shader;
-					break;
-			}
-			if(!asset)
-				return;
-			asset->save();
-			editor->project().registerAssetLocation(asset);
-			delete asset;
-			_widget.reloadCurrentDirectory();
-		}
-	}
+    ShaderType _shaderType = ShaderType::fragment;
+    void drawBody() override
+    {
+        ImGui::Text("New %s:", _type.toString().c_str());
+        bool enter = ImGui::InputText("##name", &_assetName, ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_EnterReturnsTrue);
+        if(_type == AssetType::shader)
+        {
+            const char* shaderTypes[] = {"null", "vertex", "fragment"};
+            if(ImGui::BeginCombo("Shader Type", shaderTypes[(uint8_t)_shaderType]))
+            {
+                if(ImGui::Selectable("fragment"))
+                    _shaderType = ShaderType::fragment;
+                if(ImGui::Selectable("vertex"))
+                    _shaderType = ShaderType::vertex;
+                ImGui::EndCombo();
+            }
+        }
+        if(enter || ImGui::Button("create"))
+        {
+            ImGui::CloseCurrentPopup();
+            EditorAsset* asset = nullptr;
+            Editor* editor = Runtime::getModule<Editor>();
+            switch(_type.type())
+            {
+                case AssetType::chunk:
+                    asset = new EditorChunkAsset(_widget.currentDirectory() / (_assetName + ".chunk"), editor->project());
+                    break;
+                case AssetType::material:
+                    asset = new EditorMaterialAsset(_widget.currentDirectory() / (_assetName + ".material"), editor->project());
+                    break;
+                case AssetType::shader:
+                    auto* shader = new EditorShaderAsset(_widget.currentDirectory() / (_assetName + ".shader"), editor->project());
+                    shader->createDefaultSource(_shaderType);
+                    asset = shader;
+                    break;
+            }
+            if(!asset)
+                return;
+            asset->save();
+            editor->project().registerAssetLocation(asset);
+            delete asset;
+            _widget.reloadCurrentDirectory();
+        }
+    }
 public:
-	CreateAssetPopup(AssetBrowserWidget& widget, AssetType type) : _widget(widget), GUIPopup("Create Asset")
-	{
-		_type = type;
-		_assetName = "New " + _type.toString();
-	}
+    CreateAssetPopup(AssetBrowserWidget& widget, AssetType type) : _widget(widget), GUIPopup("Create Asset")
+    {
+        _type = type;
+        _assetName = "New " + _type.toString();
+    }
 };
 
 AssetBrowserWidget::AssetBrowserWidget(GUI &ui, bool allowEdits) : _ui(ui), _allowEdits(allowEdits)
 {
-	_rootPath = Runtime::getModule<Editor>()->project().projectDirectory() / "assets";
-	_root = FileManager::getDirectoryTree(_rootPath);
-	setDirectory(_root.get());
+    _rootPath = Runtime::getModule<Editor>()->project().projectDirectory() / "assets";
+    _root = FileManager::getDirectoryTree(_rootPath);
+    setDirectory(_root.get());
 }
 
 void AssetBrowserWidget::displayDirectoryTree()
@@ -137,7 +137,7 @@ void AssetBrowserWidget::displayDirectoriesRecursive(FileManager::Directory* dir
         {
             if (const ImGuiPayload* p = ImGui::AcceptDragDropPayload("directory"))
             {
-				//TODO notify project file of moved assets
+                //TODO notify project file of moved assets
                 FileManager::moveFile(_rootPath / (*(FileManager::Directory**)p->Data)->path(), _rootPath / dir->path());
             }
         }
@@ -157,9 +157,9 @@ void AssetBrowserWidget::setDirectory(FileManager::Directory* dir)
 {
     _currentDir = dir;
     _currentDir->setParentsOpen();
-	FileManager::refreshDirectoryTree(dir, _rootPath);
+    FileManager::refreshDirectoryTree(dir, _rootPath);
     _contents = FileManager::getDirectoryContents(_rootPath / _currentDir->path());
-	_selectedFiles = {-1, -1};
+    _selectedFiles = {-1, -1};
 }
 
 void AssetBrowserWidget::displayFiles()
@@ -172,75 +172,75 @@ void AssetBrowserWidget::displayFiles()
     {
         ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, {0.0f, 0.6f});
 
-		//Can't change directory in the middle of displaying it, so cache it in this var instead
-		FileManager::Directory* newDirectory = nullptr;
+        //Can't change directory in the middle of displaying it, so cache it in this var instead
+        FileManager::Directory* newDirectory = nullptr;
         for(size_t i = 0; i < _contents.size(); ++i)
         {
-			auto& file = _contents[i];
-	        bool isSelected = _selectedFiles.x <= i && i <= _selectedFiles.y;
-			FileType type = getFileType(file);
+            auto& file = _contents[i];
+            bool isSelected = _selectedFiles.x <= i && i <= _selectedFiles.y;
+            FileType type = getFileType(file);
 
-	        ImGui::PushID(file.path().c_str());
+            ImGui::PushID(file.path().c_str());
             if(ImGui::Selectable("##", isSelected, ImGuiSelectableFlags_SelectOnRelease | ImGuiSelectableFlags_AllowDoubleClick, {0,0}))
             {
-				if(ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
-				{
-					if(type == FileType::asset && _allowEdits)
-					{
-						// Make sure to construct the focus asset event on the main thread
-						auto editor = Runtime::getModule<Editor>();
-						std::shared_ptr<EditorAsset> asset = editor->project().getEditorAsset(currentDirectory() / file);
-						if(asset)
-							_ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
-					}
-					if(type == FileType::directory)
-					{
-						//Since directories are sorted to the top of files and in the same manner as directory children, they have the same index
-						newDirectory = _currentDir->children[i].get();
-					}
-				}
-				if(!ImGui::IsKeyDown(ImGuiKey_ModShift) || _selectedFiles.x == -1)
-				{
-					_selectedFiles = {i,i};
-					_firstSelected = i;
-				}
-				else
-					_selectedFiles = {std::min(_firstSelected, i), std::max(_firstSelected, i)};
+                if(ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+                {
+                    if(type == FileType::asset && _allowEdits)
+                    {
+                        // Make sure to construct the focus asset event on the main thread
+                        auto editor = Runtime::getModule<Editor>();
+                        std::shared_ptr<EditorAsset> asset = editor->project().getEditorAsset(currentDirectory() / file);
+                        if(asset)
+                            _ui.sendEvent(std::make_unique<FocusAssetEvent>(asset));
+                    }
+                    if(type == FileType::directory)
+                    {
+                        //Since directories are sorted to the top of files and in the same manner as directory children, they have the same index
+                        newDirectory = _currentDir->children[i].get();
+                    }
+                }
+                if(!ImGui::IsKeyDown(ImGuiKey_ModShift) || _selectedFiles.x == -1)
+                {
+                    _selectedFiles = {i,i};
+                    _firstSelected = i;
+                }
+                else
+                    _selectedFiles = {std::min(_firstSelected, i), std::max(_firstSelected, i)};
             }
-	        if(ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right) && _selectedFiles.x == _selectedFiles.y)
-		        _selectedFiles = {i,i};
-			ImGui::SameLine(0,0);
-	        ImVec4 iconColor = {1,0,0,1};
+            if(ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Right) && _selectedFiles.x == _selectedFiles.y)
+                _selectedFiles = {i,i};
+            ImGui::SameLine(0,0);
+            ImVec4 iconColor = {1,0,0,1};
 
-	        switch(type)
-	        {
-				case FileType::directory:
-					iconColor = {0.8,0.8,0.8,1};
-					break;
-		        case FileType::normal:
-			        iconColor = {1,1,1,1};
-			        break;
-		        case FileType::source:
-			        iconColor = {0, .80, 1, 1};
-			        break;
-		        case FileType::asset:
-			        iconColor = {0, 1, .25, 1};
-			        break;
-	        }
-	        ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
-			ImGui::Text("%s", getIcon(file));
-			ImGui::PopStyleColor();
-			ImGui::SameLine();
-			ImGui::Text("%ls", file.path().filename().c_str());
+            switch(type)
+            {
+                case FileType::directory:
+                    iconColor = {0.8,0.8,0.8,1};
+                    break;
+                case FileType::normal:
+                    iconColor = {1,1,1,1};
+                    break;
+                case FileType::source:
+                    iconColor = {0, .80, 1, 1};
+                    break;
+                case FileType::asset:
+                    iconColor = {0, 1, .25, 1};
+                    break;
+            }
+            ImGui::PushStyleColor(ImGuiCol_Text, iconColor);
+            ImGui::Text("%s", getIcon(file));
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            ImGui::Text("%ls", file.path().filename().c_str());
             ImGui::PopID();
         }
         ImGui::PopStyleVar(1);
 
-		if(!ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(0))
-			_selectedFiles = {-1,-1};
+        if(!ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(0))
+            _selectedFiles = {-1,-1};
 
-		if(newDirectory)
-	        setDirectory(newDirectory);
+        if(newDirectory)
+            setDirectory(newDirectory);
     }
     assert(_currentDir);
     if(_allowEdits)
@@ -248,55 +248,55 @@ void AssetBrowserWidget::displayFiles()
 
         if (ImGui::BeginPopupContextWindow("directoryActions"))
         {
-			if(ImGui::BeginMenu("Create New"))
-			{
-				if(ImGui::Selectable(ICON_FA_FOLDER " Directory"))
-					_ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
-				if(ImGui::Selectable(ICON_FA_CUBE " Chunk"))
-					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::chunk));
-				if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
-					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
-				if(ImGui::Selectable(ICON_FA_FIRE " Shader"))
-					_ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::shader));
-				ImGui::EndMenu();
-			}
-			if(ImGui::Selectable(ICON_FA_FOLDER " Show In File Browser"))
-			{
+            if(ImGui::BeginMenu("Create New"))
+            {
+                if(ImGui::Selectable(ICON_FA_FOLDER " Directory"))
+                    _ui.openPopup(std::make_unique<CreateDirectoryPopup>(*this));
+                if(ImGui::Selectable(ICON_FA_CUBE " Chunk"))
+                    _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::chunk));
+                if(ImGui::Selectable(ICON_FA_SPRAY_CAN_SPARKLES " Material"))
+                    _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::material));
+                if(ImGui::Selectable(ICON_FA_FIRE " Shader"))
+                    _ui.openPopup(std::make_unique<CreateAssetPopup>(*this, AssetType::shader));
+                ImGui::EndMenu();
+            }
+            if(ImGui::Selectable(ICON_FA_FOLDER " Show In File Browser"))
+            {
 
 #ifdef WIN32
-				const std::string fileBrowser = "explorer \"";
+                const std::string fileBrowser = "explorer \"";
 #elif __unix__
-				const std::string fileBrowser = "dolphin \"";
+                const std::string fileBrowser = "dolphin \"";
 #endif
-				system((fileBrowser + currentDirectory().string() + "\"").c_str());
-			}
-			if(_selectedFiles.x != -1)
-			{
-				ImGui::Separator();
-				if(_selectedFiles.x == _selectedFiles.y)
-				{
-					if(getFileType(_contents[_selectedFiles.x]) == FileType::source && ImGui::Selectable(ICON_FA_UP_RIGHT_FROM_SQUARE " Edit"))
-					{
+                system((fileBrowser + currentDirectory().string() + "\"").c_str());
+            }
+            if(_selectedFiles.x != -1)
+            {
+                ImGui::Separator();
+                if(_selectedFiles.x == _selectedFiles.y)
+                {
+                    if(getFileType(_contents[_selectedFiles.x]) == FileType::source && ImGui::Selectable(ICON_FA_UP_RIGHT_FROM_SQUARE " Edit"))
+                    {
 #ifdef WIN32
-						const std::string osCommand = R"(start "" ")";
+                        const std::string osCommand = R"(start "" ")";
 #elif __unix__
-						const std::string osCommand = "xdg-open \"";
+                        const std::string osCommand = "xdg-open \"";
 #endif
-						auto path = currentDirectory() / _contents[_selectedFiles.x].path();
-						system((osCommand + path.string() + "\"").c_str());
-					}
-				}
+                        auto path = currentDirectory() / _contents[_selectedFiles.x].path();
+                        system((osCommand + path.string() + "\"").c_str());
+                    }
+                }
 
-				if(ImGui::Selectable(ICON_FA_TRASH " Delete"))
-				{
-					Runtime::warn("TODO delete assets from project file");
-					for(size_t i = _selectedFiles.x; i <= _selectedFiles.y; ++i)
-					{
-						FileManager::deleteFile(_contents[i]);
-					}
-					reloadCurrentDirectory();
-				}
-			}
+                if(ImGui::Selectable(ICON_FA_TRASH " Delete"))
+                {
+                    Runtime::warn("TODO delete assets from project file");
+                    for(size_t i = _selectedFiles.x; i <= _selectedFiles.y; ++i)
+                    {
+                        FileManager::deleteFile(_contents[i]);
+                    }
+                    reloadCurrentDirectory();
+                }
+            }
             ImGui::EndPopup();
         }
     }
@@ -346,44 +346,44 @@ void AssetBrowserWidget::displayFullBrowser()
 
 void AssetBrowserWidget::reloadCurrentDirectory()
 {
-	setDirectory(_currentDir);
+    setDirectory(_currentDir);
 }
 
 const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
 {
-	auto ext = path.extension();
-	if(ext == "")
-		return ICON_FA_FOLDER;
-	if(ext == ".shader")
-		return ICON_FA_FIRE;
-	if(ext == ".material")
-		return ICON_FA_SPRAY_CAN_SPARKLES;
-	if(ext == ".chunk")
-		return ICON_FA_CUBE;
-	if(ext == ".assembly")
-		return ICON_FA_BOXES_STACKED;
-	if(ext == ".gltf" || ext == ".glb")
-		return ICON_FA_TABLE_CELLS;
-	if(ext == ".bin")
-		return ICON_FA_BOX_ARCHIVE;
-	if(ext == ".vert" || ext == ".frag")
-		return ICON_FA_CODE;
-	return ICON_FA_FILE;
+    auto ext = path.extension();
+    if(ext == "")
+        return ICON_FA_FOLDER;
+    if(ext == ".shader")
+        return ICON_FA_FIRE;
+    if(ext == ".material")
+        return ICON_FA_SPRAY_CAN_SPARKLES;
+    if(ext == ".chunk")
+        return ICON_FA_CUBE;
+    if(ext == ".assembly")
+        return ICON_FA_BOXES_STACKED;
+    if(ext == ".gltf" || ext == ".glb")
+        return ICON_FA_TABLE_CELLS;
+    if(ext == ".bin")
+        return ICON_FA_BOX_ARCHIVE;
+    if(ext == ".vert" || ext == ".frag")
+        return ICON_FA_CODE;
+    return ICON_FA_FILE;
 }
 
 AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesystem::directory_entry& file)
 {
-	if(file.is_directory())
-		return FileType::directory;
-	if(file.is_regular_file())
-	{
-		auto ext = file.path().extension();
-		if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material")
-			return FileType::asset;
-		if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
-			return FileType::source;
-		return FileType::normal;
-	}
-	return FileType::unknown;
+    if(file.is_directory())
+        return FileType::directory;
+    if(file.is_regular_file())
+    {
+        auto ext = file.path().extension();
+        if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material")
+            return FileType::asset;
+        if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
+            return FileType::source;
+        return FileType::normal;
+    }
+    return FileType::unknown;
 }
 

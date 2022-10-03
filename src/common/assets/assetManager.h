@@ -10,13 +10,13 @@ class EntityManager;
 class AssetManager : public Module
 {
 public:
-	using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
+    using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
 
     enum class LoadState
     {
         unloaded = 0,
-	    failed = 1,
-	    requested = 2,
+        failed = 1,
+        requested = 2,
         awaitingDependencies = 3,
         usable = 4,
         loaded = 5
@@ -31,49 +31,49 @@ public:
         std::unordered_set<HashedAssetID> usedBy;
     };
 private:
-	std::mutex _assetLock;
-	std::unordered_map<HashedAssetID, std::unique_ptr<AssetData>> _assets;
-	std::unordered_map<HashedAssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+    std::mutex _assetLock;
+    std::unordered_map<HashedAssetID, std::unique_ptr<AssetData>> _assets;
+    std::unordered_map<HashedAssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
 
     size_t _nativeComponentID = 0;
     template<typename T>
     void addNativeComponent(EntityManager& em);
 
-	//To account for different ways of fetching assets for different build targets, this function is defined multiple times
-	AsyncData<Asset*> fetchAssetInternal(const AssetID& id, bool incremental);
-	void onAssetLoaded(Asset* asset);
+    //To account for different ways of fetching assets for different build targets, this function is defined multiple times
+    AsyncData<Asset*> fetchAssetInternal(const AssetID& id, bool incremental);
+    void onAssetLoaded(Asset* asset);
 public:
-	AssetManager();
+    AssetManager();
 
-	template<typename T>
-	T* getAsset(const AssetID& id)
-	{
-		static_assert(std::is_base_of<Asset, T>());
-		std::scoped_lock lock(_assetLock);
-		if(_assets.count(id))
-			return (T*)(_assets[id]->asset.get());
-		return nullptr;
-	}
-	AsyncData<Asset*> fetchAsset(const AssetID& id, bool incremental = false);
-	template <typename T>
-	AsyncData<T*> fetchAsset(const AssetID& id)
-	{
-		static_assert(std::is_base_of<Asset, T>());
-		AsyncData<T*> asset;
-		fetchAsset(id, std::is_base_of<IncrementalAsset, T>()).then([asset](Asset* a)
-		{
-			asset.setData(std::move((T*)a));
-		});
-		return asset;
-	}
-	void reloadAsset(Asset* asset);
-	bool hasAsset(const AssetID& id);
+    template<typename T>
+    T* getAsset(const AssetID& id)
+    {
+        static_assert(std::is_base_of<Asset, T>());
+        std::scoped_lock lock(_assetLock);
+        if(_assets.count(id))
+            return (T*)(_assets[id]->asset.get());
+        return nullptr;
+    }
+    AsyncData<Asset*> fetchAsset(const AssetID& id, bool incremental = false);
+    template <typename T>
+    AsyncData<T*> fetchAsset(const AssetID& id)
+    {
+        static_assert(std::is_base_of<Asset, T>());
+        AsyncData<T*> asset;
+        fetchAsset(id, std::is_base_of<IncrementalAsset, T>()).then([asset](Asset* a)
+        {
+            asset.setData(std::move((T*)a));
+        });
+        return asset;
+    }
+    void reloadAsset(Asset* asset);
+    bool hasAsset(const AssetID& id);
 
-	void fetchDependencies(Asset* asset, std::function<void()> callback);
+    void fetchDependencies(Asset* asset, std::function<void()> callback);
     bool dependenciesLoaded(const Asset* asset) const;
 
-	std::vector<const Asset*> nativeAssets(AssetType type);
+    std::vector<const Asset*> nativeAssets(AssetType type);
 
-	static const char* name();
-	void start() override;
+    static const char* name();
+    void start() override;
 };

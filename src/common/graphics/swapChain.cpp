@@ -61,7 +61,7 @@ namespace graphics
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, nullptr);
         _images.resize(imageCount);
         _size = imageCount;
-		_currentFrame = _size - 1;
+        _currentFrame = _size - 1;
         vkGetSwapchainImagesKHR(device->get(), _swapChain, &imageCount, _images.data());
     }
 
@@ -238,23 +238,23 @@ namespace graphics
         createImageViews();
         createDepthResources();
 
-	    _imageAvailableSemaphores.resize(_size);
-	    VkSemaphoreCreateInfo semaphoreInfo{};
-	    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	    VkFenceCreateInfo fenceInfo{};
-	    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-		for(size_t i = 0; i < _size; i++)
-		{
-			if(vkCreateSemaphore(device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS){
-				throw std::runtime_error("failed to create semaphores for a frame!");
-			}
-		}
+        _imageAvailableSemaphores.resize(_size);
+        VkSemaphoreCreateInfo semaphoreInfo{};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkFenceCreateInfo fenceInfo{};
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        for(size_t i = 0; i < _size; i++)
+        {
+            if(vkCreateSemaphore(device->get(), &semaphoreInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS){
+                throw std::runtime_error("failed to create semaphores for a frame!");
+            }
+        }
     }
     SwapChain::~SwapChain()
     {
-	    for(auto s : _imageAvailableSemaphores)
-		    vkDestroySemaphore(device->get(), s, nullptr);
+        for(auto s : _imageAvailableSemaphores)
+            vkDestroySemaphore(device->get(), s, nullptr);
 
         vkDestroyImageView(device->get(), _depthImageView, nullptr);
         vkDestroyImage(device->get(), _depthImage, nullptr);
@@ -291,53 +291,53 @@ namespace graphics
     {
         return _imageFormat;
     }
-	VkFormat SwapChain::depthImageFormat()
-	{
-		return _depthImageFormat;
-	}
+    VkFormat SwapChain::depthImageFormat()
+    {
+        return _depthImageFormat;
+    }
 
-	const std::vector<VkImageView>& SwapChain::getImages()
+    const std::vector<VkImageView>& SwapChain::getImages()
     {
         return _imageViews;
     }
 
-	const uint32_t& SwapChain::currentFrame()
-	{
-		return _currentFrame;
-	}
+    const uint32_t& SwapChain::currentFrame()
+    {
+        return _currentFrame;
+    }
 
-	uint32_t  SwapChain::nextFrame()
-	{
-		return (_currentFrame + 1) % _images.size();
-	}
+    uint32_t  SwapChain::nextFrame()
+    {
+        return (_currentFrame + 1) % _images.size();
+    }
 
-	VkSemaphore SwapChain::currentSemaphore()
-	{
-		return _imageAvailableSemaphores[_currentSemaphore];
-	}
+    VkSemaphore SwapChain::currentSemaphore()
+    {
+        return _imageAvailableSemaphores[_currentSemaphore];
+    }
 
-	VkImageView SwapChain::depthTexture()
-	{
-		return _depthImageView;
-	}
+    VkImageView SwapChain::depthTexture()
+    {
+        return _depthImageView;
+    }
 
-	void SwapChain::resize()
-	{
-		vkDestroyImageView(device->get(), _depthImageView, nullptr);
-		vkDestroyImage(device->get(), _depthImage, nullptr);
-		vkFreeMemory(device->get(), _depthImageMemory, nullptr);
+    void SwapChain::resize()
+    {
+        vkDestroyImageView(device->get(), _depthImageView, nullptr);
+        vkDestroyImage(device->get(), _depthImage, nullptr);
+        vkFreeMemory(device->get(), _depthImageMemory, nullptr);
 
-		for (auto imageView : _imageViews)
-		{
-			vkDestroyImageView(device->get(), imageView, nullptr);
-		}
+        for (auto imageView : _imageViews)
+        {
+            vkDestroyImageView(device->get(), imageView, nullptr);
+        }
 
-		vkDestroySwapchainKHR(device->get(), _swapChain, nullptr);
+        vkDestroySwapchainKHR(device->get(), _swapChain, nullptr);
 
-		createSwapChain();
-		createImageViews();
-		createDepthResources();
-		_currentFrame = 0;
-		 _currentSemaphore = 0;
-	}
+        createSwapChain();
+        createImageViews();
+        createDepthResources();
+        _currentFrame = 0;
+         _currentSemaphore = 0;
+    }
 }

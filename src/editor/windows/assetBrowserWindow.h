@@ -11,7 +11,7 @@
 
 class AssetBrowserWindow : public EditorWindow
 {
-	AssetBrowserWidget _browser;
+    AssetBrowserWidget _browser;
     void displayContent() override;
 public:
     AssetBrowserWindow(GUI& ui, Editor& editor);

@@ -4,7 +4,7 @@
 
 namespace graphics
 {
-	std::function<void()> Window::_onRefocus;
+    std::function<void()> Window::_onRefocus;
     Window::Window()
     {
         init();
@@ -42,24 +42,24 @@ namespace graphics
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         _window = glfwCreateWindow(800, 600, "Brane Engine", nullptr, nullptr);
         assert(_window != NULL);
-		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-	    const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
-		_framerate = vidMode->refreshRate;
-		std::cout << "Using framrate of: " << _framerate << std::endl;
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* vidMode = glfwGetVideoMode(monitor);
+        _framerate = vidMode->refreshRate;
+        std::cout << "Using framrate of: " << _framerate << std::endl;
 
-	    int w, h, texChannels;
-	    unsigned char* pixels = stbi_load(ICON_IMAGE_PATH, &w, &h, &texChannels, STBI_rgb_alpha);
-	    if (pixels == nullptr)
-	    {
-		    throw std::runtime_error("failed to load icon");
-	    }
-		GLFWimage icon{};
-	    icon.width = w;
-	    icon.height = h;
-		icon.pixels = pixels;
-	    glfwSetWindowIcon(_window, 1, &icon);
+        int w, h, texChannels;
+        unsigned char* pixels = stbi_load(ICON_IMAGE_PATH, &w, &h, &texChannels, STBI_rgb_alpha);
+        if (pixels == nullptr)
+        {
+            throw std::runtime_error("failed to load icon");
+        }
+        GLFWimage icon{};
+        icon.width = w;
+        icon.height = h;
+        icon.pixels = pixels;
+        glfwSetWindowIcon(_window, 1, &icon);
 
-	    stbi_image_free(pixels);
+        stbi_image_free(pixels);
     }
 
     void Window::update()
@@ -86,29 +86,29 @@ namespace graphics
         glfwTerminate();
     }
 
-	GLFWwindow* Window::window()
-	{
-		return _window;
-	}
+    GLFWwindow* Window::window()
+    {
+        return _window;
+    }
 
-	int Window::framerate() const
-	{
-		return _framerate;
-	}
+    int Window::framerate() const
+    {
+        return _framerate;
+    }
 
-	void Window::setTitle(std::string_view name)
-	{
-		glfwSetWindowTitle(_window, name.data());
-	}
+    void Window::setTitle(std::string_view name)
+    {
+        glfwSetWindowTitle(_window, name.data());
+    }
 
-	void Window::onRefocus(std::function<void()> onRefocus)
-	{
-		if(!_onRefocus)
-			glfwSetWindowFocusCallback(_window, [](GLFWwindow *window, int focused){
-				if(focused)
-					_onRefocus();
-			});
-		_onRefocus = std::move(onRefocus);
+    void Window::onRefocus(std::function<void()> onRefocus)
+    {
+        if(!_onRefocus)
+            glfwSetWindowFocusCallback(_window, [](GLFWwindow *window, int focused){
+                if(focused)
+                    _onRefocus();
+            });
+        _onRefocus = std::move(onRefocus);
 
-	}
+    }
 }

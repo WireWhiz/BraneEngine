@@ -10,12 +10,12 @@
 namespace graphics
 {
 
-	class Camera
-	{
-	public:
-		glm::mat4x4 transform;
-		glm::mat4x4 view;
-	};
+    class Camera
+    {
+    public:
+        glm::mat4x4 transform;
+        glm::mat4x4 view;
+    };
 
 } // graphics
 

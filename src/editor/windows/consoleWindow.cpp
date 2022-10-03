@@ -10,18 +10,18 @@
 ConsoleWindow::ConsoleWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Console";
-	_listenerIndex = Logging::addListener([this](const auto& log){
+    _listenerIndex = Logging::addListener([this](const auto& log){
         CachedLog cl{log.toString(), log.level, 1};
         for(auto c : cl.text)
             if(c == '\n')
                 ++cl.lineCount;
-		_messages.push_back(cl);
-	});
+        _messages.push_back(cl);
+    });
 }
 
 void ConsoleWindow::displayContent()
 {
-	ImGui::Checkbox("Auto Scroll", &_autoScroll);
+    ImGui::Checkbox("Auto Scroll", &_autoScroll);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, {0,0,0,1});
     ImGui::BeginChild("messages");
     const ImVec4 textColors[] = {
@@ -50,7 +50,7 @@ void ConsoleWindow::displayContent()
             ImGui::Dummy(size);
         ImGui::PopID();
     }
-	if(_autoScroll)
+    if(_autoScroll)
         ImGui::SetScrollHereY(1.0f);
     ImGui::PopStyleVar();
     ImGui::PopFont();

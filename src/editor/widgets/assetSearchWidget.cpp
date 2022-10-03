@@ -19,11 +19,11 @@ AssetSearchWidget::AssetSearchWidget(AssetType type, size_t searchIncrement)
 
 bool AssetSearchWidget::draw()
 {
-	bool submit = false;
+    bool submit = false;
     if(ImGui::InputText("search", &_searchText))
     {
         _selected = -1;
-	    _searchResults = _project->searchAssets(_searchText, _assetType);
+        _searchResults = _project->searchAssets(_searchText, _assetType);
     }
     ImGui::Separator();
 
@@ -45,13 +45,13 @@ bool AssetSearchWidget::draw()
     ImGui::Separator();
     ImGui::BeginDisabled(_selected < 0);
     if(ImGui::Button("Select"))
-		submit = true;
+        submit = true;
     ImGui::EndDisabled();
-	return submit;
+    return submit;
 }
 
 const AssetID& AssetSearchWidget::currentSelected()
 {
-	assert(_selected >= 0);
-	return _searchResults[_selected].first;
+    assert(_selected >= 0);
+    return _searchResults[_selected].first;
 }

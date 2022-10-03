@@ -11,15 +11,15 @@
 
 class ConsoleWindow : public EditorWindow
 {
-	struct CachedLog
-	{
-		std::string text = "";
-		Logging::LogLevel level = Logging::LogLevel::log;
+    struct CachedLog
+    {
+        std::string text = "";
+        Logging::LogLevel level = Logging::LogLevel::log;
         float lineCount;
-	};
-	std::vector<CachedLog> _messages;
+    };
+    std::vector<CachedLog> _messages;
     size_t _listenerIndex;
-	bool _autoScroll = true;
+    bool _autoScroll = true;
     void displayContent() override;
 public:
     ConsoleWindow(GUI& ui, Editor& editor);

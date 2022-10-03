@@ -16,23 +16,23 @@ using ChunkLODCallback = std::function<void(const WorldChunk* chunk, uint32_t ol
 
 class ChunkLoader : public Module
 {
-	struct ChunkContext
-	{
-		WorldChunk* chunk;
-		uint32_t lod = NullLOD;
-	};
-	std::shared_mutex _chunkLock;
-	robin_hood::unordered_map<HashedAssetID, ChunkContext> _chunks;
+    struct ChunkContext
+    {
+        WorldChunk* chunk;
+        uint32_t lod = NullLOD;
+    };
+    std::shared_mutex _chunkLock;
+    robin_hood::unordered_map<HashedAssetID, ChunkContext> _chunks;
 
-	staticIndexVector<ChunkLODCallback> _onLODChange;
+    staticIndexVector<ChunkLODCallback> _onLODChange;
 public:
-	void loadChunk(WorldChunk* chunk);
-	void unloadChunk(const AssetID& chunk);
-	ChunkCallbackID addOnLODChangeCallback(ChunkLODCallback callback);
-	void removeOnLODChangeCallback(ChunkCallbackID id);
-	void setChunkLOD(const AssetID& chunk, uint32_t lod);
+    void loadChunk(WorldChunk* chunk);
+    void unloadChunk(const AssetID& chunk);
+    ChunkCallbackID addOnLODChangeCallback(ChunkLODCallback callback);
+    void removeOnLODChangeCallback(ChunkCallbackID id);
+    void setChunkLOD(const AssetID& chunk, uint32_t lod);
 
-	static const char* name();
+    static const char* name();
 };
 
 

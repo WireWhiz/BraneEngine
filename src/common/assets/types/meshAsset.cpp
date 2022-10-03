@@ -6,33 +6,33 @@
 
 void MeshAsset::serialize(OutputSerializer& s) const
 {
-	Asset::serialize(s);
+    Asset::serialize(s);
     serializeHeader(s);
     s << _data;
 }
 
 void MeshAsset::deserialize(InputSerializer& s)
 {
-	Asset::deserialize(s);
+    Asset::deserialize(s);
     deserializeHeader(s);
     s >> _data;
 }
 
 MeshAsset::MeshAsset()
 {
-	type.set(AssetType::Type::mesh);
+    type.set(AssetType::Type::mesh);
 #ifdef CLIENT
-	meshUpdated = false;
+    meshUpdated = false;
 #endif
 }
 
 size_t MeshAsset::meshSize() const
 {
-	return _data.size();
+    return _data.size();
 }
 void MeshAsset::serializeHeader(OutputSerializer& s) const
 {
-	IncrementalAsset::serializeHeader(s);
+    IncrementalAsset::serializeHeader(s);
     s << (uint16_t)_primitives.size();
     for(auto& primitive : _primitives)
     {
@@ -52,7 +52,7 @@ void MeshAsset::serializeHeader(OutputSerializer& s) const
 
 void MeshAsset::deserializeHeader(InputSerializer& s)
 {
-	IncrementalAsset::deserializeHeader(s);
+    IncrementalAsset::deserializeHeader(s);
     uint16_t primitiveCount;
     s >> primitiveCount;
     _primitives.resize(primitiveCount);
@@ -80,22 +80,22 @@ void MeshAsset::deserializeHeader(InputSerializer& s)
 //For now, we're just testing the header first, data later setup, so all meshes will be sent as only one increment.
 bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* iteratorData) const
 {
-	auto* itr = (MeshSerializationContext*)iteratorData;
-	auto& primitive = _primitives[itr->primitive];
-	s << (uint16_t)itr->primitive;
+    auto* itr = (MeshSerializationContext*)iteratorData;
+    auto& primitive = _primitives[itr->primitive];
+    s << (uint16_t)itr->primitive;
 
-	uint32_t start = itr->pos;
-	uint32_t end = std::min(primitive.indexCount, _trisPerIncrement * 3 + start);
-	s << start << end;
+    uint32_t start = itr->pos;
+    uint32_t end = std::min(primitive.indexCount, _trisPerIncrement * 3 + start);
+    s << start << end;
 
-	for (size_t i = start; i < end; ++i)
-	{
-		uint16_t index = *((uint16_t*)&_data[primitive.indexOffset + i * sizeof(uint16_t)]);
-		s << index;
-		s << !(bool)itr->vertexSent[index]; //We have to cast these because vector returns a custom wrapper for references that's not "trivially copyable"
-		// If we haven't sent this vertex, send it.
-		if(!itr->vertexSent[index])
-		{
+    for (size_t i = start; i < end; ++i)
+    {
+        uint16_t index = *((uint16_t*)&_data[primitive.indexOffset + i * sizeof(uint16_t)]);
+        s << index;
+        s << !(bool)itr->vertexSent[index]; //We have to cast these because vector returns a custom wrapper for references that's not "trivially copyable"
+        // If we haven't sent this vertex, send it.
+        if(!itr->vertexSent[index])
+        {
             for(auto& a : primitive.attributes)
             {
                 size_t attributeOffset = a.second.offset + a.second.step * index;
@@ -107,32 +107,32 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
                 }
             }
             itr->vertexSent[index] = true;
-		}
-	}
-	itr->pos = end;
+        }
+    }
+    itr->pos = end;
 
-	if(itr->pos == primitive.indexCount)
-	{
-		itr->primitive++;
-		itr->pos = 0;
+    if(itr->pos == primitive.indexCount)
+    {
+        itr->primitive++;
+        itr->pos = 0;
 
-		if(itr->primitive >= _primitives.size())
-			return false;
-		itr->vertexSent.clear();
-		itr->vertexSent.resize(_primitives[itr->primitive].vertexCount);
-	}
+        if(itr->primitive >= _primitives.size())
+            return false;
+        itr->vertexSent.clear();
+        itr->vertexSent.resize(_primitives[itr->primitive].vertexCount);
+    }
 
-	return true;
+    return true;
 }
 
 void MeshAsset::deserializeIncrement(InputSerializer& s)
 {
-	uint16_t pIndex;
-	s >> pIndex;
-	auto& primitive = _primitives[pIndex];
+    uint16_t pIndex;
+    s >> pIndex;
+    auto& primitive = _primitives[pIndex];
 
-	uint32_t start, end;
-	s >> start >> end;
+    uint32_t start, end;
+    s >> start >> end;
 
     for (size_t i = start; i < end; ++i)
     {
@@ -160,7 +160,7 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
         }
     }
 #ifdef CLIENT
-	meshUpdated = true;
+    meshUpdated = true;
 #endif
 }
 

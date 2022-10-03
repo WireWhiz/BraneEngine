@@ -17,58 +17,58 @@ const EnumNameMap<AssetType::Type> names(
 
 AssetType::Type AssetType::fromString(const std::string& type)
 {
-	return names.toEnum(type);
+    return names.toEnum(type);
 }
 
 const std::string& AssetType::toString(Type type)
 {
-	return names.toString(type);
+    return names.toString(type);
 }
 
 AssetType::AssetType()
 {
-	_type = none;
+    _type = none;
 }
 
 void AssetType::set(const std::string& type)
 {
-	_type = fromString(type);
+    _type = fromString(type);
 }
 void AssetType::set(AssetType::Type type)
 {
-	_type = type;
+    _type = type;
 }
 
 AssetType::Type AssetType::type() const
 {
-	return _type;
+    return _type;
 }
 
 const std::string& AssetType::toString() const
 {
-	return toString(_type);
+    return toString(_type);
 }
 
 bool AssetType::operator==(AssetType::Type t) const
 {
-	return t == _type;
+    return t == _type;
 }
 
 bool AssetType::operator==(AssetType t) const
 {
-	return _type == t._type;
+    return _type == t._type;
 }
 bool AssetType::operator!=(AssetType t) const
 {
-	return _type != t._type;
+    return _type != t._type;
 }
 
 bool AssetType::operator!=(AssetType::Type t) const
 {
-	return t != _type;
+    return t != _type;
 }
 
 AssetType::AssetType(AssetType::Type type)
 {
-	_type = type;
+    _type = type;
 }

@@ -8,21 +8,21 @@
 class ShaderAsset;
 namespace graphics
 {
-	using ShaderID = uint64_t;
-	class Shader
-	{
-		ShaderAsset* _asset;
+    using ShaderID = uint64_t;
+    class Shader
+    {
+        ShaderAsset* _asset;
         VkShaderModule _shader;
-	public:
+    public:
         Shader(ShaderAsset* asset);
-		Shader(const Shader&) = delete;
-		Shader(Shader&&);
-		Shader& operator=(Shader&&);
-		~Shader();
-		ShaderAsset* asset() const;
-		VkShaderModule get();
-		VkShaderStageFlagBits type();
-		VkPipelineShaderStageCreateInfo stageInfo();
-	};
+        Shader(const Shader&) = delete;
+        Shader(Shader&&);
+        Shader& operator=(Shader&&);
+        ~Shader();
+        ShaderAsset* asset() const;
+        VkShaderModule get();
+        VkShaderStageFlagBits type();
+        VkPipelineShaderStageCreateInfo stageInfo();
+    };
 
 }

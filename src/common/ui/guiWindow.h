@@ -25,10 +25,10 @@ protected:
 
     virtual void displayContent() = 0;
 public:
-	GUIWindow(GUI& ui);
-	virtual ~GUIWindow() = default;
-	virtual void draw();
-	virtual void update();
+    GUIWindow(GUI& ui);
+    virtual ~GUIWindow() = default;
+    virtual void draw();
+    virtual void update();
     bool isOpen() const;
     void close();
     std::string name() const;

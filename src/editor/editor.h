@@ -23,27 +23,27 @@ class GUIWindow;
 class EditorAsset;
 class Editor : public Module
 {
-	GUI* _ui;
-	GUIWindow* _selectProjectWindow = nullptr;
+    GUI* _ui;
+    GUIWindow* _selectProjectWindow = nullptr;
 
-	JsonVersionTracker _jsonTracker;
-	AssetCache _cache;
-	BraneProject _project;
-	ShaderCompiler _shaderCompiler;
-	void addMainWindows();
-	void drawMenu();
+    JsonVersionTracker _jsonTracker;
+    AssetCache _cache;
+    BraneProject _project;
+    ShaderCompiler _shaderCompiler;
+    void addMainWindows();
+    void drawMenu();
 public:
-	Editor();
-	void start() override;
-	void loadProject(const std::filesystem::path& filepath);
-	void createProject(const std::string& name, const std::filesystem::path& directory);
-	void reloadAsset(std::shared_ptr<EditorAsset> asset);
-	BraneProject& project();
-	JsonVersionTracker& jsonTracker();
-	AssetCache& cache();
-	ShaderCompiler& shaderCompiler();
+    Editor();
+    void start() override;
+    void loadProject(const std::filesystem::path& filepath);
+    void createProject(const std::string& name, const std::filesystem::path& directory);
+    void reloadAsset(std::shared_ptr<EditorAsset> asset);
+    BraneProject& project();
+    JsonVersionTracker& jsonTracker();
+    AssetCache& cache();
+    ShaderCompiler& shaderCompiler();
     std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
-	static const char* name();
+    static const char* name();
 };
 
 

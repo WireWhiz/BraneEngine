@@ -17,8 +17,8 @@
 namespace net
 {
 
-	using tcp_socket = asio::ip::tcp::socket;
-	using ssl_socket = asio::ssl::stream<tcp_socket>;
+    using tcp_socket = asio::ip::tcp::socket;
+    using ssl_socket = asio::ssl::stream<tcp_socket>;
 
     enum class ResponseCode : uint8_t
     {
@@ -39,54 +39,54 @@ namespace net
         }
     };
 
-	class Connection
-	{
-	protected:
+    class Connection
+    {
+    protected:
         AsyncQueue<OMessage> _obuffer;
-		AsyncQueue<IMessage> _ibuffer;
-		std::shared_mutex _streamLock;
-		robin_hood::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>> _streamListeners;
-		uint32_t _reqIDCounter = 1000;
-		std::shared_mutex _responseLock;
-		robin_hood::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
-		IMessage _tempIn;
+        AsyncQueue<IMessage> _ibuffer;
+        std::shared_mutex _streamLock;
+        robin_hood::unordered_map<uint32_t, std::pair<std::function<void(InputSerializer s)>, std::function<void()>>> _streamListeners;
+        uint32_t _reqIDCounter = 1000;
+        std::shared_mutex _responseLock;
+        robin_hood::unordered_map<uint32_t, std::function<void(ResponseCode code, InputSerializer s)>> _responseListeners;
+        IMessage _tempIn;
         std::function<void(Connection* connection, IMessage&& message)> _requestHandler;
 
-		std::vector<std::function<void()>> _onDisconnect;
+        std::vector<std::function<void()>> _onDisconnect;
 
         std::string _address;
-	public:
+    public:
 
-		Connection();
-		virtual ~Connection();
-		virtual void disconnect() = 0;
-		virtual bool connected() = 0;
+        Connection();
+        virtual ~Connection();
+        virtual void disconnect() = 0;
+        virtual bool connected() = 0;
 
-		virtual void send(OMessage&& msg) = 0;
-		void sendStreamData(uint32_t id, SerializedData&& sData);
-		void endStream(uint32_t id);
-		void addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback, std::function<void()> onEnd = std::function<void()>());
-		void eraseStreamListener(uint32_t id);
-		void sendRequest(const std::string& name, SerializedData&& data, const std::function<void(ResponseCode code, InputSerializer s)>& callback);
-		void onDisconnect(std::function<void()> f);
+        virtual void send(OMessage&& msg) = 0;
+        void sendStreamData(uint32_t id, SerializedData&& sData);
+        void endStream(uint32_t id);
+        void addStreamListener(uint32_t id, std::function<void(InputSerializer s)> callback, std::function<void()> onEnd = std::function<void()>());
+        void eraseStreamListener(uint32_t id);
+        void sendRequest(const std::string& name, SerializedData&& data, const std::function<void(ResponseCode code, InputSerializer s)>& callback);
+        void onDisconnect(std::function<void()> f);
         void onRequest(std::function<void(Connection* connection, IMessage&& message)> request);
-		bool messageAvailable();
+        bool messageAvailable();
         const std::string& address() const;
-		IMessage popMessage();
+        IMessage popMessage();
 
-	};
+    };
 
-	template<class socket_t>
-	class ConnectionBase : public Connection
-	{
+    template<class socket_t>
+    class ConnectionBase : public Connection
+    {
 
-	protected:
-		socket_t _socket;
-		void async_readHeader()
-		{
-			_tempIn.body.clear();
-			asio::async_read(_socket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)) , [this](std::error_code ec, std::size_t length) {
-				if (ec)
+    protected:
+        socket_t _socket;
+        void async_readHeader()
+        {
+            _tempIn.body.clear();
+            asio::async_read(_socket, asio::buffer(&_tempIn.header, sizeof(MessageHeader)) , [this](std::error_code ec, std::size_t length) {
+                if (ec)
                 {
                     Runtime::error("[" + _address + "] Header Parse Fail: " + ec.message());
                     disconnect();
@@ -101,13 +101,13 @@ namespace net
                     async_readHeader();
                 }
 
-			});
-		}
-		void async_readBody()
-		{
-			_tempIn.body.resize(_tempIn.header.size);
-			asio::async_read(_socket, asio::buffer(_tempIn.body.data(), _tempIn.body.size()),  [this](std::error_code ec, std::size_t length) {
-				if (ec)
+            });
+        }
+        void async_readBody()
+        {
+            _tempIn.body.resize(_tempIn.header.size);
+            asio::async_read(_socket, asio::buffer(_tempIn.body.data(), _tempIn.body.size()),  [this](std::error_code ec, std::size_t length) {
+                if (ec)
                 {
                     Runtime::error("[" + _address + "] Read Message Body Fail: " + ec.message());
                     disconnect();
@@ -180,22 +180,22 @@ namespace net
                 }
                 async_readHeader();
 
-			});
-		}
-		void async_sendMessage()
-		{
-			asio::async_write(_socket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
-				if (ec)
-				{
+            });
+        }
+        void async_sendMessage()
+        {
+            asio::async_write(_socket, asio::buffer(&_obuffer.front().header, sizeof(MessageHeader)), [this](std::error_code ec, std::size_t length) {
+                if (ec)
+                {
                     Runtime::error("[" + _address + "] Write header fail: " + ec.message());
                     disconnect();
                     return;
-				}
+                }
                 async_writeBody();
-			});
-		}
-		void async_writeBody(size_t chunkIndex = 0)
-		{
+            });
+        }
+        void async_writeBody(size_t chunkIndex = 0)
+        {
             if(chunkIndex == _obuffer.front().chunks.size())
             {
                 _obuffer.pop_front();
@@ -203,42 +203,42 @@ namespace net
                     async_sendMessage();
                 return;
             }
-			asio::async_write(_socket, asio::buffer(_obuffer.front().chunks[chunkIndex].data(), _obuffer.front().chunks[chunkIndex].size()), [this, chunkIndex](std::error_code ec, std::size_t length) {
-				if (ec)
+            asio::async_write(_socket, asio::buffer(_obuffer.front().chunks[chunkIndex].data(), _obuffer.front().chunks[chunkIndex].size()), [this, chunkIndex](std::error_code ec, std::size_t length) {
+                if (ec)
                 {
                     Runtime::error("[" + _address + "] Write body fail: " + ec.message());
                     disconnect();
                 }
                 async_writeBody(chunkIndex + 1);
-			});
-		}
-	public:
-		ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
-		{
-		}
-		~ConnectionBase()
-		{
-		}
-		void send(OMessage&& msg) override
-		{
+            });
+        }
+    public:
+        ConnectionBase(socket_t&& socket) : _socket(std::move(socket))
+        {
+        }
+        ~ConnectionBase()
+        {
+        }
+        void send(OMessage&& msg) override
+        {
             msg.header.size = 0;
             for(auto& c : msg.chunks)
                 msg.header.size += c.size();
 
-			assert(msg.header.size <= 4294967295); //unsigned int 32 max value
+            assert(msg.header.size <= 4294967295); //unsigned int 32 max value
             //mutable so that we can move the messge
-			asio::post(_socket.get_executor(), [this, msg = std::move(msg)]() mutable
-			{
-				bool sending = !_obuffer.empty();
-				_obuffer.push_back(std::move(msg));
+            asio::post(_socket.get_executor(), [this, msg = std::move(msg)]() mutable
+            {
+                bool sending = !_obuffer.empty();
+                _obuffer.push_back(std::move(msg));
 
-				if (!sending)
-					async_sendMessage();
-			});
-		}
-		void disconnect() override
-		{
-			asio::post(_socket.get_executor(), [this]{
+                if (!sending)
+                    async_sendMessage();
+            });
+        }
+        void disconnect() override
+        {
+            asio::post(_socket.get_executor(), [this]{
                 _socket.lowest_layer().close();
                 for(auto& f: _onDisconnect)
                     f();
@@ -250,36 +250,36 @@ namespace net
                     r.second(ResponseCode::disconnect, s);
                 }
                 _responseLock.unlock();
-			});
-		}
-		bool connected() override
-		{
-			return _socket.lowest_layer().is_open();
-		}
+            });
+        }
+        bool connected() override
+        {
+            return _socket.lowest_layer().is_open();
+        }
 
-	};
+    };
 
-	template<class socket_t>
-	class ServerConnection : public ConnectionBase<socket_t>
-	{
-	public:
-		ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
-		{
-			connectToClient();
-		}
-		void connectToClient();
-	};
+    template<class socket_t>
+    class ServerConnection : public ConnectionBase<socket_t>
+    {
+    public:
+        ServerConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
+        {
+            connectToClient();
+        }
+        void connectToClient();
+    };
 
 
 
-	template<class socket_t>
-	class ClientConnection : public ConnectionBase<socket_t>
-	{
+    template<class socket_t>
+    class ClientConnection : public ConnectionBase<socket_t>
+    {
 
-	public:
-		ClientConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
-		{
-		}
-		void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail);
-	};
+    public:
+        ClientConnection(socket_t&& socket) : ConnectionBase<socket_t>(std::move(socket))
+        {
+        }
+        void connectToServer(const asio::ip::tcp::resolver::results_type& endpoints, std::function<void()> onConnect, std::function<void()> onFail);
+    };
 }

@@ -13,45 +13,45 @@ template <class T>
 class NativeComponent
 {
 protected:
-	using ComponentType = T;
-	static ComponentDescription* _description;
+    using ComponentType = T;
+    static ComponentDescription* _description;
 public:
-	static ComponentDescription* constructDescription()
-	{
-		if(_description != nullptr)
-			return _description;
-		AssetID id;
-		std::vector<VirtualType::Type> members = T::getMemberTypes();
-		std::vector<size_t> offsets = T::getMemberOffsets();
-		_description = new ComponentDescription(members, offsets, sizeof(T));
-		_description->name =  T::getComponentName();
-		return _description;
-	}
-	NativeComponent() = default;
-	VirtualComponentView toVirtual() const
-	{
-		return VirtualComponentView(_description, (byte*)this);
-	}
-	operator VirtualComponentView() const
-	{
-		return toVirtual();
-	}
-	static T* fromVirtual(byte* data)
-	{
-		return (T*)data;
-	}
-	static const T* fromVirtual(const byte* data)
-	{
-		return (const T*)data;
-	}
-	static T* fromVirtual(VirtualComponentView component)
-	{
-		return (T*)component.data();
-	}
-	static ComponentDescription* def()
-	{
-		return _description;
-	}
+    static ComponentDescription* constructDescription()
+    {
+        if(_description != nullptr)
+            return _description;
+        AssetID id;
+        std::vector<VirtualType::Type> members = T::getMemberTypes();
+        std::vector<size_t> offsets = T::getMemberOffsets();
+        _description = new ComponentDescription(members, offsets, sizeof(T));
+        _description->name =  T::getComponentName();
+        return _description;
+    }
+    NativeComponent() = default;
+    VirtualComponentView toVirtual() const
+    {
+        return VirtualComponentView(_description, (byte*)this);
+    }
+    operator VirtualComponentView() const
+    {
+        return toVirtual();
+    }
+    static T* fromVirtual(byte* data)
+    {
+        return (T*)data;
+    }
+    static const T* fromVirtual(const byte* data)
+    {
+        return (const T*)data;
+    }
+    static T* fromVirtual(VirtualComponentView component)
+    {
+        return (T*)component.data();
+    }
+    static ComponentDescription* def()
+    {
+        return _description;
+    }
 };
 
 

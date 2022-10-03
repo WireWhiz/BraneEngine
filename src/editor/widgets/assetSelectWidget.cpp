@@ -40,17 +40,17 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
             changed = true;
         }
     }
-	if(ImGui::BeginPopup("select asset"))
-	{
-		if(_searchWidget->draw())
-		{
-			id = _searchWidget->currentSelected();
-			changed = true;
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::EndPopup();
-	}
-	ImGui::PopID();
+    if(ImGui::BeginPopup("select asset"))
+    {
+        if(_searchWidget->draw())
+        {
+            id = _searchWidget->currentSelected();
+            changed = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::PopID();
 
 
 
