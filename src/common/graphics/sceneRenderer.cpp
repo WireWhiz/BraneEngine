@@ -80,6 +80,8 @@ namespace graphics{
 					return;
 				for (int j = 0; j < mesh->primitiveCount(); ++j)
 				{
+					if(j == mr->materials.size())
+						break;
 					RenderObject ro{};
 					ro.mesh = mesh;
 					ro.primitive = j;
@@ -94,7 +96,6 @@ namespace graphics{
 	    _renderDataBuffers[_swapChain.currentFrame()].setData(cameraMatrix, 0);
 		for(auto& mat :  _vkr.materials())
         {
-
 			VkPipeline pipeline = getPipeline(mat.get());
 			if(!pipeline)
 				continue;
