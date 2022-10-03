@@ -13,6 +13,8 @@ int main()
 	Config::loadConfig();
 	std::cout << "BraneSurfer starting up\n";
 
+
+	Runtime::init();
 	Timeline& tl = Runtime::timeline();
 	tl.addBlock("asset management");
 	tl.addBlock("networking");
@@ -29,5 +31,7 @@ int main()
 	Runtime::addModule<Client>();
 
 	Runtime::run();
+
+	Runtime::cleanup();
 	return 0;
 }

@@ -231,7 +231,7 @@ namespace VirtualType
 				copy<std::string>(dest, source);
 				return;
 			case virtualAssetID:
-				*(AssetID*)(dest) = ((AssetID*)source)->copy();
+				copy<AssetID>(dest, source);
 				return;
 			case virtualVec3:
 				copy<glm::vec3>(dest, source);

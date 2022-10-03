@@ -66,7 +66,7 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
 		auto dep = _assets.find(d.id);
 		if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
 		{
-			std::pair<AssetID, bool> depPair = {d.id.copy(), d.streamable};
+			std::pair<AssetID, bool> depPair = {d.id, d.streamable};
 			//If the server address is empty, it means this asset is from the same origin as the parent.
 			if(depPair.first.address().empty())
 				depPair.first.setAddress(a->id.address());
@@ -134,6 +134,7 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 
 	_assetLock.unlock();
 	fetchAssetInternal(id, incremental).then([this, assetData, asset](Asset* a){
+		assert(a);
 		_assetLock.lock();
 		assetData->loadState = LoadState::loaded;
 		assetData->asset = std::unique_ptr<Asset>(a);

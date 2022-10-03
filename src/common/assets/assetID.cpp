@@ -71,11 +71,6 @@ AssetID& AssetID::operator=(const std::string& id)
 	return *this;
 }
 
-AssetID AssetID::copy() const
-{
-	return std::move(AssetID(_string));
-}
-
 uint32_t AssetID::id() const
 {
 	assert(!null());
@@ -140,6 +135,13 @@ AssetID::AssetID(AssetID&& o)
 	o._delimiter = std::string::npos;
 }
 
+AssetID AssetID::sameOrigin(const AssetID& parent)
+{
+	AssetID id = *this;
+	id.setAddress(parent.address());
+	return id;
+}
+
 std::size_t std::hash<HashedAssetID>::operator()(const HashedAssetID& k) const
 {
 	return k.hash();
@@ -149,17 +151,17 @@ HashedAssetID::HashedAssetID(const AssetID& id)
 {
 	_hash = robin_hood::hash<std::string>()(id.string());
 	_id = id.id();
-	_strLen = id.string().length();
+	_address = id.address();
 }
 
 bool HashedAssetID::operator!=(const HashedAssetID& hash) const
 {
-	return _hash != hash._hash || _id != hash._id || _strLen != hash._strLen;
+	return !(*this == hash);
 }
 
 bool HashedAssetID::operator==(const HashedAssetID& hash) const
 {
-	return !(_hash != hash._hash);
+	return _hash == hash._hash && _id == hash._id && _address == hash._address;
 }
 
 size_t HashedAssetID::hash() const

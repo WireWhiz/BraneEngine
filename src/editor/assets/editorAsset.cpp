@@ -13,8 +13,6 @@
 #include "editor/assets/types/editorMaterialAsset.h"
 #include "editor/assets/types/editorChunkAsset.h"
 
-const std::string endToken = "\n/* Do not edit past this line */\n";
-
 EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& project) : _file(file), _project(project), _json(project.editor().jsonTracker())
 {
 	auto ext = file.extension().string();
@@ -39,7 +37,10 @@ bool EditorAsset::load()
 			return false;
 		}
 		if(_json.data().get("id", "null").asString() == "null")
+		{
 			_json.data()["id"] = _project.newAssetID(_file, _type).string();
+			_json.markDirty();
+		}
 	} catch(const std::exception& e)
 	{
 		Runtime::error("Could not parse " + _file.string() + "!\n" + e.what());
@@ -59,6 +60,8 @@ void EditorAsset::save()
 	}
 	FileManager::writeFile(_file, _json.data());
 	_json.markClean();
+	_project.editor().cache().cacheAsset(buildAsset(AssetID(_json["id"].asString())));
+	Runtime::log("Saved " + _file.string());
 }
 
 VersionedJson& EditorAsset::json()

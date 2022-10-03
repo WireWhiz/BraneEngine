@@ -16,7 +16,7 @@ add_library(graphics STATIC
 		graphicsBuffer.cpp)
 target_compile_definitions(graphics PUBLIC GLFW_INCLUDE_VULKAN ${COMMON_DEFS})
 target_link_libraries(graphics PUBLIC utility)
-target_compile_definitions(graphics PRIVATE ICON_IMAGE_PATH="branelogo.png")
+target_compile_definitions(graphics PRIVATE ICON_IMAGE_PATH="branelogo.png" CLIENT)
 if(WIN32)
 target_link_libraries(graphics PUBLIC vulkan glfw)
 else (WIN32)

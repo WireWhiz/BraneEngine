@@ -146,7 +146,7 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
 	for(size_t i = 0; i < entities.size(); ++i)
 	{
 		EntityAsset& entity = entities[i];
-		EntityID id = entityMap[i];
+		EntityID entityId = entityMap[i];
 		if(entity.hasComponent(Children::def()))
 		{
             auto* cc = em.getComponent<Children>(entityMap[i]);
@@ -154,14 +154,14 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
             for(auto& child : children)
             {
                 EntityID childID = entityMap[child.id];
-                Transforms::setParent(childID, id, em);
+                Transforms::setParent(childID, entityId, em);
             }
 		}
 #ifdef CLIENT
         if(entity.hasComponent(MeshRendererComponent::def()))
         {
             auto* renderer = em.getComponent<MeshRendererComponent>(entityMap[i]);
-            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh]);
+            auto* mesh = am->getAsset<MeshAsset>(meshes[renderer->mesh].sameOrigin(id));
             renderer->mesh = mesh->runtimeID;
             for(auto& mID : renderer->materials)
             {
@@ -170,7 +170,7 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
 					mID = -1;
 					continue;
 				}
-                auto* material = am->getAsset<MaterialAsset>(materials[mID]);
+                auto* material = am->getAsset<MaterialAsset>(materials[mID].sameOrigin(id));
                 mID = material->runtimeID;
             }
         }

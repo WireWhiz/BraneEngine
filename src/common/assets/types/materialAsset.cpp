@@ -36,6 +36,6 @@ std::vector<AssetDependency> MaterialAsset::dependencies() const
 void MaterialAsset::onDependenciesLoaded()
 {
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    vkr->addAsset(this);
+    runtimeID = vkr->addAsset(this);
 }
 #endif

@@ -76,6 +76,8 @@ namespace graphics{
 					return;
 				}
 				Mesh* mesh = _vkr.meshes()[mr->mesh].get();
+				if(!mesh)
+					return;
 				for (int j = 0; j < mesh->primitiveCount(); ++j)
 				{
 					RenderObject ro{};
@@ -183,6 +185,8 @@ namespace graphics{
 
 	void SceneRenderer::updateLights(size_t frame, std::vector<PointLightData>& lights)
 	{
+		if(lights.empty())
+			return;
 		auto& buffer = _pointLights[frame];
 		//16 because vulkan is dumb and doesn't let you tightly pack ints
 		if(buffer.size() < 16 + lights.size() * sizeof(PointLightData))

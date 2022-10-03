@@ -1,8 +1,8 @@
 #include "mesh.h"
 #include "common/ecs/component.h"
-#include <assets/types/meshAsset.h>
 #include "utility/serializedData.h"
 #include "graphicsBuffer.h"
+#include <assets/types/meshAsset.h>
 
 namespace graphics
 {

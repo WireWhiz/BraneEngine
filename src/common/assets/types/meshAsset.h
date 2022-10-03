@@ -6,7 +6,7 @@
 
 class MeshAsset : public IncrementalAsset
 {
-	uint32_t _trisPerIncrement = 1;
+	uint32_t _trisPerIncrement = 60;
 
     struct Primitive{
         uint32_t indexOffset;
@@ -30,12 +30,12 @@ public:
         std::vector<bool> vertexSent;
     };
 
-	uint32_t runtimeID = -1;
-	bool meshUpdated;
 
 	MeshAsset();
 
 #ifdef CLIENT
+	uint32_t runtimeID = -1;
+	bool meshUpdated;
     void onDependenciesLoaded() override;
 #endif
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);

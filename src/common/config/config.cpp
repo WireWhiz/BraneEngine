@@ -1,4 +1,5 @@
 #include "config.h"
+#include <filesystem>
 
 Json::Value Config::root;
 const char* Config::configFileName = "config.json";
@@ -13,7 +14,7 @@ void Config::loadConfig()
 	std::ifstream configFile(configFileName, std::ios::binary);
 	if (!configFile.is_open())
 	{
-		std::cerr << "Could not open config.json, make sure it's in the same directory as the BraneAssetServer.exe\n";
+		std::cerr << "Could not open config.json, make sure it's in the same directory as this executable\n";
 		throw std::runtime_error("Could not open config file");
 	}
 	try
@@ -23,6 +24,7 @@ void Config::loadConfig()
 	catch(const std::exception& e)
 	{
 		std::cerr << "Error reading configuration file: " << e.what() << std::endl;
+		throw std::runtime_error("Error reading configuration file: " + std::string(e.what()));
 	}
 	configFile.close();
 }

@@ -8,8 +8,10 @@
 
 void ChunkLoader::loadChunk(WorldChunk* chunk)
 {
-	std::scoped_lock l(_chunkLock);
+
+	_chunkLock.lock();
 	_chunks.insert({chunk->id, {chunk}});
+	_chunkLock.unlock();
 
 	assert(chunk->maxLOD != NullLOD);
 	if(chunk->maxLOD != NullLOD)
@@ -36,9 +38,10 @@ void ChunkLoader::removeOnLODChangeCallback(ChunkCallbackID id)
 
 void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
 {
-	std::scoped_lock lock(_chunkLock);
+	_chunkLock.lock_shared();
 	assert(_chunks.contains(chunk));
 	auto& cctx = _chunks.at(chunk);
+	_chunkLock.unlock_shared();
 	assert(lod <= cctx.chunk->maxLOD);
 
 	uint32_t oldLod = cctx.lod;
@@ -61,7 +64,10 @@ void ChunkLoader::setChunkLOD(const AssetID& chunk, uint32_t lod)
 	auto* am =Runtime::getModule<AssetManager>();
 	for(auto& l : LODsToLoad)
 	{
-		am->fetchAsset<Assembly>(l->assembly).then([cJob](Assembly* asset){
+		AssetID id = l->assembly;
+		if(id.address().empty())
+			id.setAddress(chunkPtr->id.address());
+		am->fetchAsset<Assembly>(id).then([cJob](Assembly* asset){
 			cJob->signal();
 		}).onError([](const std::string& error){
 			Runtime::error("Could not load chunk lod: " + error);

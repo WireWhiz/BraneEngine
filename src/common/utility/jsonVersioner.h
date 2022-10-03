@@ -21,6 +21,7 @@ namespace Json
 
 class JsonChangeBase
 {
+	friend class JsonVersionTracker;
 protected:
 	VersionedJson* _json = nullptr;
 public:
@@ -102,9 +103,7 @@ class VersionedJson
 	};
 	std::unique_ptr<UncompletedChange> _uncompletedChange;
 	std::stack<std::unique_ptr<MultiJsonChange>> _multiChanges;
-	friend class JsonChangeBase;
-	friend class JsonChange;
-	friend class JsonArrayChange;
+	friend class JsonVersionTracker;
 public:
 	VersionedJson(JsonVersionTracker& tkr);
 	void initialize(const Json::Value& value);
@@ -116,6 +115,7 @@ public:
 	void beginMultiChange(bool dontReverse = false);
 	void endMultiChange();
 
+	void markDirty();
 	void markClean();
 	bool dirty() const;
 	Json::Value& data();

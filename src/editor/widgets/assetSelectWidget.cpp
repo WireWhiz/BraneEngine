@@ -44,7 +44,7 @@ bool AssetSelectWidget::draw(AssetID& id, AssetType type)
 	{
 		if(_searchWidget->draw())
 		{
-			id = _searchWidget->currentSelected().copy();
+			id = _searchWidget->currentSelected();
 			changed = true;
 			ImGui::CloseCurrentPopup();
 		}

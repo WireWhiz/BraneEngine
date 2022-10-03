@@ -35,7 +35,7 @@ namespace graphics
 		SwapChain* _swapChain;
 		std::vector<VkCommandBuffer> _drawBuffers;
 
-        AsyncQueue<Asset*> _newAssets;
+        AsyncQueue<std::pair<uint32_t, Asset*>> _newAssets;
 		AsyncQueue<Asset*> _reloadAssets;
         staticIndexVector<std::unique_ptr<Shader>> _shaders;
 		staticIndexVector<std::unique_ptr<Material>> _materials;
@@ -72,7 +72,7 @@ namespace graphics
 		static void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-		void processAsset(Asset* graphicalAsset);
+		void processAsset(uint32_t runtimeID, Asset* graphicalAsset);
 	public:
 		
 		VulkanRuntime();
@@ -102,7 +102,7 @@ namespace graphics
 		void reloadMaterial(MaterialAsset* material);
 
         // Add asset may be called from any thread
-        void addAsset(Asset* graphicalAsset);
+        uint32_t addAsset(Asset* graphicalAsset);
 		void reloadAsset(Asset* graphicalAsset, bool async = true);
 
         const staticIndexVector<std::unique_ptr<Material>>& materials();

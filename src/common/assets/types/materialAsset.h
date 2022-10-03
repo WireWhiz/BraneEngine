@@ -11,13 +11,13 @@ public:
     AssetID vertexShader;
     AssetID fragmentShader;
     AssetID inputComponent;
-    uint32_t runtimeID = -1;
 
     void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;
     std::vector<AssetDependency> dependencies() const override;
 
 #ifdef CLIENT
+	uint32_t runtimeID = -1;
     void onDependenciesLoaded() override;
 #endif
 };

@@ -3,6 +3,7 @@
 
 #include "networking/networking.h"
 #include "graphics/graphics.h"
+#include "graphics/sceneRenderer.h"
 #include "assets/assembly.h"
 #include "systems/transforms.h"
 #include "ecs/nativeTypes/meshRenderer.h"
@@ -14,6 +15,7 @@
 #include "networking/connection.h"
 #include "chunk/chunkLoader.h"
 #include "assets/chunk.h"
+#include "glm/gtx/quaternion.hpp"
 
 const char* Client::name()
 {
@@ -53,9 +55,11 @@ void Client::start()
 			{
 				if(lod.min <= newLod && newLod <= lod.max)
 				{
-					am->fetchAsset<Assembly>(lod.assembly).then([this, em](Assembly* assembly){
-						assembly->inject(em);
-						_chunkRoots.insert(lod.assembly);
+					AssetID id = lod.assembly;
+					if(id.address().empty())
+						id.setAddress(chunk->id.address());
+					am->fetchAsset<Assembly>(id).then([this, em](Assembly* assembly){
+						_chunkRoots[assembly->id] = assembly->inject(*em);
 					});
 				}
 			}
@@ -65,17 +69,57 @@ void Client::start()
 	nm->addRequestListener("loadChunk", [am](auto& rc){
 		AssetID chunkID;
 		rc.req >> chunkID;
+		Runtime::log("Was requested to load chunk " + chunkID.string());
 		am->fetchAsset<WorldChunk>(chunkID).then([](WorldChunk* chunk){
 			Runtime::getModule<ChunkLoader>()->loadChunk(chunk);
 			Runtime::log("Loaded chunk " + chunk->id.string());
 		});
-		Runtime::log("Was requested to load chunk " + chunkID.string());
 	});
 	nm->addRequestListener("unloadChunk", [](auto& rc){
 		Runtime::log("Was requested to unload chunk");
 	});
 
 
+	auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+	_renderer = vkr->createRenderer<graphics::SceneRenderer>(vkr, em);
+	_renderer->setClearColor({.2,.2,.2,1});
+	_renderer->position = {4,2,-4};
+	_renderer->rotation = glm::quatLookAt(glm::normalize(glm::vec3{2,1,-2}), {0,1,0});
+	_renderer->setTargetAsSwapChain(true);
+
+	nm->async_connectToAssetServer("localhost", 2001, [nm](bool success){
+		if(success)
+		{
+			auto* assetServer = nm->getServer("localhost");
+			SerializedData data;
+			OutputSerializer s(data);
+			std::string username = Config::json()["user"]["username"].asString();
+			std::string password = Config::json()["user"]["password"].asString();
+			s << username << password;
+			assetServer->sendRequest("login", std::move(data), [assetServer](auto rc, InputSerializer res){
+				if(rc == net::ResponseCode::success)
+				{
+					assetServer->sendRequest("defaultChunk", {}, [](auto rc, InputSerializer res){
+						if(rc != net::ResponseCode::success)
+						{
+							Runtime::error("Problem fetching default chunk");
+							return;
+						}
+						Runtime::log("Requested default chunk");
+					});
+
+				}
+				else
+				{
+					Runtime::error("Failed to log in");
+				}
+			});
+		}
+		else
+		{
+			Runtime::error("Failed to connect to asset server");
+		}
+	});
 }
 
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)

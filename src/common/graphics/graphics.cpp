@@ -25,7 +25,10 @@ namespace graphics
     void VulkanRuntime::draw(EntityManager& em)
     {
         while(!_newAssets.empty())
-            processAsset(_newAssets.pop_front());
+        {
+			auto asset = _newAssets.pop_front();
+	        processAsset(asset.first, asset.second);
+        }
 	    while(!_reloadAssets.empty())
 		    reloadAsset(_reloadAssets.pop_front(), false);
 		if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
@@ -484,23 +487,47 @@ namespace graphics
         return _shaders[shaderID].get();
     }
 
-    void VulkanRuntime::addAsset(Asset* graphicalAsset)
+    uint32_t VulkanRuntime::addAsset(Asset* graphicalAsset)
     {
-        _newAssets.push_back(graphicalAsset);
+		auto shader = dynamic_cast<ShaderAsset*>(graphicalAsset);
+		auto material = dynamic_cast<MaterialAsset*>(graphicalAsset);
+		auto mesh = dynamic_cast<MeshAsset*>(graphicalAsset);
+		assert(shader || material || mesh);
+		uint32_t runtimeID;
+		if(shader)
+		{
+			runtimeID = _shaders.size();
+			_shaders.push(0);
+		}
+	    if(material)
+	    {
+		    runtimeID = _materials.size();
+		    _materials.push(0);
+	    }
+	    if(mesh)
+	    {
+		    runtimeID = _meshes.size();
+		    _meshes.push(0);
+	    }
+	    _newAssets.push_back({runtimeID, graphicalAsset});
+		return runtimeID;
     }
 
-    void VulkanRuntime::processAsset(Asset* graphicalAsset)
+    void VulkanRuntime::processAsset(uint32_t runtimeID, Asset* graphicalAsset)
     {
         switch(graphicalAsset->type.type())
         {
             case AssetType::mesh:
-                addMesh((MeshAsset*)graphicalAsset);
+				assert(_meshes[runtimeID] == nullptr);
+	            _meshes[runtimeID] = std::make_unique<Mesh>(dynamic_cast<MeshAsset*>(graphicalAsset));
                 break;
             case AssetType::shader:
-                addShader((ShaderAsset*)graphicalAsset);
+	            assert(_shaders[runtimeID] == nullptr);
+	            _shaders[runtimeID] = std::make_unique<Shader>(dynamic_cast<ShaderAsset*>(graphicalAsset));
                 break;
             case AssetType::material:
-                addMaterial((MaterialAsset*)graphicalAsset);
+	            assert(_materials[runtimeID] == nullptr);
+		        _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
                 break;
             default:
                 Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");

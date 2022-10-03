@@ -41,6 +41,7 @@ class AssetServer : public Module
 	};
 
 	std::unordered_map<net::Connection*, ConnectionContext> _connectionCtx;
+	std::mutex _sendersLock;
 	std::list<IncrementalAssetSender> _senders;
 
 	std::filesystem::path AssetServer::assetPath(const AssetID& id);

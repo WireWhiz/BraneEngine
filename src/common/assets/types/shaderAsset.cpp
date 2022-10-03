@@ -87,7 +87,7 @@ ShaderAsset::ShaderAsset()
 void ShaderAsset::onDependenciesLoaded()
 {
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    vkr->addAsset(this);
+    runtimeID = vkr->addAsset(this);
 }
 #endif
 

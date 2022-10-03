@@ -206,10 +206,9 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 
 	if(editor->cache().hasAsset(id))
 	{
-		std::shared_ptr<AssetID> idPtr = std::make_shared<AssetID>(id.copy());
-		ThreadPool::enqueue([this, editor, asset, idPtr]()
+		ThreadPool::enqueue([this, editor, asset, id]()
         {
-            Asset* cachedAsset = editor->cache().getAsset(*idPtr);
+            Asset* cachedAsset = editor->cache().getAsset(id);
             fetchDependencies(cachedAsset, [asset, cachedAsset]() mutable{
                 asset.setData(cachedAsset);
             });
@@ -220,16 +219,15 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
 	std::shared_ptr<EditorAsset> editorAsset = editor->project().getEditorAsset(id);
 	if(editorAsset)
 	{
-		std::shared_ptr<AssetID> idPtr = std::make_shared<AssetID>(id.copy());
-		ThreadPool::enqueue([this, editorAsset, editor, asset, idPtr](){
-			Asset* a = editorAsset->buildAsset(*idPtr);
+		ThreadPool::enqueue([this, editorAsset, editor, asset, id](){
+			Asset* a = editorAsset->buildAsset(id);
 			if(!a)
 			{
-				asset.setError("Could not build " + idPtr->string() + " from " + editorAsset->name());
+				asset.setError("Could not build " + id.string() + " from " + editorAsset->name());
 				return;
 			}
 			_assetLock.lock();
-			_assets.at(*idPtr)->loadState = LoadState::awaitingDependencies;
+			_assets.at(id)->loadState = LoadState::awaitingDependencies;
 			_assetLock.unlock();
 			fetchDependencies(a, [editor, asset, a]() mutable{
 				editor->cache().cacheAsset(a);

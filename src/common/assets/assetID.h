@@ -23,8 +23,9 @@ public:
 	const std::string& string() const;
     bool null() const;
 	void setNull();
-	AssetID copy() const;
+	AssetID sameOrigin(const AssetID& parent);
 
+	AssetID& operator=(const AssetID&) = default;
 	AssetID& operator=(AssetID&&) noexcept;
 	AssetID& operator=(std::string&& id);
 	AssetID& operator=(const std::string& id);
@@ -37,7 +38,7 @@ class HashedAssetID
 {
 	size_t _hash;
 	uint32_t _id;
-	uint32_t _strLen;
+	std::string _address;
 public:
 	HashedAssetID(const AssetID& id);
 	bool operator!=(const HashedAssetID& hash) const;

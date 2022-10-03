@@ -21,7 +21,9 @@ void MeshAsset::deserialize(InputSerializer& s)
 MeshAsset::MeshAsset()
 {
 	type.set(AssetType::Type::mesh);
+#ifdef CLIENT
 	meshUpdated = false;
+#endif
 }
 
 size_t MeshAsset::meshSize() const
@@ -157,7 +159,9 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
             }
         }
     }
+#ifdef CLIENT
 	meshUpdated = true;
+#endif
 }
 
 std::unique_ptr<IncrementalAsset::SerializationContext> MeshAsset::createContext() const
@@ -230,7 +234,7 @@ uint32_t MeshAsset::indexCount(size_t primitive) const
 void MeshAsset::onDependenciesLoaded()
 {
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    vkr->addAsset(this);
+    runtimeID = vkr->addAsset(this);
 }
 #endif
 

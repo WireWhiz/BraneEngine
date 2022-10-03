@@ -26,7 +26,7 @@ class RenderWindowAssetReady : public GUIEvent
 {
 	AssetID _id;
 public:
-	RenderWindowAssetReady(const AssetID& id) : _id(id.copy()), GUIEvent("render window asset ready"){};
+	RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
 	const AssetID& id() const {return _id;}
 };
 

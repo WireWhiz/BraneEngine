@@ -98,20 +98,17 @@ JsonChange::JsonChange(const std::string& path, Json::Value oldValue, Json::Valu
 
 void JsonChange::undo()
 {
-	Json::resolvePath(_path, _json->_root) = _before;
-	--_json->_version;
+	Json::resolvePath(_path, _json->data()) = _before;
 }
 
 void JsonChange::redo()
 {
-	auto& value = Json::resolvePath(_path, _json->_root);
+	auto& value = Json::resolvePath(_path, _json->data());
 	if(_before.isNull())
 		_before = value;
 	assert(!_before.isNull());
 
 	value = _after;
-
-	++_json->_version;
 }
 
 const Json::Value& JsonChange::before() const
@@ -127,6 +124,7 @@ const Json::Value& JsonChange::after() const
 void JsonVersionTracker::recordChange(std::unique_ptr<JsonChangeBase> change)
 {
 	change->redo();
+	change->_json->_version++;
 	if(_currentChange != _changes.end())
 		_changes.erase(_currentChange, _changes.end());
 	_changes.push_back(std::move(change));
@@ -141,6 +139,7 @@ void JsonVersionTracker::undo()
 		return;
 	--_currentChange;
 	(*_currentChange)->undo();
+	(*_currentChange)->_json->_version--;
 }
 
 void JsonVersionTracker::redo()
@@ -148,6 +147,7 @@ void JsonVersionTracker::redo()
 	if(_currentChange == _changes.end())
 		return;
 	(*_currentChange)->redo();
+	(*_currentChange)->_json->_version++;
 	++_currentChange;
 }
 
@@ -284,6 +284,11 @@ void VersionedJson::recordChange(std::unique_ptr<JsonChangeBase>&& change)
 		_tkr.recordChange(std::move(change));
 }
 
+void VersionedJson::markDirty()
+{
+	++_version;
+}
+
 MultiJsonChange::MultiJsonChange(bool dontReverse, VersionedJson* json) : dontReverse(dontReverse), JsonChangeBase(json)
 {
 
@@ -323,8 +328,6 @@ void JsonArrayChange::undo()
 		removeValue();
 	else
 		insertValue();
-
-	--_json->_version;
 }
 
 void JsonArrayChange::redo()
@@ -333,8 +336,6 @@ void JsonArrayChange::redo()
 		insertValue();
 	else
 		removeValue();
-
-	++_json->_version;
 }
 
 void JsonArrayChange::insertValue()

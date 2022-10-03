@@ -132,14 +132,14 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
 	}
 
 	//Register component ids
-    assembly->components.push_back(EntityName::def()->asset->id.copy());
-	assembly->components.push_back(Transform::def()->asset->id.copy());
-	assembly->components.push_back(LocalTransform::def()->asset->id.copy());
-	assembly->components.push_back(Children::def()->asset->id.copy());
-	assembly->components.push_back(TRS::def()->asset->id.copy());
-	assembly->components.push_back(MeshRendererComponent::def()->asset->id.copy());
+    assembly->components.push_back(EntityName::def()->asset->id);
+	assembly->components.push_back(Transform::def()->asset->id);
+	assembly->components.push_back(LocalTransform::def()->asset->id);
+	assembly->components.push_back(Children::def()->asset->id);
+	assembly->components.push_back(TRS::def()->asset->id);
+	assembly->components.push_back(MeshRendererComponent::def()->asset->id);
 
-    assembly->materials.push_back(defaultMaterial->id.copy());
+    assembly->materials.push_back(defaultMaterial->id);
 
 	assembly->entities = std::move(entities);
 	assets.assembly = std::move(assembly);

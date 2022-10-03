@@ -8,6 +8,7 @@
 namespace Runtime
 {
 	std::unordered_map<std::string, std::unique_ptr<Module>> _modules;
+	bool _initalized = false;
 	Timeline _timeline;
 	std::atomic_bool _running = true;
 	uint32_t _tickRate = 0;
@@ -16,6 +17,7 @@ namespace Runtime
 
 	void addModule(const std::string& name, Module* m)
 	{
+		assert(_initalized);
 		_modules.insert({name, std::unique_ptr<Module>(m)});
 	}
 
@@ -44,6 +46,7 @@ namespace Runtime
 
 	void run()
 	{
+		assert(_initalized);
 		for (auto& m : _modules)
 		{
 			m.second->start();
@@ -102,10 +105,12 @@ namespace Runtime
 		Logging::init();
 		ThreadPool::init(4);
 		_lastUpdate = std::chrono::high_resolution_clock::now();
+		_initalized = true;
 	}
 
 	void cleanup()
 	{
+		assert(_initalized);
 		stop();
 		if(!_modules.empty())
 			_modules.clear();

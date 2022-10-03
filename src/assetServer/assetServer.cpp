@@ -105,7 +105,6 @@ void AssetServer::createAssetListeners()
 		rc.req >> id >> streamID;
 		std::cout << "request for: " << id.string() << std::endl;
 
-		Asset* asset = _am.getAsset<Asset>(id);
 		auto ctxPtr = std::make_shared<RequestCTX>(std::move(rc));
 		auto f = [this, ctxPtr, streamID](Asset* asset) mutable
 		{
@@ -120,29 +119,38 @@ void AssetServer::createAssetListeners()
 				assetSender.asset = ia;
 				assetSender.streamID = streamID;
 				assetSender.connection = ctxPtr->sender;
+
+				_sendersLock.lock();
 				_senders.push_back(std::move(assetSender));
+				_sendersLock.unlock();
 				ctxPtr = nullptr;
 			}
 			else
 				std::cerr << "Tried to request non-incremental asset as incremental" << std::endl;
 		};
 
-		_nm.addRequestListener("defaultChunk", [this](auto& rc){
-			auto ctx = getContext(rc.sender);
-			if(!ctx.authenticated)
-			{
-				rc.code = net::ResponseCode::denied;
-				return;
-			}
-			AssetID defaultChunk(Config::json()["default_assets"]["chunk"].asString());
-			rc.res << defaultChunk;
-		});
-
+		Asset* asset = _am.getAsset<Asset>(id);
 		if(asset)
 			f(asset);
 		else
 			_am.fetchAsset<Asset>(id).then(f);
 
+	});
+
+	_nm.addRequestListener("defaultChunk", [this](auto& rc){
+		auto ctx = getContext(rc.sender);
+		if(!ctx.authenticated)
+		{
+			rc.code = net::ResponseCode::denied;
+			return;
+		}
+		SerializedData data;
+		OutputSerializer s(data);
+		AssetID defaultChunk(Config::json()["default_assets"]["chunk"].asString());
+		if(defaultChunk.address().empty())
+			defaultChunk.setAddress(Config::json()["network"]["domain"].asString());
+		s << defaultChunk;
+		rc.sender->sendRequest("loadChunk", std::move(data), [](auto rc, auto s){});
 	});
 }
 
@@ -257,6 +265,7 @@ void AssetServer::createEditorListeners()
 void AssetServer::processMessages()
 {
 	//Send one increment from every incremental asset that we are sending, to create the illusion of them loading in parallel
+	_sendersLock.lock();
 	_senders.remove_if([&](IncrementalAssetSender& sender)
 	{
 		try
@@ -274,6 +283,7 @@ void AssetServer::processMessages()
 			return true;
 		}
 	});
+	_sendersLock.unlock();
 }
 
 const char* AssetServer::name()
@@ -308,6 +318,11 @@ AssetServer::ConnectionContext& AssetServer::getContext(net::Connection* connect
 		_connectionCtx.insert({connection, ConnectionContext{}});
 		connection->onDisconnect([this, connection]{
 			_connectionCtx.erase(connection);
+			_sendersLock.lock();
+			_senders.remove_if([connection](auto& sender){
+				return sender.connection == connection;
+		    });
+			_sendersLock.unlock();
 		});
 	}
 
@@ -335,77 +350,37 @@ std::filesystem::path AssetServer::assetPath(const AssetID& id)
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
 	AsyncData<Asset*> asset;
-	if(hasAsset(id))
-	{
-		asset.setData(getAsset<Asset>(id));
-		return asset;
-	}
-
-	AssetData* assetData = new AssetData{};
-	assetData->loadState = LoadState::requested;
-	_assetLock.lock();
-	_assets.insert({id, std::unique_ptr<AssetData>(assetData)});
-	_assetLock.unlock();
 
 	auto* nm = Runtime::getModule<NetworkManager>();
 	auto* fm = Runtime::getModule<FileManager>();
 
-	auto path = std::filesystem::path{Config::json()["data"]["asset_path"].asString()} / (std::string(id.idStr()) + ".bin");
-	if(!std::filesystem::exists(path))
+	auto path = std::filesystem::current_path() / Config::json()["data"]["asset_path"].asString() / ((std::string)id.idStr() + ".bin");
+	if(std::filesystem::exists(path))
 	{
 		fm->async_readUnknownAsset(path).then([this, asset](Asset* ptr) {
-			std::scoped_lock lock(_assetLock);
+			ptr->id.setAddress(Config::json()["network"]["domain"].asString());
+			_assetLock.lock();
 			auto& d = _assets.at(ptr->id);
-			d->asset = std::unique_ptr<Asset>(ptr);
+			d->loadState = LoadState::awaitingDependencies;
+			_assetLock.unlock();
 			if(dependenciesLoaded(ptr))
 			{
-				d->loadState = LoadState::loaded;
 				asset.setData(ptr);
 				return;
 			}
 
 			d->loadState = LoadState::awaitingDependencies;
 			fetchDependencies(ptr, [this, ptr, asset]() mutable{
-				auto& d = _assets.at(ptr->id);
-				d->loadState = LoadState::usable;
-				ptr->onDependenciesLoaded();
 				asset.setData(ptr);
 			});
+		}).onError([asset](auto& err){
+			asset.setError(err);
 		});
 		return asset;
 	}
-	if(incremental)
-	{
-		nm->async_requestAssetIncremental(id).then([this, asset](Asset* ptr){
-			auto& d = _assets.at(ptr->id);
-			d->loadState = LoadState::usable;
-			d->asset = std::unique_ptr<Asset>(ptr);
-			ptr->onDependenciesLoaded();
-			asset.setData(ptr);
-		});
-	}
 	else
 	{
-		nm->async_requestAsset(id).then([this, asset](Asset* ptr){
-			AssetID& id = ptr->id;
-			auto& d = _assets.at(id);
-			d->loadState = LoadState::awaitingDependencies;
-			d->asset = std::unique_ptr<Asset>(ptr);
-			if(dependenciesLoaded(d->asset.get()))
-			{
-				d->loadState = LoadState::loaded;
-				d->asset->onDependenciesLoaded();
-				asset.setData(ptr);
-				return;
-			}
-			d->loadState = LoadState::awaitingDependencies;
-			fetchDependencies(d->asset.get(), [this, &id, asset]() mutable{
-				auto& d = _assets.at(id);
-				d->loadState = LoadState::loaded;
-				d->asset->onDependenciesLoaded();
-				asset.setData(d->asset.get());
-			});
-		});
+		asset.setError("Asset not found");
 	}
 	return asset;
 }

@@ -228,7 +228,7 @@ Asset* EditorAssemblyAsset::buildAssembly() const
 		}
 	}
 	for(auto* def : components)
-		assembly->components.push_back(def->asset->id.copy());
+		assembly->components.push_back(def->asset->id);
 
 	return assembly;
 }
@@ -257,7 +257,7 @@ Asset* EditorAssemblyAsset::buildMesh(const AssetID& id) const
 
 	auto* mesh = new MeshAsset();
 	mesh->name = meshData["name"].asString();
-	mesh->id = id.copy();
+	mesh->id = id;
 
 	for(auto& primitive : meshData["primitives"])
 	{

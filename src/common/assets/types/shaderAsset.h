@@ -70,7 +70,6 @@ public:
 	robin_hood::unordered_flat_map<std::string, UniformBufferData> uniforms;
 	std::vector<ShaderVariableData> inputs;
 	std::vector<ShaderVariableData> outputs;
-    uint32_t runtimeID = -1;
 	ShaderAsset();
 
 	void serialize(OutputSerializer& s) const override;
@@ -78,6 +77,7 @@ public:
     VkShaderStageFlagBits vulkanShaderType() const;
 
 #ifdef CLIENT
+	uint32_t runtimeID = -1;
     void onDependenciesLoaded() override;
 #endif
 };

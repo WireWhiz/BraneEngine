@@ -137,13 +137,15 @@ AsyncData<Asset*> NetworkManager::async_requestAsset(const AssetID& id)
     OutputSerializer s(data);
 	s << id;
 
-	server->sendRequest("asset", std::move(data), [asset](net::ResponseCode code, InputSerializer sData){
+	server->sendRequest("asset", std::move(data), [asset, address](net::ResponseCode code, InputSerializer sData){
         if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not get asset, server responded with code: " + std::to_string((uint8_t)code));
             return;
         }
-		asset.setData(Asset::deserializeUnknown(sData));
+		auto* a = Asset::deserializeUnknown(sData);
+		a->id.setAddress(address);
+		asset.setData(a);
 	});
 	return asset;
 }

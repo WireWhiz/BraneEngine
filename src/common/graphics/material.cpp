@@ -14,9 +14,19 @@ namespace graphics
 	{
 		auto* am = Runtime::getModule<AssetManager>();
 		if(!asset->vertexShader.null())
-			_vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->vertexShader)->runtimeID);
+		{
+			AssetID id = asset->vertexShader;
+			if(id.address().empty())
+				id.setAddress(asset->id.address());
+			_vertexShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
+		}
 		if(!asset->fragmentShader.null())
-			_fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(asset->fragmentShader)->runtimeID);
+		{
+			AssetID id = asset->fragmentShader;
+			if(id.address().empty())
+				id.setAddress(asset->id.address());
+			_fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
+		}
 
 		_transformBuffers.resize(vkr->swapChain()->size());
 		for(auto& b : _transformBuffers)
