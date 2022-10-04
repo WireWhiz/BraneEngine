@@ -263,7 +263,7 @@ void AssetBrowserWidget::displayFiles()
             if(ImGui::Selectable(ICON_FA_FOLDER " Show In File Browser"))
             {
 
-#ifdef WIN32
+#ifdef _WIN32
                 const std::string fileBrowser = "explorer \"";
 #elif __unix__
                 const std::string fileBrowser = "dolphin \"";
@@ -277,7 +277,7 @@ void AssetBrowserWidget::displayFiles()
                 {
                     if(getFileType(_contents[_selectedFiles.x]) == FileType::source && ImGui::Selectable(ICON_FA_UP_RIGHT_FROM_SQUARE " Edit"))
                     {
-#ifdef WIN32
+#ifdef _WIN32
                         const std::string osCommand = R"(start "" ")";
 #elif __unix__
                         const std::string osCommand = "xdg-open \"";
