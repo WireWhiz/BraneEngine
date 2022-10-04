@@ -10,7 +10,7 @@
 #include <string>
 #include <utility/asyncQueue.h>
 
-#if WIN32
+#if _WIN32
 #include <windows.h>
 #endif
 
@@ -21,7 +21,7 @@ namespace Logging
     std::vector<std::function<void(const Log&)>> _logListeners;
     AsyncQueue<Log> _logEvents;
 
-#if WIN32
+#if _WIN32
     HANDLE hConsole;
 #endif
 
@@ -29,7 +29,7 @@ namespace Logging
     tm& getLocalTime()
     {
         const time_t now = time(0);
-#if WIN32
+#if _WIN32
         localtime_s(&ltm_global, &now);
 #else
         localtime_r(&now, &ltm_global);
@@ -51,7 +51,7 @@ namespace Logging
         if(!_logFile.is_open())
             throw std::runtime_error("Could not generate log file");
 
-#if WIN32
+#if _WIN32
         hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 #endif
     }

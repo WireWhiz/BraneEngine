@@ -127,7 +127,7 @@ void GUI::setupImGui(graphics::VulkanRuntime& runtime)
     io.ConfigFlags   |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;    // Enable Gamepad Controls
     io.ConfigFlags   |= ImGuiConfigFlags_DockingEnable;         // Enable docking
-#ifdef WIN32
+#ifdef _WIN32
     //io.ConfigFlags   |= ImGuiConfigFlags_ViewportsEnable;
 #endif
     io.IniFilename = NULL;

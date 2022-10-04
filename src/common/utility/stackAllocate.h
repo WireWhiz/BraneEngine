@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef WIN32
+#ifdef _WIN32
 #define STACK_ALLOCATE(x) _alloca(x)
 #else
 #include <alloca.h>
