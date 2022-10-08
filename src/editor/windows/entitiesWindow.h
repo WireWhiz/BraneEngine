@@ -7,6 +7,7 @@
 
 #include "editorWindow.h"
 #include <memory>
+#include <vector>
 
 class EditorAsset;
 class EntityManager;
