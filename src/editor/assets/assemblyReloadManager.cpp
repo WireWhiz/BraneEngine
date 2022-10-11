@@ -58,7 +58,13 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
             auto* renderer = MeshRendererComponent::fromVirtual(newData);
             renderer->mesh = am->getAsset<MeshAsset>(assembly->meshes[renderer->mesh])->runtimeID;
             for(auto& material : renderer->materials)
-                material = am->getAsset<MaterialAsset>(assembly->materials[material])->runtimeID;
+            {
+                auto& id = assembly->materials[material];
+                if(!id.null())
+                    material = am->getAsset<MaterialAsset>(id)->runtimeID;
+                else
+                    material = -1;
+            }
         }
         else if(newData.description() == LocalTransform::def())
         {

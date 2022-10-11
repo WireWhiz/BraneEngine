@@ -29,6 +29,7 @@ public:
     void updateEntityComponent(uint32_t entity, uint32_t component, Json::Value value, bool continuous = false);
     void addEntityComponent(uint32_t entity, Json::Value component);
     void removeEntityComponent(uint32_t entity, uint32_t component);
+    void changeMaterial(uint32_t matIndex, AssetID materialID);
 
     static Json::Value componentToJson(VirtualComponentView component);
     static VirtualComponent jsonToComponent(Json::Value component);

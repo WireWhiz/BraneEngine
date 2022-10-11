@@ -320,19 +320,8 @@ void DataWindow::displayEntityAssetData()
                         while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
                             _focusedAsset->json().data()["dependencies"]["materials"].append("null");
 
-                        auto am = Runtime::getModule<AssetManager>();
-                        if(!matID.null())
-                        {
-                            am->fetchAsset<MaterialAsset>(matID).then([this, matIndex, matIDStr = matID.string()](auto* m){
-                                _focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matIDStr);
-                                _editor.reloadAsset(_focusedAsset);
-                            });
-                        }
-                        else
-                        {
-                            _focusedAsset->json().changeValue("dependencies/materials/" + std::to_string(matIndex), matID.string());
-                            _editor.reloadAsset(_focusedAsset);
-                        }
+                        dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(matIndex, matID);
+                        _editor.reloadAsset(_focusedAsset);
                     }
                     ImGui::PopID();
                 }

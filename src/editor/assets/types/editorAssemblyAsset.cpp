@@ -707,4 +707,60 @@ void EditorAssemblyAsset::removeEntityComponent(uint32_t entity, uint32_t compon
     _json.recordChange(std::make_unique<RemoveEntityComponent>(entity, component, &_json));
 }
 
+class MaterialChange : public JsonChange
+{
+    static Json::Value generateAfter(uint32_t materialIndex, AssetID materialID, VersionedJson* json)
+    {
+        Json::Value newList = json->data()["dependencies"]["materials"];
+        while(materialIndex >= newList.size())
+            newList.append("null");
+        newList[materialIndex] = materialID.string();
+
+        return newList;
+    }
+    void updateMaterialRenderers()
+    {
+        auto* am = Runtime::getModule<AssetManager>();
+        auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
+        if (!assembly)
+            return;
+        auto* arm = Runtime::getModule<AssemblyReloadManager>();
+        uint32_t entityIndex = 0;
+        for(auto& entity : _json->data()["entities"])
+        {
+            for(auto& component : entity["components"])
+            {
+                if(component["name"] == MeshRendererComponent::def()->name)\
+                    arm->updateEntityComponent(assembly, entityIndex, EditorAssemblyAsset::jsonToComponent(component));\
+            }
+            ++entityIndex;
+        }
+    }
+
+public:
+    MaterialChange(uint32_t materialIndex, AssetID materialID, VersionedJson* json) :
+        JsonChange("dependencies/materials", generateAfter(materialIndex, std::move(materialID), json), json)
+    {};
+    void redo() override
+    {
+        JsonChange::redo();
+        updateMaterialRenderers();
+    }
+    void undo() override
+    {
+        JsonChange::undo();
+        updateMaterialRenderers();
+    }
+};
+
+void EditorAssemblyAsset::changeMaterial(uint32_t materialIndex, AssetID materialID)
+{
+    if(materialID.null())
+        _json.recordChange(std::make_unique<MaterialChange>(materialIndex, std::move(materialID), &_json));
+    else
+        Runtime::getModule<AssetManager>()->fetchAsset<Asset>(materialID).then([this, materialIndex, materialID](Asset* m){
+            _json.recordChange(std::make_unique<MaterialChange>(materialIndex, std::move(materialID), &_json));
+        });
+}
+
 
