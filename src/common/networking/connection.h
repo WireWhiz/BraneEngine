@@ -27,6 +27,7 @@ namespace net
         noResponse = 2,
         denied = 3,
         serverError = 4,
+        invalidRequest = 5
     };
 
     struct Response

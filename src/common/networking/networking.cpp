@@ -254,6 +254,7 @@ void NetworkManager::handleResponse(net::Connection* connection, net::IMessage&&
             if (listener == _requestListeners.end())
             {
                 Runtime::warn("Unknown request received: " + ctx.name);
+                ctx.code = net::ResponseCode::invalidRequest;
                 return;
             }
             listener->second(ctx);
