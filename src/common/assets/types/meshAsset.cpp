@@ -234,6 +234,7 @@ uint32_t MeshAsset::indexCount(size_t primitive) const
 void MeshAsset::onDependenciesLoaded()
 {
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
+    if(runtimeID)
     runtimeID = vkr->addAsset(this);
 }
 #endif

@@ -267,7 +267,7 @@ void AssetBrowserWidget::displayFiles()
 #ifdef _WIN32
                 const std::string fileBrowser = "explorer \"";
 #elif __unix__
-                const std::string fileBrowser = "dolphin \"";
+                const std::string fileBrowser = "xdg-open \"";
 #endif
                 system((fileBrowser + currentDirectory().string() + "\"").c_str());
             }

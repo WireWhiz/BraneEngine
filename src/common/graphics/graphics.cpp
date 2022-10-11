@@ -24,13 +24,17 @@ namespace graphics
 {
     void VulkanRuntime::draw(EntityManager& em)
     {
+        std::scoped_lock aLock(_assetLock);
         while(!_newAssets.empty())
         {
-            auto asset = _newAssets.pop_front();
-            processAsset(asset.first, asset.second);
+            processAsset(_newAssets.front().first, _newAssets.front().second);
+            _newAssets.pop_front();
         }
         while(!_reloadAssets.empty())
-            reloadAsset(_reloadAssets.pop_front(), false);
+        {
+            reloadAsset(_reloadAssets.front(), false);
+            _reloadAssets.pop_front();
+        }
         if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
             return;
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
@@ -489,6 +493,7 @@ namespace graphics
 
     uint32_t VulkanRuntime::addAsset(Asset* graphicalAsset)
     {
+        std::scoped_lock aLock(_assetLock);
         auto shader = dynamic_cast<ShaderAsset*>(graphicalAsset);
         auto material = dynamic_cast<MaterialAsset*>(graphicalAsset);
         auto mesh = dynamic_cast<MeshAsset*>(graphicalAsset);
@@ -538,6 +543,7 @@ namespace graphics
 
     void VulkanRuntime::reloadShader(ShaderAsset* shader)
     {
+        std::scoped_lock aLock(_assetLock);
         vkDeviceWaitIdle(device());
         for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
         {
@@ -566,6 +572,7 @@ namespace graphics
 
     void VulkanRuntime::reloadMaterial(MaterialAsset* material)
     {
+        std::scoped_lock aLock(_assetLock);
         vkDeviceWaitIdle(device());
         for(auto m = _materials.begin(); m != _materials.end(); ++m)
         {
@@ -588,6 +595,7 @@ namespace graphics
     {
         if(async)
         {
+            std::scoped_lock aLock(_assetLock);
             _reloadAssets.push_back(graphicalAsset);
             return;
         }

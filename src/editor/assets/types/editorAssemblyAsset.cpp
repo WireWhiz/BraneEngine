@@ -51,6 +51,9 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
     if(_json["linked"].asBool())
         return;
 
+    //Clear default entity
+    _json.data()["entities"].clear();
+
     _json.data()["linked"] = true;
     _json.data()["source"] = (std::filesystem::relative(file, _file.parent_path())).string();
 
@@ -109,7 +112,11 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
         if(entity.isMember("children"))
         {
             for(auto& child : entity["children"])
+            {
+                if(index == child.asUInt())
+                    throw std::runtime_error("Cannot parent entity to itself");
                 _json.data()["entities"][child.asUInt()]["parent"] = index;
+            }
         }
         index++;
     }

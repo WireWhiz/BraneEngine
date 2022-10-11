@@ -154,7 +154,10 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
             for(auto& child : children)
             {
                 EntityID childID = entityMap[child.id];
+                if(entityId == childID)
+                    throw std::runtime_error("Cannot parent an entity to itself");
                 Transforms::setParent(childID, entityId, em);
+
             }
         }
 #ifdef CLIENT

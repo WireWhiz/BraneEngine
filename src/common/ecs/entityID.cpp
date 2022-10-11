@@ -12,3 +12,8 @@ bool EntityID::operator==(const EntityID& o) const
 {
     return id == o.id && version == o.version;
 }
+
+bool EntityID::operator!=(const EntityID& o) const
+{
+    return !(*this == o);
+}

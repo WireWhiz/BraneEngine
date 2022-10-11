@@ -187,7 +187,7 @@ void BraneProject::initLoaded()
         if(!isOpen)
             _openAssets.erase(assetPath.string());
     });
-    _fileWatcher->scanForChanges(false);
+    _fileWatcher->scanForChanges(true);
     _loaded = true;
 }
 

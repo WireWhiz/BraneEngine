@@ -30,6 +30,7 @@ void Transforms::start()
 void Transforms::setParent(EntityID entity, EntityID parent, EntityManager& em, bool keepOffset)
 {
     assert(em.entityExists(entity) && em.entityExists(parent));
+    assert(entity != parent);
     removeParent(entity, em, false);
     if(!em.hasComponent<LocalTransform>(entity))
         em.addComponent<LocalTransform>(entity);

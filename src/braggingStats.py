@@ -12,7 +12,7 @@ for root, dirs, files in os.walk(path):
 		if print_filenames:
 			print(name)
 		if ".h" in name or ".cpp" in name:
-			file = open(root + "\\" +  name)
+			file = open(root + "/" +  name)
 			for line in file:
 				lines += 1
 			

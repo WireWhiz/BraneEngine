@@ -117,6 +117,8 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
             Children cc;
             for (auto& child: node["children"])
             {
+                if(child.asUInt() == pIndex)
+                    throw std::runtime_error("Cannot parent entity to itself");
                 Assembly::EntityAsset& childEnt = entities[child.asUInt()];
                 glm::mat4  localTransform = childEnt.getComponent(Transform::def())->readVar<glm::mat4>(0);
 
