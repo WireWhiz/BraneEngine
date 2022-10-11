@@ -25,13 +25,13 @@ void FileWatcher::scanForChanges(bool callbacks)
             std::string ext = file.path().extension().string();
             if(_fileWatchers.count(ext))
             {
-                auto lastUpdate = _lastUpdate[file.path().string()];
                 auto currentUpdate = std::filesystem::last_write_time(file.path());
-                if(lastUpdate != currentUpdate)
+                std::string strPath = file.path().string();
+                if(!_lastUpdate.count(strPath) || _lastUpdate.at(strPath) != currentUpdate)
                 {
                     if(callbacks)
                         _fileWatchers[ext](file.path());
-                    _lastUpdate[file.path().string()] = currentUpdate;
+                    _lastUpdate[strPath] = currentUpdate;
                 }
 
             }
