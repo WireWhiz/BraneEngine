@@ -24,7 +24,7 @@ namespace graphics
 {
     void VulkanRuntime::draw(EntityManager& em)
     {
-        std::scoped_lock aLock(_assetLock);
+        _assetLock.lock();
         while(!_newAssets.empty())
         {
             processAsset(_newAssets.front().first, _newAssets.front().second);
@@ -35,6 +35,7 @@ namespace graphics
             reloadAsset(_reloadAssets.front(), false);
             _reloadAssets.pop_front();
         }
+        _assetLock.unlock();
         if(_window->size().x == 0 ||  _window->size().y == 0 || _renderers.empty())
             return;
         vkWaitForFences(_device->get(), 1, &_inFlightFences[_swapChain->nextFrame()], VK_TRUE, UINT64_MAX);
