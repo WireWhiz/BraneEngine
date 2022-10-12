@@ -395,9 +395,17 @@ namespace graphics
             updateWindow();
             if(_window->closed())
             {
+                bool closing = true;
+                if(_onWindowClosed)
+                    closing = _onWindowClosed();
 
-                Runtime::stop();
-                return;
+                if(closing)
+                {
+                    Runtime::stop();
+                    return;
+                }
+                else
+                    glfwSetWindowShouldClose(_window->window(), GL_FALSE);
             }
             draw(*em);
         }, "draw");
@@ -432,6 +440,11 @@ namespace graphics
     void VulkanRuntime::updateWindow()
     {
         _window->update();
+    }
+
+    void VulkanRuntime::onWindowClosed(std::function<bool()> callback)
+    {
+        _onWindowClosed = std::move(callback);
     }
 
     size_t VulkanRuntime::addShader(ShaderAsset* shader)

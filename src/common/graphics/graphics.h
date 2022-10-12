@@ -59,6 +59,8 @@ namespace graphics
         std::vector<VkFence> _inFlightFences;
         std::vector<VkFence> _imagesInFlight;
 
+        std::function<bool()> _onWindowClosed;
+
         void init();
         void cleanup();
         void createInstance();
@@ -88,6 +90,7 @@ namespace graphics
         SwapChain* swapChain();
 
         void updateWindow();
+        void onWindowClosed(std::function<bool()> callback);
 
         // Behold, the only function we care about:
         void draw(EntityManager& em);

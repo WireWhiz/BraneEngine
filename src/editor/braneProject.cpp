@@ -193,7 +193,14 @@ void BraneProject::initLoaded()
 
 bool BraneProject::unsavedChanges() const
 {
-    return _file.dirty();
+    if(_file.dirty())
+        return true;
+    for(auto& asset : _openAssets)
+    {
+        if(asset.second->unsavedChanged())
+            return true;
+    }
+    return false;
 }
 
 VersionedJson& BraneProject::json()

@@ -25,6 +25,8 @@
 #include "assets/editorAsset.h"
 #include "fileManager/fileWatcher.h"
 
+#include "tinyfiledialogs.h"
+
 void Editor::start()
 {
     _ui = Runtime::getModule<GUI>();
@@ -38,6 +40,18 @@ void Editor::start()
             _ui->clearWindows();
             addMainWindows();
         }
+    });
+    Runtime::getModule<graphics::VulkanRuntime>()->onWindowClosed([this](){
+        if(!_project.loaded())
+            return true;
+        if(!_project.unsavedChanges())
+            return true;
+        int input = tinyfd_messageBox(nullptr, "Unsaved changes! Do you want to save?", "yesnocancel", "warning", 1);
+        if(input == 1)
+            _project.save();
+        else
+            Runtime::log("User chose not to save on exit");
+        return input != 0;
     });
 }
 

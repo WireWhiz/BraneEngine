@@ -156,6 +156,8 @@ namespace graphics{
 
     VkPipeline SceneRenderer::getPipeline(const Material* mat)
     {
+        if(!mat)
+            return VK_NULL_HANDLE;
         if(_cachedPipelines.count(mat))
             return _cachedPipelines.at(mat);
         //TODO still want to refactor this
