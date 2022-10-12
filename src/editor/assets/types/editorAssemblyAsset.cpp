@@ -520,7 +520,7 @@ class ParentEntity : public JsonChangeBase
         Json::Value newChildren;
         uint32_t oldIndex = 0;
         uint32_t cIndex = 0;
-        for(auto& child : json["entities"][oldParent])
+        for(auto& child : json["entities"][oldParent]["children"])
         {
             if(child.asUInt() != entity)
                 newChildren.append(child);
@@ -528,6 +528,8 @@ class ParentEntity : public JsonChangeBase
                 oldIndex = cIndex;
             ++cIndex;
         }
+        if(oldParent == parent && oldIndex < index)
+            --index;
         json["entities"][oldParent]["children"] = std::move(newChildren);
         Json::insertArrayValue(entity, index, json["entities"][parent]["children"]);
 
