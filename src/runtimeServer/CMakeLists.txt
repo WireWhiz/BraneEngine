@@ -1,5 +1,6 @@
 # src/runtimeServer
 set(CMAKE_FOLDER ${CMAKE_FOLDER}/RuntimeServer)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(RuntimeServer main.cpp
         "runtimeServer.cpp"
         )

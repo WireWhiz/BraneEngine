@@ -6,6 +6,7 @@ add_subdirectory(windows)
 add_subdirectory(assets)
 add_subdirectory(graphics)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_executable(BraneEditor
         ${PROJECT_SOURCE_DIR}/media/brane.rc
         main.cpp
