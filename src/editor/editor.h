@@ -42,7 +42,6 @@ public:
     JsonVersionTracker& jsonTracker();
     AssetCache& cache();
     ShaderCompiler& shaderCompiler();
-    std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
     static const char* name();
 };
 

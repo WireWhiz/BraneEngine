@@ -392,9 +392,82 @@ void DataWindow::displayMaterialData()
         material->json().changeValue("fragmentShader", fragmentID.string());
         _editor.reloadAsset(_focusedAsset);
     }
+
     ImGui::SameLine();
     ImGui::Text("Fragment Shader");
     ImGui::Spacing();
+
+    if(!vertexID.null())
+    {
+        ImGui::Text("Vertex Shader:");
+        ImGui::Indent();
+        const auto shader = _editor.project().getEditorAsset(vertexID);
+        ImGui::Text("inputs:");
+        ImGui::Indent();
+        const auto& attributes = shader->json()["attributes"];
+        for(auto& input : attributes["inputs"])
+            ImGui::Text("%s %s", input["layout"].asCString(), input["name"].asCString());
+        ImGui::Unindent();
+        ImGui::Text("outputs:");
+        ImGui::Indent();
+        for(auto& output : attributes["outputs"])
+            ImGui::Text("%s %s", output["layout"].asCString(), output["name"].asCString());
+        ImGui::Unindent();
+        ImGui::Text("uniforms:");
+        ImGui::Indent();
+        if(attributes.isMember("uniformBuffers"))
+        {
+            for(auto& uniformName : attributes["uniformBuffers"].getMemberNames())
+            {
+                auto& uniform = attributes["uniformBuffers"][uniformName];
+                ImGui::Text("name: %s", uniformName.c_str());
+                ImGui::Text("members:");
+                ImGui::Indent();
+                for(auto& member : uniform["members"])
+                    ImGui::Text("%s %s", member["layout"].asCString(), member["name"].asCString());
+                ImGui::Unindent();
+            }
+        }
+        ImGui::Unindent();
+        ImGui::Unindent();
+        ImGui::Separator();
+    }
+    if(!fragmentID.null())
+    {
+        ImGui::Text("Fragment Shader:");
+        ImGui::Indent();
+        const auto shader = _editor.project().getEditorAsset(fragmentID);
+        ImGui::Text("inputs:");
+        ImGui::Indent();
+        const auto& attributes = shader->json()["attributes"];
+        for(auto& input : attributes["inputs"])
+            ImGui::Text("%s %s", input["layout"].asCString(), input["name"].asCString());
+        ImGui::Unindent();
+        ImGui::Text("outputs:");
+        ImGui::Indent();
+        for(auto& output : attributes["outputs"])
+            ImGui::Text("%s %s", output["layout"].asCString(), output["name"].asCString());
+        ImGui::Unindent();
+        ImGui::Text("uniforms:");
+        ImGui::Indent();
+        if(attributes.isMember("uniformBuffers"))
+        {
+            for(auto& uniformName : attributes["uniformBuffers"].getMemberNames())
+            {
+                auto& uniform = attributes["uniformBuffers"][uniformName];
+                ImGui::Text("name: %s", uniformName.c_str());
+                ImGui::Text("members:");
+                ImGui::Indent();
+                for(auto& member : uniform["members"])
+                    ImGui::Text("%s %s", member["layout"].asCString(), member["name"].asCString());
+                ImGui::Unindent();
+            }
+        }
+        ImGui::Unindent();
+        ImGui::Unindent();
+        ImGui::Separator();
+    }
+
     ImGui::TextDisabled("Custom property components coming eventually");
 }
 

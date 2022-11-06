@@ -231,7 +231,7 @@ void AssetBrowserWidget::displayFiles()
             ImGui::Text("%s", getIcon(file));
             ImGui::PopStyleColor();
             ImGui::SameLine();
-            std::string filename = file.path().filename();
+            std::string filename = file.path().filename().string();
             ImGui::Text("%s", filename.c_str());
             ImGui::PopID();
         }
