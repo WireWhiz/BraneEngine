@@ -200,17 +200,20 @@ void DataWindow::displayAssemblyData()
         if(ImGui::CollapsingHeader("Materials")){
             ImGui::Indent();
             int materialIndex = 0;
+            std::pair<int, AssetID> changedMaterial;
             for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
             {
                 AssetID materialID(cID.asString());
                 ImGui::PushID(materialIndex);
                 if(AssetSelectWidget::draw(materialID, AssetType::material))
-                {
-                    dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(materialIndex, materialID);
-                    _editor.reloadAsset(_focusedAsset);
-                }
+                    changedMaterial = {materialIndex, std::move(materialID)};
                 ImGui::PopID();
                 ++materialIndex;
+            }
+            if(!changedMaterial.second.null())
+            {
+                dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(changedMaterial.first, changedMaterial.second);
+                _editor.reloadAsset(_focusedAsset);
             }
             ImGui::Unindent();
         }

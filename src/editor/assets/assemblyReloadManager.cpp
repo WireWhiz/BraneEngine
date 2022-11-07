@@ -50,9 +50,9 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
 {
     std::scoped_lock lock(m);
     auto* am = Runtime::getModule<AssetManager>();
+    VirtualComponent newData = component;
     for(auto& i : _instances[assembly])
     {
-        VirtualComponent newData = component;
         if(newData.description() == MeshRendererComponent::def())
         {
             auto* renderer = MeshRendererComponent::fromVirtual(newData);
@@ -65,6 +65,7 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
                 else
                     material = -1;
             }
+
         }
         else if(newData.description() == LocalTransform::def())
         {
