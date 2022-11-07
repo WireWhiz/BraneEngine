@@ -10,6 +10,7 @@
 #include <fstream>
 #include <cassert>
 #include <utility/inlineArray.h>
+#include <json/json.h>
 
 class SerializationError : virtual public std::runtime_error
 {
@@ -225,7 +226,22 @@ public:
         return s;
     }
 
+    friend InputSerializer& operator >> (InputSerializer& s, Json::Value& value)
+    {
+        std::string jsonString;
+        s >> jsonString;
 
+        Json::CharReaderBuilder builder;
+        Json::CharReader* reader = builder.newCharReader();
+
+        std::string errors;
+        bool success = reader->parse(jsonString.c_str(), jsonString.c_str() + jsonString.size(), &value, &errors);
+        delete reader;
+        if(!success)
+            throw std::runtime_error(errors);
+
+        return s;
+    }
 
     void read(void* dest, size_t size)
     {
@@ -343,7 +359,7 @@ public:
     friend OutputSerializer operator << (OutputSerializer s, const std::vector<std::string>& strings)
     {
         s << (uint32_t)strings.size();
-        for (uint32_t i = 0; i < strings.size(); ++i)
+        for(uint32_t i = 0; i < strings.size(); ++i)
         {
             s << strings[i];
         }
@@ -353,11 +369,21 @@ public:
     friend OutputSerializer operator << (OutputSerializer s, const std::vector<AssetID>& ids)
     {
         s << (uint32_t)ids.size();
-        for (uint32_t i = 0; i < ids.size(); ++i)
+        for(uint32_t i = 0; i < ids.size(); ++i)
         {
             s << ids[i].string();
         }
 
+
+        return s;
+    }
+
+    friend OutputSerializer& operator << (OutputSerializer& s, const Json::Value& value)
+    {
+        Json::FastWriter writer;
+        std::string jsonString = writer.write(value);
+
+        s << jsonString;
 
         return s;
     }

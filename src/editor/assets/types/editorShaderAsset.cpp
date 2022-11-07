@@ -39,20 +39,36 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
         if(FileManager::readFile(source, glsl) && _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), attributes))
         {
             Json::Value atr;
-            for(auto& ub : attributes.uniformBuffers)
+            for(auto& ub : attributes.uniforms)
             {
-                Json::Value uniformBuffer;
-                uniformBuffer["name"] = ub.name;
-                uniformBuffer["binding"] = ub.binding;
+                Json::Value uniform;
+                uniform["name"] = ub.name;
+                uniform["binding"] = ub.binding;
                 for(auto& m : ub.members)
                 {
                     Json::Value member;
                     member["name"] = m.name;
                     member["type"] = ShaderVariableData::typeNames.toString(m.type);
                     member["layout"] = ShaderVariableData::layoutNames.toString(m.layout());
-                    uniformBuffer["members"].append(member);
+                    uniform["members"].append(member);
                 }
-                atr["uniformBuffers"][ub.name] = uniformBuffer;
+                atr["uniforms"][ub.name] = uniform;
+            }
+
+            for(auto& ub : attributes.buffers)
+            {
+                Json::Value buffer;
+                buffer["name"] = ub.name;
+                buffer["binding"] = ub.binding;
+                for(auto& m : ub.members)
+                {
+                    Json::Value member;
+                    member["name"] = m.name;
+                    member["type"] = ShaderVariableData::typeNames.toString(m.type);
+                    member["layout"] = ShaderVariableData::layoutNames.toString(m.layout());
+                    buffer["members"].append(member);
+                }
+                atr["buffers"][ub.name] = buffer;
             }
 
             for(auto& in : attributes.inputVariables)
@@ -116,7 +132,7 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
 
     ShaderCompiler::ShaderAttributes attributes;
     compiler.extractAttributes(shaderCode, shader->shaderType, attributes);
-    for(auto& u : attributes.uniformBuffers)
+    for(auto& u : attributes.uniforms)
         shader->uniforms.insert({u.name, u});
 
     shader->inputs = std::move(attributes.inputVariables);

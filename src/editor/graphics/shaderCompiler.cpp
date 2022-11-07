@@ -130,7 +130,30 @@ bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shade
             ub.members.push_back(memberData);
         }
 
-        attributes.uniformBuffers.push_back(ub);
+        attributes.uniforms.push_back(ub);
+    }
+    for(auto& uniformBuffer : resources.storage_buffers)
+    {
+        UniformBufferData ub{};
+        ub.name = uniformBuffer.name;
+        ub.binding = compiler.get_decoration(uniformBuffer.id, spv::DecorationBinding);
+        auto& type = compiler.get_type(uniformBuffer.base_type_id);
+        assert(type.basetype == spirv_cross::SPIRType::Struct);
+        ub.size = compiler.get_declared_struct_size(type);
+        for(size_t i = 0; i < type.member_types.size(); ++i)
+        {
+            auto& memberType = compiler.get_type(type.member_types[i]);
+            ShaderVariableData memberData;
+            memberData.location = compiler.get_member_decoration(uniformBuffer.base_type_id, i, spv::DecorationOffset);
+            memberData.name = compiler.get_member_name(uniformBuffer.base_type_id, i);
+            memberData.size = compiler.get_declared_struct_member_size(type, i);
+            memberData.type = typeFromSpirvType(memberType.basetype);
+            memberData.vecSize = memberType.vecsize;
+            memberData.columns = memberType.columns;
+            ub.members.push_back(memberData);
+        }
+
+        attributes.buffers.push_back(ub);
     }
     for(auto& stageInput : resources.stage_inputs)
     {

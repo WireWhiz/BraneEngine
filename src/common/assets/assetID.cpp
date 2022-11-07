@@ -13,6 +13,8 @@ AssetID::AssetID(const std::string& serverAddress, uint32_t id)
 
 AssetID::AssetID(std::string&& id)
 {
+    if(id == "")
+        id = "null";
     assert(id == "null" || id.find('/') != std::string::npos);
     _string = std::move(id);
     _delimiter = _string.find('/');

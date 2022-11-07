@@ -12,6 +12,7 @@
 #include "assets/assetManager.h"
 #include "ui/gui.h"
 #include "ui/guiPopup.h"
+#include "../widgets/assetSelectWidget.h"
 
 std::atomic_bool SyncWindow::_loggedIn = false;
 std::atomic_bool SyncWindow::_loggingIn = false;
@@ -127,7 +128,7 @@ void SyncWindow::drawConnected()
         }
         if(ImGui::BeginTabItem("Server Settings"))
         {
-            ImGui::TextDisabled("Work in progress");
+            serverSettings();
             ImGui::EndTabItem();
         }
         if(ImGui::BeginTabItem("Users"))
@@ -172,15 +173,13 @@ void SyncWindow::syncAssets()
     }
     if(_assetDiffSynced == 0)
     {
-        const char* dots[] = {"", ".", "..", "..."};
-        size_t time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 4;
-        ImGui::Text("Comparing assets%s", dots[time]);
+        displayLoadingAnim();
         return;
     }
 
     ImGui::Text("Changed Assets: ");
     ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 68);
-    if(ImGui::Button("Sync All " ICON_FA_CLOUD_ARROW_UP))
+    if(ImGui::Button("Upload All " ICON_FA_CLOUD_ARROW_UP))
     {
         for(auto& asset : _assetDiffs)
         {
@@ -208,6 +207,8 @@ void SyncWindow::syncAssets()
             ImGui::SetTooltip("Sync Asset");
         ImGui::PopID();
     }
+    if(ImGui::Button("Resync " ICON_FA_ARROWS_ROTATE))
+        _assetDiffSynced = -1;
 }
 
 void SyncWindow::updateAsset(Asset* asset)
@@ -222,6 +223,45 @@ void SyncWindow::updateAsset(Asset* asset)
         else
             Runtime::error("Failed to update asset " + id->string());
     });
+}
+
+
+void SyncWindow::serverSettings()
+{
+    if(_serverSettings.empty())
+    {
+        _serverSettings["loading"] = true;
+        _syncServer->sendRequest("getServerSettings", {}, [this](auto ec, InputSerializer res){
+            if(ec != net::ResponseCode::success)
+                Runtime::error("Could not load server settings");
+            else
+                res >> _serverSettings;
+        });
+    }
+
+    if(_serverSettings.isMember("loading"))
+    {
+        displayLoadingAnim();
+        return;
+    }
+
+    AssetID defaultChunk(_serverSettings["default_assets"]["chunk"].asString());
+    if(AssetSelectWidget::draw(defaultChunk, AssetType::chunk))
+        _serverSettings["default_assets"]["chunk"] = defaultChunk.string();
+
+    if(ImGui::Button("Save " ICON_FA_CLOUD_ARROW_UP))
+    {
+        SerializedData data;
+        OutputSerializer s(data);
+        s << _serverSettings;
+
+        _syncServer->sendRequest("setServerSettings", std::move(data), [](auto ec, InputSerializer res){
+            if(ec == net::ResponseCode::success)
+                Runtime::log("Server settings updated");
+            else
+                Runtime::error("Failed to update server settings");
+        });
+    }
 }
 
 class DeleteUserPopup : public GUIPopup
@@ -403,3 +443,11 @@ void SyncWindow::refreshUsers()
 {
     _usersSynced = -1;
 }
+
+void SyncWindow::displayLoadingAnim()
+{
+    const char* dots[] = {"", ".", "..", "..."};
+    size_t time = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 4;
+    ImGui::Text("Loading%s", dots[time]);
+}
+

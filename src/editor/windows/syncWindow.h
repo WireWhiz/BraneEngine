@@ -36,6 +36,9 @@ class SyncWindow : public EditorWindow
     void syncAssets();
     void updateAsset(Asset* asset);
 
+    Json::Value _serverSettings;
+    void serverSettings();
+
     std::atomic_int _usersSynced = -1;
     std::string _userFilter;
     struct UserInfo
@@ -50,6 +53,8 @@ class SyncWindow : public EditorWindow
     std::string _newUserPassword;
     void drawUsers();
     void getUsers(const std::string& filter);
+
+    static void displayLoadingAnim();
 public:
     SyncWindow(GUI& ui, Editor& editor);
     void refreshUsers();

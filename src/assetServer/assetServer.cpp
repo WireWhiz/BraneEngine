@@ -260,6 +260,30 @@ void AssetServer::createEditorListeners()
         _db.deleteUser(userID);
         Runtime::log("Deleted user " + std::to_string(userID));
     });
+
+    _nm.addRequestListener("getServerSettings", [this](auto& rc)
+    {
+        auto ctx = getContext(rc.sender);
+        if(!validatePermissions(ctx, {"manage server"}))
+        {
+            rc.code = net::ResponseCode::denied;
+            return;
+        }
+
+        rc.res << Config::json();
+    });
+
+    _nm.addRequestListener("setServerSettings", [this](auto& rc)
+    {
+        auto ctx = getContext(rc.sender);
+        if(!validatePermissions(ctx, {"manage server"}))
+        {
+            rc.code = net::ResponseCode::denied;
+            return;
+        }
+        rc.req >> Config::json();
+        Config::save();
+    });
 }
 
 void AssetServer::processMessages()

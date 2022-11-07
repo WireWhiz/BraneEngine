@@ -18,7 +18,8 @@ class ShaderCompiler
 public:
     struct ShaderAttributes
     {
-        std::vector<UniformBufferData> uniformBuffers;
+        std::vector<UniformBufferData> uniforms;
+        std::vector<UniformBufferData> buffers;
         std::vector<ShaderVariableData> samplers;
         std::vector<ShaderVariableData> inputVariables;
         std::vector<ShaderVariableData> outputVariables;

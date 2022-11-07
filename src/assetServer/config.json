@@ -22,6 +22,6 @@
   "default_assets" :
   {
     "material" : "defaults/shaded.material",
-    "chunk" : "/4E"
+    "chunk" : ""
   }
 }

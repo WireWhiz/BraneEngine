@@ -39,6 +39,8 @@ class DataWindow : public EditorWindow
     void displayAssemblyData();
     void displayMeshData();
     void displayMaterialData();
+
+    void displayShaderAttributes(EditorAsset* asset);
     void displayContent() override;
 public:
     DataWindow(GUI& ui, Editor& editor);
