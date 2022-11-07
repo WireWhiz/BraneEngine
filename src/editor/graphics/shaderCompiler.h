@@ -14,7 +14,6 @@
 class ShaderAsset;
 class ShaderCompiler
 {
-    shaderc_util::FileFinder _fileFinder;
 public:
     struct ShaderAttributes
     {
@@ -25,10 +24,9 @@ public:
         std::vector<ShaderVariableData> outputVariables;
     };
     ShaderCompiler();
-    void includeDir(const std::string& path);
-    void removeIncludeDir(const std::string& path);
-    bool compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, bool optimize = true);
-    bool extractAttributes(const std::string& glsl, ShaderType type, ShaderAttributes& attributes);
+    static shaderc_util::FileFinder defaultFinder();
+    bool compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, shaderc_util::FileFinder& fileFinder, bool optimize = true);
+    bool extractAttributes(const std::string& glsl, ShaderType type, shaderc_util::FileFinder& fileFinder, ShaderAttributes& attributes);
 };
 
 

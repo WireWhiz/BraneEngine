@@ -11,10 +11,9 @@
 
 ShaderCompiler::ShaderCompiler()
 {
-    includeDir((std::filesystem::current_path() / "defaultAssets" / "shaders").string());
 }
 
-bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, bool optimize)
+bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, shaderc_util::FileFinder& fileFinder, bool optimize)
 {
     shaderc_shader_kind kind;
     switch(type)
@@ -45,7 +44,7 @@ bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std
     options.SetSourceLanguage(shaderc_source_language_glsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     options.SetTargetSpirv(shaderc_spirv_version_1_5);
-    options.SetIncluder(std::make_unique<glslc::FileIncluder>(&_fileFinder));
+    options.SetIncluder(std::make_unique<glslc::FileIncluder>(&fileFinder));
 
     auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
@@ -99,11 +98,11 @@ ShaderVariableData::Type typeFromSpirvType(spirv_cross::SPIRType::BaseType type)
     }
 }
 
-bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shaderType, ShaderAttributes& attributes)
+bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shaderType, shaderc_util::FileFinder& fileFinder, ShaderAttributes& attributes)
 {
     // We need to compile without optimization to be able to extract variable names
     std::vector<uint32_t> spirv;
-    if(!compileShader(glsl, shaderType, spirv, false))
+    if(!compileShader(glsl, shaderType, spirv, fileFinder, false))
         return false;
 
     spirv_cross::Compiler compiler(std::move(spirv));
@@ -183,14 +182,10 @@ bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shade
     return true;
 }
 
-void ShaderCompiler::includeDir(const std::string& path)
+shaderc_util::FileFinder ShaderCompiler::defaultFinder()
 {
-    _fileFinder.search_path().push_back(path);
-}
-
-void ShaderCompiler::removeIncludeDir(const std::string& path)
-{
-    auto& dirs = _fileFinder.search_path();
-    dirs.erase(std::remove(dirs.begin(), dirs.end(), path), dirs.end());
+    shaderc_util::FileFinder finder;
+    finder.search_path().push_back((std::filesystem::current_path() / "defaultAssets" / "shaders").string());
+    return std::move(finder);
 }
 

@@ -199,9 +199,18 @@ void DataWindow::displayAssemblyData()
         ImGui::Indent();
         if(ImGui::CollapsingHeader("Materials")){
             ImGui::Indent();
+            int materialIndex = 0;
             for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
             {
-                ImGui::Selectable(cID.asCString());
+                AssetID materialID(cID.asString());
+                ImGui::PushID(materialIndex);
+                if(AssetSelectWidget::draw(materialID, AssetType::material))
+                {
+                    dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(materialIndex, materialID);
+                    _editor.reloadAsset(_focusedAsset);
+                }
+                ImGui::PopID();
+                ++materialIndex;
             }
             ImGui::Unindent();
         }

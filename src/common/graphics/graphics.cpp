@@ -568,6 +568,8 @@ namespace graphics
 
                 for(auto & m : _materials)
                 {
+                    if(!m)
+                        continue;
                     if(m->fragmentShader() == (*s).get() || m->vertexShader() == (*s).get())
                     {
                         (*m) = Material(m->asset(), this);

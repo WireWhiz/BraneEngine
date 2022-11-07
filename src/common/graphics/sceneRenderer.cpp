@@ -94,6 +94,8 @@ namespace graphics{
         _renderDataBuffers[_swapChain.currentFrame()].setData(cameraMatrix, 0);
         for(auto& mat :  _vkr.materials())
         {
+            if(!mat)
+                continue;
             VkPipeline pipeline = getPipeline(mat.get());
             if(!pipeline)
                 continue;
