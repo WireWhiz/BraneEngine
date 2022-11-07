@@ -127,6 +127,7 @@ void BraneProject::initLoaded()
         testID = "localhost/" + std::to_string(++_assetIdCounter);
 
     _fileWatcher = std::make_unique<FileWatcher>();
+    _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache");
     _fileWatcher->watchDirectory(projectDirectory() / "assets");
     _fileWatcher->addFileWatcher(".gltf", [this](const std::filesystem::path& path){
         Runtime::log("loading gltf: " + path.string());

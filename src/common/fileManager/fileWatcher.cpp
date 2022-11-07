@@ -2,7 +2,9 @@
 // Created by eli on 8/17/2022.
 //
 
+#include "fileManager.h"
 #include "fileWatcher.h"
+#include "utility/serializedData.h"
 
 void FileWatcher::watchDirectory(const std::filesystem::path& directory)
 {
@@ -37,4 +39,44 @@ void FileWatcher::scanForChanges(bool callbacks)
             }
         }
     }
+
+    saveCache();
+}
+
+void FileWatcher::loadCache(std::filesystem::path changeCache)
+{
+    SerializedData cacheData;
+    _changeCache = std::move(changeCache);
+    if(!FileManager::readFile(_changeCache, cacheData.vector()))
+        return;
+    InputSerializer s(cacheData);
+    uint32_t count = 0;
+    s >> count;
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        std::string path;
+        std::filesystem::file_time_type lastUpdate;
+        s >> path >> lastUpdate;
+        if(!std::filesystem::exists(path))
+            continue;
+        _lastUpdate.insert({path, lastUpdate});
+    }
+}
+
+void FileWatcher::saveCache()
+{
+    if(_changeCache.empty())
+        return;
+    SerializedData cacheData;
+    OutputSerializer s(cacheData);
+    uint32_t count = _lastUpdate.size();
+    s << count;
+    for (auto& u : _lastUpdate)
+        s << u.first << u.second;
+    FileManager::writeFile(_changeCache, cacheData.vector());
+}
+
+FileWatcher::~FileWatcher()
+{
+    saveCache();
 }
