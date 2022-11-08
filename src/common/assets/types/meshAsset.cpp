@@ -90,23 +90,33 @@ bool MeshAsset::serializeIncrement(OutputSerializer& s, SerializationContext* it
     uint32_t end = std::min(primitive.indexCount, _trisPerIncrement * 3 + start);
     s << start << end;
 
+    bool shortIndexType = primitive.indexType == Primitive::UInt16;
+
     for (size_t i = start; i < end; ++i)
     {
-        uint16_t index = *((uint16_t*)&_data[primitive.indexOffset + i * sizeof(uint16_t)]);
-        s << index;
+        uint32_t index;
+        if(shortIndexType)
+        {
+            uint16_t shortIndex = *((uint16_t*)&_data[primitive.indexOffset + i * sizeof(uint16_t)]);
+            s << shortIndex;
+            index = shortIndex;
+        }
+        else
+        {
+            index = *((uint32_t*)&_data[primitive.indexOffset + i * sizeof(uint32_t)]);
+            s << index;
+        }
+
         s << !(bool)itr->vertexSent[index]; //We have to cast these because vector returns a custom wrapper for references that's not "trivially copyable"
         // If we haven't sent this vertex, send it.
         if(!itr->vertexSent[index])
         {
             for(auto& a : primitive.attributes)
             {
-                size_t attributeOffset = a.second.offset + a.second.step * index;
-                s << a.second.step;
-                s << attributeOffset;
+                uint32_t attributeOffset = a.second.offset + a.second.step * index;
+                s << a.second.step << attributeOffset;
                 for (uint32_t j = 0; j < a.second.step; ++j)
-                {
                     s << (byte)_data[attributeOffset + j];
-                }
             }
             itr->vertexSent[index] = true;
         }
@@ -133,31 +143,42 @@ void MeshAsset::deserializeIncrement(InputSerializer& s)
     s >> pIndex;
     auto& primitive = _primitives[pIndex];
 
+    bool shortIndexType = primitive.indexType == Primitive::UInt16;
+
     uint32_t start, end;
     s >> start >> end;
 
     for (size_t i = start; i < end; ++i)
     {
-        uint16_t index;
-        s >> index;
-        *((uint16_t*)&_data[primitive.indexOffset + 2 * i]) = index;
+        size_t index;
+        if(shortIndexType)
+        {
+            uint16_t sIndex;
+            s >> sIndex;
+            *((uint16_t*)&_data[primitive.indexOffset + sizeof(uint16_t) * i]) = sIndex;
+            index = sIndex;
+        }
+        else
+        {
+            uint32_t uIndex;
+            s >> uIndex;
+            *((uint32_t*)&_data[primitive.indexOffset + sizeof(uint32_t) * i]) = uIndex;
+            index = uIndex;
+        }
+
         bool vertexSent;
-        s >> vertexSent; //We have to cast these because vector returns a custom wrapper for references that's not "trivially copyable"
+        s >> vertexSent;
         // If we haven't received this vertex, save it.
         if(vertexSent)
         {
             for (int j = 0; j < primitive.attributes.size(); ++j)
             {
-                uint32_t step;
-                s >> step;
-                size_t attributeOffset;
-                s >> attributeOffset;
+                uint32_t step, attributeOffset;
+                s >> step >> attributeOffset;
                 if(attributeOffset + step >= _data.size())
                     throw std::runtime_error("increment deserialization fail, out of bounds data");
-                for (uint32_t j = 0; j < step; ++j)
-                {
-                    s >> (byte&)_data[attributeOffset + j];
-                }
+                for (uint32_t k = 0; k < step; ++k)
+                    s >> (byte&)_data[attributeOffset + k];
             }
         }
     }
