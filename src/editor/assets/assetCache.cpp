@@ -20,6 +20,11 @@ std::filesystem::path AssetCache::getPath(const AssetID& id)
 
 void AssetCache::cacheAsset(const Asset* asset)
 {
+    if(!asset)
+    {
+        Runtime::warn("Tried to cache nonexistent asset");
+        return;
+    }
     FileManager::writeAsset(asset, getPath(asset->id));
 }
 

@@ -58,6 +58,11 @@ namespace graphics
         return _meshAsset->vertexCount(primitive);
     }
 
+    VkIndexType Mesh::indexBufferType(uint32_t primitive) const
+    {
+        return (_meshAsset->indexType(primitive) == MeshAsset::Primitive::UInt16) ? VK_INDEX_TYPE_UINT16 : VK_INDEX_TYPE_UINT32;
+    }
+
     VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const
     {
         return _meshAsset->indexOffset(primitive);

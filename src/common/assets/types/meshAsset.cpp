@@ -37,6 +37,7 @@ void MeshAsset::serializeHeader(OutputSerializer& s) const
     for(auto& primitive : _primitives)
     {
         s << primitive.indexOffset;
+        s << primitive.indexType;
         s << primitive.indexCount;
         s << primitive.vertexCount;
         s << (uint16_t)primitive.attributes.size();
@@ -59,6 +60,7 @@ void MeshAsset::deserializeHeader(InputSerializer& s)
     for(auto& primitive : _primitives)
     {
         s >> primitive.indexOffset;
+        s >> primitive.indexType;
         s >> primitive.indexCount;
         s >> primitive.vertexCount;
         uint16_t attributeCount;
@@ -176,6 +178,7 @@ size_t MeshAsset::addPrimitive(const std::vector<uint16_t>& indices, uint32_t ve
 {
     size_t index = _data.size();
     Primitive p{};
+    p.indexType = Primitive::UInt16;
     p.indexOffset = static_cast<uint32_t>(index);
     p.indexCount = static_cast<uint32_t>(indices.size());
     p.vertexCount = vertexCount;
@@ -185,6 +188,23 @@ size_t MeshAsset::addPrimitive(const std::vector<uint16_t>& indices, uint32_t ve
     newSize += 4 - newSize % 4;
     _data.resize(newSize);
     std::memcpy(&_data[index], indices.data(), indices.size() * sizeof(uint16_t));
+    assert(_data.size() % 4 == 0);
+    return _primitives.size() - 1;
+}
+
+size_t MeshAsset::addPrimitive(const std::vector<uint32_t>& indices, uint32_t vertexCount)
+{
+    size_t index = _data.size();
+    Primitive p{};
+    p.indexType = Primitive::UInt32;
+    p.indexOffset = static_cast<uint32_t>(index);
+    p.indexCount = static_cast<uint32_t>(indices.size());
+    p.vertexCount = vertexCount;
+    _primitives.push_back(p);
+
+    size_t newSize = _data.size() + indices.size() * sizeof(uint32_t);
+    _data.resize(newSize);
+    std::memcpy(&_data[index], indices.data(), indices.size() * sizeof(uint32_t));
     assert(_data.size() % 4 == 0);
     return _primitives.size() - 1;
 }
@@ -237,6 +257,13 @@ void MeshAsset::onDependenciesLoaded()
     if(runtimeID)
     runtimeID = vkr->addAsset(this);
 }
+
+MeshAsset::Primitive::IndexType MeshAsset::indexType(size_t primitive) const
+{
+    assert(primitive < _primitives.size());
+    return _primitives[primitive].indexType;
+}
+
 #endif
 
 

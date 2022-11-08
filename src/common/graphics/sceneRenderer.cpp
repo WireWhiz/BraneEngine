@@ -140,7 +140,7 @@ namespace graphics{
                 transformOffset += renderObject.second.size() * sizeof(glm::mat4);
 
                 vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
-                vkCmdBindIndexBuffer(cmdBuffer, mesh->buffer(), mesh->indexBufferOffset(primitive), VK_INDEX_TYPE_UINT16);
+                vkCmdBindIndexBuffer(cmdBuffer, mesh->buffer(), mesh->indexBufferOffset(primitive), mesh->indexBufferType(primitive));
                 vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh->indexCount(primitive)), renderObject.second.size(), 0, 0, 0);
             }
         }

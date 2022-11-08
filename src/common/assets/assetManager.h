@@ -12,7 +12,7 @@ class AssetManager : public Module
 public:
     using FetchCallback = std::function<AsyncData<Asset*>(const AssetID& id, bool incremental)>;
 
-    enum class LoadState
+    enum class LoadState : uint8_t
     {
         unloaded = 0,
         failed = 1,

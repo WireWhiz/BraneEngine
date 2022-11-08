@@ -59,7 +59,9 @@ void AssemblyReloadManager::updateEntityComponent(Assembly* assembly, size_t ind
             renderer->mesh = am->getAsset<MeshAsset>(assembly->meshes[renderer->mesh])->runtimeID;
             for(auto& material : renderer->materials)
             {
-                auto& id = assembly->materials[material];
+                AssetID id;
+                if(material < assembly->materials.size())
+                    id = assembly->materials[material];
                 if(!id.null())
                     material = am->getAsset<MaterialAsset>(id)->runtimeID;
                 else

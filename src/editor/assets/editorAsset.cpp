@@ -60,7 +60,11 @@ void EditorAsset::save()
     }
     FileManager::writeFile(_file, _json.data());
     _json.markClean();
-    _project.editor().cache().cacheAsset(buildAsset(AssetID(_json["id"].asString())));
+    auto* builtAsset = buildAsset(AssetID(_json["id"].asString()));
+    if(builtAsset)
+        _project.editor().cache().cacheAsset(builtAsset);
+    else
+        Runtime::warn("Could not build and cache " + name());
     Runtime::log("Saved " + _file.string());
 }
 

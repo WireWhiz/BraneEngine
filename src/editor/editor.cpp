@@ -157,6 +157,10 @@ void Editor::loadProject(const std::filesystem::path& filepath)
 void Editor::createProject(const std::string& name, const std::filesystem::path& directory)
 {
     _project.create(name, directory);
+    Runtime::getModule<graphics::VulkanRuntime>()->window()->onRefocus([this](){
+        if(_project.fileWatcher())
+            _project.fileWatcher()->scanForChanges();
+    });
     _ui->sendEvent(std::make_unique<GUIEvent>("projectLoaded"));
 }
 

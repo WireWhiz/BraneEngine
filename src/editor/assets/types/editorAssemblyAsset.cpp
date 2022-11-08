@@ -121,6 +121,10 @@ void EditorAssemblyAsset::linkToGLTF(const std::filesystem::path& file)
         index++;
     }
 
+    auto& materials = _json.data()["dependencies"]["materials"];
+    while(materials.size() < gltf.json()["materials"].size())
+        materials.append("null");
+
     save();
 }
 
@@ -726,7 +730,10 @@ class MaterialChange : public JsonChange
         auto* assembly = am->getAsset<Assembly>(AssetID{(*_json)["id"].asString()});
         if (!assembly)
             return;
-        assembly->materials[_materialIndex] = AssetID((*_json)["dependencies"]["materials"][_materialIndex].asString());
+        auto& materials =  (*_json)["dependencies"]["materials"];
+        if(assembly->materials.size() != materials.size())
+            assembly->materials.resize(materials.size());
+        assembly->materials[_materialIndex] =AssetID(materials[_materialIndex].asString());
 
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
         uint32_t entityIndex = 0;

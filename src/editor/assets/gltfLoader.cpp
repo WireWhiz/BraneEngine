@@ -154,26 +154,54 @@ void GLTFLoader::printPositions(int meshIndex, int primitiveIndex)
     std::cout << "vertices: " << positionAccessor["count"].asInt() << std::endl;
 }
 
-std::vector<uint16_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
+
+
+std::vector<uint16_t> GLTFLoader::readShortScalarBuffer(uint32_t accessorIndex)
 {
     Json::Value& accessor = _json["accessors"][accessorIndex];
-    if(accessor["componentType"].asUInt() != 5123 ||
-       accessor["type"].asString() != "SCALAR")
-        throw std::runtime_error("Mismatched accessor values for reading Scalar");
+    if(accessor["type"].asString() != "SCALAR" || accessor["componentType"].asUInt() != 5123)
+        throw std::runtime_error("Mismatched accessor type for reading Scalar");
 
     Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
     uint32_t count = accessor["count"].asUInt();
-    uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
     uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
 
+    uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
     std::vector<uint16_t> buffer(count);
     for (uint32_t i = 0; i < count; ++i)
-    {
         buffer[i] = *(uint16_t*)&_bin[offset + stride * i];
-    }
-
-
     return buffer;
+}
+
+std::vector<uint32_t> GLTFLoader::readScalarBuffer(uint32_t accessorIndex)
+{
+    Json::Value& accessor = _json["accessors"][accessorIndex];
+    if(accessor["type"].asString() != "SCALAR")
+        throw std::runtime_error("Mismatched accessor type for reading Scalar");
+
+    Json::Value& bufferView = _json["bufferViews"][accessor["bufferView"].asUInt()];
+    uint32_t count = accessor["count"].asUInt();
+    uint32_t offset = bufferView["byteOffset"].asUInt() + accessor["byteOffset"].asUInt();
+
+    //UNSIGNED_SHORT
+    if(accessor["componentType"].asUInt() == 5123)
+    {
+        uint32_t stride = bufferView.get("byteStride", sizeof(uint16_t)).asUInt();
+        std::vector<uint32_t> buffer(count);
+        for (uint32_t i = 0; i < count; ++i)
+            buffer[i] = *(uint16_t*)&_bin[offset + stride * i];
+        return buffer;
+    }
+    //UNSIGNED_INT
+    if(accessor["componentType"].asUInt() == 5125)
+    {
+        uint32_t stride = bufferView.get("byteStride", sizeof(uint32_t)).asUInt();
+        std::vector<uint32_t> buffer(count);
+        for (uint32_t i = 0; i < count; ++i)
+            buffer[i] = *(uint32_t*)&_bin[offset + stride * i];
+        return buffer;
+    }
+    throw std::runtime_error("Unknown accessor component type");
 }
 
 std::vector<glm::vec2> GLTFLoader::readVec2Buffer(uint32_t accessorIndex)
@@ -238,7 +266,12 @@ std::vector<MeshAsset*> GLTFLoader::extractAllMeshes()
         for(auto& primitive : meshData["primitives"])
         {
             auto positions = readVec3Buffer(primitive["attributes"]["POSITION"].asUInt());
-            size_t pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+            size_t pIndex;
+            auto indexBufferType = accessorComponentType(primitive["indices"].asUInt());
+            if(indexBufferType == 5123) //UNSIGNED_SHORT
+                pIndex = mesh->addPrimitive(readShortScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
+            else //UNSIGNED_INT
+                pIndex = mesh->addPrimitive(readScalarBuffer(primitive["indices"].asUInt()), static_cast<uint32_t>(positions.size()));
             mesh->addAttribute(pIndex, "POSITION", positions);
 
 
@@ -291,6 +324,12 @@ bool GLTFLoader::loadFromFile(const std::filesystem::path& filename)
         return loadGltfFromFile(filename);
     Runtime::error("Unrecognised file postfix: " + ext);
     return false;
+}
+
+uint32_t GLTFLoader::accessorComponentType(uint32_t accessorIndex)
+{
+    Json::Value& accessor = _json["accessors"][accessorIndex];
+    return accessor["componentType"].asUInt();
 }
 
 

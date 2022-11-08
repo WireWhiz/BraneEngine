@@ -556,7 +556,6 @@ namespace graphics
 
     void VulkanRuntime::reloadShader(ShaderAsset* shader)
     {
-        std::scoped_lock aLock(_assetLock);
         vkDeviceWaitIdle(device());
         for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
         {

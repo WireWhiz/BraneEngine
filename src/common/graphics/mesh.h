@@ -30,6 +30,7 @@ namespace graphics
 
         MeshAsset* meshAsset();
         VkBuffer buffer() const;
+        VkIndexType indexBufferType(uint32_t primitive) const;
         VkDeviceSize indexBufferOffset(uint32_t primitive) const;
         VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string& name) const;
 

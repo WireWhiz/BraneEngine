@@ -35,7 +35,9 @@ public:
     bool loadGlbFromFile(const std::filesystem::path& glbFilename);
     void printInfo();
     void printPositions(int mesh, int primitive);
-    std::vector<uint16_t> readScalarBuffer(uint32_t accessor);
+    uint32_t accessorComponentType(uint32_t accessor);
+    std::vector<uint16_t> readShortScalarBuffer(uint32_t accessor);
+    std::vector<uint32_t> readScalarBuffer(uint32_t accessor);
     std::vector<glm::vec2> readVec2Buffer(uint32_t accessor);
     std::vector<glm::vec3> readVec3Buffer(uint32_t accessor);
     std::vector<MeshAsset*> extractAllMeshes();

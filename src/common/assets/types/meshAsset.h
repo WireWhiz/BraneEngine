@@ -6,10 +6,16 @@
 
 class MeshAsset : public IncrementalAsset
 {
+public:
     uint32_t _trisPerIncrement = 60;
 
     struct Primitive{
         uint32_t indexOffset;
+        enum IndexType : uint8_t
+        {
+            UInt16 = 0,
+            UInt32 = 1
+        } indexType;
         uint32_t indexCount;
         uint32_t vertexCount;
 
@@ -19,7 +25,7 @@ class MeshAsset : public IncrementalAsset
         };
         std::unordered_map<std::string, Attribute> attributes;
     };
-
+private:
     std::vector<Primitive> _primitives;
     std::vector<byte> _data;
 public:
@@ -39,6 +45,7 @@ public:
     void onDependenciesLoaded() override;
 #endif
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);
+    size_t addPrimitive(const std::vector<uint32_t>& indices, uint32_t vertexCount);
     template<typename T>
     void addAttribute(size_t primitive, const std::string& name, std::vector<T>& data)
     {
@@ -56,6 +63,7 @@ public:
     const std::vector<byte>& packedData() const;
     uint32_t indexOffset(size_t primitive) const;
     uint32_t indexCount(size_t primitive) const;
+    Primitive::IndexType indexType(size_t primitive) const;
     bool hasAttribute(size_t primitive, const std::string& name) const;
     uint32_t attributeOffset(size_t primitive, const std::string& name) const;
     uint32_t vertexCount(uint32_t primitive) const;

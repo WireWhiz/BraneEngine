@@ -52,7 +52,10 @@ void AssetManager::start()
 bool AssetManager::hasAsset(const AssetID& id)
 {
     std::scoped_lock lock(_assetLock);
-    return _assets.count(id);
+    if(!_assets.count(id))
+        return false;
+    auto state = _assets.at(id)->loadState;
+    return (uint8_t)state >= (uint8_t)LoadState::awaitingDependencies;
 }
 
 void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
@@ -164,9 +167,10 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
 
 void AssetManager::reloadAsset(Asset* asset)
 {
-    std::scoped_lock lock(_assetLock);
-    if(!_assets.count(asset->id))
+    assert(asset);
+    if(!hasAsset(asset->id))
         return;
+    std::scoped_lock lock(_assetLock);
 
     // We move instead of just replacing the pointer to avoid breaking references
     switch(asset->type.type())
