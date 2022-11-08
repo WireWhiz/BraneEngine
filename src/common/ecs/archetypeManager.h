@@ -7,6 +7,7 @@
 
 #include "archetype.h"
 #include "entitySet.h"
+#include "utility/sharedRecursiveMutex.h"
 
 class ComponentManager;
 class ArchetypeManager
@@ -20,6 +21,7 @@ class ArchetypeManager
     std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
     robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
     ComponentManager& _componentManager;
+
 public:
     class iterator{
         ArchetypeManager& _ref;
@@ -43,7 +45,6 @@ public:
 
     std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
 
-    void removeEmpty();
     void clear();
     iterator begin();
     iterator end();

@@ -22,6 +22,8 @@
 #include "editor/assets/assemblyReloadManager.h"
 #include "ui/guiPopup.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
+#include "graphics/pointLightComponent.h"
+#include "utility/jsonTypeUtilities.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -338,6 +340,23 @@ void DataWindow::displayEntityAssetData()
                     ImGui::PopID();
                 }
             }
+            else if(component["name"].asString() == PointLightComponent::def()->name)
+            {
+                auto lightValue = fromJson<glm::vec4>(component["members"][0]["value"]);
+                ImGui::ColorEdit3("Tint", (float*)&lightValue);
+                bool change = ImGui::IsItemEdited();
+                bool endChange = ImGui::IsItemDeactivatedAfterEdit();
+                ImGui::DragFloat("Strength", &lightValue[3], 0.005);
+                change = change || ImGui::IsItemEdited();
+                endChange = endChange || ImGui::IsItemDeactivatedAfterEdit();
+                if(change || endChange)
+                {
+                    Json::Value data = component;
+                    data["members"][0]["value"] = toJson(lightValue);
+                    assembly->updateEntityComponent(_focusedAssetEntity, i, data, endChange);
+                }
+
+            }
             else
             {
                 Json::Value data = component;
@@ -347,7 +366,6 @@ void DataWindow::displayEntityAssetData()
                     assembly->updateEntityComponent(_focusedAssetEntity, i, data, res != UiChangeType::finished);
                     if(res == UiChangeType::finished)
                     {
-
                         _editor.reloadAsset(_focusedAsset);
                     }
                 }

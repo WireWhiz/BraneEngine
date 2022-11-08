@@ -15,6 +15,7 @@ using ComponentID = uint32_t;
 struct SystemContext;
 class ChunkComponentView;
 class Archetype;
+class ArchetypeManager;
 
 typedef uint8_t ComponentFilterFlags;
 enum ComponentFilterFlags_

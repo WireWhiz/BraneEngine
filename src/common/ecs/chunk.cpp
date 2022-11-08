@@ -26,6 +26,37 @@ ChunkComponentView::ChunkComponentView(byte* data, size_t maxSize, const Compone
     version = 0;
 }
 
+ChunkComponentView::ChunkComponentView(const ChunkComponentView& o)
+{
+    _description = o._description;
+    _data = o._data;
+    _size = o._size;
+    _maxSize = o._maxSize;
+    version = o.version;
+}
+
+ChunkComponentView& ChunkComponentView::operator=(const ChunkComponentView& o)
+{
+    _description = o._description;
+    _data = o._data;
+    _size = o._size;
+    _maxSize = o._maxSize;
+    version = o.version;
+    return *this;
+}
+
+ChunkComponentView::ChunkComponentView(ChunkComponentView&& o)
+{
+    _description = o._description;
+    _data = o._data;
+    _size = o._size;
+    _maxSize = o._maxSize;
+    version = o.version;
+    o._data = nullptr;
+    o._size = 0;
+    o.version = 0;
+}
+
 ChunkComponentView::~ChunkComponentView()
 {
     for(size_t i = 0; i < _size; ++i)
@@ -91,3 +122,24 @@ byte* ChunkComponentView::getComponentData(size_t index)
     assert(index < _size);
     return dataIndex(index);
 }
+
+void ChunkComponentView::lockShared()
+{
+    _mutex.lock_shared();
+}
+
+void ChunkComponentView::unlockShared()
+{
+    _mutex.unlock_shared();
+}
+
+void ChunkComponentView::lock()
+{
+    _mutex.lock();
+}
+
+void ChunkComponentView::unlock()
+{
+    _mutex.unlock();
+}
+

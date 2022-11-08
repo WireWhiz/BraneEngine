@@ -174,7 +174,7 @@ void AssetServer::createEditorListeners()
         std::vector<AssetID> assetsWithDiff;
         for(auto& h : hashes)
         {
-            if(h.first.address() != "")
+            if(!h.first.address().empty())
                 continue;
             auto info = _db.getAssetInfo(h.first.id());
             if(info.hash != h.second)
@@ -202,7 +202,7 @@ void AssetServer::createEditorListeners()
             assetExists = false;
         }
 
-        _fm.writeAsset(asset, path);
+        FileManager::writeAsset(asset, path);
         assetInfo.id = asset->id.id();
         assetInfo.name = asset->name;
         assetInfo.type = asset->type;

@@ -51,3 +51,49 @@ void SharedRecursiveMutex::unlock_shared()
     _sharedOwners -= 1;
 
 }
+
+SharedRecursiveMutex::ScopedLock SharedRecursiveMutex::scopedLock()
+{
+    return std::move(ScopedLock(*this));
+}
+
+SharedRecursiveMutex::SharedScopedLock SharedRecursiveMutex::sharedScopedLock()
+{
+    return std::move(SharedScopedLock(*this));
+}
+
+SharedRecursiveMutex::ScopedLock::ScopedLock(SharedRecursiveMutex& m) : _m(&m)
+{
+    _m->lock();
+}
+
+SharedRecursiveMutex::ScopedLock::ScopedLock(ScopedLock&& o) noexcept
+{
+    _m = o._m;
+    o._m = nullptr;
+}
+
+SharedRecursiveMutex::ScopedLock::~ScopedLock()
+{
+    if(_m)
+        _m->unlock();
+}
+
+
+
+SharedRecursiveMutex::SharedScopedLock::SharedScopedLock(SharedRecursiveMutex& m) : _m(&m)
+{
+    _m->lock_shared();
+}
+
+SharedRecursiveMutex::SharedScopedLock::SharedScopedLock(SharedScopedLock&& o) noexcept
+{
+    _m = o._m;
+    o._m = nullptr;
+}
+
+SharedRecursiveMutex::SharedScopedLock::~SharedScopedLock()
+{
+    if(_m)
+        _m->unlock_shared();
+}

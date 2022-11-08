@@ -3,8 +3,10 @@
 #include <array>
 #include <vector>
 #include "virtualType.h"
+
 #include "component.h"
 #include "robin_hood.h"
+#include "utility/sharedRecursiveMutex.h"
 
 class ChunkComponentView
 {
@@ -13,10 +15,14 @@ class ChunkComponentView
     size_t _maxSize = 0;
     size_t _size = 0;
     byte* dataIndex(size_t index) const;
+    SharedRecursiveMutex _mutex;
 public:
-    uint32_t version;
+    uint32_t version = 0;
     ChunkComponentView() = default;
     ChunkComponentView(byte* data, size_t maxSize, const ComponentDescription* def);
+    ChunkComponentView(const ChunkComponentView&);
+    ChunkComponentView& operator=(const ChunkComponentView&);
+    ChunkComponentView(ChunkComponentView&&);
     ~ChunkComponentView();
     VirtualComponentView operator[](size_t index) const;
     void createComponent();
@@ -24,6 +30,11 @@ public:
     void setComponent(size_t index, VirtualComponentView component);
     void setComponent(size_t index, VirtualComponent&& component);
     byte* getComponentData(size_t index);
+
+    void lockShared();
+    void unlockShared();
+    void lock();
+    void unlock();
 
     size_t size() const;
     uint32_t compID() const;

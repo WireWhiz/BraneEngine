@@ -5,6 +5,7 @@
 #include "entitySet.h"
 #include "system.h"
 #include "archetype.h"
+#include "archetypeManager.h"
 
 void ComponentFilter::addComponent(ComponentID id, ComponentFilterFlags flags)
 {
@@ -77,7 +78,10 @@ void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
                 continue;
 
             for(size_t i = 0; i < itrComponents.size(); ++i)
+            {
                 componentViews[i] = &chunk->getComponent(itrComponents[i]);
+                componentViews[i]->lock();
+            }
             for(size_t i = 0; i < chunk->size(); ++i)
             {
                 for(size_t d = 0; d < itrComponents.size(); ++d)
@@ -85,7 +89,10 @@ void EntitySet::forEachNative(const std::function<void(byte** components)>& f)
                 f(data.data());
             }
             for(auto c : componentViews)
+            {
                 c->version = _filter.system()->version;
+                c->unlock();
+            }
         }
     }
 }

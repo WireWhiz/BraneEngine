@@ -192,9 +192,7 @@ void SyncWindow::syncAssets()
     for(auto& asset : _assetDiffs)
     {
         ImGui::PushID(asset.id.id());
-        ImGui::Selectable(_editor.project().getAssetName(asset.id).c_str());
-        if(ImGui::IsItemHovered())
-            ImGui::SetTooltip("%s", asset.id.string().c_str());
+        ImGui::Text("%s: %s", _editor.project().getAssetName(asset.id).c_str(), asset.id.string().c_str());
         ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 20);
         if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP))
         {

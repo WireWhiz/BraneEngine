@@ -55,6 +55,7 @@ namespace Runtime
         while (_running)
         {
             _timeline.run();
+            ThreadPool::runMainJobs();
             Logging::callListeners();
             auto now = std::chrono::high_resolution_clock::now();
             auto updatePeriod = std::chrono::duration_cast<std::chrono::microseconds>(now - _lastUpdate);

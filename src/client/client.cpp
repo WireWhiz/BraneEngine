@@ -58,7 +58,7 @@ void Client::start()
                     AssetID id = lod.assembly;
                     if(id.address().empty())
                         id.setAddress(chunk->id.address());
-                    am->fetchAsset<Assembly>(id).then([this, em](Assembly* assembly){
+                    am->fetchAsset<Assembly>(id).thenMain([this, em](Assembly* assembly){
                         _chunkRoots[assembly->id] = assembly->inject(*em);
                     });
                 }

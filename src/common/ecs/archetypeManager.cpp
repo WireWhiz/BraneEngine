@@ -12,12 +12,11 @@ ArchetypeManager::ArchetypeManager(ComponentManager& componentManager) : _compon
 
 Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 {
+    ASSERT_MAIN_THREAD();
     size_t numComps = components.size();
     assert(numComps > 0);
     if (numComps > _archetypes.size())
-    {
         return makeArchetype(components);
-    }
     std::vector<robin_hood::unordered_flat_set<Archetype*>*> archesWithComponent;
     for(ComponentID c : components)
     {
@@ -55,6 +54,7 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
             break;
         }
     }
+
     if(foundArch)
         return foundArch;
 
@@ -63,6 +63,7 @@ Archetype* ArchetypeManager::getArchetype(const ComponentSet& components)
 
 Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 {
+    ASSERT_MAIN_THREAD();
     assert(components.size() > 0);
     size_t numComps = components.size();
 
@@ -123,6 +124,7 @@ Archetype* ArchetypeManager::makeArchetype(const ComponentSet& components)
 void ArchetypeManager::destroyArchetype(Archetype* archetype)
 {
     assert(archetype);
+    ASSERT_MAIN_THREAD();
     for(auto c : archetype->components())
         _compToArch[c].erase(archetype);
 
@@ -147,6 +149,7 @@ void ArchetypeManager::destroyArchetype(Archetype* archetype)
 
 void ArchetypeManager::clear()
 {
+    ASSERT_MAIN_THREAD();
     _archetypes.resize(0);
 }
 

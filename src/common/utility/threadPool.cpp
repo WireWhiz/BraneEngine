@@ -14,6 +14,9 @@ std::queue<Job> ThreadPool::_jobs;
 std::mutex ThreadPool::_queueMutex;
 std::condition_variable ThreadPool::_workAvailable;
 
+std::mutex ThreadPool::_mainQueueMutex;
+std::queue<Job> ThreadPool::_mainThreadJobs;
+
 int ThreadPool::threadRuntime()
 {
     while (_running)
@@ -103,6 +106,13 @@ std::shared_ptr<JobHandle> ThreadPool::enqueue(std::function<void()> function)
     return handle;
 }
 
+void ThreadPool::enqueueMain(std::function<void()> function)
+{
+    _mainQueueMutex.lock();
+    _mainThreadJobs.push({std::move(function), nullptr});
+    _mainQueueMutex.unlock();
+}
+
 void ThreadPool::enqueue(std::function<void()> function, std::shared_ptr<JobHandle>& sharedHandle)
 {
     sharedHandle->_instances += 1;
@@ -160,6 +170,22 @@ std::shared_ptr<ConditionJob> ThreadPool::conditionalEnqueue(std::function<void(
 {
     assert(conditionCount != 0);
     return std::make_shared<ConditionJob>(ConditionJob{std::move(function), conditionCount});
+}
+
+void ThreadPool::runMainJobs()
+{
+    _mainQueueMutex.lock();
+    while(!_mainThreadJobs.empty())
+    {
+        auto job = std::move(_mainThreadJobs.front());
+        _mainThreadJobs.pop();
+        _mainQueueMutex.unlock();
+
+        job.f();
+
+        _mainQueueMutex.lock();
+    }
+    _mainQueueMutex.unlock();
 }
 
 bool JobHandle::finished()
