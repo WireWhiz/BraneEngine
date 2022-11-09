@@ -28,6 +28,12 @@ namespace graphics{
             alignas(16) glm::vec4 color;
         };
 
+        struct alignas(16) RenderInfo
+        {
+            glm::mat4 render_matrix;
+            glm::vec3 camera_pos;
+        };
+
         void updateLights(size_t frame, std::vector<PointLightData>& lights);
 
     public:

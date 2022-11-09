@@ -497,17 +497,17 @@ namespace graphics
         vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
     }
 
-    void Material::bindTransformUniformBuffer(size_t frame, GraphicsBuffer& buffer)
+    void Material::bindUniformBuffer(size_t frame, size_t binding, size_t uniformSize, GraphicsBuffer& buffer)
     {
         VkDescriptorBufferInfo instanceDataInfo{};
         instanceDataInfo.buffer = buffer.get();
         instanceDataInfo.offset = 0;
-        instanceDataInfo.range = sizeof(glm::mat4);
+        instanceDataInfo.range = uniformSize;
 
         VkWriteDescriptorSet instanceDataSet{};
         instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         instanceDataSet.dstSet = _descriptorSets[frame];
-        instanceDataSet.dstBinding = 0;
+        instanceDataSet.dstBinding = binding;
         instanceDataSet.dstArrayElement = 0;
         instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         instanceDataSet.descriptorCount = 1;

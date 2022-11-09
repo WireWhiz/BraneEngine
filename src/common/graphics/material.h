@@ -46,7 +46,7 @@ namespace graphics
         void initialize(size_t swapChainSize);
         GraphicsBuffer& transformBuffer(size_t frame);
         void reallocateTransformBuffer(size_t frame, size_t newSize);
-        void bindTransformUniformBuffer(size_t frame, GraphicsBuffer& buffer);
+        void bindUniformBuffer(size_t frame, size_t binding, size_t uniformSize, GraphicsBuffer& buffer);
         void bindPointLightBuffer(size_t frame, GraphicsBuffer& buffer);
         const ComponentDescription* component() const;
         VkPipeline pipeline(SceneRenderer* renderer) const;

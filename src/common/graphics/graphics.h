@@ -35,7 +35,7 @@ namespace graphics
         SwapChain* _swapChain;
         std::vector<VkCommandBuffer> _drawBuffers;
 
-        std::mutex _assetLock;
+        std::recursive_mutex _assetLock;
         std::deque<std::pair<uint32_t, Asset*>> _newAssets;
         std::deque<Asset*> _reloadAssets;
         staticIndexVector<std::unique_ptr<Shader>> _shaders;

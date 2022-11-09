@@ -19,7 +19,7 @@ namespace graphics{
         for(auto& b : _renderDataBuffers)
         {
             b.setFlags(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-            b.realocate(sizeof(glm::mat4));
+            b.realocate(sizeof(RenderInfo));
         }
 
         _pointLights.resize(swapChain.size());
@@ -91,7 +91,8 @@ namespace graphics{
         //Render meshes
         startRenderPass(cmdBuffer);
         glm::mat4 cameraMatrix = perspectiveMatrix() * transformMatrix();
-        _renderDataBuffers[_swapChain.currentFrame()].setData(cameraMatrix, 0);
+        RenderInfo renderInfo{cameraMatrix, position};
+        _renderDataBuffers[_swapChain.currentFrame()].setData(renderInfo, 0);
         for(auto& mat :  _vkr.materials())
         {
             if(!mat)
@@ -115,7 +116,7 @@ namespace graphics{
                 mat->reallocateTransformBuffer(_swapChain.currentFrame(), newSize);
             }
 
-            mat->bindTransformUniformBuffer(_swapChain.currentFrame(), _renderDataBuffers[_swapChain.currentFrame()]);
+            mat->bindUniformBuffer(_swapChain.currentFrame(), 0, sizeof(RenderInfo), _renderDataBuffers[_swapChain.currentFrame()]);
             mat->bindPointLightBuffer(_swapChain.currentFrame(), _pointLights[_swapChain.currentFrame()]);
 
             vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->pipelineLayout(), 0, 1, mat->descriptorSet(_swapChain.currentFrame()), 0, nullptr);

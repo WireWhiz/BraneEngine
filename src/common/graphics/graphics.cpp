@@ -586,7 +586,6 @@ namespace graphics
 
     void VulkanRuntime::reloadMaterial(MaterialAsset* material)
     {
-        std::scoped_lock aLock(_assetLock);
         vkDeviceWaitIdle(device());
         for(auto m = _materials.begin(); m != _materials.end(); ++m)
         {
