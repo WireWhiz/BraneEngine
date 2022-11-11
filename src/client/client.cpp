@@ -148,8 +148,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
                 asset.setData(ptr);
                 return;
             }
-            fetchDependencies(ptr, [ptr, asset]() mutable{
-                asset.setData(ptr);
+            fetchDependencies(ptr, [ptr, asset](bool success) mutable{
+                if(success)
+                    asset.setData(ptr);
+                else
+                    asset.setError("Failed to load dependency for: " + ptr->name);
             });
         });
     }

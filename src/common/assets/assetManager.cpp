@@ -58,7 +58,7 @@ bool AssetManager::hasAsset(const AssetID& id)
     return (uint8_t)state >= (uint8_t)LoadState::awaitingDependencies;
 }
 
-void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
+void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callback)
 {
     assert(a);
     assert(!a->id.null());
@@ -80,11 +80,11 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
     _assetLock.unlock();
     if(unloadedDeps.empty())
     {
-        callback();
+        callback(true);
         return;
     }
 
-    auto callbackPtr = std::make_shared<std::function<void()>>(callback);
+    auto callbackPtr = std::make_shared<std::function<void(bool)>>(std::move(callback));
     _assetLock.lock();
     AssetData* data = _assets.at(a->id).get();
     data->unloadedDependencies = unloadedDeps.size();
@@ -98,9 +98,10 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void()> callback)
             auto remaining = --data->unloadedDependencies;
             _assetLock.unlock();
             if(remaining == 0)
-                (*callbackPtr)();
-        }).onError([a](const std::string& message){
+                (*callbackPtr)(true);
+        }).onError([a, callbackPtr](const std::string& message){
             Runtime::error("Unable to fetch dependency of " + a->id.string());
+            (*callbackPtr)(false);
         });
     }
 }
@@ -125,7 +126,10 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
             asset.setData(assetData->asset.get());
         else
             _awaitingLoad[id].push_back([asset](Asset* a){
-                asset.setData(a);
+                if(a)
+                    asset.setData(a);
+                else
+                    asset.setError("Asset failed to load");
             });
         _assetLock.unlock();
         return asset;
@@ -153,11 +157,19 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
             f(a);
 
         asset.setData(a);
-    }).onError([this, asset, assetData](const std::string& error){
+    }).onError([this, asset, id](const std::string& error){
         _assetLock.lock();
-        assetData->loadState = LoadState::failed;
+        std::vector<std::function<void(Asset*)>> onLoaded;
+        if(_awaitingLoad.count(id))
+        {
+            onLoaded = std::move(_awaitingLoad.at(id));
+            _awaitingLoad.erase(id);
+        }
+        _assets.erase(id);
         _assetLock.unlock();
         asset.setError(error);
+        for(auto& f : onLoaded)
+            f(nullptr);
     });
 
     return asset;

@@ -202,7 +202,7 @@ void DataWindow::displayAssemblyData()
         if(ImGui::CollapsingHeader("Materials")){
             ImGui::Indent();
             int materialIndex = 0;
-            std::pair<int, AssetID> changedMaterial;
+            std::pair<int, AssetID> changedMaterial = {-1, AssetID()};
             for(auto& cID : _focusedAsset->json()["dependencies"]["materials"])
             {
                 AssetID materialID(cID.asString());
@@ -212,7 +212,7 @@ void DataWindow::displayAssemblyData()
                 ImGui::PopID();
                 ++materialIndex;
             }
-            if(!changedMaterial.second.null())
+            if(changedMaterial.first >= 0)
             {
                 dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(changedMaterial.first, changedMaterial.second);
                 _editor.reloadAsset(_focusedAsset);
@@ -331,9 +331,6 @@ void DataWindow::displayEntityAssetData()
                     AssetID matID(_focusedAsset->json()["dependencies"]["materials"].get(matIndex, "null").asString());
                     if(AssetSelectWidget::draw(matID, AssetType::material))
                     {
-                        while(matIndex >= _focusedAsset->json()["dependencies"]["materials"].size())
-                            _focusedAsset->json().data()["dependencies"]["materials"].append("null");
-
                         dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get())->changeMaterial(matIndex, matID);
                         _editor.reloadAsset(_focusedAsset);
                     }

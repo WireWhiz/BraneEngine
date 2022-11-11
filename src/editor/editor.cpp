@@ -206,8 +206,10 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
         case AssetType::shader:
             am->fetchAsset<Asset>(id).then([&am](Asset* asset){
                 //Manually fetch dependencies, since it skips that step if an asset is already fully loaded
-                am->fetchDependencies(asset, [asset](){
-                    Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+                am->fetchDependencies(asset, [asset](bool success){
+                    if(success)
+                        Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
+                    Runtime::warn("Could not reload " + asset->name);
                 });
             });
             break;
@@ -227,8 +229,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
         ThreadPool::enqueue([this, editor, asset, id]()
         {
             Asset* cachedAsset = editor->cache().getAsset(id);
-            fetchDependencies(cachedAsset, [asset, cachedAsset]() mutable{
-                asset.setData(cachedAsset);
+            fetchDependencies(cachedAsset, [asset, cachedAsset](bool success) mutable{
+                if(success)
+                    asset.setData(cachedAsset);
+                else
+                    asset.setError("Failed to load dependency for: " + cachedAsset->name);
             });
         });
         return asset;
@@ -247,9 +252,14 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
             _assetLock.lock();
             _assets.at(id)->loadState = LoadState::awaitingDependencies;
             _assetLock.unlock();
-            fetchDependencies(a, [editor, asset, a]() mutable{
-                editor->cache().cacheAsset(a);
-                asset.setData(a);
+            fetchDependencies(a, [editor, asset, a](bool success) mutable{
+                if(success)
+                {
+                    editor->cache().cacheAsset(a);
+                    asset.setData(a);
+                }
+                else
+                    asset.setError("Failed to load dependency for: " + a->name);
             });
         });
         return asset;
@@ -278,8 +288,11 @@ AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incre
                 asset.setData(ptr);
                 return;
             }
-            fetchDependencies(ptr, [ptr, asset]() mutable{
-                asset.setData(ptr);
+            fetchDependencies(ptr, [ptr, asset](bool success) mutable{
+                if(success)
+                    asset.setData(ptr);
+                else
+                    asset.setError("Failed to load dependency for: " + ptr->name);
             });
         });
     }
