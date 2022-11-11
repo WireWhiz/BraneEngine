@@ -429,7 +429,8 @@ void DataWindow::displayMaterialData()
         ImGui::Text("Vertex Shader:");
         ImGui::Indent();
         const auto shader = _editor.project().getEditorAsset(vertexID);
-        displayShaderAttributes(shader.get());
+        if(shader)
+            displayShaderAttributes(shader.get());
         ImGui::Unindent();
         ImGui::Separator();
     }
@@ -438,7 +439,8 @@ void DataWindow::displayMaterialData()
         ImGui::Text("Fragment Shader:");
         ImGui::Indent();
         const auto shader = _editor.project().getEditorAsset(fragmentID);
-        displayShaderAttributes(shader.get());
+        if(shader)
+            displayShaderAttributes(shader.get());
         ImGui::Unindent();
         ImGui::Separator();
     }
