@@ -109,7 +109,10 @@ public:
     {
         assert(_size < _maxCapacity);
         for(auto& c : _components)
+        {
             c.second.createComponent();
+            c.second.version++;
+        }
         return _size++;
     }
 

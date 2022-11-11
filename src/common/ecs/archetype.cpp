@@ -70,7 +70,9 @@ void Archetype::setComponent(size_t entity, VirtualComponent&& component)
 
     size_t index = entity - chunk * _chunks[0]->maxCapacity();
     assert(index < _chunks[chunk]->size());
-    _chunks[chunk]->getComponent(component.description()->id).setComponent(index, std::move(component));
+    auto& componentView = _chunks[chunk]->getComponent(component.description()->id);
+    componentView.setComponent(index, std::move(component));
+    componentView.version++;
 }
 
 void Archetype::setComponent(size_t entity, VirtualComponentView component)
@@ -82,7 +84,9 @@ void Archetype::setComponent(size_t entity, VirtualComponentView component)
 
     size_t index = entity - chunk * _chunks[0]->maxCapacity();
     assert(index < _chunks[chunk]->size());
-    _chunks[chunk]->getComponent(component.description()->id).setComponent(index, component);
+    auto& componentView = _chunks[chunk]->getComponent(component.description()->id);
+    componentView.setComponent(index, component);
+    componentView.version++;
 }
 
 bool Archetype::isChildOf(const Archetype* parent, ComponentID& connectingComponent) const
