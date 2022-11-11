@@ -4,7 +4,7 @@
 #include "lighting.glsl"
 
 void main() {
-    vec4 color = vec4(1,1,1,1);
+    vec3 color = vec3(1);
     color = shadeDiffuse(color, fragPosition, fragNormal);
-    fragColor = color;
+    fragColor = vec4(color, 1);
 }
