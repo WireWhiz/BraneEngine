@@ -86,7 +86,7 @@ void BraneProject::save()
     auto openAsset = _openAssets.begin();
     while(openAsset != _openAssets.end())
     {
-        if((*openAsset).second->unsavedChanged())
+        if((*openAsset).second->unsavedChanges())
             (*openAsset).second->save();
         if((*openAsset).second.use_count() <= 1)
             openAsset = _openAssets.erase(openAsset);
@@ -198,7 +198,7 @@ bool BraneProject::unsavedChanges() const
         return true;
     for(auto& asset : _openAssets)
     {
-        if(asset.second->unsavedChanged())
+        if(asset.second->unsavedChanges())
             return true;
     }
     return false;
@@ -342,12 +342,7 @@ std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
     for(auto& idStr : ids)
     {
         AssetID id(idStr);
-        if(!_editor.cache().hasAsset(id))
-        {
-            auto editorAsset = getEditorAsset(id);
-            _editor.cache().cacheAsset(editorAsset->buildAsset(id));
-        }
-        hashes.emplace_back(std::move(id), _editor.cache().getAssetHash(id));
+        hashes.emplace_back(std::move(id), getEditorAsset(id)->hash(id));
     }
     return hashes;
 }

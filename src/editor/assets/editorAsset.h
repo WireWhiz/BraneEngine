@@ -28,10 +28,11 @@ public:
     bool load();
     virtual std::vector<std::pair<AssetID, AssetType>> containedAssets() const = 0;
     virtual Asset* buildAsset(const AssetID& id) const = 0;
+    std::string hash(const AssetID& id);
     const AssetType& type() const;
     const std::string& name() const;
     const std::filesystem::path& file() const;
-    bool unsavedChanged() const;
+    bool unsavedChanges() const;
     void save();
     VersionedJson& json();
 };

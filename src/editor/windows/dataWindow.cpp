@@ -63,7 +63,7 @@ void DataWindow::displayAssetData()
         return;
 
     ImGui::PushFont(_ui.fonts()[1]);
-    ImGui::Text("%s%s", _focusedAsset->name().c_str(), (_focusedAsset->unsavedChanged()) ? " *" : "");
+    ImGui::Text("%s%s", _focusedAsset->name().c_str(), (_focusedAsset->unsavedChanges()) ? " *" : "");
     ImGui::PopFont();
     ImGui::TextDisabled("%s", _focusedAsset->type().toString().c_str());
 #ifdef NDEBUG

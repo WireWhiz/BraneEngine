@@ -22,7 +22,7 @@ EditorAsset::EditorAsset(const std::filesystem::path& file, BraneProject& projec
     load();
 }
 
-bool EditorAsset::unsavedChanged() const
+bool EditorAsset::unsavedChanges() const
 {
     return _json.dirty();
 }
@@ -66,6 +66,16 @@ void EditorAsset::save()
     else
         Runtime::warn("Could not build and cache " + name());
     Runtime::log("Saved " + _file.string());
+}
+
+std::string EditorAsset::hash(const AssetID& id)
+{
+    if(unsavedChanges())
+        save();
+    if(!_project.editor().cache().hasAsset(id))
+        _project.editor().cache().cacheAsset(buildAsset(id));
+
+    return _project.editor().cache().getAssetHash(id);
 }
 
 VersionedJson& EditorAsset::json()

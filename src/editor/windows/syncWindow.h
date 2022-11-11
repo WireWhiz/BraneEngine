@@ -34,7 +34,7 @@ class SyncWindow : public EditorWindow
     std::vector<AssetDiff> _assetDiffs;
     std::atomic_int _assetDiffSynced = -1;
     void syncAssets();
-    void updateAsset(Asset* asset);
+    void updateAsset(const AssetID& asset);
 
     Json::Value _serverSettings;
     void serverSettings();

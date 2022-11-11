@@ -6,6 +6,7 @@
 #include "editor/editorEvents.h"
 #include "networking/networking.h"
 #include "editor/editor.h"
+#include "editor/assets/editorAsset.h"
 #include "utility/threadPool.h"
 #include "ui/IconsFontAwesome6.h"
 #include "assets/asset.h"
@@ -182,11 +183,7 @@ void SyncWindow::syncAssets()
     if(ImGui::Button("Upload All " ICON_FA_CLOUD_ARROW_UP))
     {
         for(auto& asset : _assetDiffs)
-        {
-            Runtime::getModule<AssetManager>()->fetchAsset(asset.id).then([this](Asset* asset){
-                updateAsset(asset);
-            });
-        }
+            updateAsset(asset.id);
         _assetDiffSynced = -1;
     }
     for(auto& asset : _assetDiffs)
@@ -196,9 +193,7 @@ void SyncWindow::syncAssets()
         ImGui::SameLine(ImGui::GetWindowContentRegionWidth() - 20);
         if(ImGui::Button(ICON_FA_CLOUD_ARROW_UP))
         {
-            Runtime::getModule<AssetManager>()->fetchAsset(asset.id).then([this](Asset* asset){
-                updateAsset(asset);
-            });
+            updateAsset(asset.id);
             _assetDiffSynced = -1;
         }
         if(ImGui::IsItemHovered())
@@ -209,17 +204,24 @@ void SyncWindow::syncAssets()
         _assetDiffSynced = -1;
 }
 
-void SyncWindow::updateAsset(Asset* asset)
+void SyncWindow::updateAsset(const AssetID& asset)
 {
     SerializedData assetData;
     OutputSerializer s(assetData);
-    asset->serialize(s);
-    AssetID* id = &asset->id;
-    _syncServer->sendRequest("updateAsset", std::move(assetData), [id](auto ec, InputSerializer res){
+
+    if(_editor.cache().hasAsset(asset))
+        _editor.cache().getAsset(asset)->serialize(s);
+    else
+    {
+        Asset* a = _editor.project().getEditorAsset(asset)->buildAsset(asset);
+        a->serialize(s);
+        _editor.cache().cacheAsset(a);
+    }
+    _syncServer->sendRequest("updateAsset", std::move(assetData), [asset](auto ec, InputSerializer res){
         if(ec == net::ResponseCode::success)
-            Runtime::log("Asset " + id->string() + " updated");
+            Runtime::log("Asset " + asset.string() + " updated");
         else
-            Runtime::error("Failed to update asset " + id->string());
+            Runtime::error("Failed to update asset " + asset.string());
     });
 }
 
