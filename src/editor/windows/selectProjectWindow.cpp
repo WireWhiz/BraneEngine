@@ -67,11 +67,11 @@ void SelectProjectWindow::displayContent()
         if(ImGui::Selectable(p.name.c_str(), _selectedProject == i)){
             _selectedProject = i;
         }
-        if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
-            _selectedProject = i;
-            saveRecents();
-            Runtime::getModule<Editor>()->loadProject(_recentProjects[i].path);
-        }
+
+    }
+    if(ImGui::IsMouseDoubleClicked(0) && _selectedProject >= 0){
+        saveRecents();
+        Runtime::getModule<Editor>()->loadProject(_recentProjects[_selectedProject].path);
     }
     ImGui::EndChild();
     ImGui::PopStyleColor();
