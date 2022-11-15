@@ -100,7 +100,7 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
             if(remaining == 0)
                 (*callbackPtr)(true);
         }).onError([a, callbackPtr](const std::string& message){
-            Runtime::error("Unable to fetch dependency of " + a->id.string());
+            Runtime::error("Unable to fetch dependency of " + a->id.string() + ": " + message);
             (*callbackPtr)(false);
         });
     }

@@ -26,7 +26,10 @@ bool GLTFLoader::loadGltfFromFile(const std::filesystem::path& gltfFilename)
 
     std::ifstream binFile = std::ifstream(binFilename, std::ios::binary | std::ios::ate); // File will be closed when this object is destroyed.
     if(!binFile.is_open())
+    {
+        Runtime::error("Could not find bin file for gltf: " + binFilename.string());
         return false;
+    }
 
     auto binLength = binFile.tellg();
     binFile.seekg(0);
