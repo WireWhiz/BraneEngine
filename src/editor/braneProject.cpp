@@ -152,6 +152,29 @@ void BraneProject::initLoaded()
         if(!isOpen)
             delete assembly;
     });
+    _fileWatcher->addFileWatcher(".glb", [this](const std::filesystem::path& path){
+        Runtime::log("loading gltf: " + path.string());
+        std::filesystem::path assetPath = path;
+        assetPath.replace_extension(".assembly");
+
+        bool isOpen = false;
+        EditorAssemblyAsset* assembly;
+        if(_openAssets.count(assetPath.string()))
+        {
+            assembly = (EditorAssemblyAsset*)_openAssets.at(assetPath.string()).get();
+            isOpen = true;
+        }
+        else
+            assembly = new EditorAssemblyAsset(assetPath, *this);
+
+        assembly->linkToGLTF(path);
+
+        registerAssetLocation(assembly);
+        _editor.cache().deleteCachedAsset(AssetID{assembly->json()["id"].asString()});
+
+        if(!isOpen)
+            delete assembly;
+    });
     _fileWatcher->addFileWatcher(".vert", [this](const std::filesystem::path& path){
         Runtime::log("loading fragment shader: " + path.string());
         std::filesystem::path assetPath = path;
