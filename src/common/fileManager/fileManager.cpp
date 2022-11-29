@@ -62,9 +62,15 @@ void FileManager::writeFile(const std::filesystem::path& filename, const Json::V
     std::filesystem::path path{filename};
     std::filesystem::create_directories(path.parent_path());
 
+    Json::StreamWriterBuilder builder;
+    builder["indentation"] = "  ";
+    auto* writer = builder.newStreamWriter();
+
     std::ofstream f(path, std::ios::out | std::ofstream::binary);
-    f << data;
+    writer->write(data, &f);
     f.close();
+
+    delete writer;
 }
 
 AsyncData<Asset*> FileManager::async_readUnknownAsset(const std::filesystem::path& filename)
