@@ -122,9 +122,8 @@ void BraneProject::initLoaded()
     refreshAssets();
 
     Json::Value& assets = _file.data()["assets"];
-    std::string testID = "localhost/" + std::to_string(_assetIdCounter);
-    while(assets.isMember(testID))
-        testID = "localhost/" + std::to_string(++_assetIdCounter);
+    if(!_file.data().isMember("assetIdCounter"))
+        _file.data()["assetIdCounter"] = 0;
 
     _fileWatcher = std::make_unique<FileWatcher>();
     _fileWatcher->loadCache(projectDirectory() / "cache" / "changeCache");
@@ -258,9 +257,11 @@ Editor& BraneProject::editor()
 AssetID BraneProject::newAssetID(const std::filesystem::path& editorAsset, AssetType type)
 {
     Json::Value& assets = _file.data()["assets"];
-    std::string testID = "/" + toHex(_assetIdCounter);
+    auto id = _file["assetIdCounter"].asUInt();
+    std::string testID = "/" + toHex(id);
     while(assets.isMember(testID))
-        testID = "/" + toHex(++_assetIdCounter);
+        testID = "/" + toHex(++id);
+    _file.data()["assetIdCounter"] = id;
 
     assets[testID]["path"] = std::filesystem::relative(editorAsset, projectDirectory() / "assets").string();
     assets[testID]["type"] = type.toString();

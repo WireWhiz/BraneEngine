@@ -26,8 +26,6 @@ class BraneProject
     std::unique_ptr<FileWatcher> _fileWatcher;
     std::unordered_map<std::string, std::shared_ptr<EditorAsset>> _openAssets;
 
-    uint32_t _assetIdCounter = 0;
-
     void loadDefault();
     void initLoaded();
     void refreshAssets();
