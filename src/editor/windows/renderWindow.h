@@ -46,9 +46,10 @@ class RenderWindow : public EditorWindow
     size_t _focusedAssetEntity;
     EntityID _focusedEntity;
 
+    EntityID _cameraEntity;
     EntityID _lightEntity;
 
-    float zoom = -5;
+    float zoom = 5;
     glm::vec3 position = {0,0,0};
     glm::vec2 rotation = {24,-45};
 

@@ -266,3 +266,22 @@ void TransformSystem::run(EntityManager& _em)
         gt->dirty = false;
     });
 }
+
+glm::vec3 Transform::pos() const
+{
+    return value[3];
+}
+
+glm::quat Transform::rot() const
+{
+    return glm::quat_cast(value);
+}
+
+glm::vec3 Transform::scale() const
+{
+    return {
+        glm::length(glm::vec3(value[0])),
+        glm::length(glm::vec3(value[1])),
+        glm::length(glm::vec3(value[2]))
+    };
+}

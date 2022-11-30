@@ -8,6 +8,7 @@
 #include "types/shaderAsset.h"
 #include "types/meshAsset.h"
 #include "graphics/pointLightComponent.h"
+#include "graphics/camera.h"
 
 AssetManager::AssetManager()
 {
@@ -47,6 +48,7 @@ void AssetManager::start()
     addNativeComponent<TRS>(em);
     addNativeComponent<MeshRendererComponent>(em);
     addNativeComponent<PointLightComponent>(em);
+    addNativeComponent<graphics::Camera>(em);
 }
 
 bool AssetManager::hasAsset(const AssetID& id)

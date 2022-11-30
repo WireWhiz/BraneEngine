@@ -14,6 +14,10 @@ class Transform : public NativeComponent<Transform>
 public:
     glm::mat4 value = glm::mat4(1);
     bool dirty = true;
+
+    glm::vec3 pos() const;
+    glm::quat rot() const;
+    glm::vec3 scale() const;
 };
 
 class LocalTransform : public NativeComponent<LocalTransform>

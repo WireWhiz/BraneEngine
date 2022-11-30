@@ -82,8 +82,6 @@ public:
     T* getComponent(EntityID entity) const { return T::fromVirtual(getComponent(entity, T::def()->id));}
     void setComponent(EntityID entity, const VirtualComponent& component);
     void setComponent(EntityID entity, const VirtualComponentView& component);
-    template<class T>
-    void setComponent(EntityID entity, NativeComponent<T>& component) const { setComponent(entity, component.toVirtual());}
     void markComponentChanged(EntityID entity, ComponentID component);
     template<class T>
     void removeComponent(EntityID entity) {removeComponent(entity, T::def()->id);}

@@ -6,15 +6,20 @@
 #define BRANEENGINE_CAMERA_H
 
 #include "glm/mat4x4.hpp"
+#include "glm/gtx/quaternion.hpp"
+
+#include "ecs/nativeComponent.h"
 
 namespace graphics
 {
 
-    class Camera
+    class Camera : public NativeComponent<Camera>
     {
+        REGISTER_MEMBERS_1("camera",fov,"fov");
     public:
-        glm::mat4x4 transform;
-        glm::mat4x4 view;
+        float fov = 45;
+
+        glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
     };
 
 } // graphics

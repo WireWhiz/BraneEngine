@@ -12,6 +12,7 @@
 #include "graphics/material.h"
 #include "graphics/renderTarget.h"
 #include "graphics/pointLightComponent.h"
+#include "graphics/camera.h"
 
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
@@ -90,13 +91,18 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _ui.addEventListener<FocusEntityEvent>("focus entity", this, [this](const FocusEntityEvent* event){
         _focusedEntity = event->id();
     });
+    _cameraEntity = em.createEntity(ComponentSet({Transform::def()->id, graphics::Camera::def()->id}));
+    graphics::Camera camera;
+    camera.fov = 45;
+    em.setComponent(_cameraEntity, camera);
+
     _lightEntity = em.createEntity(ComponentSet({Transform::def()->id, PointLightComponent::def()->id}));
     Transform lightTransform;
     lightTransform.value = glm::translate(glm::mat4(1), {2,2,-2});
-    em.setComponent(_lightEntity, lightTransform.toVirtual());
     PointLightComponent pointLight{};
     pointLight.color = {1,1,1,10};
-    em.setComponent(_lightEntity, pointLight.toVirtual());
+    em.setComponent(_lightEntity, lightTransform);
+    em.setComponent(_lightEntity, pointLight);
 
     ImGuizmo::AllowAxisFlip(false); // Maybe add this to the config at some point
 }
@@ -184,7 +190,8 @@ void RenderWindow::displayContent()
     ImGui::SameLine();
     ImGui::DragFloat("Brightness", &light->color.a, 0.5, 0, 0, "%.3f");
 
-
+    auto* cameraTransform = em->getComponent<Transform>(_cameraEntity);
+    auto* camera = em->getComponent<graphics::Camera>(_cameraEntity);
 
     auto window = ImGui::GetContentRegionAvail();
     _windowSize = {static_cast<uint32_t>(glm::floor(glm::max((float)0,window.x))), static_cast<uint32_t>(glm::floor(glm::max((float)0,window.y)))};
@@ -209,7 +216,7 @@ void RenderWindow::displayContent()
         if(ImGui::IsWindowHovered() || _panning)
         {
             //TODO add in sensitivity settings for all these
-            zoom = glm::min<float>(0,  zoom + ImGui::GetIO().MouseWheel);
+            zoom = glm::max<float>(0,  zoom - ImGui::GetIO().MouseWheel);
 
             bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
             if(!_panning && mouseDown)
@@ -241,7 +248,7 @@ void RenderWindow::displayContent()
                 }
                 else
                 {
-                    float mpp = (std::tan((3.14159f / 180.0f * _renderer->fov) / 2) * -zoom * 2) / _windowSize.height;
+                    float mpp = (std::tan((3.14159f / 180.0f * camera->fov) / 2) * zoom * 2) / _windowSize.height;
                     position += rq * glm::vec3{0.0f, (mousePos.y - _lastMousePos.y) * mpp, 0.0f};
                     position += rq * glm::vec3{-(mousePos.x - _lastMousePos.x) * mpp, 0.0f, 0.0f};
                 }
@@ -257,14 +264,13 @@ void RenderWindow::displayContent()
         auto* em = Runtime::getModule<EntityManager>();
         if(em->entityExists(_focusedEntity) && em->hasComponent<Transform>(_focusedEntity))
         {
-            glm::mat4 vt = _renderer->transformMatrix();
-            glm::mat4 pt = _renderer->perspectiveMatrix();
+            glm::mat4 pt = camera->perspectiveMatrix({_windowSize.width, _windowSize.height});
             //Undo inversion since ImGuizmo won't expect it
             pt[1][1] *= -1;
 
             auto objectTransform = Transforms::getGlobalTransform(_focusedEntity, *em);
 
-            ImGuizmo::Manipulate((float*)&vt, (float*)&pt, _gizmoOperation, (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
+            ImGuizmo::Manipulate((float*)&cameraTransform->value, (float*)&pt, _gizmoOperation, (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
             if(ImGuizmo::IsUsing())
             {
                 _manipulating = true;
@@ -291,8 +297,7 @@ void RenderWindow::displayContent()
         }
 
         glm::quat rot = rotationQuat();
-        _renderer->position = position + rot * glm::vec3(0, 0, zoom);
-        _renderer->rotation = rot;
+        cameraTransform->value = glm::translate(glm::mat4(1), position - rot * glm::vec3{0,0,zoom}) * glm::toMat4(rot);
     }
 }
 

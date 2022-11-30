@@ -11,6 +11,7 @@
 #include "mesh.h"
 #include "assets/types/materialAsset.h"
 #include "pointLightComponent.h"
+#include "camera.h"
 
 namespace graphics{
     SceneRenderer::SceneRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em) : Renderer(swapChain), _vkr(*vkr), _em(*em)
@@ -88,64 +89,77 @@ namespace graphics{
             });
         });
 
-        //Render meshes
-        startRenderPass(cmdBuffer);
-        glm::mat4 cameraMatrix = perspectiveMatrix() * transformMatrix();
-        RenderInfo renderInfo{cameraMatrix, position};
-        _renderDataBuffers[_swapChain.currentFrame()].setData(renderInfo, 0);
-        for(auto& mat :  _vkr.materials())
-        {
-            if(!mat)
-                continue;
-            VkPipeline pipeline = getPipeline(mat.get());
-            if(!pipeline)
-                continue;
-            vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        //Render cameras
+        _em.systems().runUnmanagedSystem("renderCameras", [&](SystemContext* ctx){
+            ComponentFilter filter(ctx);
+            filter.addComponent(Camera::def()->id, ComponentFilterFlags_Const);
+            filter.addComponent(Transform::def()->id, ComponentFilterFlags_Const);
+            _em.getEntities(filter).forEachNative([&](byte** components){
+                auto* camera = Camera::fromVirtual(components[0]);
+                auto* transform = Transform::fromVirtual(components[1]);
+                glm::mat4 cameraMatrix = camera->perspectiveMatrix({_extent.width, _extent.height}) * glm::inverse(transform->value);
+                RenderInfo renderInfo{cameraMatrix, transform->pos()};
 
-            auto& transformBuffer = mat->transformBuffer(_swapChain.currentFrame());
+                startRenderPass(cmdBuffer);
+                _renderDataBuffers[_swapChain.currentFrame()].setData(renderInfo, 0);
+                for(auto& mat :  _vkr.materials())
+                {
+                    if(!mat)
+                        continue;
+                    VkPipeline pipeline = getPipeline(mat.get());
+                    if(!pipeline)
+                        continue;
+                    vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-            size_t transformCount = 0;
-            for(auto& renderObject : meshTransforms[mat->asset()->runtimeID])
-                transformCount += renderObject.second.size();
+                    auto& transformBuffer = mat->transformBuffer(_swapChain.currentFrame());
 
-            if(transformCount * sizeof(glm::mat4) > transformBuffer.size())
-            {
-                size_t newSize = transformBuffer.size() * 2;
-                while(transformCount * sizeof(glm::mat4) > newSize)
-                    newSize *= 2;
-                mat->reallocateTransformBuffer(_swapChain.currentFrame(), newSize);
-            }
+                    size_t transformCount = 0;
+                    for(auto& renderObject : meshTransforms[mat->asset()->runtimeID])
+                        transformCount += renderObject.second.size();
 
-            mat->bindUniformBuffer(_swapChain.currentFrame(), 0, sizeof(RenderInfo), _renderDataBuffers[_swapChain.currentFrame()]);
-            mat->bindPointLightBuffer(_swapChain.currentFrame(), _pointLights[_swapChain.currentFrame()]);
+                    if(transformCount * sizeof(glm::mat4) > transformBuffer.size())
+                    {
+                        size_t newSize = transformBuffer.size() * 2;
+                        while(transformCount * sizeof(glm::mat4) > newSize)
+                            newSize *= 2;
+                        mat->reallocateTransformBuffer(_swapChain.currentFrame(), newSize);
+                    }
 
-            vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->pipelineLayout(), 0, 1, mat->descriptorSet(_swapChain.currentFrame()), 0, nullptr);
+                    mat->bindUniformBuffer(_swapChain.currentFrame(), 0, sizeof(RenderInfo), _renderDataBuffers[_swapChain.currentFrame()]);
+                    mat->bindPointLightBuffer(_swapChain.currentFrame(), _pointLights[_swapChain.currentFrame()]);
 
-            uint32_t transformOffset = 0;
-            for(auto& renderObject : meshTransforms[mat->asset()->runtimeID])
-            {
-                Mesh* mesh = renderObject.first.mesh;
-                size_t primitive = renderObject.first.primitive;
-                VkBuffer b = mesh->buffer();
-                std::vector<VkBuffer> vertexBuffers = {b, b};
-                std::vector<VkDeviceSize> vertexBufferOffsets = {
-                        mesh->attributeBufferOffset(primitive, "POSITION"),
-                        mesh->attributeBufferOffset(primitive, "NORMAL")
-                };
+                    vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->pipelineLayout(), 0, 1, mat->descriptorSet(_swapChain.currentFrame()), 0, nullptr);
+
+                    uint32_t transformOffset = 0;
+                    for(auto& renderObject : meshTransforms[mat->asset()->runtimeID])
+                    {
+                        Mesh* mesh = renderObject.first.mesh;
+                        size_t primitive = renderObject.first.primitive;
+                        VkBuffer b = mesh->buffer();
+                        std::vector<VkBuffer> vertexBuffers = {b, b};
+                        std::vector<VkDeviceSize> vertexBufferOffsets = {
+                                mesh->attributeBufferOffset(primitive, "POSITION"),
+                                mesh->attributeBufferOffset(primitive, "NORMAL")
+                        };
 
 
-                mesh->updateData();
-                transformBuffer.setData(renderObject.second, transformOffset);
-                uint32_t instanceOffset = transformOffset / sizeof(glm::mat4);
-                vkCmdPushConstants(cmdBuffer, mat->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &instanceOffset);
-                transformOffset += renderObject.second.size() * sizeof(glm::mat4);
+                        mesh->updateData();
+                        transformBuffer.setData(renderObject.second, transformOffset);
+                        uint32_t instanceOffset = transformOffset / sizeof(glm::mat4);
+                        vkCmdPushConstants(cmdBuffer, mat->pipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(uint32_t), &instanceOffset);
+                        transformOffset += renderObject.second.size() * sizeof(glm::mat4);
 
-                vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
-                vkCmdBindIndexBuffer(cmdBuffer, mesh->buffer(), mesh->indexBufferOffset(primitive), mesh->indexBufferType(primitive));
-                vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh->indexCount(primitive)), renderObject.second.size(), 0, 0, 0);
-            }
-        }
-        endRenderPass(cmdBuffer);
+                        vkCmdBindVertexBuffers(cmdBuffer, 0, vertexBuffers.size(), vertexBuffers.data(), vertexBufferOffsets.data());
+                        vkCmdBindIndexBuffer(cmdBuffer, mesh->buffer(), mesh->indexBufferOffset(primitive), mesh->indexBufferType(primitive));
+                        vkCmdDrawIndexed(cmdBuffer, static_cast<uint32_t>(mesh->indexCount(primitive)), renderObject.second.size(), 0, 0, 0);
+                    }
+                }
+                endRenderPass(cmdBuffer);
+            });
+        });
+
+
+
     }
 
     void SceneRenderer::rebuild()
@@ -173,18 +187,6 @@ namespace graphics{
             //Runtime::warn("Tried to create pipeline from invalid material configuration: " + (std::string)e.what());
         }
         return VK_NULL_HANDLE;
-    }
-
-    glm::mat4 SceneRenderer::transformMatrix() const
-    {
-        return glm::inverse(glm::translate(glm::mat4(1), position) * glm::toMat4(rotation));
-    }
-
-    glm::mat4 SceneRenderer::perspectiveMatrix() const
-    {
-        glm::mat4 projection = glm::perspectiveLH(glm::radians(fov), static_cast<float>(_extent.width) / static_cast<float>(_extent.height), 0.1f, 100.0f);
-        projection[1][1] *= -1;
-        return projection;
     }
 
     void SceneRenderer::updateLights(size_t frame, std::vector<PointLightData>& lights)
