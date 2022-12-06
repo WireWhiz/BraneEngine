@@ -89,6 +89,14 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
                 output["layout"] = ShaderVariableData::layoutNames.toString(out.layout());
                 atr["outputs"][std::to_string(out.location)] = output;
             }
+
+            for(auto& samp : attributes.samplers)
+            {
+                Json::Value sampler;
+                sampler["name"] = samp.name;
+                sampler["binding"] = samp.location;
+                atr["samplers"].append(sampler);
+            }
             _json.data()["attributes"] = atr;
         }
         else

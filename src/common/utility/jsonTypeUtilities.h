@@ -19,6 +19,13 @@ T fromJson(const Json::Value& value)
             mat[i / 4][i % 4] = value[i].asFloat();
         return mat;
     }
+    else if constexpr(std::is_same<T, glm::vec2>())
+    {
+        glm::vec2 vec;
+        for (Json::ArrayIndex i = 0; i < value.size(); ++i)
+            vec[i] = value[i].asFloat();
+        return vec;
+    }
     else if constexpr(std::is_same<T, glm::vec3>())
     {
         glm::vec3 vec;
@@ -85,6 +92,11 @@ Json::Value toJson(const T& value)
     {
         for (Json::ArrayIndex i = 0; i < 16; ++i)
             json.append(value[i / 4][i % 4]);
+    }
+    else if constexpr(std::is_same<T, glm::vec2>())
+    {
+        for (Json::ArrayIndex i = 0; i < 3; ++i)
+            json.append(value[i]);
     }
     else if constexpr(std::is_same<T, glm::vec3>())
     {

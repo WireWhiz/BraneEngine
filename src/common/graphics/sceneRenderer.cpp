@@ -12,6 +12,7 @@
 #include "assets/types/materialAsset.h"
 #include "pointLightComponent.h"
 #include "camera.h"
+#include "assets/types/meshAsset.h"
 
 namespace graphics{
     SceneRenderer::SceneRenderer(SwapChain& swapChain, VulkanRuntime* vkr, EntityManager* em) : Renderer(swapChain), _vkr(*vkr), _em(*em)
@@ -125,6 +126,7 @@ namespace graphics{
                         mat->reallocateTransformBuffer(_swapChain.currentFrame(), newSize);
                     }
 
+                    mat->bindProperties(_swapChain.currentFrame());
                     mat->bindUniformBuffer(_swapChain.currentFrame(), 0, sizeof(RenderInfo), _renderDataBuffers[_swapChain.currentFrame()]);
                     mat->bindPointLightBuffer(_swapChain.currentFrame(), _pointLights[_swapChain.currentFrame()]);
 
@@ -136,12 +138,23 @@ namespace graphics{
                         Mesh* mesh = renderObject.first.mesh;
                         size_t primitive = renderObject.first.primitive;
                         VkBuffer b = mesh->buffer();
-                        std::vector<VkBuffer> vertexBuffers = {b, b};
-                        std::vector<VkDeviceSize> vertexBufferOffsets = {
-                                mesh->attributeBufferOffset(primitive, "POSITION"),
-                                mesh->attributeBufferOffset(primitive, "NORMAL")
-                        };
-
+                        std::vector<VkBuffer> vertexBuffers;
+                        std::vector<VkDeviceSize> vertexBufferOffsets;
+                        vertexBufferOffsets.reserve(mat->vertexBuffers().size());
+                        bool allAttributesFound = true;
+                        for(auto& input : mat->vertexBuffers())
+                        {
+                            if(mesh->hasAttributeBuffer(0, input))
+                                vertexBufferOffsets.push_back(mesh->attributeBufferOffset(primitive, input));
+                            else
+                            {
+                                //Runtime::error("Was unable to find vertex attribute " + input + " when attempting to render " + mesh->meshAsset()->name);
+                                allAttributesFound = false;
+                            }
+                        }
+                        if(!allAttributesFound)
+                            continue;
+                        vertexBuffers.resize(vertexBufferOffsets.size(), b);
 
                         mesh->updateData();
                         transformBuffer.setData(renderObject.second, transformOffset);

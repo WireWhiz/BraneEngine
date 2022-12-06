@@ -14,8 +14,8 @@ layout(binding = 1) buffer InstanceInfo {
     mat4 objectMatrix[];
 } instances;
 
-layout(location = 0) in vec3 vertPosition;
-layout(location = 1) in vec3 vertNormal;
+layout(location = 0) in vec3 POSITION;
+layout(location = 1) in vec3 NORMAL;
 
 layout(location = 0) out vec3 fragPosition;
 layout(location = 1) out vec3 fragNormal;

@@ -20,6 +20,7 @@ class AsyncData
         std::unique_ptr<T> _data;
         std::function<void(T)> _callback;
         bool _thenMain = false;
+        std::string _errorMessage;
         std::function<void(const std::string&)> _error;
         std::mutex _lock;
     };
@@ -59,7 +60,10 @@ public:
     AsyncData& onError(std::function<void(const std::string& err)> callback)
     {
         std::scoped_lock lock(_instance->_lock);
-        _instance->_error = std::move(callback);
+        if(_instance->_errorMessage.empty())
+            _instance->_error = std::move(callback);
+        else
+            callback(_instance->_errorMessage);
         return *this;
     }
     void setData(const T& data) const
@@ -108,10 +112,15 @@ public:
     {
         std::scoped_lock lock(_instance->_lock);
         T data;
+        if(!_instance->_errorMessage.empty())
+            return;
         if(_instance->_error)
+        {
+            _instance->_errorMessage = error;
             _instance->_error(error);
+        }
         else
-            Runtime::error(error);
+            _instance->_errorMessage = error;
     }
 
     [[nodiscard]] bool callbackSet() const

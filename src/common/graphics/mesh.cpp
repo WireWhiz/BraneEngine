@@ -93,6 +93,11 @@ namespace graphics
         _meshAsset->meshUpdated = false;
     }
 
+    bool Mesh::hasAttributeBuffer(uint32_t primitive, const std::string& name) const
+    {
+        return _meshAsset->hasAttribute(primitive, name);
+    }
+
     VkDeviceSize Mesh::attributeBufferOffset(uint32_t primitive, const std::string& name) const
     {
         return _meshAsset->attributeOffset(primitive, name);
@@ -107,4 +112,6 @@ namespace graphics
     {
         return _meshAsset->indexCount(primitive);
     }
+
+
 }

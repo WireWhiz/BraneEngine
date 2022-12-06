@@ -114,6 +114,8 @@ namespace graphics
 
     void GraphicsBuffer::realocate(VkDeviceSize newSize)
     {
+        if(_size == newSize)
+            return;
         if(_buffer)
             vkDestroyBuffer(device->get(), _buffer, nullptr);
         if(_memory)

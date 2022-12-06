@@ -32,6 +32,7 @@ namespace graphics
         VkBuffer buffer() const;
         VkIndexType indexBufferType(uint32_t primitive) const;
         VkDeviceSize indexBufferOffset(uint32_t primitive) const;
+        bool hasAttributeBuffer(uint32_t, const std::string& name) const;
         VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string& name) const;
 
         uint32_t size() const;

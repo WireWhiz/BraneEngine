@@ -303,11 +303,8 @@ namespace graphics
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
         std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
         if (_validationLayersEnabled)
-        {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
         return extensions;
     }
 
@@ -501,6 +498,7 @@ namespace graphics
 
     Shader* VulkanRuntime::getShader(size_t shaderID)
     {
+        std::scoped_lock l(_assetLock);
         return _shaders[shaderID].get();
     }
 
@@ -510,7 +508,8 @@ namespace graphics
         auto shader = dynamic_cast<ShaderAsset*>(graphicalAsset);
         auto material = dynamic_cast<MaterialAsset*>(graphicalAsset);
         auto mesh = dynamic_cast<MeshAsset*>(graphicalAsset);
-        assert(shader || material || mesh);
+        auto image = dynamic_cast<ImageAsset*>(graphicalAsset);
+        assert(shader || material || mesh || image);
         uint32_t runtimeID;
         if(shader)
         {
@@ -526,6 +525,11 @@ namespace graphics
         {
             runtimeID = _meshes.size();
             _meshes.push(0);
+        }
+        if(image)
+        {
+            runtimeID = _textures.size();
+            _textures.push(0);
         }
         _newAssets.push_back({runtimeID, graphicalAsset});
         return runtimeID;
@@ -547,6 +551,10 @@ namespace graphics
                 assert(_materials[runtimeID] == nullptr);
                 _materials[runtimeID] = std::make_unique<Material>(dynamic_cast<MaterialAsset*>(graphicalAsset), this);
                 break;
+            case AssetType::image:
+                assert(_textures[runtimeID] == nullptr);
+                _textures[runtimeID] = std::make_unique<Texture>(dynamic_cast<ImageAsset*>(graphicalAsset));
+                break;
             default:
                 Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' is not a graphical asset");
                 assert(false);
@@ -557,6 +565,7 @@ namespace graphics
     void VulkanRuntime::reloadShader(ShaderAsset* shader)
     {
         vkDeviceWaitIdle(device());
+        std::scoped_lock l(_assetLock);
         for(auto s = _shaders.begin(); s != _shaders.end(); ++s)
         {
             if((*s)->asset() == shader)
@@ -587,6 +596,7 @@ namespace graphics
     void VulkanRuntime::reloadMaterial(MaterialAsset* material)
     {
         vkDeviceWaitIdle(device());
+        std::scoped_lock l(_assetLock);
         for(auto m = _materials.begin(); m != _materials.end(); ++m)
         {
             if((*m)->asset() == material)
@@ -624,6 +634,13 @@ namespace graphics
                 Runtime::log("Asset type '" + graphicalAsset->type.toString() + "' cannot be reloaded by the graphics runtime");
                 assert(false);
         }
+    }
+
+    Texture* VulkanRuntime::getTexture(size_t runtimeID)
+    {
+        if(runtimeID >= _textures.size())
+            return nullptr;
+        return _textures[runtimeID].get();
     }
 
 

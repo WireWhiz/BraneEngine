@@ -65,4 +65,9 @@ namespace graphics
         return _asset;
     }
 
+    std::vector<ShaderVariableData>& Shader::inputs() const
+    {
+        return _asset->inputs;
+    }
+
 }

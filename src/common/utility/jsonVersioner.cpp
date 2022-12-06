@@ -105,12 +105,7 @@ void JsonChange::redo()
 {
     auto& value = Json::resolvePath(_path, _json->data());
     if(_before.isNull())
-    {
-        assert(!value.isNull());
         _before = value;
-    }
-    assert(!_before.isNull());
-
     value = _after;
 }
 

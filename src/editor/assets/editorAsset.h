@@ -34,6 +34,7 @@ public:
     const std::filesystem::path& file() const;
     bool unsavedChanges() const;
     void save();
+    AssetID id() const;
     VersionedJson& json();
 };
 

@@ -28,6 +28,13 @@ namespace graphics
             _fragmentShader = vkr->getShader(am->getAsset<ShaderAsset>(id)->runtimeID);
         }
 
+        _materialProperties.setFlags(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        if(!asset->serializedProperties.empty())
+        {
+            _materialProperties.realocate(asset->serializedProperties.size());
+            _materialProperties.setData(asset->serializedProperties);
+        }
+
         _transformBuffers.resize(vkr->swapChain()->size());
         for(auto& b : _transformBuffers)
         {
@@ -35,13 +42,51 @@ namespace graphics
             b.realocate(sizeof(glm::mat4) * 2);
         }
 
-        //Vertex Position
-        addBinding(0,sizeof(glm::vec3));
-        //Vertex Normal
-        addBinding(1, sizeof(glm::vec3));
+        uint32_t inputBindingIndex = 0;
+        if(_vertexShader)
+        {
+            for(auto& input : _vertexShader->inputs())
+            {
+                VkFormat inputFormat = VK_FORMAT_R32_SFLOAT;
+                switch(input.type)
+                {
+                    case ShaderVariableData::Float:
+                        switch(input.layout())
+                        {
+                            case ShaderVariableData::scalar:
+                                inputFormat = VK_FORMAT_R32_SFLOAT;
+                                addBinding(inputBindingIndex, sizeof(float));
+                                break;
+                            case ShaderVariableData::vec2:
+                                inputFormat = VK_FORMAT_R32G32_SFLOAT;
+                                addBinding(inputBindingIndex,sizeof(glm::vec2));
+                                break;
+                            case ShaderVariableData::vec3:
+                                inputFormat = VK_FORMAT_R32G32B32_SFLOAT;
+                                addBinding(inputBindingIndex,sizeof(glm::vec3));
+                                break;
+                            case ShaderVariableData::vec4:
+                                inputFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+                                addBinding(inputBindingIndex,sizeof(glm::vec4));
+                                break;
+                            default:
+                                assert(false);
+                        }
+                        break;
+                    default:
+                        assert(false);
+                }
+                addAttribute(inputBindingIndex++, input.location, inputFormat, 0);
+                _vertexBuffers.push_back(input.name);
+            }
+        }
 
-        addAttribute(0, VK_FORMAT_R32G32B32_SFLOAT, 0);
-        addAttribute(1, VK_FORMAT_R32G32B32_SFLOAT, 0);
+        for(auto& textureBinding : asset->textures)
+        {
+            auto* image = am->getAsset<ImageAsset>(textureBinding.second);
+            Texture* texture = vkr->getTexture(image->runtimeID);
+            _textures.push_back({texture, textureBinding.first});
+        }
 
         buildPipelineLayout(vkr->swapChain());
         initialize(vkr->swapChain()->size());
@@ -141,10 +186,20 @@ namespace graphics
         pointLightDataBinding.descriptorCount = 1;
         bindings.push_back(pointLightDataBinding);
 
-        for (size_t i = 1; i <= _textures.size(); i++)
+        if(_asset->serializedProperties.size())
+        {
+            VkDescriptorSetLayoutBinding propertiesDataBinding{};
+            propertiesDataBinding.binding = 3;
+            propertiesDataBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            propertiesDataBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+            propertiesDataBinding.descriptorCount = 1;
+            bindings.push_back(propertiesDataBinding);
+        }
+
+        for (size_t i = 0; i < _textures.size(); i++)
         {
             VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-            samplerLayoutBinding.binding = bindings.size();
+            samplerLayoutBinding.binding = _textures[i].binding;
             samplerLayoutBinding.descriptorCount = 1;
             samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             samplerLayoutBinding.pImmutableSamplers = nullptr;
@@ -221,8 +276,6 @@ namespace graphics
         {
             throw std::runtime_error("failed to create pipeline layout!");
         }
-
-        buildDescriptorSetVars(swapChain);
     }
 
     VkPipeline Material::pipeline(SceneRenderer* renderer) const
@@ -378,11 +431,11 @@ namespace graphics
         _bindings.push_back(bindingDescription);
     }
 
-    void Material::addAttribute(uint32_t binding, VkFormat format, uint32_t offset)
+    void Material::addAttribute(uint32_t binding, uint32_t location, VkFormat format, uint32_t offset)
     {
         VkVertexInputAttributeDescription attributeDescription;
         attributeDescription.binding = binding;
-        attributeDescription.location = _attributes.size();
+        attributeDescription.location = location;
         attributeDescription.format = format;
         attributeDescription.offset = offset;
         _attributes.push_back(attributeDescription);
@@ -411,7 +464,6 @@ namespace graphics
         for (size_t i = 0; i < swapChainSize; i++)
         {
             std::vector<VkWriteDescriptorSet> descriptorWrites;
-            std::vector<VkDescriptorImageInfo> descriptorImages;
 
             VkDescriptorBufferInfo instanceDataInfo{};
             instanceDataInfo.buffer = _transformBuffers[i].get();
@@ -429,22 +481,26 @@ namespace graphics
             descriptorWrites.push_back(instanceDataSet);
 
 
+
+
+            std::vector<VkDescriptorImageInfo> descriptorImages;
+            descriptorImages.reserve(_textures.size()); // This reserve makes it so we don't lose references due to resizes
             for (size_t image = 0; image < _textures.size(); image++)
             {
                 VkDescriptorImageInfo newImageInfo{};
                 newImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                newImageInfo.imageView = _textures[image]->view();
-                newImageInfo.sampler = _textures[image]->sampler();
+                newImageInfo.imageView = _textures[image].texture->view();
+                newImageInfo.sampler = _textures[image].texture->sampler();
                 descriptorImages.push_back(newImageInfo);
 
                 VkWriteDescriptorSet newSet{};
                 newSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
                 newSet.dstSet = _descriptorSets[i];
-                newSet.dstBinding = image + 1;
+                newSet.dstBinding = _textures[image].binding;
                 newSet.dstArrayElement = 0;
                 newSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 newSet.descriptorCount = 1;
-                newSet.pImageInfo = &descriptorImages[descriptorImages.size() - 1];
+                newSet.pImageInfo = &descriptorImages[image];
                 descriptorWrites.push_back(newSet);
             }
 
@@ -535,6 +591,27 @@ namespace graphics
         vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
     }
 
+    void Material::bindProperties(size_t frame)
+    {
+        if(_materialProperties.size() == 0)
+            return;
+        VkDescriptorBufferInfo instanceDataInfo{};
+        instanceDataInfo.buffer = _materialProperties.get();
+        instanceDataInfo.offset = 0;
+        instanceDataInfo.range = _materialProperties.size();
+
+        VkWriteDescriptorSet instanceDataSet{};
+        instanceDataSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        instanceDataSet.dstSet = _descriptorSets[frame];
+        instanceDataSet.dstBinding = 3;
+        instanceDataSet.dstArrayElement = 0;
+        instanceDataSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        instanceDataSet.descriptorCount = 1;
+        instanceDataSet.pBufferInfo = &instanceDataInfo;
+
+        vkUpdateDescriptorSets(device->get(), 1, &instanceDataSet, 0, nullptr);
+    }
+
     Shader* Material::vertexShader() const
     {
         return _vertexShader;
@@ -543,5 +620,22 @@ namespace graphics
     Shader* Material::fragmentShader() const
     {
         return _fragmentShader;
+    }
+
+    const std::vector<std::string>& Material::vertexBuffers() const
+    {
+        return _vertexBuffers;
+    }
+
+    GraphicsBuffer& Material::materialProperties()
+    {
+        return _materialProperties;
+    }
+
+    void Material::setMaterialProperties(const std::vector<uint8_t>& data)
+    {
+        if(data.size() > _materialProperties.size())
+            _materialProperties.realocate(data.size());
+        _materialProperties.setData(data);
     }
 }

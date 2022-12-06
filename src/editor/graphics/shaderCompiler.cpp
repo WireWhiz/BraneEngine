@@ -154,6 +154,13 @@ bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shade
 
         attributes.buffers.push_back(ub);
     }
+    for(auto& sampler : resources.sampled_images)
+    {
+        ShaderVariableData samp{};
+        samp.name = sampler.name;
+        samp.location = compiler.get_decoration(sampler.id, spv::DecorationBinding);
+        attributes.samplers.push_back(samp);
+    }
     for(auto& stageInput : resources.stage_inputs)
     {
         ShaderVariableData var;

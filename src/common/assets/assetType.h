@@ -14,7 +14,7 @@ public:
         component = 1,
         system = 2,
         mesh = 3,
-        texture = 4,
+        image = 4,
         shader = 5,
         material = 6,
         assembly = 7,

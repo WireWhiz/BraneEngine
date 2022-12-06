@@ -29,19 +29,13 @@ private:
     std::vector<Primitive> _primitives;
     std::vector<byte> _data;
 public:
-    struct MeshSerializationContext : SerializationContext
-    {
-        size_t primitive;
-        uint32_t pos;
-        std::vector<bool> vertexSent;
-    };
 
 
     MeshAsset();
 
 #ifdef CLIENT
     uint32_t runtimeID = -1;
-    bool meshUpdated;
+    bool meshUpdated = false;
     void onDependenciesLoaded() override;
 #endif
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);

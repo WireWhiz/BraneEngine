@@ -7,10 +7,10 @@ class MaterialAsset : public Asset
 {
 public:
     MaterialAsset();
-    std::vector<AssetID> textures;
+    std::vector<std::pair<uint16_t, AssetID>> textures;
+    std::vector<uint8_t> serializedProperties;
     AssetID vertexShader;
     AssetID fragmentShader;
-    AssetID inputComponent;
 
     void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;

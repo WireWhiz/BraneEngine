@@ -43,7 +43,7 @@ namespace graphics
             setData(&data, sizeof(T), startIndex);
         }
         template <class T>
-        void setData(const std::vector<T>& data, VkDeviceSize startIndex)
+        void setData(const std::vector<T>& data, VkDeviceSize startIndex = 0)
         {
             assert(startIndex >= 0);
             assert(startIndex + data.size() * sizeof(T) <= _size);

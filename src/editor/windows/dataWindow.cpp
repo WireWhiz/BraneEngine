@@ -17,13 +17,20 @@
 #include "assets/types/materialAsset.h"
 #include "../widgets/assetSelectWidget.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
-#include "ecs/nativeTypes/meshRenderer.h"
 #include "editor/assets/types/editorMaterialAsset.h"
+#include "editor/assets/types/editorShaderAsset.h"
+
+#include "ecs/nativeTypes/meshRenderer.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "ui/guiPopup.h"
 #include "imgui/misc/cpp/imgui_stdlib.h"
+#include "graphics/graphics.h"
 #include "graphics/pointLightComponent.h"
+#include "graphics/texture.h"
+#include "backends/imgui_impl_vulkan.h"
+
 #include "utility/jsonTypeUtilities.h"
+#include "assets/types/imageAsset.h"
 
 DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
@@ -32,6 +39,18 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedAsset = event->asset();
         _focusMode = FocusMode::asset;
         _focusedAssetEntity = -1;
+
+        if(_focusedAsset->type() == AssetType::image)
+        {
+            _imagePreview = VK_NULL_HANDLE;
+            _previewImageAsset = nullptr;
+            Runtime::getModule<AssetManager>()->fetchAsset<ImageAsset>(AssetID(_focusedAsset->json()["id"].asString())).then([this](ImageAsset* image){
+                _previewImageAsset = image;
+                auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(image->runtimeID);
+                if(texture)
+                    _imagePreview = ImGui_ImplVulkan_AddTexture(texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            });
+        }
     });
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
@@ -40,6 +59,11 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         _focusedEntity = event->id();
         _focusMode = FocusMode::entity;
     });
+}
+
+DataWindow::~DataWindow()
+{
+
 }
 
 void DataWindow::displayContent()
@@ -82,6 +106,9 @@ void DataWindow::displayAssetData()
                 break;
             case AssetType::material:
                 displayMaterialData();
+                break;
+            case AssetType::image:
+                displayImageData();
                 break;
             case AssetType::chunk:
                 displayChunkData();
@@ -417,6 +444,8 @@ void DataWindow::displayMaterialData()
     if(AssetSelectWidget::draw(fragmentID, AssetType::shader))
     {
         material->json().changeValue("fragmentShader", fragmentID.string());
+        auto frag = _editor.project().getEditorAsset(fragmentID);
+        material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
         _editor.reloadAsset(_focusedAsset);
     }
 
@@ -424,13 +453,14 @@ void DataWindow::displayMaterialData()
     ImGui::Text("Fragment Shader");
     ImGui::Spacing();
 
+    uint32_t samplerIndex = 0;
     if(!vertexID.null())
     {
         ImGui::Text("Vertex Shader:");
         ImGui::Indent();
         const auto shader = _editor.project().getEditorAsset(vertexID);
         if(shader)
-            displayShaderAttributes(shader.get());
+            displayShaderAttributes(shader.get(), material);
         ImGui::Unindent();
         ImGui::Separator();
     }
@@ -440,15 +470,116 @@ void DataWindow::displayMaterialData()
         ImGui::Indent();
         const auto shader = _editor.project().getEditorAsset(fragmentID);
         if(shader)
-            displayShaderAttributes(shader.get());
+            displayShaderAttributes(shader.get(), material);
         ImGui::Unindent();
         ImGui::Separator();
-    }
+        ImGui::Text("Properties");
+        ImGui::Indent();
+        size_t propIndex = 0;
+        for(auto& prop : material->json()["properties"])
+        {
+            auto& type = prop["type"];
+            if(type == "bool")
+            {
+                bool value = prop["value"].asBool();
+                ImGui::Checkbox(prop["name"].asCString(), &value);
+                if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
+                    material->changeProperty(propIndex, value, ImGui::IsItemDeactivatedAfterEdit());
+            }
+            else if(type == "float")
+            {
+                float value = prop["value"].asFloat();
+                ImGui::DragFloat(prop["name"].asCString(), &value, 0.05f);
+                if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
+                    material->changeProperty(propIndex, value, ImGui::IsItemDeactivatedAfterEdit());
+            }
+            else if(type == "int")
+            {
+                int value = prop["value"].asInt();
+                ImGui::DragInt(prop["name"].asCString(), &value);
+                if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
+                    material->changeProperty(propIndex, value, ImGui::IsItemDeactivatedAfterEdit());
+            }
+            else if(type == "vec2")
+            {
+                auto value = fromJson<glm::vec2>(prop["value"]);
+                ImGui::DragFloat2(prop["name"].asCString(), (float*)&value, 0.05f);
+                if(ImGui::IsItemEdited() || ImGui::IsItemDeactivatedAfterEdit())
+                    material->changeProperty(propIndex, toJson(value), ImGui::IsItemDeactivatedAfterEdit());
+            }
+            else if(type == "vec3")
+            {
+                glm::vec4 value = {fromJson<glm::vec3>(prop["value"]), 1};
+                ImGui::DragFloat3(prop["name"].asCString(), (float*)&value, 0.05f);
+                bool edited = ImGui::IsItemEdited();
+                bool finished = ImGui::IsItemDeactivatedAfterEdit();
+                ImGui::SameLine();
+                if (ImGui::ColorButton("##ColorButton", *(ImVec4*)&value))
+                {
+                    ImGui::OpenPopup("picker");
+                }
+                if (ImGui::BeginPopup("picker"))
+                {
+                    ImGui::ColorPicker3("##picker", (float*)&value);
+                    edited |= ImGui::IsItemEdited();
+                    finished |= ImGui::IsItemDeactivatedAfterEdit();
+                    ImGui::EndPopup();
+                }
+                if(edited || finished)
+                    material->changeProperty(propIndex, toJson(glm::vec3{value.x, value.y, value.z}), finished);
+            }
+            else if(type == "vec4")
+            {
+                glm::vec4 value = fromJson<glm::vec4>(prop["value"]);
+                ImGui::DragFloat4(prop["name"].asCString(), (float*)&value, 0.05f);
+                bool edited = ImGui::IsItemEdited();
+                bool finished = ImGui::IsItemDeactivatedAfterEdit();
+                ImGui::SameLine();
+                if (ImGui::ColorButton("##ColorButton", *(ImVec4*)&value))
+                {
+                    ImGui::OpenPopup("picker");
+                }
+                if (ImGui::BeginPopup("picker"))
+                {
+                    ImGui::ColorPicker4("##picker", (float*)&value);
+                    edited |= ImGui::IsItemEdited();
+                    finished |= ImGui::IsItemDeactivatedAfterEdit();
+                    ImGui::EndPopup();
+                }
+                if(edited || finished)
+                    material->changeProperty(propIndex, toJson(value), finished);
+            }
 
-    ImGui::TextDisabled("Custom property components coming eventually");
+            propIndex++;
+        }
+        ImGui::Unindent();
+        ImGui::Separator();
+        ImGui::Text("Textures");
+        ImGui::Indent();
+        for(auto& sampler : shader->json()["attributes"]["samplers"])
+        {
+            std::string sampName = sampler["name"].asString();
+            AssetID imageID;
+            if(material->json()["textures"].isMember(sampName))
+                imageID = material->json()["textures"][sampName]["id"].asString();
+            ImGui::PushID(sampName.c_str());
+            if(AssetSelectWidget::draw(imageID, AssetType::image))
+            {
+                Json::Value samplerJson;
+                samplerJson["id"] = imageID.string();
+                samplerJson["binding"] = sampler["binding"];
+                material->json().changeValue("textures/" + sampName, samplerJson);
+                _editor.reloadAsset(_focusedAsset);
+            }
+            ImGui::SameLine();
+            ImGui::Text("%s", sampName.c_str());
+            ImGui::PopID();
+        }
+        ImGui::Unindent();
+    }
 }
 
-void DataWindow::displayShaderAttributes(EditorAsset* asset)
+void DataWindow::displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset* material)
 {
     ImGui::Text("inputs:");
     ImGui::Indent();
@@ -473,6 +604,8 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset)
             ImGui::Indent();
             for(auto& member : uniform["members"])
                 ImGui::Text("%s %s", member["layout"].asCString(), member["name"].asCString());
+            if(uniform[""])
+
             ImGui::Unindent();
         }
         ImGui::Unindent();
@@ -493,6 +626,34 @@ void DataWindow::displayShaderAttributes(EditorAsset* asset)
         }
         ImGui::Unindent();
     }
+}
+
+void DataWindow::displayImageData()
+{
+    const char* imageTypes[2] = {"color", "normal map"};
+    auto imageType = _focusedAsset->json()["imageType"].asUInt();
+    if(ImGui::BeginCombo("ImageType", imageTypes[imageType]))
+    {
+        if(ImGui::Selectable("color"))
+            _focusedAsset->json().changeValue("imageType", 0);
+        if(ImGui::Selectable("normal map"))
+            _focusedAsset->json().changeValue("imageType", 1);
+        ImGui::EndCombo();
+    }
+    if(_imagePreview)
+    {
+        float width = ImGui::GetWindowContentRegionWidth();
+        float height = width / (float)_previewImageAsset->size.x * _previewImageAsset->size.y;
+        ImGui::Image(_imagePreview, {width, height});
+    }
+    else if(_previewImageAsset)
+    {
+        ImGui::TextDisabled("Loading image preview...");
+        auto* texture = Runtime::getModule<graphics::VulkanRuntime>()->getTexture(_previewImageAsset->runtimeID);
+        if(texture)
+            _imagePreview = ImGui_ImplVulkan_AddTexture(texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
 }
 
 

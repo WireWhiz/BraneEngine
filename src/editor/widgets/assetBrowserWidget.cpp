@@ -359,6 +359,10 @@ const char* AssetBrowserWidget::getIcon(const std::filesystem::path& path)
         return ICON_FA_FIRE;
     if(ext == ".material")
         return ICON_FA_SPRAY_CAN_SPARKLES;
+    if(ext == ".png")
+        return ICON_FA_FILE_IMAGE;
+    if(ext == ".image")
+        return ICON_FA_IMAGE;
     if(ext == ".chunk")
         return ICON_FA_CUBE;
     if(ext == ".assembly")
@@ -379,9 +383,9 @@ AssetBrowserWidget::FileType AssetBrowserWidget::getFileType(const std::filesyst
     if(file.is_regular_file())
     {
         auto ext = file.path().extension();
-        if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material")
+        if(ext == ".shader" || ext == ".assembly" || ext == ".chunk" || ext == ".material" || ext == ".image")
             return FileType::asset;
-        if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin")
+        if(ext == ".gltf" || ext == ".glb" || ext == ".vert" || ext == ".frag" || ext == ".bin" || ext == ".png")
             return FileType::source;
         return FileType::normal;
     }

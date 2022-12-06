@@ -40,6 +40,8 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
     _renderer->setClearColor({.2,.2,.2,1});
     _swapChain = vkr.swapChain();
     _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event){
+        if(event->asset()->type() != AssetType::assembly)
+            return;
         if(!_assemblies.empty())
         {
             auto* arm = Runtime::getModule<AssemblyReloadManager>();
@@ -50,19 +52,16 @@ RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
         auto* am = Runtime::getModule<AssetManager>();
         _focusedAsset = event->asset();
         _focusedAssetEntity = -1;
-        if(_focusedAsset->json().data().isMember("entities"))
+        if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
         {
-            if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
-            {
-                am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString())).then([this](Assembly* assembly){
-                    _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
-                }).onError([this](const std::string& error){
-                    if(_focusedAsset)
-                        Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
-                    else
-                        Runtime::warn("Could not load asset to render: " + error);
-                });
-            }
+            am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString())).then([this](Assembly* assembly){
+                _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
+            }).onError([this](const std::string& error){
+                if(_focusedAsset)
+                    Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
+                else
+                    Runtime::warn("Could not load asset to render: " + error);
+            });
         }
     });
     _ui.addEventListener<RenderWindowAssetReady>("render window asset ready", this, [this, &em](const RenderWindowAssetReady* event){
@@ -138,9 +137,7 @@ void RenderWindow::update()
         auto& images = _texture->images();
         _imGuiBindings.resize(0);
         for(auto image : images)
-        {
             _imGuiBindings.push_back(ImGui_ImplVulkan_AddTexture(_texture->sampler(), image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL));
-        }
         _renderer->setTarget(_texture);
     }
 }
@@ -267,10 +264,11 @@ void RenderWindow::displayContent()
             glm::mat4 pt = camera->perspectiveMatrix({_windowSize.width, _windowSize.height});
             //Undo inversion since ImGuizmo won't expect it
             pt[1][1] *= -1;
+            auto ct = glm::inverse(cameraTransform->value);
 
             auto objectTransform = Transforms::getGlobalTransform(_focusedEntity, *em);
 
-            ImGuizmo::Manipulate((float*)&cameraTransform->value, (float*)&pt, _gizmoOperation, (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
+            ImGuizmo::Manipulate((float*)&ct, (float*)&pt, _gizmoOperation, (_gizmoOperation != ImGuizmo::OPERATION::SCALE) ? _gizmoMode : ImGuizmo::MODE::LOCAL, (float*)&objectTransform);
             if(ImGuizmo::IsUsing())
             {
                 _manipulating = true;

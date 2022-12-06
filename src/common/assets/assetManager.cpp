@@ -91,12 +91,19 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     AssetData* data = _assets.at(a->id).get();
     data->unloadedDependencies = unloadedDeps.size();
     _assetLock.unlock();
+    AssetID id = a->id;
     for(auto& d : unloadedDeps)
     {
-        fetchAsset(d.first, d.second).then([this, data, callbackPtr](Asset* asset)
+        fetchAsset(d.first, d.second).then([this, id, callbackPtr](Asset* asset)
         {
             Runtime::log("Loaded: " + asset->name);
             _assetLock.lock();
+            if(!_assets.count(id))
+            {
+                _assetLock.unlock();
+                return;
+            }
+            auto* data = _assets.at(id).get();
             auto remaining = --data->unloadedDependencies;
             _assetLock.unlock();
             if(remaining == 0)
@@ -230,7 +237,7 @@ std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
             break;
         case AssetType::mesh:
             break;
-        case AssetType::texture:
+        case AssetType::image:
             break;
         case AssetType::shader:
             break;

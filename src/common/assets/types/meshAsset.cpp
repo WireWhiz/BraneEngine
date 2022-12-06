@@ -4,6 +4,13 @@
 
 #include <utility/serializedData.h>
 
+struct MeshSerializationContext : IncrementalAsset::SerializationContext
+{
+    size_t primitive;
+    uint32_t pos;
+    std::vector<bool> vertexSent;
+};
+
 void MeshAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);
@@ -21,9 +28,6 @@ void MeshAsset::deserialize(InputSerializer& s)
 MeshAsset::MeshAsset()
 {
     type.set(AssetType::Type::mesh);
-#ifdef CLIENT
-    meshUpdated = false;
-#endif
 }
 
 size_t MeshAsset::meshSize() const

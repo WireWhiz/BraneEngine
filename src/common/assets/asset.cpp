@@ -6,6 +6,7 @@
 #include "assembly.h"
 #include "types/shaderAsset.h"
 #include "chunk.h"
+#include "types/imageAsset.h"
 
 void Asset::serialize(OutputSerializer& s) const
 {
@@ -35,8 +36,8 @@ Asset* Asset::assetFromType(AssetType type)
             break;
         case AssetType::mesh:
             return new MeshAsset();
-        case AssetType::texture:
-            assert("Not implemented" && false);
+        case AssetType::image:
+            return new ImageAsset();
             break;
         case AssetType::shader:
             return new ShaderAsset();

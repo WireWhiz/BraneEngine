@@ -7,11 +7,14 @@
 
 #include "editorWindow.h"
 #include <memory>
+#include "vulkan/vulkan.hpp"
 
 #include "ecs/entityID.h"
 
 class EditorAsset;
 class Assembly;
+class ImageAsset;
+class EditorMaterialAsset;
 
 class DataWindow : public EditorWindow
 {
@@ -40,10 +43,15 @@ class DataWindow : public EditorWindow
     void displayMeshData();
     void displayMaterialData();
 
-    void displayShaderAttributes(EditorAsset* asset);
+    ImageAsset* _previewImageAsset = nullptr;
+    VkDescriptorSet _imagePreview = VK_NULL_HANDLE;
+    void displayImageData();
+
+    void displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset* material);
     void displayContent() override;
 public:
     DataWindow(GUI& ui, Editor& editor);
+    ~DataWindow();
 };
 
 

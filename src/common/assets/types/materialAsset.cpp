@@ -6,13 +6,24 @@
 void MaterialAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);
-    s << vertexShader << fragmentShader << textures << inputComponent;
+    s << serializedProperties << vertexShader << fragmentShader;
+    s << (uint16_t)textures.size();
+    for (auto& tb : textures)
+        s << tb.first << tb.second;
 }
 
 void MaterialAsset::deserialize(InputSerializer& s)
 {
     Asset::deserialize(s);
-    s >> vertexShader >> fragmentShader >> textures >> inputComponent;
+    s >> serializedProperties >> vertexShader >> fragmentShader;
+    uint16_t textureCount;
+    s >> textureCount;
+    for (uint16_t i = 0; i < textureCount; ++i)
+    {
+        std::pair<uint16_t, AssetID> textureBinding;
+        s >> textureBinding.first >> textureBinding.second;
+        textures.push_back(textureBinding);
+    }
 }
 
 MaterialAsset::MaterialAsset()
@@ -27,8 +38,8 @@ std::vector<AssetDependency> MaterialAsset::dependencies() const
         deps.push_back({vertexShader, false});
     if(!fragmentShader.null())
         deps.push_back({fragmentShader, false});
-    if(!inputComponent.null())
-        deps.push_back({inputComponent, false});
+    for(auto& t : textures)
+        deps.push_back({t.second, true});
     return deps;
 }
 

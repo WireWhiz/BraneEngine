@@ -209,7 +209,8 @@ void Editor::reloadAsset(std::shared_ptr<EditorAsset> asset)
                 am->fetchDependencies(asset, [asset](bool success){
                     if(success)
                         Runtime::getModule<graphics::VulkanRuntime>()->reloadAsset(asset);
-                    Runtime::warn("Could not reload " + asset->name);
+                    else
+                        Runtime::warn("Could not reload " + asset->name);
                 });
             });
             break;

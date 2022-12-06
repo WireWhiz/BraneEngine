@@ -5,7 +5,8 @@ set(ASSET_SOURCES
         "meshAsset.cpp"
         "componentAsset.cpp"
         "shaderAsset.cpp"
-        scriptAsset.cpp)
+        scriptAsset.cpp
+        imageAsset.cpp)
 
 add_library(client_asset_types STATIC ${ASSET_SOURCES})
 target_link_libraries(client_asset_types PUBLIC include_dir graphics PRIVATE assets_client)

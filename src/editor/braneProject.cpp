@@ -13,6 +13,7 @@
 #include <fstream>
 #include "utility/hex.h"
 #include "assets/assetManager.h"
+#include "assets/types/editorImageAsset.h"
 
 BraneProject::BraneProject(Editor& editor) : _editor(editor), _file(editor.jsonTracker())
 {
@@ -210,8 +211,27 @@ void BraneProject::initLoaded()
         if(!isOpen)
             _openAssets.erase(assetPath.string());
     });
+    _fileWatcher->addFileWatcher(".png", [this](const std::filesystem::path& path){
+        Runtime::log("loading image: " + path.string());
+        std::filesystem::path assetPath = path;
+        assetPath.replace_extension(".image");
+
+        bool isOpen = _openAssets.count(assetPath.string());
+        if(!isOpen)
+            _openAssets.insert({assetPath.string(), std::make_shared<EditorImageAsset>(assetPath, *this)});
+        std::shared_ptr<EditorImageAsset> imageAsset = std::dynamic_pointer_cast<EditorImageAsset>(_openAssets.at(assetPath.string()));
+
+        imageAsset->updateSource(path);
+
+        registerAssetLocation(imageAsset.get());
+        _editor.reloadAsset(imageAsset);
+
+        if(!isOpen)
+            _openAssets.erase(assetPath.string());
+    });
     _fileWatcher->scanForChanges(true);
     _loaded = true;
+    save();
 }
 
 bool BraneProject::unsavedChanges() const
@@ -298,7 +318,7 @@ void BraneProject::refreshAssets()
             assets.removeMember(id);
     }
 
-    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly"};
+    std::unordered_set<std::string> assetTypes = {".shader", ".material", ".assembly", ".image"};
     for(auto& file : std::filesystem::recursive_directory_iterator{projectDirectory() / "assets"})
     {
         if(!file.is_regular_file())

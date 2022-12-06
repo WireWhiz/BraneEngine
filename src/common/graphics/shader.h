@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fstream>
 #include <memory>
+#include "assets/types/shaderAsset.h"
 
-class ShaderAsset;
 namespace graphics
 {
     using ShaderID = uint64_t;
@@ -23,6 +23,8 @@ namespace graphics
         VkShaderModule get();
         VkShaderStageFlagBits type();
         VkPipelineShaderStageCreateInfo stageInfo();
+
+        std::vector<ShaderVariableData>& inputs() const;
     };
 
 }

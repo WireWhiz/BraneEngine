@@ -31,6 +31,7 @@ namespace graphics
     class VulkanRuntime : public Module
     {
         Window* _window;
+        VkInstance _instance;
         GraphicsDevice* _device;
         SwapChain* _swapChain;
         std::vector<VkCommandBuffer> _drawBuffers;
@@ -45,7 +46,6 @@ namespace graphics
 
         std::vector<std::unique_ptr<Renderer>> _renderers;
 
-        VkInstance _instance;
 
         std::vector<VkSemaphore> _renderFinishedSemaphores;
 
@@ -111,6 +111,7 @@ namespace graphics
 
         const staticIndexVector<std::unique_ptr<Material>>& materials();
         Shader* getShader(size_t runtimeID);
+        Texture* getTexture(size_t runtimeID);
 
         template<typename T, typename... Args>
         T* createRenderer(Args... args)

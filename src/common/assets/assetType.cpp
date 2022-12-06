@@ -8,7 +8,7 @@ const EnumNameMap<AssetType::Type> names(
          {AssetType::system,    "system"   },
          {AssetType::mesh,      "mesh"     },
          {AssetType::material,  "material" },
-         {AssetType::texture,   "texture"  },
+         {AssetType::image,     "image"  },
          {AssetType::player,    "player"   },
          {AssetType::shader,    "shader"   },
          {AssetType::assembly,  "assembly" },
