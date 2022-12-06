@@ -51,6 +51,13 @@ DataWindow::DataWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
                     _imagePreview = ImGui_ImplVulkan_AddTexture(texture->sampler(), texture->view(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
             });
         }
+        else if(_focusedAsset->type() == AssetType::material)
+        {
+            auto* material = static_cast<EditorMaterialAsset*>(_focusedAsset.get());
+            auto frag = _editor.project().getEditorAsset(AssetID(material->json()["fragmentShader"].asString()));
+            if(frag)
+                material->initializeProperties(static_cast<EditorShaderAsset*>(frag.get()));
+        }
     });
     ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         _focusedAssetEntity = event->entity();
