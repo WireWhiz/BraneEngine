@@ -15,8 +15,8 @@ namespace graphics
 
     class Camera : public NativeComponent<Camera>
     {
-        REGISTER_MEMBERS_1("camera",fov,"fov");
     public:
+        REGISTER_MEMBERS_1("camera",fov,"fov");
         float fov = 45;
 
         glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
