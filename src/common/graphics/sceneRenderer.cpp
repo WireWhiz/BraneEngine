@@ -148,7 +148,7 @@ namespace graphics{
                                 vertexBufferOffsets.push_back(mesh->attributeBufferOffset(primitive, input));
                             else
                             {
-                                //Runtime::error("Was unable to find vertex attribute " + input + " when attempting to render " + mesh->meshAsset()->name);
+                                Runtime::error("Was unable to find vertex attribute " + input + " when attempting to render " + mesh->meshAsset()->name);
                                 allAttributesFound = false;
                             }
                         }
