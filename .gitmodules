@@ -33,3 +33,6 @@
 [submodule "libraries/external/repos/spirv-cross"]
 	path = libraries/external/repos/spirv-cross
 	url = https://github.com/KhronosGroup/SPIRV-Cross/
+[submodule "libraries/internal/BraneScript"]
+	path = libraries/internal/BraneScript
+	url = https://github.com/WireWhiz/BraneScript
