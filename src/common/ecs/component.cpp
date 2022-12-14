@@ -2,13 +2,37 @@
 #include <algorithm>
 #include <cstring>
 
-#include "common/assets/types/componentAsset.h"
+#include "structDefinition.h"
 #include "utility/serializedData.h"
 
-ComponentDescription::ComponentDescription(const ComponentAsset* asset) : ComponentDescription(asset->members())
+ComponentDescription::ComponentDescription(const BraneScript::StructDef* type)
 {
-    name = asset->name;
-    this->asset = asset;
+    name = type->name();
+    _size = type->size();
+    for(auto& mem : type->memberVars())
+    {
+        switch(mem.type->type())
+        {
+            case BraneScript::Bool:
+                _members.push_back({VirtualType::virtualBool, mem.offset});
+                break;
+            case BraneScript::Int32:
+                _members.push_back({VirtualType::virtualInt, mem.offset});
+                break;
+            case BraneScript::Int64:
+                _members.push_back({VirtualType::virtualInt64, mem.offset});
+                break;
+            case BraneScript::Float32:
+                _members.push_back({VirtualType::virtualFloat, mem.offset});
+                break;
+            case BraneScript::Float64:
+                assert(false);
+                break;
+            case BraneScript::Struct:
+                assert(false);
+                break;
+        }
+    }
 }
 
 ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members) : ComponentDescription(members,generateOffsets(members))

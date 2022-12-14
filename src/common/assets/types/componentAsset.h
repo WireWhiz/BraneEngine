@@ -5,7 +5,7 @@
 #include "../asset.h"
 
 using ComponentID = uint32_t;
-class ComponentAsset : public Asset
+class ComponentAsse : public Asset
 {
 private:
     std::vector<VirtualType::Type> _members;
@@ -13,10 +13,10 @@ private:
 public:
     ComponentID componentID = -1;
 
-    ComponentAsset();
-    ComponentAsset(const ComponentAsset&) = delete;
-    ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id);
-    ~ComponentAsset() override;
+    ComponentAsse();
+    ComponentAsse(const ComponentAsse&) = delete;
+    ComponentAsse(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id);
+    ~ComponentAsse() override;
     const std::vector<VirtualType::Type>& members() const;
     const std::vector<std::string>& memberNames() const;
     std::vector<VirtualType::Type>& members();

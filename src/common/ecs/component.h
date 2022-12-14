@@ -19,7 +19,10 @@
 #define WORD_SIZE 4
 #endif
 
-class ComponentAsset;
+namespace BraneScript
+{
+    class StructDef;
+}
 using ComponentID = uint32_t;
 
 class ComponentDescription
@@ -37,9 +40,9 @@ class ComponentDescription
 public:
     ComponentID id;
     std::string name;
-    const ComponentAsset* asset = nullptr;
+    const BraneScript::StructDef* type = nullptr;
 
-    ComponentDescription(const ComponentAsset* asset);
+    ComponentDescription(const BraneScript::StructDef* type);
     ComponentDescription(const std::vector<VirtualType::Type>& members);
     ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets);
     ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size);

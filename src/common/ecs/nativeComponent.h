@@ -7,7 +7,8 @@
 
 #include "component.h"
 #include "structMembers.h"
-
+#include "structDefinition.h"
+#include "nativeTypes.h"
 
 template <class T>
 class NativeComponent
@@ -27,6 +28,42 @@ public:
         _description->name =  T::getComponentName();
         return _description;
     }
+
+    static BraneScript::StructDef* newTypeDef()
+    {
+        auto def = new BraneScript::StructDef(T::getComponentName());
+        auto names = T::getMemberNames();
+        auto offsets = T::getMemberOffsets();
+        auto types = T::getMemberTypes();
+        for(size_t i = 0; i < names.size(); ++i)
+        {
+            BraneScript::TypeDef* type = nullptr;
+            switch(types[i])
+            {
+                {
+                    case VirtualType::virtualBool:
+                        type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Bool);
+                    break;
+                    case VirtualType::virtualInt:
+                        type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Int32);
+                    break;
+                    case VirtualType::virtualInt64:
+                        type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Int64);
+                    break;
+                    case VirtualType::virtualFloat:
+                        type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Float32);
+                    break;
+                    default:
+                        assert(false);
+                        break;
+                }
+            }
+            if(type)
+                def->addMemberVar(names[i], type, offsets[i]);
+        }
+        return def;
+    }
+
     NativeComponent() = default;
     VirtualComponentView toVirtual() const
     {

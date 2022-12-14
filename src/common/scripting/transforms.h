@@ -22,7 +22,7 @@ public:
 
 class LocalTransform : public NativeComponent<LocalTransform>
 {
-    REGISTER_MEMBERS_2("Local Transform", value, "value", parent, "parent id");
+    REGISTER_MEMBERS_2("LocalTransform", value, "value", parent, "parentID");
 public:
     glm::mat4 value = glm::mat4(1);
     EntityID parent;
