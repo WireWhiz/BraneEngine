@@ -23,8 +23,8 @@ int main()
     tl.addBlock("draw");
     Runtime::addModule<FileManager>();
     Runtime::addModule<NetworkManager>();
-    Runtime::addModule<AssetManager>();
     Runtime::addModule<EntityManager>();
+    Runtime::addModule<AssetManager>();
     Runtime::addModule<ChunkLoader>();
     Runtime::addModule<graphics::VulkanRuntime>();
     Runtime::addModule<Transforms>();

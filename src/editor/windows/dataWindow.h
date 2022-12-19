@@ -24,7 +24,7 @@ class DataWindow : public EditorWindow
     };
     FocusMode _focusMode;
     std::shared_ptr<EditorAsset> _focusedAsset;
-    size_t _focusedAssetEntity = 0;
+    uint32_t _focusedAssetEntity = 0;
 
     struct DraggedComponent
     {

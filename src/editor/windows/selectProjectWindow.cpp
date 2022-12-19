@@ -56,7 +56,7 @@ void SelectProjectWindow::displayContent()
     ImGui::Separator();
 
     ImGui::PushFont(_ui.fonts()[1]);
-    ImGui::Text("Recent Projects", ImGuiTreeNodeFlags_DefaultOpen);
+    ImGui::Text("Recent Projects");
     ImGui::PopFont();
 
     ImGui::PushStyleColor(ImGuiCol_ChildBg, {0.1f, 0.1f, 0.1f, 1.0f});

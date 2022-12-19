@@ -11,7 +11,7 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  linux-build:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
@@ -19,6 +19,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: sudo apt-get install libopengl-dev
     
     - name: Download Submodules
       run: git submodule update --init
@@ -28,7 +31,7 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_TESTS=ON
 
-    - name: Build
+    - name: Build Tests
       # Build your program with the given configuration
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target tests
 
@@ -37,4 +40,13 @@ jobs:
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{env.BUILD_TYPE}} --test-dir src/tests
-      
+
+      # Make sure all the main targets build
+    - name: Build Editor
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target BraneEditor
+
+    - name: Build Client
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target BraneSurfer
+
+    - name: Build Asset Server
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target AssetServer

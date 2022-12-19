@@ -309,7 +309,7 @@ void DataWindow::displayEntityAssetData()
         _focusedAsset->json().changeValue("entities/" + std::to_string(_focusedAssetEntity) + "/name", entityName);
 
     ImGui::PopFont();
-    ImGui::TextDisabled("Index: %llu", _focusedAssetEntity);
+    ImGui::TextDisabled("Index: %u", _focusedAssetEntity);
     ImGui::Separator();
     int deleteComponent = -1;
     for (Json::ArrayIndex i = 0; i < entityAsset["components"].size(); ++i)

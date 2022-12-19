@@ -4,6 +4,7 @@
 #include "networking/networking.h"
 #include "graphics/graphics.h"
 #include "graphics/sceneRenderer.h"
+#include "graphics/camera.h"
 #include "assets/assembly.h"
 #include "systems/transforms.h"
 #include "ecs/nativeTypes/meshRenderer.h"
@@ -83,9 +84,16 @@ void Client::start()
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
     _renderer = vkr->createRenderer<graphics::SceneRenderer>(vkr, em);
     _renderer->setClearColor({.2,.2,.2,1});
-    _renderer->position = {4,2,-4};
-    _renderer->rotation = glm::quatLookAt(glm::normalize(glm::vec3{2,1,-2}), {0,1,0});
     _renderer->setTargetAsSwapChain(true);
+
+    _mainCamera = em->createEntity(ComponentSet{{Transform::def()->id, TRS::def()->id, graphics::Camera::def()->id}});
+    TRS cameraTransform;
+    cameraTransform.translation = {4,2,-4};
+    cameraTransform.rotation = glm::quatLookAt(glm::normalize(glm::vec3{2,1,-2}), {0,1,0});
+    em->setComponent(_mainCamera, cameraTransform);
+    graphics::Camera camera;
+    camera.fov = 45;
+    em->setComponent(_mainCamera, camera);
 
     nm->async_connectToAssetServer("localhost", 2001, [nm](bool success){
         if(success)

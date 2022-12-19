@@ -26,8 +26,8 @@ int main(int argc, char** argv)
     tl.addBlock("draw");
     Runtime::addModule<NetworkManager>();
     Runtime::addModule<FileManager>();
-    Runtime::addModule<AssetManager>();
     Runtime::addModule<EntityManager>();
+    Runtime::addModule<AssetManager>();
     Runtime::addModule<Transforms>();
     Runtime::addModule<graphics::VulkanRuntime>();
     Runtime::addModule<GUI>();

@@ -372,10 +372,6 @@ namespace graphics
         return VK_FALSE;
     }
 
-    
-
-    
-
     VulkanRuntime::VulkanRuntime()
     {
         _window = new Window();

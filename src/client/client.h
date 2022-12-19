@@ -18,6 +18,7 @@ class Client : public Module
 {
     robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
     graphics::SceneRenderer* _renderer;
+    EntityID _mainCamera;
 public:
     Client();
     void start() override;

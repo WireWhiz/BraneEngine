@@ -12,6 +12,17 @@
 
 AssetManager::AssetManager()
 {
+    EntityManager* em = Runtime::getModule<EntityManager>();
+    assert(em);
+    addNativeComponent<EntityIDComponent>(*em);
+    addNativeComponent<EntityName>(*em);
+    addNativeComponent<Transform>(*em);
+    addNativeComponent<LocalTransform>(*em);
+    addNativeComponent<Children>(*em);
+    addNativeComponent<TRS>(*em);
+    addNativeComponent<MeshRendererComponent>(*em);
+    addNativeComponent<PointLightComponent>(*em);
+    addNativeComponent<graphics::Camera>(*em);
 }
 
 const char* AssetManager::name()
@@ -39,16 +50,7 @@ void AssetManager::addNativeComponent(EntityManager& em)
 
 void AssetManager::start()
 {
-    EntityManager& em = *Runtime::getModule<EntityManager>();
-    addNativeComponent<EntityIDComponent>(em);
-    addNativeComponent<EntityName>(em);
-    addNativeComponent<Transform>(em);
-    addNativeComponent<LocalTransform>(em);
-    addNativeComponent<Children>(em);
-    addNativeComponent<TRS>(em);
-    addNativeComponent<MeshRendererComponent>(em);
-    addNativeComponent<PointLightComponent>(em);
-    addNativeComponent<graphics::Camera>(em);
+
 }
 
 bool AssetManager::hasAsset(const AssetID& id)
