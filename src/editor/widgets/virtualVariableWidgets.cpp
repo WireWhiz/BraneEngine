@@ -6,9 +6,10 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "common/ecs/entity.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "utility/stackAllocate.h"
 #include "../assets/jsonVirtualType.h"
+#include "scripting/scripting.h"
 
 UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponentView component)
 {
@@ -18,11 +19,14 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
             || component.description() == LocalTransform::def()
             || component.description() == Children::def();
     ImGui::BeginDisabled(viewOnly);
+    auto typeDef = dynamic_cast<const BraneScript::StructDef*>(Runtime::getModule<ScriptManager>()->linker().getType(component.description()->name));
+    assert(typeDef);
     for(size_t i = 0; i < component.description()->members().size(); ++i)
     {
         auto& member = component.description()->members()[i];
-        const std::string& name = component.description()->asset->memberNames()[i];
-        if(!name.empty()){
+        const std::string& name = typeDef->memberVars()[i].name;
+        if(!name.empty())
+        {
             changed = (UiChangeType)std::max((uint8_t)changed, (uint8_t)displayVirtualVariable(name.c_str(), member.type, component.data() + member.offset));
             ImGui::Spacing();
         }

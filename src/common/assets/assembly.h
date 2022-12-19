@@ -8,6 +8,7 @@
 #include "asset.h"
 #include <json/json.h>
 #include "ecs/component.h"
+#include "robin_hood.h"
 
 class EntityManager;
 class ComponentManager;
@@ -23,14 +24,14 @@ public:
     {
         std::vector<VirtualComponent> components;
         std::vector<ComponentID> runtimeComponentIDs();
-        void serialize(OutputSerializer& message, const Assembly& assembly) const;
+        void serialize(OutputSerializer& message, robin_hood::unordered_map<std::string, uint32_t>& componentIndices) const;
         void deserialize(InputSerializer& message, Assembly& assembly, ComponentManager& cm, AssetManager& am);
         bool hasComponent(const ComponentDescription* def) const;
         VirtualComponent* getComponent(const ComponentDescription* def);
     };
 
     Assembly();
-    std::vector<AssetID> components;
+    std::vector<std::string> components;
     std::vector<AssetID> scripts; // Any systems in dependencies will be automatically loaded
     std::vector<AssetID> meshes; // We need to store these in a list, so we can tell witch asset entities are referring to
     std::vector<AssetID> materials;
@@ -40,7 +41,6 @@ public:
     void deserialize(InputSerializer& message) override;
 
     std::vector<AssetDependency> dependencies() const override;
-    void onDependenciesLoaded() override;
     EntityID inject(EntityManager& em, std::vector<EntityID>* entityMap = nullptr);
 };
 

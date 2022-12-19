@@ -3,7 +3,7 @@
 //
 
 #include "assemblyBuilder.h"
-#include "common/systems/transforms.h"
+#include "scripting/transforms.h"
 #include "common/ecs/nativeTypes/meshRenderer.h"
 #include "assets/types/materialAsset.h"
 
@@ -133,13 +133,13 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
         pIndex++;
     }
 
-    //Register component ids
-    assembly->components.push_back(EntityName::def()->asset->id);
-    assembly->components.push_back(Transform::def()->asset->id);
-    assembly->components.push_back(LocalTransform::def()->asset->id);
-    assembly->components.push_back(Children::def()->asset->id);
-    assembly->components.push_back(TRS::def()->asset->id);
-    assembly->components.push_back(MeshRendererComponent::def()->asset->id);
+    //Register component names
+    assembly->components.push_back(EntityName::def()->name);
+    assembly->components.push_back(Transform::def()->name);
+    assembly->components.push_back(LocalTransform::def()->name);
+    assembly->components.push_back(Children::def()->name);
+    assembly->components.push_back(TRS::def()->name);
+    assembly->components.push_back(MeshRendererComponent::def()->name);
 
     assembly->materials.push_back(defaultMaterial->id);
 

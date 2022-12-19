@@ -11,15 +11,14 @@ public:
     enum Type
     {
         none = 0,
-        component = 1,
-        system = 2,
-        mesh = 3,
-        image = 4,
-        shader = 5,
-        material = 6,
-        assembly = 7,
-        chunk = 8,
-        player = 9
+        script = 1,
+        mesh = 2,
+        image = 3,
+        shader = 4,
+        material = 5,
+        assembly = 6,
+        chunk = 7,
+        player = 8
     };
 
 private:
@@ -39,6 +38,7 @@ public:
     [[nodiscard]] Type type() const;
     [[nodiscard]] const std::string& toString() const;
 
+    operator Type() const;
     bool operator==(Type t) const;
     bool operator!=(Type t) const;
     bool operator==(AssetType t) const;

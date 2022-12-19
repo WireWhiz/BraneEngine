@@ -20,14 +20,17 @@ class ChunkLoader : public Module
     {
         WorldChunk* chunk;
         uint32_t lod = NullLOD;
+        robin_hood::unordered_set<AssetID> _dependencies;
     };
     std::shared_mutex _chunkLock;
-    robin_hood::unordered_map<HashedAssetID, ChunkContext> _chunks;
+    robin_hood::unordered_node_map<AssetID, ChunkContext> _chunks;
 
     staticIndexVector<ChunkLODCallback> _onLODChange;
+    void initAssets(ChunkContext& chunk);
 public:
     void loadChunk(WorldChunk* chunk);
     void unloadChunk(const AssetID& chunk);
+    uint32_t currentLOD(const AssetID& chunk) const;
     ChunkCallbackID addOnLODChangeCallback(ChunkLODCallback callback);
     void removeOnLODChangeCallback(ChunkCallbackID id);
     void setChunkLOD(const AssetID& chunk, uint32_t lod);

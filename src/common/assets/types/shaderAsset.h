@@ -76,9 +76,4 @@ public:
     void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;
     VkShaderStageFlagBits vulkanShaderType() const;
-
-#ifdef CLIENT
-    uint32_t runtimeID = -1;
-    void onDependenciesLoaded() override;
-#endif
 };

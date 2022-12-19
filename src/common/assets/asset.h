@@ -23,6 +23,7 @@ public:
     std::string name;
     AssetID id;
     AssetType type;
+    uint32_t runtimeID = -1;
 
     Asset() = default;
     Asset(Asset&&) = default;
@@ -32,7 +33,6 @@ public:
     virtual void serialize(OutputSerializer& s) const;
     virtual void deserialize(InputSerializer& s);
     virtual std::vector<AssetDependency> dependencies() const;
-    virtual void onDependenciesLoaded();
 };
 
 class IncrementalAsset : public Asset

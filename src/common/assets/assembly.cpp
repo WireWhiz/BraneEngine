@@ -5,35 +5,29 @@
 #include "assembly.h"
 #include "assetManager.h"
 #include "common/ecs/componentManager.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include <ecs/nativeTypes/meshRenderer.h>
 #include "types/meshAsset.h"
 #include "types/materialAsset.h"
 #include "utility/serializedData.h"
 
 
-void Assembly::EntityAsset::serialize(OutputSerializer& message, const Assembly& assembly) const
+void Assembly::EntityAsset::serialize(OutputSerializer& message, robin_hood::unordered_map<std::string, uint32_t>& componentIndices) const
 {
     uint32_t size = static_cast<uint32_t>(components.size());
     message << size;
-    for (size_t i = 0; i < size; ++i)
+    for(auto& comp : components)
     {
-        uint32_t componentIDIndex = 0;
-        for(auto& id : assembly.components)
+        auto* desc = comp.description();
+        if(!componentIndices.contains(desc->name))
         {
-            if(id == components[i].description()->asset->id)
-                break;
-            ++componentIDIndex;
-        }
-        if(componentIDIndex >= assembly.components.size())
-        {
-            Runtime::error("Component: " + components[i].description()->asset->id.string() + " not found in asset components");
+            Runtime::error("Component: " + desc->name + " not found in asset component list");
             throw std::runtime_error("Component assetID not listed in asset components");
         }
 
-        uint32_t ssize = components[i].description()->serializationSize();
-        message << componentIDIndex << ssize;
-        components[i].description()->serialize(message, components[i].data());
+        uint32_t ssize = desc->serializationSize();
+        message << componentIndices.at(desc->name) << ssize;
+        desc->serialize(message, comp.data());
     }
 }
 
@@ -48,11 +42,13 @@ void Assembly::EntityAsset::deserialize(InputSerializer& message, Assembly& asse
         message >> componentIDIndex >> componentSize;
         if(componentIDIndex >= assembly.components.size())
             throw std::runtime_error("Component ID index invalid");
-        const ComponentDescription* description = cm.getComponentDef(am.getAsset<ComponentAsset>(assembly.components[componentIDIndex])->componentID);
+        const ComponentDescription* description = cm.getComponentDef(assembly.components[componentIDIndex]);
+        if(!description)
+            throw std::runtime_error("Could not locate component " + assembly.components[componentIDIndex]);
         if(componentSize != description->serializationSize())
         {
             Runtime::error("Component size " + std::to_string(componentSize) + " does not match size of component "
-            + description->name + " which is " + std::to_string(description->serializationSize()) + ".\n attempting to continue deserialization");
+            + description->name + " which is " + std::to_string(description->serializationSize()) + ".\n attempting to skip and continue deserialization");
             message.setPos(message.getPos() + componentSize);
             continue;
         }
@@ -95,9 +91,15 @@ void Assembly::serialize(OutputSerializer& message) const
     Asset::serialize(message);
     message << components << scripts << meshes << materials << rootIndex;
     message << (uint32_t)entities.size();
+
+    robin_hood::unordered_map<std::string, uint32_t> componentIndices;
+    componentIndices.reserve(components.size());
+    for (uint32_t i = 0; i < components.size(); ++i)
+        componentIndices.insert({components[i], i});
+
     for (uint32_t i = 0; i < entities.size(); ++i)
     {
-        entities[i].serialize(message, *this);
+        entities[i].serialize(message, componentIndices);
     }
 }
 
@@ -184,16 +186,9 @@ EntityID Assembly::inject(EntityManager& em, std::vector<EntityID>* entityMapRef
     return rootID;
 }
 
-void Assembly::onDependenciesLoaded()
-{
-
-}
-
 std::vector<AssetDependency> Assembly::dependencies() const
 {
     std::vector<AssetDependency> deps;
-    for(auto& id : components)
-        deps.push_back({id, false});
     for(auto& id : scripts)
         deps.push_back({id, false});
     for(auto& id : materials)

@@ -13,7 +13,8 @@
 #include "assets/types/meshAsset.h"
 #include <assets/assetID.h>
 #include "common/ecs/entity.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
+#include "scripting/scripting.h"
 #include "assets/types/materialAsset.h"
 #include "../widgets/assetSelectWidget.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
@@ -275,26 +276,41 @@ void DataWindow::displayMeshData()
 
 class AddAssetComponentPopup : public GUIPopup
 {
-    AssetSearchWidget _search;
+    BraneProject& _project;
+    std::string _searchText;
+    std::vector<std::string> _searchResults;
+    bool searchOutOfDate = true;
     std::shared_ptr<EditorAssemblyAsset> _focusedAsset;
     Json::ArrayIndex _focusedEntity;
     void drawBody() override
     {
-        if(_search.draw())
+        if(searchOutOfDate)
+            _searchResults = _project.searchComponents(_searchText);
+
+        if(ImGui::InputText("search", &_searchText))
+            searchOutOfDate = true;
+        ImGui::Separator();
+        int id = 0;
+        for(auto& r : _searchResults)
         {
-            auto asset = _focusedAsset;
-            auto entity = _focusedEntity;
-            Runtime::getModule<AssetManager>()->fetchAsset<ComponentAsset>(_search.currentSelected()).then([this, asset, entity](ComponentAsset* component){
-                auto* compDef = Runtime::getModule<EntityManager>()->components().getComponentDef(component);
-                VirtualComponent newComp(compDef);
-                _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
-            });
-            ImGui::CloseCurrentPopup();
+            ImGui::PushID(id++);
+            if(ImGui::Selectable(r.c_str()))
+                selectComponent(r);
+            ImGui::PopID();
         }
+    }
+    void selectComponent(const std::string& component)
+    {
+        auto& cm = Runtime::getModule<EntityManager>()->components();
+        auto* def = cm.getComponentDef(component);
+        assert(def);
+        VirtualComponent newComp(def);
+        _focusedAsset->addEntityComponent(_focusedEntity, EditorAssemblyAsset::componentToJson(newComp));
+        ImGui::CloseCurrentPopup();
     }
 public:
     AddAssetComponentPopup(std::shared_ptr<EditorAssemblyAsset> focusedAsset, Json::ArrayIndex focusedEntity) :
-        _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), _search(AssetType::component), GUIPopup("add component"){};
+        _focusedAsset(std::move(focusedAsset)), _focusedEntity(focusedEntity), GUIPopup("add component"), _project(Runtime::getModule<Editor>()->project()){};
 
 };
 

@@ -9,6 +9,8 @@
 #include "structMembers.h"
 #include "structDefinition.h"
 #include "nativeTypes.h"
+#include "linker.h"
+#include "assets/assetID.h"
 
 template <class T>
 class NativeComponent
@@ -29,7 +31,7 @@ public:
         return _description;
     }
 
-    static BraneScript::StructDef* newTypeDef()
+    static BraneScript::StructDef* newTypeDef(BraneScript::Linker* linker)
     {
         auto def = new BraneScript::StructDef(T::getComponentName());
         auto names = T::getMemberNames();
@@ -43,16 +45,25 @@ public:
                 {
                     case VirtualType::virtualBool:
                         type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Bool);
-                    break;
+                        break;
                     case VirtualType::virtualInt:
                         type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Int32);
-                    break;
+                        break;
                     case VirtualType::virtualInt64:
                         type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Int64);
-                    break;
+                        break;
                     case VirtualType::virtualFloat:
                         type = BraneScript::getNativeTypeDef(BraneScript::ValueType::Float32);
-                    break;
+                        break;
+                    case VirtualType::virtualVec3:
+                        type = linker->getType("vec3");
+                        break;
+                    case VirtualType::virtualVec4:
+                        type = linker->getType("vec4");
+                        break;
+                    case VirtualType::virtualQuat:
+                        type = linker->getType("quat");
+                        break;
                     default:
                         assert(false);
                         break;

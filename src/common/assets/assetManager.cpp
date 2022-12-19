@@ -1,7 +1,7 @@
 #include "assetManager.h"
 #include "ecs/nativeComponent.h"
 #include "ecs/nativeTypes/meshRenderer.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "ecs/entity.h"
 #include "assembly.h"
 #include "types/materialAsset.h"
@@ -19,7 +19,7 @@ const char* AssetManager::name()
     return "assetManager";
 }
 
-template<typename T>
+/*template<typename T>
 void AssetManager::addNativeComponent(EntityManager& em)
 {
     static_assert(std::is_base_of<NativeComponent<T>, T>());
@@ -35,7 +35,7 @@ void AssetManager::addNativeComponent(EntityManager& em)
     _assets.insert({asset->id, std::make_unique<AssetData>(std::move(data))});
     _assetLock.unlock();
     description->asset = asset;
-}
+}*/
 
 void AssetManager::start()
 {
@@ -69,6 +69,8 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
     for(AssetDependency&d : a->dependencies())
     {
         auto dep = _assets.find(d.id);
+        if(dep != _assets.end() && !dep->second->usedBy.contains(a->id))
+            dep->second->usedBy.insert(a->id);
         if(dep == _assets.end() || dep->second->loadState < LoadState::usable)
         {
             std::pair<AssetID, bool> depPair = {d.id, d.streamable};
@@ -104,6 +106,8 @@ void AssetManager::fetchDependencies(Asset* a, std::function<void(bool)> callbac
                 return;
             }
             auto* data = _assets.at(id).get();
+            if(!data->usedBy.contains(id))
+                data->usedBy.insert(id);
             auto remaining = --data->unloadedDependencies;
             _assetLock.unlock();
             if(remaining == 0)
@@ -122,6 +126,21 @@ bool AssetManager::dependenciesLoaded(const Asset* asset) const
         if(!_assets.count(d.id))
             return false;
     return true;
+}
+
+void AssetManager::getDependenciesRecursive(const AssetID& asset, robin_hood::unordered_set<AssetID>& dependencies)
+{
+    if(dependencies.contains(asset))
+        return;
+    const auto a = getAsset<Asset>(asset);
+    assert(a);
+    auto deps = a->dependencies();
+    for(auto& d : deps)
+    {
+        getDependenciesRecursive(d.id, dependencies);
+        dependencies.insert(d.id);
+    }
+
 }
 
 AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
@@ -161,7 +180,6 @@ AsyncData<Asset*> AssetManager::fetchAsset(const AssetID& id, bool incremental)
             _awaitingLoad.erase(a->id);
         }
         _assetLock.unlock();
-        a->onDependenciesLoaded();
         for(auto& f : onLoaded)
             f(a);
 
@@ -221,19 +239,7 @@ std::vector<const Asset*> AssetManager::nativeAssets(AssetType type)
     {
         case AssetType::none:
             break;
-        case AssetType::component:
-            assets = {
-                EntityIDComponent::def()->asset,
-                EntityName::def()->asset,
-                Transform::def()->asset,
-                LocalTransform::def()->asset,
-                Children::def()->asset,
-                TRS::def()->asset,
-                MeshRendererComponent::def()->asset,
-                PointLightComponent::def()->asset
-            };
-            break;
-        case AssetType::system:
+        case AssetType::script:
             break;
         case AssetType::mesh:
             break;

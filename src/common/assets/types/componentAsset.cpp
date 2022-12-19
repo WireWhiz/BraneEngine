@@ -2,12 +2,13 @@
 #include "common/ecs/component.h"
 #include "utility/serializedData.h"
 
-ComponentAsse::ComponentAsset()
+/*
+ComponentAsset::ComponentAsset()
 {
     type.set(AssetType::Type::component);
 }
 
-ComponentAsse::ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id)
+ComponentAsset::ComponentAsset(const std::vector<VirtualType::Type>& members, const std::vector<std::string>& memberNames, AssetID&& id)
 {
     this->id = std::move(id);
     type.set(AssetType::Type::component);
@@ -15,42 +16,38 @@ ComponentAsse::ComponentAsset(const std::vector<VirtualType::Type>& members, con
     _memberNames = memberNames;
 }
 
-ComponentAsse::~ComponentAsse()
+ComponentAsset::~ComponentAsset()
 {
 }
 
-const std::vector<VirtualType::Type>& ComponentAsse::members() const
+const std::vector<VirtualType::Type>& ComponentAsset::members() const
 {
     return _members;
 }
 
-void ComponentAsse::serialize(OutputSerializer& s) const
+void ComponentAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);
     s << _members << _memberNames;
 }
 
-void ComponentAsse::deserialize(InputSerializer& s)
+void ComponentAsset::deserialize(InputSerializer& s)
 {
     Asset::deserialize(s);
     s >> _members >> _memberNames;
 }
 
-const std::vector<std::string>& ComponentAsse::memberNames() const
+const std::vector<std::string>& ComponentAsset::memberNames() const
 {
     return _memberNames;
 }
 
-std::vector<VirtualType::Type>& ComponentAsse::members()
+std::vector<VirtualType::Type>& ComponentAsset::members()
 {
     return _members;
 }
 
-std::vector<std::string>& ComponentAsse::memberNames()
+std::vector<std::string>& ComponentAsset::memberNames()
 {
     return _memberNames;
-}
-
-
-
-
+}*/

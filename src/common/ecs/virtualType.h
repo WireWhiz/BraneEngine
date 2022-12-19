@@ -6,6 +6,8 @@
 #include "utility/inlineArray.h"
 #include "entityID.h"
 #include "runtime/runtime.h"
+#include "typeDef.h"
+#include "nativeTypes.h"
 
 class InputSerializer;
 class OutputSerializer;
@@ -41,109 +43,57 @@ void setVirtual(const byte* var, T value)
 
 namespace VirtualType
 {
-    enum Type{
-        virtualUnknown = 0,
-        virtualBool,
-        virtualEntityID,
-        virtualInt,
-        virtualInt64,
-        virtualUInt,
-        virtualUInt64,
-        virtualFloat,
-        virtualString,
-        virtualAssetID,
-        virtualVec3,
-        virtualVec4,
-        virtualQuat,
-        virtualMat4,
-        virtualFloatArray,
-        virtualIntArray,
-        virtualUIntArray,
-        virtualEntityIDArray
-    };
     template<typename T>
-    Type type();
-    std::string typeToString(Type type);
-    Type stringToType(const std::string& type);
-    void serialize(Type type, OutputSerializer data, const byte* source);
-    void deserialize(Type type, InputSerializer data, byte* source);
-    size_t size(Type type);
-    void construct(Type type, byte* var);
-    void deconstruct(Type type, byte* var);
-    void copy(Type type, byte* dest, const byte* source);
-    void move(Type type, byte* dest, byte* source);
+    BraneScript::ValueType type();
     template<typename T>
-    void serialize(OutputSerializer& data, const byte* source)
-    {
-        data << *getVirtual<T>(source);
-    }
-    template<typename T>
-    void deserialize(InputSerializer& data, byte* source)
-    {
-        data >> *getVirtual<T>(source);
-    }
-    template<typename T>
-    void construct(byte* var)
-    {
-        new(var) T();
-    }
-    template<typename T>
-    void deconstruct(byte* var)
-    {
-        ((T*)var)->~T();
-    }
-    template<typename T>
-    void copy(byte* dest, const byte* source)
-    {
-        *((T*)dest) = *((T*)source);
-    }
-    template<typename T>
-    void move(byte* dest, byte* source)
-    {
-        *((T*)dest) = std::move(*((T*)source));
-    }
+    std::string typeName();
+    void serialize(BraneScript::ValueType type, OutputSerializer data, const byte* source);
+    void deserialize(BraneScript::ValueType type, InputSerializer data, byte* source);
+    size_t size(BraneScript::ValueType type);
+    void construct(BraneScript::ValueType type, byte* var);
+    void deconstruct(BraneScript::ValueType type, byte* var);
+    void copy(BraneScript::ValueType type, byte* dest, const byte* source);
+    void move(BraneScript::ValueType type, byte* dest, byte* source);
 };
 
 template<typename T>
-VirtualType::Type VirtualType::type()
+BraneScript::ValueType VirtualType::type()
 {
     if constexpr(std::is_same<T, bool>().value)
-        return Type::virtualBool;
-    if constexpr(std::is_same<T, EntityID>())
-        return Type::virtualEntityID;
+        return BraneScript::ValueType::Bool;
     if constexpr(std::is_same<T, int32_t>().value)
-        return Type::virtualInt;
+        return BraneScript::ValueType::Int32;
     if constexpr(std::is_same<T, uint32_t>().value)
-        return Type::virtualUInt;
+        return BraneScript::ValueType::UInt32;
     if constexpr(std::is_same<T, int64_t>().value)
-        return Type::virtualInt64;
+        return BraneScript::ValueType::Int64;
     if constexpr(std::is_same<T, uint64_t>().value)
-        return Type::virtualUInt64;
+        return BraneScript::ValueType::UInt64;
     if constexpr(std::is_same<T, float>().value)
-        return Type::virtualFloat;
-    if constexpr(std::is_same<T, std::string>().value)
-        return Type::virtualString;
-    if constexpr(std::is_same<T, AssetID>().value)
-        return Type::virtualAssetID;
-    if constexpr(std::is_same<T, glm::vec3>().value)
-        return Type::virtualVec3;
-    if constexpr(std::is_same<T, glm::vec4>().value)
-        return Type::virtualVec4;
-    if constexpr(std::is_same<T, glm::quat>().value)
-        return Type::virtualQuat;
-    if constexpr(std::is_same<T, glm::mat4>().value)
-        return Type::virtualMat4;
-    if constexpr(std::is_same<T, inlineFloatArray>().value)
-        return Type::virtualFloatArray;
-    if constexpr(std::is_same<T, inlineIntArray>().value)
-        return Type::virtualIntArray;
-    if constexpr(std::is_same<T, inlineUIntArray>().value)
-        return Type::virtualUIntArray;
-    if constexpr(std::is_same<T, inlineEntityIDArray>().value)
-        return Type::virtualEntityIDArray;
-
-    Runtime::error("Tried to find type of: [" + (std::string)typeid(T).name() + "] and failed");
-    assert(false);
-    return Type::virtualUnknown;
+        return BraneScript::ValueType::Float32;
+    if constexpr(std::is_same<T, double>().value)
+        return BraneScript::ValueType::Float64;
+    return BraneScript::ValueType::Struct;
 }
 
+template<typename T>
+std::string typeName()
+{
+    if constexpr(std::is_same<T, bool>().value)
+        return "bool";
+    if constexpr(std::is_same<T, int32_t>().value)
+        return "int";
+    if constexpr(std::is_same<T, uint32_t>().value)
+        return "uint";
+    if constexpr(std::is_same<T, int64_t>().value)
+        return "int64";
+    if constexpr(std::is_same<T, uint64_t>().value)
+        return "uint64";
+    if constexpr(std::is_same<T, float>().value)
+        return "float";
+    if constexpr(std::is_same<T, double>().value)
+        return "double";
+    if constexpr(std::is_same<T, std::string>().value)
+        return "string";
+    return "void";
+}

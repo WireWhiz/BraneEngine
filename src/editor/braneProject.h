@@ -46,6 +46,7 @@ public:
     void registerAssetLocation(const EditorAsset* asset);
 
     std::vector<std::pair<AssetID, std::filesystem::path>> searchAssets(const std::string& query, AssetType type = AssetType::none);
+    std::vector<std::string> searchComponents(const std::string& query);
 
     std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
     std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path& path);

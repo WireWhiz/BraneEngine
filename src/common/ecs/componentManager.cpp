@@ -5,31 +5,9 @@
 #include "componentManager.h"
 #include "assets/types/componentAsset.h"
 
-ComponentID ComponentManager::createComponent(ComponentAsset* component)
-{
-    ComponentID id = createComponent(component->members(), component->name);
-    component->componentID = id;
-    return id;
-}
-
-ComponentID ComponentManager::createComponent(const std::vector<VirtualType::Type>& component, const std::string& name)
-{
-    ComponentID id = static_cast<ComponentID>(_components.push(std::make_unique<ComponentDescription>(component)));
-    _components[id]->id = id;
-    _components[id]->name = name;
-    return id;
-}
-
 const ComponentDescription* ComponentManager::getComponentDef(ComponentID id)
 {
     return _components[id].get();
-}
-
-const ComponentDescription* ComponentManager::getComponentDef(ComponentAsset* asset)
-{
-    if(asset->componentID == ComponentID(-1))
-        asset->componentID = registerComponent(new ComponentDescription(asset));
-    return getComponentDef(asset->componentID);
 }
 
 void ComponentManager::eraseComponent(ComponentID id)
@@ -39,12 +17,22 @@ void ComponentManager::eraseComponent(ComponentID id)
     _components.remove(id);
 }
 
+
+ComponentID ComponentManager::registerComponent(const BraneScript::StructDef* typeDef)
+{
+    ComponentID index = _components.push(std::make_unique<ComponentDescription>(typeDef));
+    _components[index]->id = index;
+    _nameToComponent.insert({typeDef->name(), index});
+    return index;
+}
+
+
 ComponentID ComponentManager::registerComponent(ComponentDescription* componentDescription)
 {
     ComponentID id = static_cast<ComponentID>(_components.push(std::unique_ptr<ComponentDescription>(componentDescription)));
     _components[id]->id = id;
-    componentDescription->id = id;
     _externalComponents.insert(id);
+    _nameToComponent.insert({componentDescription->name, id});
     return id;
 }
 
@@ -52,4 +40,12 @@ ComponentManager::~ComponentManager()
 {
     for(auto c : _externalComponents)
         _components[c].release();
+}
+
+const ComponentDescription* ComponentManager::getComponentDef(const std::string& name)
+{
+    auto itr = _nameToComponent.find(name);
+    if(itr == _nameToComponent.end())
+        return nullptr;
+    return _components[itr->second].get();
 }

@@ -42,11 +42,3 @@ std::vector<AssetDependency> MaterialAsset::dependencies() const
         deps.push_back({t.second, true});
     return deps;
 }
-
-#ifdef CLIENT
-void MaterialAsset::onDependenciesLoaded()
-{
-    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    runtimeID = vkr->addAsset(this);
-}
-#endif

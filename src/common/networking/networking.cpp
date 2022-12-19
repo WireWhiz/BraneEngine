@@ -180,7 +180,7 @@ AsyncData<IncrementalAsset*> NetworkManager::async_requestAssetIncremental(const
         server->addStreamListener(streamID, [assetPtr](InputSerializer sData){
             assetPtr->deserializeIncrement(sData);
         }, [assetPtr]{
-            assetPtr->onDependenciesLoaded();
+            //TODO have a callback for when an asset is fully loaded, to be used for vram optimization in meshes and images
         });
         asset.setData(assetPtr);
     });

@@ -17,8 +17,12 @@ class ScriptManager : public Module
     BraneScript::ScriptRuntime _rt;
 public:
     ScriptManager();
+    static const char* name();
 
     BraneScript::Compiler newCompiler();
+    BraneScript::Linker& linker();
+
+    BraneScript::Script* addScript(const BraneScript::IRScript* script);
 };
 
 

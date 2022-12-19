@@ -29,15 +29,10 @@ private:
     std::vector<Primitive> _primitives;
     std::vector<byte> _data;
 public:
-
-
     MeshAsset();
 
-#ifdef CLIENT
-    uint32_t runtimeID = -1;
     bool meshUpdated = false;
-    void onDependenciesLoaded() override;
-#endif
+
     size_t addPrimitive(const std::vector<uint16_t>& indices, uint32_t vertexCount);
     size_t addPrimitive(const std::vector<uint32_t>& indices, uint32_t vertexCount);
     template<typename T>

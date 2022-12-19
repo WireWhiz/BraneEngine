@@ -6,7 +6,7 @@
 #include "assemblyReloadManager.h"
 #include "assets/assembly.h"
 #include "ecs/entity.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "ecs/nativeTypes/meshRenderer.h"
 #include "assets/types/materialAsset.h"
 #include "assets/types/meshAsset.h"

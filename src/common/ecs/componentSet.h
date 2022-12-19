@@ -7,6 +7,8 @@
 #include "robin_hood.h"
 
 // Class that always has components sorted
+
+using ComponentID = uint32_t;
 class ComponentSet
 {
 private:

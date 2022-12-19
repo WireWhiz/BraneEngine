@@ -144,29 +144,7 @@ AssetID AssetID::sameOrigin(const AssetID& parent)
     return id;
 }
 
-std::size_t std::hash<HashedAssetID>::operator()(const HashedAssetID& k) const
+std::size_t std::hash<AssetID>::operator()(const AssetID& k) const
 {
-    return k.hash();
-}
-
-HashedAssetID::HashedAssetID(const AssetID& id)
-{
-    _hash = robin_hood::hash<std::string>()(id.string());
-    _id = id.id();
-    _address = id.address();
-}
-
-bool HashedAssetID::operator!=(const HashedAssetID& hash) const
-{
-    return !(*this == hash);
-}
-
-bool HashedAssetID::operator==(const HashedAssetID& hash) const
-{
-    return _hash == hash._hash && _id == hash._id && _address == hash._address;
-}
-
-size_t HashedAssetID::hash() const
-{
-    return _hash;
+    return robin_hood::hash<std::string>()(k.string());
 }

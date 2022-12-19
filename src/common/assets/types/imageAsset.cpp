@@ -20,14 +20,6 @@ ImageAsset::ImageAsset()
     type.set(AssetType::Type::image);
 }
 
-#ifdef CLIENT
-void ImageAsset::onDependenciesLoaded()
-{
-    Asset::onDependenciesLoaded();
-    runtimeID = Runtime::getModule<graphics::VulkanRuntime>()->addAsset(this);
-}
-#endif
-
 void ImageAsset::serialize(OutputSerializer& s) const
 {
     Asset::serialize(s);

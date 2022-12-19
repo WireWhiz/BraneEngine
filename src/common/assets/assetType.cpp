@@ -4,8 +4,7 @@
 const EnumNameMap<AssetType::Type> names(
 {
          {AssetType::none,      "none"     },
-         {AssetType::component, "component"},
-         {AssetType::system,    "system"   },
+         {AssetType::script,    "script"   },
          {AssetType::mesh,      "mesh"     },
          {AssetType::material,  "material" },
          {AssetType::image,     "image"  },
@@ -71,4 +70,9 @@ bool AssetType::operator!=(AssetType::Type t) const
 AssetType::AssetType(AssetType::Type type)
 {
     _type = type;
+}
+
+AssetType::operator Type() const
+{
+    return _type;
 }

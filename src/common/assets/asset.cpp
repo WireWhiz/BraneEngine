@@ -29,9 +29,7 @@ Asset* Asset::assetFromType(AssetType type)
         case AssetType::none:
             throw std::runtime_error("Can't deserialize none type");
             break;
-        case AssetType::component:
-            return new ComponentAsset();
-        case AssetType::system:
+        case AssetType::script:
             assert("Not implemented" && false);
             break;
         case AssetType::mesh:
@@ -75,11 +73,6 @@ Asset* Asset::deserializeUnknown(InputSerializer& s)
 std::vector<AssetDependency> Asset::dependencies() const
 {
     return {};
-}
-
-void Asset::onDependenciesLoaded()
-{
-
 }
 
 void IncrementalAsset::serializeHeader(OutputSerializer& s) const

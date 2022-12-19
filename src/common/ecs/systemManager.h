@@ -8,6 +8,7 @@
 #include "system.h"
 #include <string>
 #include <memory>
+#include "robin_hood.h"
 
 class SystemManager
 {
@@ -20,8 +21,8 @@ class SystemManager
         void run(EntityManager& em, uint32_t& version);
     };
 
-    std::unordered_map<std::string, std::unique_ptr<SystemNode>> _systems;
-    std::unordered_map<std::string, SystemContext> _unmanagedSystems;
+    robin_hood::unordered_flat_map<std::string, std::unique_ptr<SystemNode>> _systems;
+    robin_hood::unordered_flat_map<std::string, SystemContext> _unmanagedSystems;
 public:
     uint32_t globalVersion = 0;
     //TODO: have an actual scheduling system in here

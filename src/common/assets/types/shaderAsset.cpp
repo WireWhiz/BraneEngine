@@ -83,14 +83,6 @@ ShaderAsset::ShaderAsset()
     type.set(AssetType::Type::shader);
 }
 
-#ifdef CLIENT
-void ShaderAsset::onDependenciesLoaded()
-{
-    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    runtimeID = vkr->addAsset(this);
-}
-#endif
-
 VkShaderStageFlagBits ShaderAsset::vulkanShaderType() const
 {
     switch(shaderType)

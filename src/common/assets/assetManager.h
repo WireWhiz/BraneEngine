@@ -5,6 +5,7 @@
 #include <utility/asyncQueue.h>
 #include <utility/asyncData.h>
 #include "asset.h"
+#include "robin_hood.h"
 
 class EntityManager;
 class AssetManager : public Module
@@ -28,12 +29,12 @@ public:
         uint32_t useCount = 0;
         uint32_t unloadedDependencies = 0;
         LoadState loadState = LoadState::unloaded;
-        std::unordered_set<HashedAssetID> usedBy;
+        robin_hood::unordered_set<AssetID> usedBy;
     };
 private:
     std::mutex _assetLock;
-    std::unordered_map<HashedAssetID, std::unique_ptr<AssetData>> _assets;
-    std::unordered_map<HashedAssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
+    robin_hood::unordered_map<AssetID, std::unique_ptr<AssetData>> _assets;
+    robin_hood::unordered_map<AssetID, std::vector<std::function<void(Asset*)>>> _awaitingLoad;
 
     size_t _nativeComponentID = 0;
     template<typename T>
@@ -70,6 +71,7 @@ public:
 
     void fetchDependencies(Asset* asset, std::function<void(bool success)> callback);
     bool dependenciesLoaded(const Asset* asset) const;
+    void getDependenciesRecursive(const AssetID& asset, robin_hood::unordered_set<AssetID>& dependencies);
 
     std::vector<const Asset*> nativeAssets(AssetType type);
 

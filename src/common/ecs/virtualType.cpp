@@ -26,6 +26,8 @@ namespace VirtualType
             {virtualUIntArray,  "uintArray"},
             {virtualEntityIDArray,"entityIDArray"}
     });
+    
+
     std::string typeToString(Type type)
     {
         return names.toString(type);

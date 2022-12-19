@@ -19,7 +19,7 @@ void SystemManager::runSystems(EntityManager& em)
 void SystemManager::runUnmanagedSystem(const std::string& name, const std::function<void(SystemContext* data)>& f)
 {
     if(!_unmanagedSystems.count(name))
-        _unmanagedSystems.insert({name, {0, 0}});
+        _unmanagedSystems.insert({name, SystemContext{0, 0}});
     SystemContext* data = &_unmanagedSystems.at(name);
     data->version = globalVersion++;
     f(data);

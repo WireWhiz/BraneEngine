@@ -6,7 +6,7 @@
 #include "editor/braneProject.h"
 #include "../gltfLoader.h"
 #include "assets/assetManager.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "../jsonVirtualType.h"
 #include "utility/jsonTypeUtilities.h"
 #include "ecs/nativeTypes/meshRenderer.h"
@@ -14,6 +14,7 @@
 #include "ui/gui.h"
 #include "editor/editorEvents.h"
 #include "editor/assets/assemblyReloadManager.h"
+#include "scripting/scripting.h"
 #include <regex>
 
 
@@ -139,16 +140,16 @@ Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
 {
     Json::Value output;
     output["name"] = component.description()->name;
-    output["id"] = component.description()->asset->id.string();
-
-    auto& members = component.description()->asset->members();
-    auto& names = component.description()->asset->memberNames();
+    auto sc = Runtime::getModule<ScriptManager>();
+    auto typeDef = dynamic_cast<const BraneScript::StructDef*>(sc->linker().getType(component.description()->name));
+    assert(typeDef);
+    auto& members = typeDef->memberVars();
     for(size_t i = 0; i < members.size(); ++i)
     {
         Json::Value member;
-        member["name"] = names[i];
-        member["value"] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i]);
-        member["type"] = VirtualType::typeToString(members[i]);
+        member["name"] = members[i].name;
+        member["value"] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i].type.type());
+        member["type"] = VirtualType::typeToString(members[i].type.type());
         output["members"].append(member);
     }
     return output;

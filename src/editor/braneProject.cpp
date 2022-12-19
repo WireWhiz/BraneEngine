@@ -392,3 +392,22 @@ std::vector<std::pair<AssetID, std::string>> BraneProject::getAssetHashes()
     }
     return hashes;
 }
+
+std::vector<std::string> BraneProject::searchComponents(const std::string& query)
+{
+    std::vector<std::string> results;
+    for(auto& component : std::vector<std::string>{
+        "TRS"
+    })
+    {
+        if(query.empty() || component.find(query))
+            results.push_back(component);
+    }
+    for(auto& component : _file["components"])
+    {
+        std::string name = component["name"].asString();
+        if(query.empty() || name.find(query))
+            results.push_back(name);
+    }
+    return std::move(results);
+}

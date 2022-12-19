@@ -20,12 +20,7 @@ public:
     } imageType;
 
     ImageAsset();
-
-#ifdef CLIENT
-    uint32_t runtimeID = -1;
     bool imageUpdated = false;
-    void onDependenciesLoaded() override;
-#endif
 
     void serialize(OutputSerializer& s) const override;
     void deserialize(InputSerializer& s) override;

@@ -22,6 +22,7 @@
 namespace BraneScript
 {
     class StructDef;
+    class Linker;
 }
 using ComponentID = uint32_t;
 
@@ -40,7 +41,6 @@ class ComponentDescription
 public:
     ComponentID id;
     std::string name;
-    const BraneScript::StructDef* type = nullptr;
 
     ComponentDescription(const BraneScript::StructDef* type);
     ComponentDescription(const std::vector<VirtualType::Type>& members);

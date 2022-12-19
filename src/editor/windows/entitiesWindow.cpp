@@ -7,7 +7,7 @@
 #include "assets/assembly.h"
 #include "ui/gui.h"
 #include "ecs/entity.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "editor/editor.h"
 #include "editor/assets/editorAsset.h"
 #include "assets/assetManager.h"

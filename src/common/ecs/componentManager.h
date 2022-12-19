@@ -6,17 +6,20 @@
 #define BRANEENGINE_COMPONENTMANAGER_H
 
 #include "component.h"
+#include "structDefinition.h"
+#include "robin_hood.h"
+
 class ComponentManager {
 public:
     staticIndexVector<std::unique_ptr<ComponentDescription>> _components;
-    std::unordered_set<uint16_t> _externalComponents;
+    robin_hood::unordered_set<ComponentID> _externalComponents;
+    robin_hood::unordered_map<std::string, ComponentID> _nameToComponent;
 public:
     ~ComponentManager();
-    ComponentID createComponent(ComponentAsset* component);
-    ComponentID createComponent(const std::vector<VirtualType::Type>& component, const std::string& name);
     ComponentID registerComponent(ComponentDescription* componentDescription);
+    ComponentID registerComponent(const BraneScript::StructDef* typeDef);
     const ComponentDescription* getComponentDef(ComponentID id);
-    const ComponentDescription* getComponentDef(ComponentAsset* id);
+    const ComponentDescription* getComponentDef(const std::string& name);
     void eraseComponent(ComponentID id);
 };
 

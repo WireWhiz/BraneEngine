@@ -17,60 +17,55 @@
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
 #include "ecs/nativeTypes/assetComponents.h"
-#include <systems/transforms.h>
+#include "scripting/transforms.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
 #include "ecs/nativeComponent.h"
 #include "editor/assets/assemblyReloadManager.h"
-
-class RenderWindowAssetReady : public GUIEvent
-{
-    AssetID _id;
-public:
-    RenderWindowAssetReady(const AssetID& id) : _id(id), GUIEvent("render window asset ready"){};
-    const AssetID& id() const {return _id;}
-};
+#include "chunk/chunkLoader.h"
 
 RenderWindow::RenderWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)
 {
     _name = "Render";
     EntityManager& em = *Runtime::getModule<EntityManager>();
     graphics::VulkanRuntime& vkr = *Runtime::getModule<graphics::VulkanRuntime>();
+    ChunkLoader& cl = *Runtime::getModule<ChunkLoader>();
     _renderer = vkr.createRenderer<graphics::SceneRenderer>(&vkr, &em);
     _renderer->setClearColor({.2,.2,.2,1});
     _swapChain = vkr.swapChain();
-    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em](const FocusAssetEvent* event){
-        if(event->asset()->type() != AssetType::assembly)
-            return;
-        if(!_assemblies.empty())
-        {
-            auto* arm = Runtime::getModule<AssemblyReloadManager>();
-            for(auto& e : _assemblies)
-                arm->destroy(e.assembly, e.root);
-            _assemblies.resize(0);
-        }
-        auto* am = Runtime::getModule<AssetManager>();
-        _focusedAsset = event->asset();
-        _focusedAssetEntity = -1;
-        if(dynamic_cast<EditorAssemblyAsset*>(_focusedAsset.get()))
-        {
-            am->fetchAsset<Assembly>(AssetID(_focusedAsset->json()["id"].asString())).then([this](Assembly* assembly){
-                _ui.sendEvent(std::make_unique<RenderWindowAssetReady>(assembly->id));
-            }).onError([this](const std::string& error){
-                if(_focusedAsset)
-                    Runtime::warn("Could not load " + _focusedAsset->name() + " to render: " + error);
-                else
-                    Runtime::warn("Could not load asset to render: " + error);
-            });
-        }
-    });
-    _ui.addEventListener<RenderWindowAssetReady>("render window asset ready", this, [this, &em](const RenderWindowAssetReady* event){
+
+    previewChunk.id = "runtime/0";
+    previewChunk.LODs = {{{}, 0, 0}, {{}, 1, 1}};
+    cl.loadChunk(&previewChunk);
+    cl.addOnLODChangeCallback([this](const WorldChunk* chunk, uint32_t newLOD, uint32_t oldLOD){
         auto* am = Runtime::getModule<AssetManager>();
         auto* arm = Runtime::getModule<AssemblyReloadManager>();
-        auto* assembly = am->getAsset<Assembly>(event->id());
-        assert(assembly);
-        EntityID root = arm->instantiate(assembly);
-        _assemblies.push_back(AssemblyContex{assembly, root});
+        for(auto& a : _assemblies)
+            arm->destroy(a.assembly, a.root);
+
+        for(auto& lod : chunk->LODs)
+        {
+            if(lod.min > newLOD || lod.max < newLOD)
+                continue;
+            auto* assembly = am->getAsset<Assembly>(lod.assembly);
+            assert(assembly);
+            EntityID root = arm->instantiate(assembly);
+            _assemblies.push_back(AssemblyContex{assembly, root});
+        }
+    });
+
+    _ui.addEventListener<FocusAssetEvent>("focus asset", this, [this, &em, &cl](const FocusAssetEvent* event){
+        if(event->asset()->type() != AssetType::assembly)
+            return;
+        uint16_t lod = 0;
+        if(cl.currentLOD(previewChunk.id) == 0)
+            lod = 1;
+
+        _focusedAsset = event->asset();
+        _focusedAssetEntity = -1;
+
+        previewChunk.LODs[lod].assembly = event->asset()->id();
+        cl.setChunkLOD(previewChunk.id, lod);
     });
     _ui.addEventListener<FocusEntityAssetEvent>("focus entity asset", this, [this](const FocusEntityAssetEvent* event){
         if(!_focusedAsset)

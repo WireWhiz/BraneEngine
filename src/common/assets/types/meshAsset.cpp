@@ -275,20 +275,10 @@ uint32_t MeshAsset::indexCount(size_t primitive) const
     return _primitives[primitive].indexCount;
 }
 
-#ifdef CLIENT
-void MeshAsset::onDependenciesLoaded()
-{
-    auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
-    if(runtimeID)
-    runtimeID = vkr->addAsset(this);
-}
-
 MeshAsset::Primitive::IndexType MeshAsset::indexType(size_t primitive) const
 {
     assert(primitive < _primitives.size());
     return _primitives[primitive].indexType;
 }
-
-#endif
 
 

@@ -9,7 +9,7 @@
 #include "assets/assemblyReloadManager.h"
 #include "fileManager/fileManager.h"
 #include "networking/networking.h"
-#include "systems/transforms.h"
+#include "scripting/transforms.h"
 #include "ui/gui.h"
 #include "editor.h"
 

@@ -34,21 +34,9 @@ public:
     friend std::ostream& operator << (std::ostream& os, const AssetID& id);
 };
 
-class HashedAssetID
-{
-    size_t _hash;
-    uint32_t _id;
-    std::string _address;
-public:
-    HashedAssetID(const AssetID& id);
-    bool operator!=(const HashedAssetID& hash) const;
-    bool operator==(const HashedAssetID& hash) const;
-    size_t hash() const;
-};
-
 template <>
-struct std::hash<HashedAssetID>
+struct std::hash<AssetID>
 {
-    size_t operator()(const HashedAssetID& k) const;
+    size_t operator()(const AssetID& k) const;
 };
 

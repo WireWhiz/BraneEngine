@@ -9,6 +9,7 @@
 #include "vulkan/vulkan.h"
 #include "glm/gtx/quaternion.hpp"
 #include "ecs/entityID.h"
+#include "assets/chunk.h"
 #include <vector>
 #include <memory>
 #include <ImGuizmo.h>
@@ -37,6 +38,7 @@ class RenderWindow : public EditorWindow
     ImGuizmo::MODE _gizmoMode = ImGuizmo::MODE::WORLD;
 
     std::shared_ptr<EditorAsset> _focusedAsset;
+    WorldChunk previewChunk;
     struct AssemblyContex
     {
         Assembly* assembly;
