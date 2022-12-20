@@ -43,10 +43,10 @@ jobs:
 
       # Make sure all the main targets build
     - name: Build Editor
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target BraneEditor
+      run: cmake --build ${{github.workspace}}/build --config Debug --target BraneEditor
 
     - name: Build Client
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target BraneSurfer
+      run: cmake --build ${{github.workspace}}/build --config Debug --target BraneSurfer
 
     - name: Build Asset Server
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target AssetServer
+      run: cmake --build ${{github.workspace}}/build --config Debug --target AssetServer
