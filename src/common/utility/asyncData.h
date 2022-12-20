@@ -6,17 +6,17 @@
 #define BRANEENGINE_ASYNCDATA_H
 
 #include <memory>
-#include <functional>
 #include <string>
-#include <runtime/runtime.h>
-#include <utility/threadPool.h>
 #include <array>
 #include <mutex>
+#include <functional>
+#include <runtime/runtime.h>
+#include <utility/threadPool.h>
 
 template<typename T>
 class AsyncData
 {
-    struct InternalData{
+    struct InternalData {
         std::unique_ptr<T> _data;
         std::function<void(T)> _callback;
         bool _thenMain = false;
@@ -25,11 +25,13 @@ class AsyncData
         std::mutex _lock;
     };
     std::shared_ptr<InternalData> _instance;
+
 public:
     AsyncData()
     {
         _instance = std::make_shared<InternalData>();
     }
+
     AsyncData& then(const std::function<void(T)>& callback)
     {
         std::scoped_lock lock(_instance->_lock);
@@ -39,6 +41,7 @@ public:
             _instance->_callback = callback;
         return *this;
     }
+
     AsyncData& thenMain(const std::function<void(T)>& callback)
     {
         std::scoped_lock lock(_instance->_lock);
@@ -49,7 +52,7 @@ public:
                 callback(std::move(*_instance->_data));
             else
             {
-                auto data = std::move(*_instance->_data);
+                const auto& data = std::move(*_instance->_data);
                 ThreadPool::enqueueMain([callback, data = std::move(data)]{callback(std::move(data));});
             }
         }
@@ -57,15 +60,17 @@ public:
             _instance->_callback = callback;
         return *this;
     }
-    AsyncData& onError(std::function<void(const std::string& err)> callback)
+
+    AsyncData& onError(const std::function<void(const std::string& err)>& callback)
     {
         std::scoped_lock lock(_instance->_lock);
         if(_instance->_errorMessage.empty())
-            _instance->_error = std::move(callback);
+            _instance->_error = callback;
         else
             callback(_instance->_errorMessage);
         return *this;
     }
+
     void setData(const T& data) const
     {
         std::scoped_lock lock(_instance->_lock);
@@ -77,8 +82,8 @@ public:
                     _instance->_callback(std::move(*_instance->_data));
                 else
                 {
-                    auto callback = std::move(_instance->_callback);
-                    ThreadPool::enqueueMain([callback = std::move(callback), data]{callback(data);});
+                    const auto& callback = _instance->_callback;
+                    ThreadPool::enqueueMain([callback, data]{callback(data);});
                 }
             }
             else
@@ -87,27 +92,7 @@ public:
         else
             _instance->_data = std::make_unique<T>(data);
     }
-    void setData(T&& data) const
-    {
-        std::scoped_lock lock(_instance->_lock);
-        if(_instance->_callback)
-        {
-            if(_instance->_thenMain)
-            {
-                if(IS_MAIN_THREAD())
-                    _instance->_callback(std::move(*_instance->_data));
-                else
-                {
-                    auto callback = std::move(_instance->_callback);
-                    ThreadPool::enqueueMain([callback = std::move(callback), data = std::move(data)]{callback(std::move(data));});
-                }
-            }
-            else
-                _instance->_callback(std::move(data));
-        }
-        else
-            _instance->_data = std::make_unique<T>(std::move(data));
-    }
+
     void setError(const std::string& error) const
     {
         std::scoped_lock lock(_instance->_lock);
@@ -123,11 +108,12 @@ public:
             _instance->_errorMessage = error;
     }
 
-    [[nodiscard]] bool callbackSet() const
+    [[nodiscard]] bool isCallbackSet() const
     {
         std::scoped_lock lock(_instance->_lock);
         return (bool)(_instance->_callback);
     }
+
 };
 
 #endif //BRANEENGINE_ASYNCDATA_H
