@@ -26,7 +26,7 @@ public:
         AssetID id;
         std::vector<VirtualType::Type> members = T::getMemberTypes();
         std::vector<size_t> offsets = T::getMemberOffsets();
-        _description = new ComponentDescription(members, offsets, sizeof(T));
+        _description = new ComponentDescription(members, nullptr);
         _description->name =  T::getComponentName();
         return _description;
     }

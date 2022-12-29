@@ -2,92 +2,27 @@
 #include <algorithm>
 #include <cstring>
 
-#include "structDefinition.h"
+
+#include "linker.h"
 #include "utility/serializedData.h"
 
-ComponentDescription::ComponentDescription(const BraneScript::StructDef* type)
+ComponentDescription::ComponentDescription(const BraneScript::StructDef* type, const BraneScript::Linker* linker)
 {
-    name = type->name();
-    _size = type->size();
-    for(auto& mem : type->memberVars())
-    {
-        switch(mem.type->type())
-        {
-            case BraneScript::Bool:
-                _members.push_back({VirtualType::virtualBool, mem.offset});
-                break;
-            case BraneScript::Int32:
-                _members.push_back({VirtualType::virtualInt, mem.offset});
-                break;
-            case BraneScript::Int64:
-                _members.push_back({VirtualType::virtualInt64, mem.offset});
-                break;
-            case BraneScript::Float32:
-                _members.push_back({VirtualType::virtualFloat, mem.offset});
-                break;
-            case BraneScript::Float64:
-                assert(false);
-                break;
-            case BraneScript::Struct:
-                assert(false);
-                break;
-        }
-    }
-}
-
-ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members) : ComponentDescription(members,generateOffsets(members))
-{
-}
-
-ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets, size_t size) : ComponentDescription(members, offsets)
-{
-    _size = size;
-}
-
-ComponentDescription::ComponentDescription(const std::vector<VirtualType::Type>& members, const std::vector<size_t>& offsets)
-{
-    _members.resize(members.size());
-    for(size_t i = 0; i < members.size(); i++)
-    {
-        _members[i].type = members[i];
-        _members[i].offset = offsets[i];
-    }
-}
-
-std::vector<size_t> ComponentDescription::generateOffsets(const std::vector<VirtualType::Type>& members)
-{
-    std::vector<size_t> offsets(members.size());
-    _size = 0;
-    for (size_t i = 0; i < members.size(); ++i)
-    {
-        size_t typesize = VirtualType::size(members[i]);
-
-        size_t woffset = _size % WORD_SIZE;
-        if (woffset != 0 && WORD_SIZE - woffset < typesize)
-        {
-            _size += WORD_SIZE - woffset;
-        }
-        offsets[i] = _size;
-        _size += typesize;
-    }
-
-    return offsets;
+    _type = type;
+    _constructor = (void (*)(byte*))linker->getFunction(std::string(type->name()) + "::construct()");
+    _destructor  = (void (*)(byte*))linker->getFunction(std::string(type->name()) + "::destruct()");
+    _copy = (void (*)(byte*, const byte*))linker->getFunction(std::string(type->name()) + "::copy(const ref " + std::string(type->name()) + ")");
+    _move = (void (*)(byte*, byte*))linker->getFunction(std::string(type->name()) + "::move(ref " + std::string(type->name()) + ")");
 }
 
 void ComponentDescription::construct(byte* component) const
 {
-    for(auto& m : _members)
-    {
-        VirtualType::construct(m.type, component + m.offset);
-    }
+    _constructor(component);
 }
 
 void ComponentDescription::deconstruct(byte* component) const
 {
-    for(auto& m : _members)
-    {
-        VirtualType::deconstruct(m.type, component + m.offset);
-    }
+    _destructor(component);
 }
 
 void ComponentDescription::serialize(OutputSerializer& sData, byte* component) const
@@ -106,59 +41,33 @@ void ComponentDescription::deserialize(InputSerializer& sData, byte* component) 
     }
 }
 
-void ComponentDescription::copy(byte* src, byte* dest) const
+void ComponentDescription::copy(const byte* src, byte* dest) const
 {
-    for(auto& m : _members)
-    {
-        VirtualType::copy(m.type, dest + m.offset, src + m.offset);
-    }
+    _copy(dest, src);
 }
 
 void ComponentDescription::move(byte* src, byte* dest) const
 {
-    for(auto& m : _members)
-    {
-        VirtualType::move(m.type, dest + m.offset, src + m.offset);
-    }
-}
-
-const std::vector<ComponentDescription::Member>& ComponentDescription::members() const
-{
-    return _members;
+    _move(dest, src);
 }
 
 size_t ComponentDescription::size() const
 {
-    return _size;
-}
-
-size_t ComponentDescription::serializationSize() const
-{
-    size_t ss = 0;
-    for(auto& m : _members)
-        ss += VirtualType::size(m.type);
-    return ss;
+    return _type->size();
 }
 
 VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {
     _description = source._description;
     _data = new byte[_description->size()];
-    for (auto& member : _description->members())
-    {
-        VirtualType::construct(member.type, _data + member.offset);
-        VirtualType::copy(member.type, _data + member.offset, source._data + member.offset);
-    }
+    _description->construct(_data);
 }
 VirtualComponent::VirtualComponent(const VirtualComponentView& source)
 {
     _description = source.description();
     _data = new byte[_description->size()];
-    for (auto& member : _description->members())
-    {
-        VirtualType::construct(member.type, _data + member.offset);
-        VirtualType::copy(member.type, _data + member.offset, source.data() + member.offset);
-    }
+    _description->construct(_data);
+    _description->copy(source.data(), _data);
 }
 
 VirtualComponent::VirtualComponent(VirtualComponent&& source)
@@ -172,31 +81,22 @@ VirtualComponent::VirtualComponent(const ComponentDescription* definition)
 {
     _description = definition;
     _data = new byte[_description->size()];
-    for(auto& member : _description->members())
-    {
-        VirtualType::construct(member.type, _data + member.offset);
-    }
+    _description->construct(_data);
 }
 
 VirtualComponent::VirtualComponent(const ComponentDescription* definition, const byte* data)
 {
     _description = definition;
     _data = new byte[_description->size()];
-    for (auto& member : _description->members())
-    {
-        VirtualType::construct(member.type, _data + member.offset);
-        VirtualType::copy(member.type, _data + member.offset, data + member.offset);
-    }
+    _description->construct(_data);
+    _description->copy(data, _data);
 }
 
 VirtualComponent::~VirtualComponent()
 {
     if(_data)
     {
-        for (auto& member : _description->members())
-        {
-            VirtualType::deconstruct(member.type, _data + member.offset);
-        }
+        _description->deconstruct(_data);
         delete[] _data;
     }
 
@@ -210,10 +110,7 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
     if(_description != source._description || !_data)
     {
         if(_data)
-        {
-            for (auto& member : _description->members())
-                VirtualType::deconstruct(member.type, _data + member.offset);
-        }
+            _description->deconstruct(_data);
         if(_description->size() != source._description->size())
         {
             if(_data)
@@ -221,12 +118,10 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponent& source)
             _data = new byte[source._description->size()];
         }
         _description = source._description;
-        for (auto& member : _description->members())
-            VirtualType::construct(member.type, _data + member.offset);
+        _description->construct(_data);
     }
 
-    for (auto& member : _description->members())
-        VirtualType::copy(member.type, _data + member.offset, source._data + member.offset);
+    _description->copy(source.data(), _data);
     return *this;
 }
 
@@ -238,10 +133,7 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponentView& source
     if(_description != source.description() || !_data)
     {
         if(_data)
-        {
-            for (auto& member : _description->members())
-                VirtualType::deconstruct(member.type, _data + member.offset);
-        }
+            _description->deconstruct(_data);
         if(_description->size() != source.description()->size())
         {
             if(_data)
@@ -249,12 +141,10 @@ VirtualComponent& VirtualComponent::operator=(const VirtualComponentView& source
             _data = new byte[source.description()->size()];
         }
         _description = source.description();
-        for (auto& member : _description->members())
-            VirtualType::construct(member.type, _data + member.offset);
+        _description->construct(_data);
     }
 
-    for (auto& member : _description->members())
-        VirtualType::copy(member.type, _data + member.offset, source.data() + member.offset);
+    _description->copy(source.data(), _data);
     return *this;
 }
 
