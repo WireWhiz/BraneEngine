@@ -7,7 +7,7 @@ ColumnLimit: 120
 # Indents
 IndentWidth: 2
 PPIndentWidth: 2
-NamespaceIndentation: Inner
+NamespaceIndentation: All
 
 # Breaking
 BreakBeforeBraces: Stroustrup
