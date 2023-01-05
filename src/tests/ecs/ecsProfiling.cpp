@@ -11,15 +11,15 @@
 #include <random>
 
 namespace std {
-template <> struct hash<ComponentSet> {
-  size_t operator()(const ComponentSet &componentSet) const
-  {
-    size_t h = 17;
-    for(auto id : componentSet)
-      h = h * 31 + hash<ComponentID>()(id);
-    return h;
-  }
-};
+  template <> struct hash<ComponentSet> {
+    size_t operator()(const ComponentSet &componentSet) const
+    {
+      size_t h = 17;
+      for(auto id : componentSet)
+        h = h * 31 + hash<ComponentID>()(id);
+      return h;
+    }
+  };
 } // namespace std
 
 void allPossibleComponentSets(const ComponentSet &set, std::unordered_set<ComponentSet> &results)

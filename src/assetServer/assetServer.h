@@ -14,7 +14,7 @@ class AssetManager;
 
 class NetworkManager;
 namespace net {
-class Connection;
+  class Connection;
 }
 
 struct IncrementalAssetSender {

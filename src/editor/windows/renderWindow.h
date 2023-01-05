@@ -14,9 +14,9 @@
 #include <vector>
 
 namespace graphics {
-class RenderTexture;
-class SceneRenderer;
-class SwapChain;
+  class RenderTexture;
+  class SceneRenderer;
+  class SwapChain;
 } // namespace graphics
 
 class Assembly;

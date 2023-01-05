@@ -13,7 +13,7 @@ class EntityManager;
 class ComponentManager;
 class AssetManager;
 namespace graphics {
-class VulkanRuntime;
+  class VulkanRuntime;
 }
 
 class Assembly : public Asset {

@@ -12,10 +12,10 @@
 class VersionedJson;
 
 namespace Json {
-Value &resolvePath(const std::string &path, Json::Value &root);
-std::string getPathComponent(const std::string &path, uint32_t index);
-void insertArrayValue(const Value &value, ArrayIndex index, Value &array);
-void eraseArrayValue(ArrayIndex index, Value &array);
+  Value &resolvePath(const std::string &path, Json::Value &root);
+  std::string getPathComponent(const std::string &path, uint32_t index);
+  void insertArrayValue(const Value &value, ArrayIndex index, Value &array);
+  void eraseArrayValue(ArrayIndex index, Value &array);
 } // namespace Json
 
 class JsonChangeBase {

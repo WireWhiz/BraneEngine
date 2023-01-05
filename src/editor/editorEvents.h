@@ -12,7 +12,7 @@
 #include <memory>
 
 namespace net {
-class Connection;
+  class Connection;
 }
 class ServerDirectory;
 class LoginEvent : public GUIEvent {

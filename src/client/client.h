@@ -9,7 +9,7 @@
 
 class AssetManager;
 namespace graphics {
-class SceneRenderer;
+  class SceneRenderer;
 }
 
 class Client : public Module {

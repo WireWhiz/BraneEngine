@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace graphics {
-class VulkanRuntime;
+  class VulkanRuntime;
 }
 
 class GUIRenderer;

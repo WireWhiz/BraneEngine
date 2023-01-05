@@ -20,42 +20,42 @@ template <class T> constexpr inline T readVirtual(const byte *var) { return *(T 
 template <class T> constexpr inline void setVirtual(const byte *var, T value) { *(T *)var = value; }
 
 namespace VirtualType {
-enum Type {
-  virtualUnknown = 0,
-  virtualBool,
-  virtualEntityID,
-  virtualInt,
-  virtualInt64,
-  virtualUInt,
-  virtualUInt64,
-  virtualFloat,
-  virtualString,
-  virtualAssetID,
-  virtualVec3,
-  virtualVec4,
-  virtualQuat,
-  virtualMat4,
-  virtualFloatArray,
-  virtualIntArray,
-  virtualUIntArray,
-  virtualEntityIDArray
-};
-template <typename T> Type type();
-std::string typeToString(Type type);
-Type stringToType(const std::string &type);
-void serialize(Type type, OutputSerializer data, const byte *source);
-void deserialize(Type type, InputSerializer data, byte *source);
-size_t size(Type type);
-void construct(Type type, byte *var);
-void deconstruct(Type type, byte *var);
-void copy(Type type, byte *dest, const byte *source);
-void move(Type type, byte *dest, byte *source);
-template <typename T> void serialize(OutputSerializer &data, const byte *source) { data << *getVirtual<T>(source); }
-template <typename T> void deserialize(InputSerializer &data, byte *source) { data >> *getVirtual<T>(source); }
-template <typename T> void construct(byte *var) { new(var) T(); }
-template <typename T> void deconstruct(byte *var) { ((T *)var)->~T(); }
-template <typename T> void copy(byte *dest, const byte *source) { *((T *)dest) = *((T *)source); }
-template <typename T> void move(byte *dest, byte *source) { *((T *)dest) = std::move(*((T *)source)); }
+  enum Type {
+    virtualUnknown = 0,
+    virtualBool,
+    virtualEntityID,
+    virtualInt,
+    virtualInt64,
+    virtualUInt,
+    virtualUInt64,
+    virtualFloat,
+    virtualString,
+    virtualAssetID,
+    virtualVec3,
+    virtualVec4,
+    virtualQuat,
+    virtualMat4,
+    virtualFloatArray,
+    virtualIntArray,
+    virtualUIntArray,
+    virtualEntityIDArray
+  };
+  template <typename T> Type type();
+  std::string typeToString(Type type);
+  Type stringToType(const std::string &type);
+  void serialize(Type type, OutputSerializer data, const byte *source);
+  void deserialize(Type type, InputSerializer data, byte *source);
+  size_t size(Type type);
+  void construct(Type type, byte *var);
+  void deconstruct(Type type, byte *var);
+  void copy(Type type, byte *dest, const byte *source);
+  void move(Type type, byte *dest, byte *source);
+  template <typename T> void serialize(OutputSerializer &data, const byte *source) { data << *getVirtual<T>(source); }
+  template <typename T> void deserialize(InputSerializer &data, byte *source) { data >> *getVirtual<T>(source); }
+  template <typename T> void construct(byte *var) { new(var) T(); }
+  template <typename T> void deconstruct(byte *var) { ((T *)var)->~T(); }
+  template <typename T> void copy(byte *dest, const byte *source) { *((T *)dest) = *((T *)source); }
+  template <typename T> void move(byte *dest, byte *source) { *((T *)dest) = std::move(*((T *)source)); }
 }; // namespace VirtualType
 
 template <typename T> VirtualType::Type VirtualType::type()

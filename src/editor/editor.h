@@ -15,7 +15,7 @@
 #include <unordered_map>
 
 namespace net {
-class Connection;
+  class Connection;
 }
 
 class GUI;
