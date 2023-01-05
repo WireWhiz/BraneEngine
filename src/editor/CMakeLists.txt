@@ -13,9 +13,9 @@ add_executable(BraneEditor
         editor.cpp
         editorEvents.cpp
         braneProject.cpp)
-if(WIN32)
+if (WIN32)
     set_target_properties(BraneEditor PROPERTIES WIN32_EXECUTABLE $<IF:$<CONFIG:Release>,TRUE,FALSE>)
-endif()
+endif ()
 target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )

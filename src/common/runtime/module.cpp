@@ -4,13 +4,6 @@
 
 #include "module.h"
 
+void Module::start() {}
 
-void Module::start()
-{
-
-}
-
-void Module::stop()
-{
-
-}
+void Module::stop() {}

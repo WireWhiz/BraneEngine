@@ -1,26 +1,24 @@
 #pragma once
 
+#include "assets/asset.h"
 #include "config/config.h"
+#include "fileManager/fileManager.h"
+#include "networking/networking.h"
 #include "runtime/module.h"
 #include "utility/threadPool.h"
-#include "assets/asset.h"
-#include "networking/networking.h"
-#include "fileManager/fileManager.h"
 
 class AssetManager;
-namespace graphics
-{
-    class SceneRenderer;
+namespace graphics {
+class SceneRenderer;
 }
 
+class Client : public Module {
+  robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
+  graphics::SceneRenderer *_renderer;
+  EntityID _mainCamera;
 
-class Client : public Module
-{
-    robin_hood::unordered_map<HashedAssetID, EntityID> _chunkRoots;
-    graphics::SceneRenderer* _renderer;
-    EntityID _mainCamera;
 public:
-    Client();
-    void start() override;
-    static const char* name();
+  Client();
+  void start() override;
+  static const char *name();
 };

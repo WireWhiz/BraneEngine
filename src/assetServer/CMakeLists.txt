@@ -11,10 +11,10 @@ target_compile_definitions(AssetServer PRIVATE ${COMMON_DEFS} ${ASSET_SERVER_DEF
 
 set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/assetServer)
 configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/database/data.db)
+if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/database/data.db)
     message("resetting database")
     file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/database/data.db DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/database)
-endif()
+endif ()
 
 install(TARGETS AssetServer
         RUNTIME

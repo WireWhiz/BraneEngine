@@ -5,17 +5,15 @@
 #ifndef BRANEENGINE_EDITORWINDOW_H
 #define BRANEENGINE_EDITORWINDOW_H
 
-
 #include "ui/guiWindow.h"
 
 class Editor;
-class EditorWindow : public GUIWindow
-{
+class EditorWindow : public GUIWindow {
 protected:
-    Editor& _editor;
+  Editor &_editor;
+
 public:
-    EditorWindow(GUI& ui, Editor& editor);
+  EditorWindow(GUI &ui, Editor &editor);
 };
 
-
-#endif //BRANEENGINE_EDITORWINDOW_H
+#endif // BRANEENGINE_EDITORWINDOW_H

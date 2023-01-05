@@ -8,36 +8,34 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-namespace graphics{
-    class SwapChain;
+namespace graphics {
+class SwapChain;
 
-    class RenderTexture
-    {
-        SwapChain& _sc;
+class RenderTexture {
+  SwapChain &_sc;
 
-        VkDeviceMemory _imageMemory;
-        std::vector<VkImage> _images;
-        std::vector<VkImageView> _imageViews;
-        VkSampler _sampler;
+  VkDeviceMemory _imageMemory;
+  std::vector<VkImage> _images;
+  std::vector<VkImageView> _imageViews;
+  VkSampler _sampler;
 
-        VkFormat _format;
-        VkImage _depthTexture = VK_NULL_HANDLE;
-        VkImageView _depthTextureView = VK_NULL_HANDLE;
-        VkFormat _depthFormat = VK_FORMAT_UNDEFINED;
-        VkExtent2D _size;
-    public:
-        RenderTexture(VkExtent2D size, bool depthTexture, SwapChain& swapChain);
-        ~RenderTexture();
-        VkFormat imageFormat();
-        VkFormat depthTextureFormat();
-        VkExtent2D size();
+  VkFormat _format;
+  VkImage _depthTexture = VK_NULL_HANDLE;
+  VkImageView _depthTextureView = VK_NULL_HANDLE;
+  VkFormat _depthFormat = VK_FORMAT_UNDEFINED;
+  VkExtent2D _size;
 
-        const std::vector<VkImageView>& images();
-        VkImageView depthTexture();
-        VkSampler sampler();
-    };
-}
+public:
+  RenderTexture(VkExtent2D size, bool depthTexture, SwapChain &swapChain);
+  ~RenderTexture();
+  VkFormat imageFormat();
+  VkFormat depthTextureFormat();
+  VkExtent2D size();
 
+  const std::vector<VkImageView> &images();
+  VkImageView depthTexture();
+  VkSampler sampler();
+};
+} // namespace graphics
 
-
-#endif //BRANEENGINE_RENDERTARGET_H
+#endif // BRANEENGINE_RENDERTARGET_H

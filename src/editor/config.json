@@ -1,10 +1,10 @@
 {
   "network": {
-      "asset_server" : "localhost",
-      "tcp_port": 2001,
-      "ssl_port": 2002
+    "asset_server": "localhost",
+    "tcp_port": 2001,
+    "ssl_port": 2002
   },
-  "user":{
-    "name" : ""
+  "user": {
+    "name": ""
   }
 }

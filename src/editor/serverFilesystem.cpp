@@ -3,11 +3,11 @@
 //
 
 #include "serverFilesystem.h"
-#include "utility/strCaseCompare.h"
+#include "assets/asset.h"
 #include "editorEvents.h"
 #include "ui/gui.h"
+#include "utility/strCaseCompare.h"
 #include <algorithm>
-#include "assets/asset.h"
 /*
 
 std::string ServerDirectory::path() const
@@ -51,8 +51,8 @@ void ServerFilesystem::createDirectory(ServerDirectory* parent, const std::strin
     SerializedData req;
     OutputSerializer s(req);
     s << (parent->path() + name);
-    _server->sendRequest("createDirectory", std::move(req), [this, parent](net::ResponseCode code, InputSerializer sData){
-        if(code != net::ResponseCode::success)
+    _server->sendRequest("createDirectory", std::move(req), [this, parent](net::ResponseCode code, InputSerializer
+sData){ if(code != net::ResponseCode::success)
         {
             Runtime::error("Could not create directory");
             return;
@@ -224,7 +224,8 @@ void ServerFilesystem::updateAsset(Asset* asset)
     });
 }
 
-AsyncData<std::vector<ServerFilesystem::SearchResult>> ServerFilesystem::searchAssets(int start, int count, const std::string& match, AssetType type)
+AsyncData<std::vector<ServerFilesystem::SearchResult>> ServerFilesystem::searchAssets(int start, int count, const
+std::string& match, AssetType type)
 {
     AsyncData<std::vector<ServerFilesystem::SearchResult>> results;
     SerializedData data;

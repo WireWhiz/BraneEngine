@@ -6,30 +6,29 @@
 #define BRANEENGINE_SYSTEMMANAGER_H
 
 #include "system.h"
-#include <string>
 #include <memory>
+#include <string>
 
-class SystemManager
-{
-    struct SystemNode{
-        bool hasRun = false;
-        bool isRunning = false;
-        std::vector<SystemNode*> dependencies;
-        std::unique_ptr<System> system;
-        SystemNode(std::unique_ptr<System> s);
-        void run(EntityManager& em, uint32_t& version);
-    };
+class SystemManager {
+  struct SystemNode {
+    bool hasRun = false;
+    bool isRunning = false;
+    std::vector<SystemNode *> dependencies;
+    std::unique_ptr<System> system;
+    SystemNode(std::unique_ptr<System> s);
+    void run(EntityManager &em, uint32_t &version);
+  };
 
-    std::unordered_map<std::string, std::unique_ptr<SystemNode>> _systems;
-    std::unordered_map<std::string, SystemContext> _unmanagedSystems;
+  std::unordered_map<std::string, std::unique_ptr<SystemNode>> _systems;
+  std::unordered_map<std::string, SystemContext> _unmanagedSystems;
+
 public:
-    uint32_t globalVersion = 0;
-    //TODO: have an actual scheduling system in here
-    void runUnmanagedSystem(const std::string& name, const std::function<void(SystemContext* data)>& f);
-    void runSystems(EntityManager& em);
-    void addSystem(const std::string& name, std::unique_ptr<System> system);
-    bool addDependency(const std::string& systemName, const std::string& dependencyName);
+  uint32_t globalVersion = 0;
+  // TODO: have an actual scheduling system in here
+  void runUnmanagedSystem(const std::string &name, const std::function<void(SystemContext *data)> &f);
+  void runSystems(EntityManager &em);
+  void addSystem(const std::string &name, std::unique_ptr<System> system);
+  bool addDependency(const std::string &systemName, const std::string &dependencyName);
 };
 
-
-#endif //BRANEENGINE_SYSTEMMANAGER_H
+#endif // BRANEENGINE_SYSTEMMANAGER_H

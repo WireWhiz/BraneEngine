@@ -3,9 +3,9 @@
 set(CMAKE_FOLDER BraneEngine)
 
 include_directories(
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/common
-	../include
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+        ../include
 )
 
 # run child cmake lists
@@ -17,6 +17,6 @@ add_subdirectory(editor)
 add_subdirectory(runtimeServer)
 add_subdirectory(assetServer)
 
-if(BUILD_TESTS)
-	add_subdirectory(tests)
-endif()
+if (BUILD_TESTS)
+    add_subdirectory(tests)
+endif ()

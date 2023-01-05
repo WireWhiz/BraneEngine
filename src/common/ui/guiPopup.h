@@ -7,17 +7,17 @@
 
 #include <string>
 typedef unsigned int ImGuiID;
-class GUIPopup
-{
-    ImGuiID _id;
-    std::string _name;
+class GUIPopup {
+  ImGuiID _id;
+  std::string _name;
+
 protected:
-    virtual void drawBody() = 0;
+  virtual void drawBody() = 0;
+
 public:
-    GUIPopup(const std::string& name);
-    virtual ~GUIPopup() = default;
-    void draw();
+  GUIPopup(const std::string &name);
+  virtual ~GUIPopup() = default;
+  void draw();
 };
 
-
-#endif //BRANEENGINE_GUIPOPUP_H
+#endif // BRANEENGINE_GUIPOPUP_H

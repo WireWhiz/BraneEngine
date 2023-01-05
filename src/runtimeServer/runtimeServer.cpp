@@ -1,24 +1,17 @@
 #include "runtimeServer.h"
 
-RuntimeServer::RuntimeServer()
-{
-    _running = true;
-}
+RuntimeServer::RuntimeServer() { _running = true; }
 
-RuntimeServer::~RuntimeServer()
-{
-}
+RuntimeServer::~RuntimeServer() {}
 
 void RuntimeServer::createSystems()
 {
-    //FunctionPointerSystem fps(0, );
-
+  // FunctionPointerSystem fps(0, );
 }
 
 void RuntimeServer::run()
 {
-    while (_running)
-    {
-        em.runSystems();
-    }
+  while(_running) {
+    em.runSystems();
+  }
 }
