@@ -7,13 +7,12 @@
 
 #include "editorWindow.h"
 class EntityManager;
-class MemoryManagerWindow : public EditorWindow
-{
-    EntityManager* _em;
-    void displayContent() override;
+class MemoryManagerWindow : public EditorWindow {
+  EntityManager *_em;
+  void displayContent() override;
+
 public:
-    MemoryManagerWindow(GUI& ui, Editor& editor);
+  MemoryManagerWindow(GUI &ui, Editor &editor);
 };
 
-
-#endif //BRANEENGINE_MEMORYMANAGERWINDOW_H
+#endif // BRANEENGINE_MEMORYMANAGERWINDOW_H

@@ -1,17 +1,16 @@
 #pragma once
-#include <json/json.h>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <cstdint>
+#include <json/json.h>
 
-class Config
-{
-    const static char* configFileName;
-    static Json::Value root;
+class Config {
+  const static char *configFileName;
+  static Json::Value root;
 
 public:
-    static void loadConfig();
-    static void save();
+  static void loadConfig();
+  static void save();
 
-    static Json::Value& json();
+  static Json::Value &json();
 };

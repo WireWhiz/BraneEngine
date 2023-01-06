@@ -9,19 +9,14 @@
 #include "assets/types/meshAsset.h"
 #include "gltfLoader.h"
 class MaterialAsset;
-class AssemblyBuilder
-{
+class AssemblyBuilder {
 public:
-    struct AssemblyAssets
-    {
-        std::unique_ptr<Assembly> assembly;
-        std::vector<std::unique_ptr<MeshAsset>> meshes;
-    };
-    static AssemblyBuilder::AssemblyAssets
-    buildAssembly(const std::string& name, GLTFLoader& loader, MaterialAsset* defaultMaterial);
+  struct AssemblyAssets {
+    std::unique_ptr<Assembly> assembly;
+    std::vector<std::unique_ptr<MeshAsset>> meshes;
+  };
+  static AssemblyBuilder::AssemblyAssets
+  buildAssembly(const std::string &name, GLTFLoader &loader, MaterialAsset *defaultMaterial);
 };
 
-
-
-
-#endif //BRANEENGINE_ASSEMBLYBUILDER_H
+#endif // BRANEENGINE_ASSEMBLYBUILDER_H
