@@ -4,9 +4,12 @@
 
 #include "guiRenderer.h"
 #include "gui.h"
-#include <ImGuizmo.h>
+
+// ImGUI headers must come before ImGuizmo header
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
+#include <ImGuizmo.h>
+
 #include <runtime/runtime.h>
 
 void GUIRenderer::render(VkCommandBuffer cmdBuffer)
