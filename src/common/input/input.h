@@ -5,17 +5,18 @@
 #ifndef BRANEENGINE_INPUT_H
 #define BRANEENGINE_INPUT_H
 
-#include "runtime/module.h"
 #include "graphics/window.h"
+#include "runtime/module.h"
 
-class InputManager : public Module
-{
-    graphics::Window* _window;
+class InputManager : public Module {
+  graphics::Window* _window;
+
 public:
-    InputManager();
-    void start() override;
-    static const char* name();
+  InputManager();
+
+  void start() override;
+
+  static const char* name();
 };
 
-
-#endif //BRANEENGINE_INPUT_H
+#endif // BRANEENGINE_INPUT_H

@@ -1,108 +1,101 @@
 #pragma once
+
+#include <cassert>
+#include <iterator>
 #include <mutex>
 #include <queue>
-#include <iterator>
-#include <cassert>
 
-template <class T>
-class AsyncQueue
-{
+template <class T> class AsyncQueue {
 private:
-    std::mutex _m;
-    std::deque<T> _queue;
+  std::mutex _m;
+  std::deque<T> _queue;
+
 public:
-    AsyncQueue() = default;
-    AsyncQueue(const AsyncQueue&) = delete;
-    ~AsyncQueue()
-    {
-        _queue.clear();
-    }
-    const T& front()
-    {
-        std::scoped_lock lock(_m);
-        return _queue.front();
-    }
+  AsyncQueue() = default;
 
-    const T& back()
-    {
-        std::scoped_lock lock(_m);
-        return _queue.back();
-    }
+  AsyncQueue(const AsyncQueue&) = delete;
 
-    void push_back(const T& value)
-    {
-        std::scoped_lock lock(_m);
-        _queue.emplace_back(value);
-    }
+  ~AsyncQueue() { _queue.clear(); }
 
-    void push_back(T&& value)
-    {
-        std::scoped_lock lock(_m);
-        _queue.emplace_back(std::move(value));
-    }
+  const T& front()
+  {
+    std::scoped_lock lock(_m);
+    return _queue.front();
+  }
 
-    void push_front(const T& value)
-    {
-        std::scoped_lock lock(_m);
-        _queue.emplace_back(value);
-    }
+  const T& back()
+  {
+    std::scoped_lock lock(_m);
+    return _queue.back();
+  }
 
-    size_t count()
-    {
-        std::scoped_lock lock(_m);
-        return _queue.size();
-    }
+  void push_back(const T& value)
+  {
+    std::scoped_lock lock(_m);
+    _queue.emplace_back(value);
+  }
 
-    bool empty()
-    {
-        return count() == 0;
-    }
+  void push_back(T&& value)
+  {
+    std::scoped_lock lock(_m);
+    _queue.emplace_back(std::move(value));
+  }
 
-    void clean()
-    {
-        std::scoped_lock lock(_m);
-        _queue.erase(std::remove(_queue.begin(), _queue.end(), nullptr));
-    }
+  void push_front(const T& value)
+  {
+    std::scoped_lock lock(_m);
+    _queue.emplace_back(value);
+  }
 
-    void erase(T& value)
-    {
-        std::scoped_lock lock(_m);
-        _queue.erase(std::remove(_queue.begin(), _queue.end(), value));
-    }
+  size_t count()
+  {
+    std::scoped_lock lock(_m);
+    return _queue.size();
+  }
 
-    void clear()
-    {
-        std::scoped_lock lock(_m);
-        _queue.clear();
-    }
+  bool empty() { return count() == 0; }
 
-    T pop_front()
-    {
-        std::scoped_lock lock(_m);
-        assert(!_queue.empty());
-        T value = std::move(_queue.front());
-        _queue.pop_front();
-        return std::move(value);
-    }
+  void clean()
+  {
+    std::scoped_lock lock(_m);
+    _queue.erase(std::remove(_queue.begin(), _queue.end(), nullptr));
+  }
 
-    T pop_back()
-    {
-        std::scoped_lock lock(_m);
-        assert(!_queue.empty());
-        T value = std::move(_queue.back());
-        _queue.pop_back();
-        return std::move(value);
-    }
+  void erase(T& value)
+  {
+    std::scoped_lock lock(_m);
+    _queue.erase(std::remove(_queue.begin(), _queue.end(), value));
+  }
 
-    void lock()
-    {
-        _m.lock();
-    }
+  void clear()
+  {
+    std::scoped_lock lock(_m);
+    _queue.clear();
+  }
 
-    void unlock()
-    {
-        _m.unlock();
-    }
-     typename std::deque<T>::iterator begin() { return _queue.begin(); }
-     typename std::deque<T>::iterator end() { return _queue.end(); }
+  T pop_front()
+  {
+    std::scoped_lock lock(_m);
+    assert(!_queue.empty());
+    T value = std::move(_queue.front());
+    _queue.pop_front();
+    return std::move(value);
+  }
+
+  T pop_back()
+  {
+    std::scoped_lock lock(_m);
+    assert(!_queue.empty());
+    T value = std::move(_queue.back());
+    _queue.pop_back();
+    return std::move(value);
+  }
+
+  void lock() { _m.lock(); }
+
+  void unlock() { _m.unlock(); }
+
+  typename std::deque<T>::iterator begin() { return _queue.begin(); }
+
+  typename std::deque<T>::iterator end() { return _queue.end(); }
 };

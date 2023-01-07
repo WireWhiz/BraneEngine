@@ -15,8 +15,8 @@ AlwaysBreakAfterReturnType: None
 AlwaysBreakAfterDefinitionReturnType: None
 
 # Alignments
-PointerAlignment: Right
-ReferenceAlignment: Right
+PointerAlignment: Left
+ReferenceAlignment: Left
 
 # Break parameters to each line
 AlignAfterOpenBracket: AlwaysBreak
@@ -28,6 +28,9 @@ SpaceBeforeParens: Never
 
 # Tabs
 UseTab: Never
+
+# Includes
+SortIncludes: Never
 
 ---
 Language: CSharp

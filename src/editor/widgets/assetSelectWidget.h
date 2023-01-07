@@ -5,17 +5,17 @@
 #ifndef BRANEENGINE_ASSETSELECTWIDGET_H
 #define BRANEENGINE_ASSETSELECTWIDGET_H
 
-#include "assets/assetType.h"
 #include "assetSearchWidget.h"
+#include "assets/assetType.h"
 #include <memory>
 
 class AssetID;
-class AssetSelectWidget
-{
-    static std::unique_ptr<AssetSearchWidget> _searchWidget;
+
+class AssetSelectWidget {
+  static std::unique_ptr<AssetSearchWidget> _searchWidget;
+
 public:
-    static bool draw(AssetID& id, AssetType type = AssetType::none);
+  static bool draw(AssetID& id, AssetType type = AssetType::none);
 };
 
-
-#endif //BRANEENGINE_ASSETSELECTWIDGET_H
+#endif // BRANEENGINE_ASSETSELECTWIDGET_H

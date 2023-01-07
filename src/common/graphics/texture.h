@@ -1,37 +1,44 @@
 #pragma once
-#include "graphicsBuffer.h"
+
 #include "assets/types/imageAsset.h"
+#include "graphicsBuffer.h"
 
 #include <vulkan/vulkan.h>
 
-#include <string>
 #include <array>
+#include <string>
 
-namespace graphics
-{
-    using TextureID = uint32_t;
-    extern const std::array<const char*, 1> textureFileExtensions;
-    class Texture
-    {
-        ImageAsset* _asset;
+namespace graphics {
+  using TextureID = uint32_t;
+  extern const std::array<const char*, 1> textureFileExtensions;
 
-        VkImage _textureImage;
-        VkFormat _format;
-        VkDeviceMemory _textureImageMemory;
+  class Texture {
+    ImageAsset* _asset;
 
-        VkImageView _textureImageView;
-        VkSampler _sampler = VK_NULL_HANDLE;
+    VkImage _textureImage;
+    VkFormat _format;
+    VkDeviceMemory _textureImageMemory;
 
-        void createTextureImageView();
-        void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void copyBufferToImage(GraphicsBuffer& buffer);
+    VkImageView _textureImageView;
+    VkSampler _sampler = VK_NULL_HANDLE;
 
-    public:
-        Texture(ImageAsset* asset);
-        ~Texture();
-        VkImage get();
-        VkImageView view();
-        VkSampler sampler();
-        void update();
-    };
-}
+    void createTextureImageView();
+
+    void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+
+    void copyBufferToImage(GraphicsBuffer& buffer);
+
+  public:
+    Texture(ImageAsset* asset);
+
+    ~Texture();
+
+    VkImage get();
+
+    VkImageView view();
+
+    VkSampler sampler();
+
+    void update();
+  };
+} // namespace graphics

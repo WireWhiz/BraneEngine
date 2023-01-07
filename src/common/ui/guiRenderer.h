@@ -8,14 +8,16 @@
 #include <graphics/renderer.h>
 
 class GUI;
-class GUIRenderer : public graphics::Renderer
-{
-    GUI* _gui;
+
+class GUIRenderer : public graphics::Renderer {
+  GUI* _gui;
+
 public:
-    GUIRenderer(graphics::SwapChain& swapChain, GUI* gui);
-    void render(VkCommandBuffer cmdBuffer) override;
-    void rebuild() override;
+  GUIRenderer(graphics::SwapChain& swapChain, GUI* gui);
+
+  void render(VkCommandBuffer cmdBuffer) override;
+
+  void rebuild() override;
 };
 
-
-#endif //BRANEENGINE_GUIRENDERER_H
+#endif // BRANEENGINE_GUIRENDERER_H

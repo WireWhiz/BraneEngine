@@ -4,12 +4,6 @@
 
 #include "guiEvent.h"
 
-GUIEvent::GUIEvent(std::string name)
-{
-    _name = name;
-}
+GUIEvent::GUIEvent(std::string name) { _name = name; }
 
-const std::string& GUIEvent::name() const
-{
-    return _name;
-}
+const std::string& GUIEvent::name() const { return _name; }

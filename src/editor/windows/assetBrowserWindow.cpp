@@ -7,13 +7,8 @@
 
 AssetBrowserWindow::AssetBrowserWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor), _browser(ui, true)
 {
-    _flags = ImGuiWindowFlags_NoScrollbar;
-    _name = "Asset Browser";
+  _flags = ImGuiWindowFlags_NoScrollbar;
+  _name = "Asset Browser";
 }
 
-void AssetBrowserWindow::displayContent()
-{
-    _browser.displayFullBrowser();
-}
-
-
+void AssetBrowserWindow::displayContent() { _browser.displayFullBrowser(); }

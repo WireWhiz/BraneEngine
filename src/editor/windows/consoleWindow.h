@@ -6,25 +6,25 @@
 #define BRANEENGINE_CONSOLEWINDOW_H
 
 #include "editorWindow.h"
-#include <string>
 #include <runtime/logging.h>
+#include <string>
 
-class ConsoleWindow : public EditorWindow
-{
-    struct CachedLog
-    {
-        std::string text = "";
-        Logging::LogLevel level = Logging::LogLevel::log;
-        float lineCount;
-    };
-    std::vector<CachedLog> _messages;
-    size_t _listenerIndex;
-    bool _autoScroll = true;
-    void displayContent() override;
+class ConsoleWindow : public EditorWindow {
+  struct CachedLog {
+    std::string text = "";
+    Logging::LogLevel level = Logging::LogLevel::log;
+    float lineCount;
+  };
+  std::vector<CachedLog> _messages;
+  size_t _listenerIndex;
+  bool _autoScroll = true;
+
+  void displayContent() override;
+
 public:
-    ConsoleWindow(GUI& ui, Editor& editor);
-    ~ConsoleWindow();
+  ConsoleWindow(GUI& ui, Editor& editor);
+
+  ~ConsoleWindow();
 };
 
-
-#endif //BRANEENGINE_CONSOLEWINDOW_H
+#endif // BRANEENGINE_CONSOLEWINDOW_H

@@ -5,23 +5,21 @@
 #ifndef BRANEENGINE_CAMERA_H
 #define BRANEENGINE_CAMERA_H
 
-#include "glm/mat4x4.hpp"
 #include "glm/gtx/quaternion.hpp"
+#include "glm/mat4x4.hpp"
 
 #include "ecs/nativeComponent.h"
 
-namespace graphics
-{
+namespace graphics {
 
-    class Camera : public NativeComponent<Camera>
-    {
-    public:
-        REGISTER_MEMBERS_1("camera",fov,"fov");
-        float fov = 45;
+  class Camera : public NativeComponent<Camera> {
+  public:
+    REGISTER_MEMBERS_1("camera", fov, "fov");
+    float fov = 45;
 
-        glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
-    };
+    glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
+  };
 
-} // graphics
+} // namespace graphics
 
-#endif //BRANEENGINE_CAMERA_H
+#endif // BRANEENGINE_CAMERA_H
