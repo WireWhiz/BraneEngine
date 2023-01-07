@@ -15,49 +15,49 @@
 class Module;
 
 namespace Runtime {
-    void init();
+  void init();
 
-    void cleanup();
+  void cleanup();
 
-    void addModule(const std::string &name, Module *m);
+  void addModule(const std::string& name, Module* m);
 
-    template<typename T>
-    void addModule() {
-        static_assert(std::is_base_of<Module, T>());
-        addModule(T::name(), new T());
-    }
+  template <typename T> void addModule()
+  {
+    static_assert(std::is_base_of<Module, T>());
+    addModule(T::name(), new T());
+  }
 
-    bool hasModule(const std::string &name);
+  bool hasModule(const std::string& name);
 
-    template<typename T>
-    bool hasModule() {
-        static_assert(std::is_base_of<Module, T>());
-        return hasModule(T::name());
-    }
+  template <typename T> bool hasModule()
+  {
+    static_assert(std::is_base_of<Module, T>());
+    return hasModule(T::name());
+  }
 
-    Module *getModule(const std::string &name);
+  Module* getModule(const std::string& name);
 
-    template<typename T>
-    T *getModule() {
-        static_assert(std::is_base_of<Module, T>());
-        return (T *) getModule(T::name());
-    }
+  template <typename T> T* getModule()
+  {
+    static_assert(std::is_base_of<Module, T>());
+    return (T*)getModule(T::name());
+  }
 
-    Timeline &timeline();
+  Timeline& timeline();
 
-    void log(const std::string &message);
+  void log(const std::string& message);
 
-    void warn(const std::string &message);
+  void warn(const std::string& message);
 
-    void error(const std::string &message);
+  void error(const std::string& message);
 
-    void setTickRate(uint32_t tickRate);
+  void setTickRate(uint32_t tickRate);
 
-    void run();
+  void run();
 
-    void stop();
+  void stop();
 
-    float deltaTime();
+  float deltaTime();
 }; // namespace Runtime
 
 #endif // BRANEENGINE_RUNTIME_H

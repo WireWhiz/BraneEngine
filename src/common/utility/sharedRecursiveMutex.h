@@ -7,49 +7,49 @@
 #include <unordered_map>
 
 class SharedRecursiveMutex {
-    std::mutex _m;
-    std::thread::id _owner;
-    size_t _ownerLockCount = 0;
-    size_t _sharedOwners = 0;
+  std::mutex _m;
+  std::thread::id _owner;
+  size_t _ownerLockCount = 0;
+  size_t _sharedOwners = 0;
 
 public:
-    class ScopedLock {
-        SharedRecursiveMutex *_m;
+  class ScopedLock {
+    SharedRecursiveMutex* _m;
 
-    public:
-        ScopedLock(SharedRecursiveMutex &);
+  public:
+    ScopedLock(SharedRecursiveMutex&);
 
-        ScopedLock(const ScopedLock &) = delete;
+    ScopedLock(const ScopedLock&) = delete;
 
-        ScopedLock(ScopedLock &&) noexcept;
+    ScopedLock(ScopedLock&&) noexcept;
 
-        ~ScopedLock();
-    };
+    ~ScopedLock();
+  };
 
-    class SharedScopedLock {
-        SharedRecursiveMutex *_m;
+  class SharedScopedLock {
+    SharedRecursiveMutex* _m;
 
-    public:
-        SharedScopedLock(SharedRecursiveMutex &);
+  public:
+    SharedScopedLock(SharedRecursiveMutex&);
 
-        SharedScopedLock(const SharedScopedLock &) = delete;
+    SharedScopedLock(const SharedScopedLock&) = delete;
 
-        SharedScopedLock(SharedScopedLock &&) noexcept;
+    SharedScopedLock(SharedScopedLock&&) noexcept;
 
-        ~SharedScopedLock();
-    };
+    ~SharedScopedLock();
+  };
 
-    SharedRecursiveMutex();
+  SharedRecursiveMutex();
 
-    void lock();
+  void lock();
 
-    void unlock();
+  void unlock();
 
-    void lock_shared();
+  void lock_shared();
 
-    void unlock_shared();
+  void unlock_shared();
 
-    ScopedLock scopedLock();
+  ScopedLock scopedLock();
 
-    SharedScopedLock sharedScopedLock();
+  SharedScopedLock sharedScopedLock();
 };

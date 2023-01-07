@@ -6,13 +6,13 @@
 #include <json/json.h>
 
 class Config {
-    const static char *configFileName;
-    static Json::Value root;
+  const static char* configFileName;
+  static Json::Value root;
 
 public:
-    static void loadConfig();
+  static void loadConfig();
 
-    static void save();
+  static void save();
 
-    static Json::Value &json();
+  static Json::Value& json();
 };

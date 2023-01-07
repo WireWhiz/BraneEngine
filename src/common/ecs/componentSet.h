@@ -10,26 +10,26 @@
 // Class that always has components sorted
 class ComponentSet {
 private:
-    robin_hood::unordered_flat_set <ComponentID> _components;
+  robin_hood::unordered_flat_set<ComponentID> _components;
 
 public:
-    ComponentSet() = default;
+  ComponentSet() = default;
 
-    ComponentSet(const std::vector<ComponentID> &components);
+  ComponentSet(const std::vector<ComponentID>& components);
 
-    void add(ComponentID component);
+  void add(ComponentID component);
 
-    void remove(ComponentID component);
+  void remove(ComponentID component);
 
-    bool contains(ComponentID component) const;
+  bool contains(ComponentID component) const;
 
-    bool contains(const ComponentSet &subset) const;
+  bool contains(const ComponentSet& subset) const;
 
-    size_t size() const;
+  size_t size() const;
 
-    bool operator==(const ComponentSet &) const;
+  bool operator==(const ComponentSet&) const;
 
-    robin_hood::unordered_flat_set<ComponentID>::const_iterator begin() const;
+  robin_hood::unordered_flat_set<ComponentID>::const_iterator begin() const;
 
-    robin_hood::unordered_flat_set<ComponentID>::const_iterator end() const;
+  robin_hood::unordered_flat_set<ComponentID>::const_iterator end() const;
 };

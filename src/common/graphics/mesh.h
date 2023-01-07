@@ -11,46 +11,46 @@
 class MeshAsset;
 
 namespace graphics {
-    class GraphicsBuffer;
+  class GraphicsBuffer;
 
-    using MeshID = uint32_t;
+  using MeshID = uint32_t;
 
-    class Mesh {
-    private:
-        bool _locked;
-        GraphicsBuffer *_stagingBuffer;
-        GraphicsBuffer *_dataBuffer;
-        MeshAsset *_meshAsset;
+  class Mesh {
+  private:
+    bool _locked;
+    GraphicsBuffer* _stagingBuffer;
+    GraphicsBuffer* _dataBuffer;
+    MeshAsset* _meshAsset;
 
-    public:
-        Mesh(MeshAsset *meshAsset);
+  public:
+    Mesh(MeshAsset* meshAsset);
 
-        ~Mesh();
+    ~Mesh();
 
-        MeshAsset *meshAsset();
+    MeshAsset* meshAsset();
 
-        VkBuffer buffer() const;
+    VkBuffer buffer() const;
 
-        VkIndexType indexBufferType(uint32_t primitive) const;
+    VkIndexType indexBufferType(uint32_t primitive) const;
 
-        VkDeviceSize indexBufferOffset(uint32_t primitive) const;
+    VkDeviceSize indexBufferOffset(uint32_t primitive) const;
 
-        bool hasAttributeBuffer(uint32_t, const std::string &name) const;
+    bool hasAttributeBuffer(uint32_t, const std::string& name) const;
 
-        VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string &name) const;
+    VkDeviceSize attributeBufferOffset(uint32_t primitive, const std::string& name) const;
 
-        uint32_t size() const;
+    uint32_t size() const;
 
-        uint32_t indexCount(uint32_t primitive) const;
+    uint32_t indexCount(uint32_t primitive) const;
 
-        uint32_t vertexCount(uint32_t primitive) const;
+    uint32_t vertexCount(uint32_t primitive) const;
 
-        uint32_t primitiveCount() const;
+    uint32_t primitiveCount() const;
 
-        void updateData();
+    void updateData();
 
-        void lock();
+    void lock();
 
-        void unlock();
-    };
+    void unlock();
+  };
 } // namespace graphics

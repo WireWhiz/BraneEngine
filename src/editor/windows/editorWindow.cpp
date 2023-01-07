@@ -4,4 +4,4 @@
 
 #include "editorWindow.h"
 
-EditorWindow::EditorWindow(GUI &ui, Editor &editor) : GUIWindow(ui), _editor(editor) {}
+EditorWindow::EditorWindow(GUI& ui, Editor& editor) : GUIWindow(ui), _editor(editor) {}

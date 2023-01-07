@@ -20,48 +20,46 @@ class ImageAsset;
 class EditorMaterialAsset;
 
 class DataWindow : public EditorWindow {
-    enum class FocusMode {
-        asset, entity
-    };
-    FocusMode _focusMode;
-    std::shared_ptr<EditorAsset> _focusedAsset;
-    uint32_t _focusedAssetEntity = 0;
+  enum class FocusMode { asset, entity };
+  FocusMode _focusMode;
+  std::shared_ptr<EditorAsset> _focusedAsset;
+  uint32_t _focusedAssetEntity = 0;
 
-    struct DraggedComponent {
-        Assembly *asset;
-        size_t entity;
-        size_t componentIndex;
-    };
+  struct DraggedComponent {
+    Assembly* asset;
+    size_t entity;
+    size_t componentIndex;
+  };
 
-    EntityID _focusedEntity;
+  EntityID _focusedEntity;
 
-    void displayAssetData();
+  void displayAssetData();
 
-    void displayEntityData();
+  void displayEntityData();
 
-    void displayEntityAssetData();
+  void displayEntityAssetData();
 
-    void displayChunkData();
+  void displayChunkData();
 
-    void displayAssemblyData();
+  void displayAssemblyData();
 
-    void displayMeshData();
+  void displayMeshData();
 
-    void displayMaterialData();
+  void displayMaterialData();
 
-    ImageAsset *_previewImageAsset = nullptr;
-    VkDescriptorSet _imagePreview = VK_NULL_HANDLE;
+  ImageAsset* _previewImageAsset = nullptr;
+  VkDescriptorSet _imagePreview = VK_NULL_HANDLE;
 
-    void displayImageData();
+  void displayImageData();
 
-    void displayShaderAttributes(EditorAsset *asset, EditorMaterialAsset *material);
+  void displayShaderAttributes(EditorAsset* asset, EditorMaterialAsset* material);
 
-    void displayContent() override;
+  void displayContent() override;
 
 public:
-    DataWindow(GUI &ui, Editor &editor);
+  DataWindow(GUI& ui, Editor& editor);
 
-    ~DataWindow();
+  ~DataWindow();
 };
 
 #endif // BRANEENGINE_DATAWINDOW_H

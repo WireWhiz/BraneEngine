@@ -5,123 +5,118 @@
 #include "testing.h"
 #include "utility/jsonVersioner.h"
 
-TEST(VersionedJSON, Path
-)
+TEST(VersionedJSON, Path)
 {
-EXPECT_EQ(Json::getPathComponent("array/1/contained value", 0),
-"array");
-EXPECT_EQ(Json::getPathComponent("array/1/contained value", 1),
-"1");
-EXPECT_EQ(Json::getPathComponent("array/1/contained value", 2),
-"contained value");
+  EXPECT_EQ(Json::getPathComponent("array/1/contained value", 0), "array");
+  EXPECT_EQ(Json::getPathComponent("array/1/contained value", 1), "1");
+  EXPECT_EQ(Json::getPathComponent("array/1/contained value", 2), "contained value");
 
-std::stringstream initJson(R"({"array":["value1",{"contained value":"hello world"}]})");
-Json::Value root;
-initJson >>
-root;
+  std::stringstream initJson(R"({"array":["value1",{"contained value":"hello world"}]})");
+  Json::Value root;
+  initJson >> root;
 
-EXPECT_STREQ(Json::resolvePath("array/1/contained value", root)
-.
+  EXPECT_STREQ(
+      Json::resolvePath("array/1/contained value", root)
+          .
 
-asCString(),
+      asCString(),
 
-"hello world");
+      "hello world");
 }
 
-TEST(VersionedJSON, Change
-)
+TEST(VersionedJSON, Change)
 {
-JsonVersionTracker tracker;
-VersionedJson json(tracker);
+  JsonVersionTracker tracker;
+  VersionedJson json(tracker);
 
-std::stringstream initJson(R"({"value":"hello"})");
-initJson >> json.
+  std::stringstream initJson(R"({"value":"hello"})");
+  initJson >> json.
 
-data();
+              data();
 
-EXPECT_STREQ(json["value"]
-.
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"hello");
+      "hello");
 
-json.changeValue("value", "world");
-EXPECT_STREQ(json["value"]
-.
+  json.changeValue("value", "world");
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"world");
+      "world");
 
-tracker.
+  tracker.
 
-undo();
+      undo();
 
-EXPECT_STREQ(json["value"]
-.
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"hello");
+      "hello");
 
-tracker.
+  tracker.
 
-redo();
+      redo();
 
-EXPECT_STREQ(json["value"]
-.
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"world");
+      "world");
 
-tracker.
+  tracker.
 
-undo();
+      undo();
 
-json.changeValue("value", "there"); // Test overwrite
-EXPECT_STREQ(json["value"]
-.
+  json.changeValue("value", "there"); // Test overwrite
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"there");
+      "there");
 
-tracker.
+  tracker.
 
-redo(); // Test boundaries
-tracker.
+      redo(); // Test boundaries
+  tracker.
 
-redo();
+      redo();
 
-tracker.
+  tracker.
 
-redo();
+      redo();
 
-EXPECT_STREQ(json["value"]
-.
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"there");
+      "there");
 
-tracker.
+  tracker.
 
-undo();
+      undo();
 
-tracker.
+  tracker.
 
-undo();
+      undo();
 
-tracker.
+  tracker.
 
-undo();
+      undo();
 
-EXPECT_STREQ(json["value"]
-.
+  EXPECT_STREQ(
+      json["value"].
 
-asCString(),
+      asCString(),
 
-"hello");
+      "hello");
 }

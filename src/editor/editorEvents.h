@@ -12,69 +12,69 @@
 #include <memory>
 
 namespace net {
-    class Connection;
+  class Connection;
 }
 class ServerDirectory;
 
 class LoginEvent : public GUIEvent {
-    net::Connection *_server;
+  net::Connection* _server;
 
 public:
-    LoginEvent(net::Connection *server);
+  LoginEvent(net::Connection* server);
 
-    inline net::Connection *server() const { return _server; }
+  inline net::Connection* server() const { return _server; }
 };
 
 class DirectoryUpdateEvent : public GUIEvent {
-    ServerDirectory *_dir;
+  ServerDirectory* _dir;
 
 public:
-    DirectoryUpdateEvent(ServerDirectory *dir);
+  DirectoryUpdateEvent(ServerDirectory* dir);
 
-    ServerDirectory *directory() const;
+  ServerDirectory* directory() const;
 };
 
 class AssetReloadEvent : public GUIEvent {
 public:
-    AssetReloadEvent();
+  AssetReloadEvent();
 };
 
 class EntityAssetReloadEvent : public GUIEvent {
-    size_t _entity;
+  size_t _entity;
 
 public:
-    EntityAssetReloadEvent(size_t entity);
+  EntityAssetReloadEvent(size_t entity);
 
-    size_t entity() const;
+  size_t entity() const;
 };
 
 class EditorAsset;
 
 class FocusAssetEvent : public GUIEvent {
-    std::shared_ptr<EditorAsset> _asset;
+  std::shared_ptr<EditorAsset> _asset;
 
 public:
-    FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
+  FocusAssetEvent(std::shared_ptr<EditorAsset> asset);
 
-    std::shared_ptr<EditorAsset> asset() const;
+  std::shared_ptr<EditorAsset> asset() const;
 };
 
 class FocusEntityAssetEvent : public GUIEvent {
-    int _index;
+  int _index;
 
 public:
-    FocusEntityAssetEvent(int index);
+  FocusEntityAssetEvent(int index);
 
-    int entity() const;
+  int entity() const;
 };
 
 class FocusEntityEvent : public GUIEvent {
-    EntityID _id;
+  EntityID _id;
 
 public:
-    FocusEntityEvent(EntityID id);
+  FocusEntityEvent(EntityID id);
 
-    EntityID id() const;
+  EntityID id() const;
 };
 
 #endif // BRANEENGINE_EDITOREVENTS_H

@@ -11,19 +11,19 @@
 class GUIWindow;
 
 class GUIEvent {
-    std::string _name;
+  std::string _name;
 
 public:
-    GUIEvent(std::string name);
+  GUIEvent(std::string name);
 
-    virtual ~GUIEvent() = default;
+  virtual ~GUIEvent() = default;
 
-    const std::string &name() const;
+  const std::string& name() const;
 };
 
 struct GUIEventListener {
-    GUIWindow *window;
-    std::function<void(const GUIEvent *)> callback;
+  GUIWindow* window;
+  std::function<void(const GUIEvent*)> callback;
 };
 
 #endif // BRANEENGINE_GUIEVENT_H

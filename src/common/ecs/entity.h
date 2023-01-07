@@ -20,104 +20,101 @@
 #include <vector>
 
 class EntityIDComponent : public NativeComponent<EntityIDComponent> {
-    REGISTER_MEMBERS_1("EntityID", id, "id")
+  REGISTER_MEMBERS_1("EntityID", id, "id")
 
 public:
-    EntityID id;
+  EntityID id;
 };
 
 class EntityName : public NativeComponent<EntityName> {
-    REGISTER_MEMBERS_1("Name", name, "name")
+  REGISTER_MEMBERS_1("Name", name, "name")
 
 public:
-    std::string name;
+  std::string name;
 };
 
 struct EntityIndex {
-    Archetype *archetype;
-    size_t index;
-    uint32_t version;
+  Archetype* archetype;
+  size_t index;
+  uint32_t version;
 };
 
 class EntityManager : public Module {
-    struct SystemContext {
-        uint32_t version;
-        uint32_t lastVersion;
-    };
+  struct SystemContext {
+    uint32_t version;
+    uint32_t lastVersion;
+  };
 #ifdef TEST_BUILD
-    public:
+public:
 #else
 private:
 #endif
-    uint32_t _globalEntityVersion = 0;
-    staticIndexVector<EntityIndex> _entities;
+  uint32_t _globalEntityVersion = 0;
+  staticIndexVector<EntityIndex> _entities;
 
-    ComponentManager _components;
-    ArchetypeManager _archetypes;
-    SystemManager _systems;
+  ComponentManager _components;
+  ArchetypeManager _archetypes;
+  SystemManager _systems;
 
 public:
-    EntityManager();
+  EntityManager();
 
-    EntityManager(const EntityManager &) = delete;
+  EntityManager(const EntityManager&) = delete;
 
-    ~EntityManager();
+  ~EntityManager();
 
-    Archetype *getArchetype(const ComponentSet &components);
+  Archetype* getArchetype(const ComponentSet& components);
 
-    EntityID createEntity();
+  EntityID createEntity();
 
-    EntityID createEntity(ComponentSet components);
+  EntityID createEntity(ComponentSet components);
 
-    bool tryGetEntity(size_t index, EntityID &id) const;
+  bool tryGetEntity(size_t index, EntityID& id) const;
 
-    void createEntities(const ComponentSet &components, size_t count);
+  void createEntities(const ComponentSet& components, size_t count);
 
-    void destroyEntity(EntityID entity);
+  void destroyEntity(EntityID entity);
 
-    bool entityExists(EntityID entity) const;
+  bool entityExists(EntityID entity) const;
 
-    Archetype *getEntityArchetype(EntityID entity) const;
+  Archetype* getEntityArchetype(EntityID entity) const;
 
-    bool hasArchetype(EntityID entity) const;
+  bool hasArchetype(EntityID entity) const;
 
-    bool hasComponent(EntityID entity, ComponentID component) const;
+  bool hasComponent(EntityID entity, ComponentID component) const;
 
-    template<class T>
-    bool hasComponent(EntityID entity) const { return hasComponent(entity, T::def()->id); }
+  template <class T> bool hasComponent(EntityID entity) const { return hasComponent(entity, T::def()->id); }
 
-    void addComponent(EntityID entity, ComponentID component);
+  void addComponent(EntityID entity, ComponentID component);
 
-    template<class T>
-    void addComponent(EntityID entity) { addComponent(entity, T::def()->id); };
+  template <class T> void addComponent(EntityID entity) { addComponent(entity, T::def()->id); };
 
-    VirtualComponentView getComponent(EntityID entity, ComponentID component) const;
+  VirtualComponentView getComponent(EntityID entity, ComponentID component) const;
 
-    template<class T>
-    T *getComponent(EntityID entity) const {
-        return T::fromVirtual(getComponent(entity, T::def()->id));
-    }
+  template <class T> T* getComponent(EntityID entity) const
+  {
+    return T::fromVirtual(getComponent(entity, T::def()->id));
+  }
 
-    void setComponent(EntityID entity, const VirtualComponent &component);
+  void setComponent(EntityID entity, const VirtualComponent& component);
 
-    void setComponent(EntityID entity, const VirtualComponentView &component);
+  void setComponent(EntityID entity, const VirtualComponentView& component);
 
-    void markComponentChanged(EntityID entity, ComponentID component);
+  void markComponentChanged(EntityID entity, ComponentID component);
 
-    template<class T>
-    void removeComponent(EntityID entity) { removeComponent(entity, T::def()->id); }
+  template <class T> void removeComponent(EntityID entity) { removeComponent(entity, T::def()->id); }
 
-    void removeComponent(EntityID entity, ComponentID component);
+  void removeComponent(EntityID entity, ComponentID component);
 
-    ComponentManager &components();
+  ComponentManager& components();
 
-    SystemManager &systems();
+  SystemManager& systems();
 
-    ArchetypeManager &archetypes();
+  ArchetypeManager& archetypes();
 
-    EntitySet getEntities(ComponentFilter filter);
+  EntitySet getEntities(ComponentFilter filter);
 
-    static const char *name();
+  static const char* name();
 
-    void stop() override;
+  void stop() override;
 };

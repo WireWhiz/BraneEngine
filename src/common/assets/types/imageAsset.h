@@ -10,34 +10,32 @@
 
 class ImageAsset : public IncrementalAsset {
 public:
-    std::vector<uint8_t> data;
-    glm::uvec2 size;
+  std::vector<uint8_t> data;
+  glm::uvec2 size;
 
-    enum ImageType : uint8_t {
-        color = 0, normal = 1
-    } imageType;
+  enum ImageType : uint8_t { color = 0, normal = 1 } imageType;
 
-    ImageAsset();
+  ImageAsset();
 
 #ifdef CLIENT
-    uint32_t runtimeID = -1;
-    bool imageUpdated = false;
-    void onDependenciesLoaded() override;
+  uint32_t runtimeID = -1;
+  bool imageUpdated = false;
+  void onDependenciesLoaded() override;
 #endif
 
-    void serialize(OutputSerializer &s) const override;
+  void serialize(OutputSerializer& s) const override;
 
-    void deserialize(InputSerializer &s) override;
+  void deserialize(InputSerializer& s) override;
 
-    void serializeHeader(OutputSerializer &s) const override;
+  void serializeHeader(OutputSerializer& s) const override;
 
-    void deserializeHeader(InputSerializer &s) override;
+  void deserializeHeader(InputSerializer& s) override;
 
-    std::unique_ptr<SerializationContext> createContext() const override;
+  std::unique_ptr<SerializationContext> createContext() const override;
 
-    bool serializeIncrement(OutputSerializer &sData, SerializationContext *iteratorData) const override;
+  bool serializeIncrement(OutputSerializer& sData, SerializationContext* iteratorData) const override;
 
-    void deserializeIncrement(InputSerializer &sData) override;
+  void deserializeIncrement(InputSerializer& sData) override;
 };
 
 #endif // BRANEENGINE_IMAGEASSET_H

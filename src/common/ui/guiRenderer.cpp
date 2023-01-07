@@ -12,21 +12,22 @@
 
 #include <runtime/runtime.h>
 
-void GUIRenderer::render(VkCommandBuffer cmdBuffer) {
-    startRenderPass(cmdBuffer);
-    ImGui_ImplGlfw_NewFrame();
-    ImGui_ImplVulkan_NewFrame();
-    ImGui::NewFrame();
-    ImGuizmo::BeginFrame();
-    _gui->drawUI();
-    ImGui::Render();
-    ImDrawData *ImGuiDrawData = ImGui::GetDrawData();
-    ImGui::UpdatePlatformWindows();
-    ImGui::RenderPlatformWindowsDefault();
-    ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
-    endRenderPass(cmdBuffer);
+void GUIRenderer::render(VkCommandBuffer cmdBuffer)
+{
+  startRenderPass(cmdBuffer);
+  ImGui_ImplGlfw_NewFrame();
+  ImGui_ImplVulkan_NewFrame();
+  ImGui::NewFrame();
+  ImGuizmo::BeginFrame();
+  _gui->drawUI();
+  ImGui::Render();
+  ImDrawData* ImGuiDrawData = ImGui::GetDrawData();
+  ImGui::UpdatePlatformWindows();
+  ImGui::RenderPlatformWindowsDefault();
+  ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
+  endRenderPass(cmdBuffer);
 }
 
-GUIRenderer::GUIRenderer(graphics::SwapChain &swapChain, GUI *gui) : graphics::Renderer(swapChain) { _gui = gui; }
+GUIRenderer::GUIRenderer(graphics::SwapChain& swapChain, GUI* gui) : graphics::Renderer(swapChain) { _gui = gui; }
 
 void GUIRenderer::rebuild() { Renderer::rebuild(); }

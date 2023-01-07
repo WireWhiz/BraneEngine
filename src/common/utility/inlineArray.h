@@ -9,170 +9,179 @@
 #include <cstdint>
 #include <vector>
 
-template<typename T, size_t Count>
-class InlineArray {
-    T _localData[Count];
-    std::vector<T> *_externalData = nullptr;
-    size_t _size = 0;
+template <typename T, size_t Count> class InlineArray {
+  T _localData[Count];
+  std::vector<T>* _externalData = nullptr;
+  size_t _size = 0;
 
 public:
-    InlineArray() = default;
+  InlineArray() = default;
 
-    InlineArray(const InlineArray &o) noexcept {
-        for (size_t i = 0; i < Count; ++i) {
-            _localData[i] = o._localData[i];
-        }
-        _size = o._size;
-        _externalData = nullptr;
-        if (o._externalData) {
-            _externalData = new std::vector<T>(o._externalData->size());
-            std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
-        }
+  InlineArray(const InlineArray& o) noexcept
+  {
+    for(size_t i = 0; i < Count; ++i) {
+      _localData[i] = o._localData[i];
+    }
+    _size = o._size;
+    _externalData = nullptr;
+    if(o._externalData) {
+      _externalData = new std::vector<T>(o._externalData->size());
+      std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
+    }
+  }
+
+  void operator=(const InlineArray& o) noexcept
+  {
+    for(size_t i = 0; i < Count; ++i) {
+      _localData[i] = o._localData[i];
+    }
+    _size = o._size;
+    _externalData = nullptr;
+    if(o._externalData) {
+      _externalData = new std::vector<T>(o._externalData->size());
+      std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
+    }
+  }
+
+  InlineArray(InlineArray&& o) noexcept
+  {
+    for(size_t i = 0; i < Count; ++i) {
+      _localData[i] = std::move(o._localData[i]);
+    }
+    _externalData = o._externalData;
+    _size = o._size;
+    o._externalData = nullptr;
+    o._size = 0;
+  }
+
+  void operator=(InlineArray&& o) noexcept
+  {
+    for(size_t i = 0; i < Count; ++i) {
+      _localData[i] = std::move(o._localData[i]);
+    }
+    _externalData = o._externalData;
+    o._externalData = nullptr;
+    _size = o._size;
+  }
+
+  ~InlineArray()
+  {
+    if(_externalData)
+      delete _externalData;
+  }
+
+  T& operator[](size_t index)
+  {
+    assert(index < _size);
+    if(index < Count)
+      return _localData[index];
+
+    assert(_externalData);
+    index -= Count;
+    return (*_externalData)[index];
+  }
+
+  const T& operator[](size_t index) const
+  {
+    assert(index < _size);
+    if(index < Count)
+      return _localData[index];
+
+    assert(_externalData);
+    index -= Count;
+    return (*_externalData)[index];
+  }
+
+  void push_back(const T& item)
+  {
+    if(_size < Count) {
+      _localData[_size++] = item;
+      return;
     }
 
-    void operator=(const InlineArray &o) noexcept {
-        for (size_t i = 0; i < Count; ++i) {
-            _localData[i] = o._localData[i];
-        }
-        _size = o._size;
-        _externalData = nullptr;
-        if (o._externalData) {
-            _externalData = new std::vector<T>(o._externalData->size());
-            std::copy(o._externalData->begin(), o._externalData->end(), _externalData->begin());
-        }
+    if(!_externalData)
+      _externalData = new std::vector<T>();
+    _externalData->push_back(item);
+    ++_size;
+  }
+
+  void push_back(T&& item)
+  {
+    if(_size < Count) {
+      _localData[_size++] = item;
+      return;
     }
 
-    InlineArray(InlineArray &&o) noexcept {
-        for (size_t i = 0; i < Count; ++i) {
-            _localData[i] = std::move(o._localData[i]);
-        }
-        _externalData = o._externalData;
-        _size = o._size;
-        o._externalData = nullptr;
-        o._size = 0;
+    if(!_externalData)
+      _externalData = new std::vector<T>();
+    _externalData->push_back(item);
+    ++_size;
+  }
+
+  void erase(size_t index)
+  {
+    assert(index < _size);
+    for(size_t i = index; i < _size - 1; i++) {
+      (*this)[i] = (*this)[i + 1];
     }
+    if(index >= Count)
+      _externalData->resize(_externalData->size() - 1);
+    --_size;
+  }
 
-    void operator=(InlineArray &&o) noexcept {
-        for (size_t i = 0; i < Count; ++i) {
-            _localData[i] = std::move(o._localData[i]);
-        }
-        _externalData = o._externalData;
-        o._externalData = nullptr;
-        _size = o._size;
-    }
+  size_t size() const { return _size; }
 
-    ~InlineArray() {
-        if (_externalData)
-            delete _externalData;
-    }
+  class iterator {
+    InlineArray<T, Count>& _ref;
+    size_t _index;
 
-    T &operator[](size_t index) {
-        assert(index < _size);
-        if (index < Count)
-            return _localData[index];
+  public:
+    iterator(InlineArray<T, Count>& ref, size_t index) : _ref(ref), _index(index){};
 
-        assert(_externalData);
-        index -= Count;
-        return (*_externalData)[index];
-    }
+    void operator++() { ++_index; }
 
-    const T &operator[](size_t index) const {
-        assert(index < _size);
-        if (index < Count)
-            return _localData[index];
+    void operator+(size_t index) { _index += index; }
 
-        assert(_externalData);
-        index -= Count;
-        return (*_externalData)[index];
-    }
+    bool operator!=(const iterator& o) const { return _index != o._index; }
 
-    void push_back(const T &item) {
-        if (_size < Count) {
-            _localData[_size++] = item;
-            return;
-        }
+    bool operator==(const iterator& o) const { return _index == o._index; }
 
-        if (!_externalData)
-            _externalData = new std::vector<T>();
-        _externalData->push_back(item);
-        ++_size;
-    }
+    T& operator*() { return _ref[_index]; };
 
-    void push_back(T &&item) {
-        if (_size < Count) {
-            _localData[_size++] = item;
-            return;
-        }
+    using iterator_category = std::random_access_iterator_tag;
+    using reference = T&;
+    using pointer = T*;
+  };
 
-        if (!_externalData)
-            _externalData = new std::vector<T>();
-        _externalData->push_back(item);
-        ++_size;
-    }
+  class const_iterator {
+    const InlineArray<T, Count>& _ref;
+    size_t _index;
 
-    void erase(size_t index) {
-        assert(index < _size);
-        for (size_t i = index; i < _size - 1; i++) {
-            (*this)[i] = (*this)[i + 1];
-        }
-        if (index >= Count)
-            _externalData->resize(_externalData->size() - 1);
-        --_size;
-    }
+  public:
+    const_iterator(const InlineArray<T, Count>& ref, size_t index) : _ref(ref), _index(index){};
 
-    size_t size() const { return _size; }
+    void operator++() { ++_index; }
 
-    class iterator {
-        InlineArray<T, Count> &_ref;
-        size_t _index;
+    void operator+(size_t index) { _index += index; }
 
-    public:
-        iterator(InlineArray<T, Count> &ref, size_t index) : _ref(ref), _index(index) {};
+    bool operator!=(const const_iterator& o) const { return _index != o._index; }
 
-        void operator++() { ++_index; }
+    bool operator==(const const_iterator& o) const { return _index == o._index; }
 
-        void operator+(size_t index) { _index += index; }
+    const T& operator*() const { return _ref[_index]; };
 
-        bool operator!=(const iterator &o) const { return _index != o._index; }
+    using iterator_category = std::random_access_iterator_tag;
+    using reference = T&;
+    using pointer = T*;
+  };
 
-        bool operator==(const iterator &o) const { return _index == o._index; }
+  iterator begin() { return iterator(*this, 0); }
 
-        T &operator*() { return _ref[_index]; };
+  iterator end() { return iterator(*this, _size); }
 
-        using iterator_category = std::random_access_iterator_tag;
-        using reference = T &;
-        using pointer = T *;
-    };
+  const_iterator begin() const { return const_iterator(*this, 0); }
 
-    class const_iterator {
-        const InlineArray<T, Count> &_ref;
-        size_t _index;
-
-    public:
-        const_iterator(const InlineArray<T, Count> &ref, size_t index) : _ref(ref), _index(index) {};
-
-        void operator++() { ++_index; }
-
-        void operator+(size_t index) { _index += index; }
-
-        bool operator!=(const const_iterator &o) const { return _index != o._index; }
-
-        bool operator==(const const_iterator &o) const { return _index == o._index; }
-
-        const T &operator*() const { return _ref[_index]; };
-
-        using iterator_category = std::random_access_iterator_tag;
-        using reference = T &;
-        using pointer = T *;
-    };
-
-    iterator begin() { return iterator(*this, 0); }
-
-    iterator end() { return iterator(*this, _size); }
-
-    const_iterator begin() const { return const_iterator(*this, 0); }
-
-    const_iterator end() const { return const_iterator(*this, _size); }
+  const_iterator end() const { return const_iterator(*this, _size); }
 };
 
 using inlineUIntArray = InlineArray<uint32_t, 4>;

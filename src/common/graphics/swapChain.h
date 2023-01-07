@@ -7,71 +7,70 @@
 #include <vector>
 
 namespace graphics {
-    class SwapChain {
-        Window *_window;
-        VkSwapchainKHR _swapChain;
+  class SwapChain {
+    Window* _window;
+    VkSwapchainKHR _swapChain;
 
-        std::vector<VkImage> _images;
-        std::vector<VkImageView> _imageViews;
+    std::vector<VkImage> _images;
+    std::vector<VkImageView> _imageViews;
 
-        std::vector<VkSemaphore> _imageAvailableSemaphores;
+    std::vector<VkSemaphore> _imageAvailableSemaphores;
 
-        VkImage _depthImage;
-        VkDeviceMemory _depthImageMemory;
-        VkImageView _depthImageView;
+    VkImage _depthImage;
+    VkDeviceMemory _depthImageMemory;
+    VkImageView _depthImageView;
 
-        VkFormat _imageFormat;
-        VkFormat _depthImageFormat;
-        VkExtent2D _extent;
-        size_t _size = 0;
-        uint32_t _currentFrame = 0;
-        uint32_t _currentSemaphore = 0;
+    VkFormat _imageFormat;
+    VkFormat _depthImageFormat;
+    VkExtent2D _extent;
+    size_t _size = 0;
+    uint32_t _currentFrame = 0;
+    uint32_t _currentSemaphore = 0;
 
-        void createSwapChain();
+    void createSwapChain();
 
-        void createImageViews();
+    void createImageViews();
 
-        void createDepthResources();
+    void createDepthResources();
 
-        VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR &capabilities);
+    VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
 
-        VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
 
-        VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 
-        VkFormat
-        findSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-                            VkFormatFeatureFlags features);
+    VkFormat
+    findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
-        VkFormat findDepthFormat();
+    VkFormat findDepthFormat();
 
-    public:
-        SwapChain(Window *window);
+  public:
+    SwapChain(Window* window);
 
-        ~SwapChain();
+    ~SwapChain();
 
-        VkSwapchainKHR get();
+    VkSwapchainKHR get();
 
-        VkResult acquireNextImage();
+    VkResult acquireNextImage();
 
-        const uint32_t &currentFrame();
+    const uint32_t& currentFrame();
 
-        uint32_t nextFrame();
+    uint32_t nextFrame();
 
-        VkSemaphore currentSemaphore();
+    VkSemaphore currentSemaphore();
 
-        size_t size();
+    size_t size();
 
-        VkExtent2D extent();
+    VkExtent2D extent();
 
-        VkFormat imageFormat();
+    VkFormat imageFormat();
 
-        VkFormat depthImageFormat();
+    VkFormat depthImageFormat();
 
-        const std::vector<VkImageView> &getImages();
+    const std::vector<VkImageView>& getImages();
 
-        VkImageView depthTexture();
+    VkImageView depthTexture();
 
-        void resize();
-    };
+    void resize();
+  };
 } // namespace graphics

@@ -10,21 +10,21 @@
 #include <string>
 
 class ConsoleWindow : public EditorWindow {
-    struct CachedLog {
-        std::string text = "";
-        Logging::LogLevel level = Logging::LogLevel::log;
-        float lineCount;
-    };
-    std::vector<CachedLog> _messages;
-    size_t _listenerIndex;
-    bool _autoScroll = true;
+  struct CachedLog {
+    std::string text = "";
+    Logging::LogLevel level = Logging::LogLevel::log;
+    float lineCount;
+  };
+  std::vector<CachedLog> _messages;
+  size_t _listenerIndex;
+  bool _autoScroll = true;
 
-    void displayContent() override;
+  void displayContent() override;
 
 public:
-    ConsoleWindow(GUI &ui, Editor &editor);
+  ConsoleWindow(GUI& ui, Editor& editor);
 
-    ~ConsoleWindow();
+  ~ConsoleWindow();
 };
 
 #endif // BRANEENGINE_CONSOLEWINDOW_H

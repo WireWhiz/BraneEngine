@@ -21,56 +21,56 @@ class Editor;
 
 // This file stores everything to do with our connection to the server
 class BraneProject {
-    Editor &_editor;
-    bool _loaded = false;
-    std::filesystem::path _filepath;
-    VersionedJson _file;
-    std::unique_ptr<FileWatcher> _fileWatcher;
-    std::unordered_map<std::string, std::shared_ptr<EditorAsset>> _openAssets;
+  Editor& _editor;
+  bool _loaded = false;
+  std::filesystem::path _filepath;
+  VersionedJson _file;
+  std::unique_ptr<FileWatcher> _fileWatcher;
+  std::unordered_map<std::string, std::shared_ptr<EditorAsset>> _openAssets;
 
-    void loadDefault();
+  void loadDefault();
 
-    void initLoaded();
+  void initLoaded();
 
-    void refreshAssets();
+  void refreshAssets();
 
 public:
-    BraneProject(Editor &editor);
+  BraneProject(Editor& editor);
 
-    ~BraneProject();
+  ~BraneProject();
 
-    bool loaded() const;
+  bool loaded() const;
 
-    bool load(const std::filesystem::path &filepath);
+  bool load(const std::filesystem::path& filepath);
 
-    void create(const std::string &projectName, const std::filesystem::path &directory);
+  void create(const std::string& projectName, const std::filesystem::path& directory);
 
-    void save();
+  void save();
 
-    bool unsavedChanges() const;
+  bool unsavedChanges() const;
 
-    std::filesystem::path projectDirectory();
+  std::filesystem::path projectDirectory();
 
-    VersionedJson &json();
+  VersionedJson& json();
 
-    Editor &editor();
+  Editor& editor();
 
-    FileWatcher *fileWatcher();
+  FileWatcher* fileWatcher();
 
-    AssetID newAssetID(const std::filesystem::path &editorAsset, AssetType type);
+  AssetID newAssetID(const std::filesystem::path& editorAsset, AssetType type);
 
-    void registerAssetLocation(const EditorAsset *asset);
+  void registerAssetLocation(const EditorAsset* asset);
 
-    std::vector<std::pair<AssetID, std::filesystem::path>>
-    searchAssets(const std::string &query, AssetType type = AssetType::none);
+  std::vector<std::pair<AssetID, std::filesystem::path>>
+  searchAssets(const std::string& query, AssetType type = AssetType::none);
 
-    std::shared_ptr<EditorAsset> getEditorAsset(const AssetID &id);
+  std::shared_ptr<EditorAsset> getEditorAsset(const AssetID& id);
 
-    std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path &path);
+  std::shared_ptr<EditorAsset> getEditorAsset(const std::filesystem::path& path);
 
-    std::string getAssetName(const AssetID &id);
+  std::string getAssetName(const AssetID& id);
 
-    std::vector<std::pair<AssetID, std::string>> getAssetHashes();
+  std::vector<std::pair<AssetID, std::string>> getAssetHashes();
 };
 
 #endif // BRANEENGINE_BRANEPROJECT_H

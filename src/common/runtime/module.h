@@ -9,12 +9,12 @@
 // scripts will be stored
 class Module {
 public:
-    virtual ~Module() = default;
+  virtual ~Module() = default;
 
-    virtual void start();
+  virtual void start();
 
-    virtual void stop();
-    // All native modules must have static "const char* name()" function to work with Runtime::GetName<Module>()
+  virtual void stop();
+  // All native modules must have static "const char* name()" function to work with Runtime::GetName<Module>()
 };
 
 #endif // BRANEENGINE_MODULE_H

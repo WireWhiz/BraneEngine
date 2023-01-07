@@ -13,13 +13,13 @@ class MaterialAsset;
 
 class AssemblyBuilder {
 public:
-    struct AssemblyAssets {
-        std::unique_ptr<Assembly> assembly;
-        std::vector<std::unique_ptr<MeshAsset>> meshes;
-    };
+  struct AssemblyAssets {
+    std::unique_ptr<Assembly> assembly;
+    std::vector<std::unique_ptr<MeshAsset>> meshes;
+  };
 
-    static AssemblyBuilder::AssemblyAssets
-    buildAssembly(const std::string &name, GLTFLoader &loader, MaterialAsset *defaultMaterial);
+  static AssemblyBuilder::AssemblyAssets
+  buildAssembly(const std::string& name, GLTFLoader& loader, MaterialAsset* defaultMaterial);
 };
 
 #endif // BRANEENGINE_ASSEMBLYBUILDER_H
