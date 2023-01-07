@@ -29,5 +29,8 @@ SpaceBeforeParens: Never
 # Tabs
 UseTab: Never
 
+# Includes
+SortIncludes: Never
+
 ---
 Language: CSharp
