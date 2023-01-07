@@ -6,26 +6,25 @@
 #include "gui.h"
 
 // ImGUI headers must come before ImGuizmo header
+#include <ImGuizmo.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
-#include <ImGuizmo.h>
 
 #include <runtime/runtime.h>
 
-void GUIRenderer::render(VkCommandBuffer cmdBuffer)
-{
-  startRenderPass(cmdBuffer);
-  ImGui_ImplGlfw_NewFrame();
-  ImGui_ImplVulkan_NewFrame();
-  ImGui::NewFrame();
-  ImGuizmo::BeginFrame();
-  _gui->drawUI();
-  ImGui::Render();
-  ImDrawData *ImGuiDrawData = ImGui::GetDrawData();
-  ImGui::UpdatePlatformWindows();
-  ImGui::RenderPlatformWindowsDefault();
-  ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
-  endRenderPass(cmdBuffer);
+void GUIRenderer::render(VkCommandBuffer cmdBuffer) {
+    startRenderPass(cmdBuffer);
+    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplVulkan_NewFrame();
+    ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
+    _gui->drawUI();
+    ImGui::Render();
+    ImDrawData *ImGuiDrawData = ImGui::GetDrawData();
+    ImGui::UpdatePlatformWindows();
+    ImGui::RenderPlatformWindowsDefault();
+    ImGui_ImplVulkan_RenderDrawData(ImGuiDrawData, cmdBuffer);
+    endRenderPass(cmdBuffer);
 }
 
 GUIRenderer::GUIRenderer(graphics::SwapChain &swapChain, GUI *gui) : graphics::Renderer(swapChain) { _gui = gui; }

@@ -7,11 +7,11 @@
 LoginEvent::LoginEvent(net::Connection *server) : GUIEvent("login") { _server = server; }
 
 DirectoryUpdateEvent::DirectoryUpdateEvent(ServerDirectory *dir) : GUIEvent("dir reload") { _dir = dir; }
+
 ServerDirectory *DirectoryUpdateEvent::directory() const { return _dir; }
 
-FocusAssetEvent::FocusAssetEvent(std::shared_ptr<EditorAsset> asset) : GUIEvent("focus asset")
-{
-  _asset = std::move(asset);
+FocusAssetEvent::FocusAssetEvent(std::shared_ptr<EditorAsset> asset) : GUIEvent("focus asset") {
+    _asset = std::move(asset);
 }
 
 std::shared_ptr<EditorAsset> FocusAssetEvent::asset() const { return _asset; }

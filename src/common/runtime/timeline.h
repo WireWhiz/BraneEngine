@@ -14,37 +14,46 @@
 #include <utility/staticIndexVector.h>
 
 class ScheduledTask {
-  std::function<void()> _task;
-  std::string _name;
+    std::function<void()> _task;
+    std::string _name;
 
 public:
-  [[nodiscard]] const std::string &name() const;
-  ScheduledTask(const std::string &name, std::function<void()> task);
-  void run();
+    [[nodiscard]] const std::string &name() const;
+
+    ScheduledTask(const std::string &name, std::function<void()> task);
+
+    void run();
 };
 
 class ScheduledBlock {
-  std::forward_list<ScheduledTask> _tasks;
-  std::string _name;
+    std::forward_list<ScheduledTask> _tasks;
+    std::string _name;
 
 public:
-  explicit ScheduledBlock(const std::string &name);
-  void run();
-  [[nodiscard]] const std::string &name() const;
+    explicit ScheduledBlock(const std::string &name);
 
-  void addTask(const ScheduledTask &runnable);
+    void run();
+
+    [[nodiscard]] const std::string &name() const;
+
+    void addTask(const ScheduledTask &runnable);
 };
 
 class Timeline {
-  std::list<ScheduledBlock> _blocks;
+    std::list<ScheduledBlock> _blocks;
 
 public:
-  void addBlock(const std::string &name);
-  void addBlockBefore(const std::string &name, const std::string &before);
-  void addBlockAfter(const std::string &name, const std::string &before);
-  ScheduledBlock *getTimeBlock(const std::string &name);
-  void addTask(const std::string &name, std::function<void()> task, const std::string &timeBlock);
-  void run();
+    void addBlock(const std::string &name);
+
+    void addBlockBefore(const std::string &name, const std::string &before);
+
+    void addBlockAfter(const std::string &name, const std::string &before);
+
+    ScheduledBlock *getTimeBlock(const std::string &name);
+
+    void addTask(const std::string &name, std::function<void()> task, const std::string &timeBlock);
+
+    void run();
 };
 
 #endif // BRANEENGINE_TIMELINE_H

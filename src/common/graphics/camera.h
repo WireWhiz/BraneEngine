@@ -12,13 +12,13 @@
 
 namespace graphics {
 
-  class Camera : public NativeComponent<Camera> {
-  public:
-    REGISTER_MEMBERS_1("camera", fov, "fov");
-    float fov = 45;
+    class Camera : public NativeComponent<Camera> {
+    public:
+        REGISTER_MEMBERS_1("camera", fov, "fov");
+        float fov = 45;
 
-    glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
-  };
+        glm::mat4 perspectiveMatrix(glm::uvec2 targetSize) const;
+    };
 
 } // namespace graphics
 

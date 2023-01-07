@@ -69,7 +69,7 @@
       VirtualType::type<decltype(Struct::_m7)>(),                                                                      \
   }))
 
-#define STRUCT_MEMBER_TYPES_9(                                                                                         \
+#define STRUCT_MEMBER_TYPES_9(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8)                  \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -83,7 +83,7 @@
       VirtualType::type<decltype(Struct::_m8)>(),                                                                      \
   }))
 
-#define STRUCT_MEMBER_TYPES_10(                                                                                        \
+#define STRUCT_MEMBER_TYPES_10(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8, _m9, _n9)        \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -98,29 +98,29 @@
       VirtualType::type<decltype(Struct::_m9)>(),                                                                      \
   }))
 
-#define STRUCT_MEMBER_TYPES_11(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_11(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
     _n10)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -136,31 +136,31 @@
       VirtualType::type<decltype(Struct::_m10)>(),                                                                     \
   }))
 
-#define STRUCT_MEMBER_TYPES_12(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_12(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
     _n11)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -177,33 +177,33 @@
       VirtualType::type<decltype(Struct::_m11)>(),                                                                     \
   }))
 
-#define STRUCT_MEMBER_TYPES_13(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_13(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
     _n12)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -221,35 +221,35 @@
       VirtualType::type<decltype(Struct::_m12)>(),                                                                     \
   }))
 
-#define STRUCT_MEMBER_TYPES_14(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_14(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
     _n13)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -268,37 +268,37 @@
       VirtualType::type<decltype(Struct::_m13)>(),                                                                     \
   }))
 
-#define STRUCT_MEMBER_TYPES_15(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_15(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
     _n14)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -318,39 +318,39 @@
       VirtualType::type<decltype(Struct::_m14)>(),                                                                     \
   }))
 
-#define STRUCT_MEMBER_TYPES_16(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
-    _n14,                                                                                                              \
-    _m15,                                                                                                              \
+#define STRUCT_MEMBER_TYPES_16(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
+    _n14, \
+    _m15, \
     _n15)                                                                                                              \
   std::move(std::vector<VirtualType::Type>({                                                                           \
       VirtualType::type<decltype(Struct::_m0)>(),                                                                      \
@@ -427,7 +427,7 @@
       offsetof(Struct, Struct::_m6),                                                                                   \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_8(                                                                                       \
+#define STRUCT_MEMBER_OFFSETS_8(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7)                            \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -440,7 +440,7 @@
       offsetof(Struct, Struct::_m7),                                                                                   \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_9(                                                                                       \
+#define STRUCT_MEMBER_OFFSETS_9(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8)                  \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -454,7 +454,7 @@
       offsetof(Struct, Struct::_m8),                                                                                   \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_10(                                                                                      \
+#define STRUCT_MEMBER_OFFSETS_10(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8, _m9, _n9)        \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -469,29 +469,29 @@
       offsetof(Struct, Struct::_m9),                                                                                   \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_11(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_11(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
     _n10)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -507,31 +507,31 @@
       offsetof(Struct, Struct::_m10),                                                                                  \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_12(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_12(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
     _n11)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -548,33 +548,33 @@
       offsetof(Struct, Struct::_m11),                                                                                  \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_13(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_13(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
     _n12)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -592,35 +592,35 @@
       offsetof(Struct, Struct::_m12),                                                                                  \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_14(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_14(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
     _n13)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -639,37 +639,37 @@
       offsetof(Struct, Struct::_m13),                                                                                  \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_15(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_15(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
     _n14)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -689,39 +689,39 @@
       offsetof(Struct, Struct::_m14),                                                                                  \
   }))
 
-#define STRUCT_MEMBER_OFFSETS_16(                                                                                      \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
-    _n14,                                                                                                              \
-    _m15,                                                                                                              \
+#define STRUCT_MEMBER_OFFSETS_16(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
+    _n14, \
+    _m15, \
     _n15)                                                                                                              \
   std::move(std::vector<size_t>({                                                                                      \
       offsetof(Struct, Struct::_m0),                                                                                   \
@@ -810,7 +810,7 @@
       _n7,                                                                                                             \
   }))
 
-#define STRUCT_MEMBER_NAMES_9(                                                                                         \
+#define STRUCT_MEMBER_NAMES_9(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8)                  \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -824,7 +824,7 @@
       _n8,                                                                                                             \
   }))
 
-#define STRUCT_MEMBER_NAMES_10(                                                                                        \
+#define STRUCT_MEMBER_NAMES_10(\
     Struct, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8, _m9, _n9)        \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -839,29 +839,29 @@
       _n9,                                                                                                             \
   }))
 
-#define STRUCT_MEMBER_NAMES_11(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_11(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
     _n10)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -877,31 +877,31 @@
       _n10,                                                                                                            \
   }))
 
-#define STRUCT_MEMBER_NAMES_12(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_12(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
     _n11)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -918,33 +918,33 @@
       _n11,                                                                                                            \
   }))
 
-#define STRUCT_MEMBER_NAMES_13(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_13(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
     _n12)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -962,35 +962,35 @@
       _n12,                                                                                                            \
   }))
 
-#define STRUCT_MEMBER_NAMES_14(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_14(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
     _n13)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -1009,37 +1009,37 @@
       _n13,                                                                                                            \
   }))
 
-#define STRUCT_MEMBER_NAMES_15(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_15(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
     _n14)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -1059,39 +1059,39 @@
       _n14,                                                                                                            \
   }))
 
-#define STRUCT_MEMBER_NAMES_16(                                                                                        \
-    Struct,                                                                                                            \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
-    _n14,                                                                                                              \
-    _m15,                                                                                                              \
+#define STRUCT_MEMBER_NAMES_16(\
+    Struct, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
+    _n14, \
+    _m15, \
     _n15)                                                                                                              \
   std::move(std::vector<std::string>({                                                                                 \
       _n0,                                                                                                             \
@@ -1240,7 +1240,7 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_9(                                                                                            \
+#define REGISTER_MEMBERS_9(\
     name, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8)                    \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1261,7 +1261,7 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_10(                                                                                           \
+#define REGISTER_MEMBERS_10(\
     name, _m0, _n0, _m1, _n1, _m2, _n2, _m3, _n3, _m4, _n4, _m5, _n5, _m6, _n6, _m7, _n7, _m8, _n8, _m9, _n9)          \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1342,29 +1342,29 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_11(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
+#define REGISTER_MEMBERS_11(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
     _n10)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1451,31 +1451,31 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_12(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
+#define REGISTER_MEMBERS_12(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
     _n11)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1568,33 +1568,33 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_13(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
+#define REGISTER_MEMBERS_13(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
     _n12)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1693,35 +1693,35 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_14(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
+#define REGISTER_MEMBERS_14(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
     _n13)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1826,37 +1826,37 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_15(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
+#define REGISTER_MEMBERS_15(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
     _n14)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \
@@ -1967,39 +1967,39 @@
   }                                                                                                                    \
   static const char *getComponentName() { return name; }
 
-#define REGISTER_MEMBERS_16(                                                                                           \
-    name,                                                                                                              \
-    _m0,                                                                                                               \
-    _n0,                                                                                                               \
-    _m1,                                                                                                               \
-    _n1,                                                                                                               \
-    _m2,                                                                                                               \
-    _n2,                                                                                                               \
-    _m3,                                                                                                               \
-    _n3,                                                                                                               \
-    _m4,                                                                                                               \
-    _n4,                                                                                                               \
-    _m5,                                                                                                               \
-    _n5,                                                                                                               \
-    _m6,                                                                                                               \
-    _n6,                                                                                                               \
-    _m7,                                                                                                               \
-    _n7,                                                                                                               \
-    _m8,                                                                                                               \
-    _n8,                                                                                                               \
-    _m9,                                                                                                               \
-    _n9,                                                                                                               \
-    _m10,                                                                                                              \
-    _n10,                                                                                                              \
-    _m11,                                                                                                              \
-    _n11,                                                                                                              \
-    _m12,                                                                                                              \
-    _n12,                                                                                                              \
-    _m13,                                                                                                              \
-    _n13,                                                                                                              \
-    _m14,                                                                                                              \
-    _n14,                                                                                                              \
-    _m15,                                                                                                              \
+#define REGISTER_MEMBERS_16(\
+    name, \
+    _m0, \
+    _n0, \
+    _m1, \
+    _n1, \
+    _m2, \
+    _n2, \
+    _m3, \
+    _n3, \
+    _m4, \
+    _n4, \
+    _m5, \
+    _n5, \
+    _m6, \
+    _n6, \
+    _m7, \
+    _n7, \
+    _m8, \
+    _n8, \
+    _m9, \
+    _n9, \
+    _m10, \
+    _n10, \
+    _m11, \
+    _n11, \
+    _m12, \
+    _n12, \
+    _m13, \
+    _n13, \
+    _m14, \
+    _n14, \
+    _m15, \
     _n15)                                                                                                              \
   friend class NativeComponent<ComponentType>;                                                                         \
   friend class AssetManager;                                                                                           \

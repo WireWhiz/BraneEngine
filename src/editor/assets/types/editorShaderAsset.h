@@ -10,12 +10,17 @@
 
 class EditorShaderAsset : public EditorAsset {
 public:
-  EditorShaderAsset(const std::filesystem::path &file, BraneProject &project);
-  std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
-  Asset *buildAsset(const AssetID &id) const override;
-  void updateSource(const std::filesystem::path &source);
-  void createDefaultSource(ShaderType type);
-  ShaderType shaderType() const;
+    EditorShaderAsset(const std::filesystem::path &file, BraneProject &project);
+
+    std::vector<std::pair<AssetID, AssetType>> containedAssets() const override;
+
+    Asset *buildAsset(const AssetID &id) const override;
+
+    void updateSource(const std::filesystem::path &source);
+
+    void createDefaultSource(ShaderType type);
+
+    ShaderType shaderType() const;
 };
 
 #endif // BRANEENGINE_EDITORSHADERASSET_H

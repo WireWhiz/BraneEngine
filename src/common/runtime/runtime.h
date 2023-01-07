@@ -15,38 +15,49 @@
 class Module;
 
 namespace Runtime {
-  void init();
-  void cleanup();
-  void addModule(const std::string &name, Module *m);
-  template <typename T> void addModule()
-  {
-    static_assert(std::is_base_of<Module, T>());
-    addModule(T::name(), new T());
-  }
+    void init();
 
-  bool hasModule(const std::string &name);
-  template <typename T> bool hasModule()
-  {
-    static_assert(std::is_base_of<Module, T>());
-    return hasModule(T::name());
-  }
-  Module *getModule(const std::string &name);
-  template <typename T> T *getModule()
-  {
-    static_assert(std::is_base_of<Module, T>());
-    return (T *)getModule(T::name());
-  }
+    void cleanup();
 
-  Timeline &timeline();
+    void addModule(const std::string &name, Module *m);
 
-  void log(const std::string &message);
-  void warn(const std::string &message);
-  void error(const std::string &message);
+    template<typename T>
+    void addModule() {
+        static_assert(std::is_base_of<Module, T>());
+        addModule(T::name(), new T());
+    }
 
-  void setTickRate(uint32_t tickRate);
-  void run();
-  void stop();
-  float deltaTime();
+    bool hasModule(const std::string &name);
+
+    template<typename T>
+    bool hasModule() {
+        static_assert(std::is_base_of<Module, T>());
+        return hasModule(T::name());
+    }
+
+    Module *getModule(const std::string &name);
+
+    template<typename T>
+    T *getModule() {
+        static_assert(std::is_base_of<Module, T>());
+        return (T *) getModule(T::name());
+    }
+
+    Timeline &timeline();
+
+    void log(const std::string &message);
+
+    void warn(const std::string &message);
+
+    void error(const std::string &message);
+
+    void setTickRate(uint32_t tickRate);
+
+    void run();
+
+    void stop();
+
+    float deltaTime();
 }; // namespace Runtime
 
 #endif // BRANEENGINE_RUNTIME_H

@@ -12,25 +12,31 @@
 #include <shaderc/shaderc.hpp>
 
 class ShaderAsset;
+
 class ShaderCompiler {
 public:
-  struct ShaderAttributes {
-    std::vector<UniformBufferData> uniforms;
-    std::vector<UniformBufferData> buffers;
-    std::vector<ShaderVariableData> samplers;
-    std::vector<ShaderVariableData> inputVariables;
-    std::vector<ShaderVariableData> outputVariables;
-  };
-  ShaderCompiler();
-  static shaderc_util::FileFinder defaultFinder();
-  bool compileShader(
-      const std::string &glsl,
-      ShaderType type,
-      std::vector<uint32_t> &spirv,
-      shaderc_util::FileFinder &fileFinder,
-      bool optimize = true);
-  bool extractAttributes(
-      const std::string &glsl, ShaderType type, shaderc_util::FileFinder &fileFinder, ShaderAttributes &attributes);
+    struct ShaderAttributes {
+        std::vector<UniformBufferData> uniforms;
+        std::vector<UniformBufferData> buffers;
+        std::vector<ShaderVariableData> samplers;
+        std::vector<ShaderVariableData> inputVariables;
+        std::vector<ShaderVariableData> outputVariables;
+    };
+
+    ShaderCompiler();
+
+    static shaderc_util::FileFinder defaultFinder();
+
+    bool compileShader(
+            const std::string &glsl,
+            ShaderType type,
+            std::vector<uint32_t> &spirv,
+            shaderc_util::FileFinder &fileFinder,
+            bool optimize = true);
+
+    bool extractAttributes(
+            const std::string &glsl, ShaderType type, shaderc_util::FileFinder &fileFinder,
+            ShaderAttributes &attributes);
 };
 
 #endif // BRANEENGINE_SHADERCOMPILER_H

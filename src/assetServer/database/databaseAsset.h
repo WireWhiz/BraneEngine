@@ -9,15 +9,18 @@
 #include <string>
 
 class AssetType;
+
 class Database;
 
-enum class AssetPermissionLevel { none = 0, view = 1, edit = 2, owner = 3 };
+enum class AssetPermissionLevel {
+    none = 0, view = 1, edit = 2, owner = 3
+};
 
 struct AssetInfo {
-  uint32_t id;
-  std::string name;
-  AssetType type;
-  std::string hash;
+    uint32_t id;
+    std::string name;
+    AssetType type;
+    std::string hash;
 };
 
 #endif // BRANEENGINE_DATABASEASSET_H
