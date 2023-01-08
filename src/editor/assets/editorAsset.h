@@ -15,42 +15,42 @@ class Asset;
 class BraneProject;
 
 class EditorAsset {
-protected:
-  // Editable data goes in the json for easy versioning, other things will be serialized in binary format
-  BraneProject& _project;
-  VersionedJson _json;
-  std::filesystem::path _file;
-  AssetType _type;
-  std::string _name;
+  protected:
+    // Editable data goes in the json for easy versioning, other things will be serialized in binary format
+    BraneProject& _project;
+    VersionedJson _json;
+    std::filesystem::path _file;
+    AssetType _type;
+    std::string _name;
 
-public:
-  static EditorAsset* openUnknownAsset(const std::filesystem::path& path, BraneProject& project);
+  public:
+    static EditorAsset* openUnknownAsset(const std::filesystem::path& path, BraneProject& project);
 
-  EditorAsset(const std::filesystem::path& file, BraneProject& project);
+    EditorAsset(const std::filesystem::path& file, BraneProject& project);
 
-  virtual ~EditorAsset() = default;
+    virtual ~EditorAsset() = default;
 
-  bool load();
+    bool load();
 
-  virtual std::vector<std::pair<AssetID, AssetType>> containedAssets() const = 0;
+    virtual std::vector<std::pair<AssetID, AssetType>> containedAssets() const = 0;
 
-  virtual Asset* buildAsset(const AssetID& id) const = 0;
+    virtual Asset* buildAsset(const AssetID& id) const = 0;
 
-  std::string hash(const AssetID& id);
+    std::string hash(const AssetID& id);
 
-  const AssetType& type() const;
+    const AssetType& type() const;
 
-  const std::string& name() const;
+    const std::string& name() const;
 
-  const std::filesystem::path& file() const;
+    const std::filesystem::path& file() const;
 
-  bool unsavedChanges() const;
+    bool unsavedChanges() const;
 
-  void save();
+    void save();
 
-  AssetID id() const;
+    AssetID id() const;
 
-  VersionedJson& json();
+    VersionedJson& json();
 };
 
 #endif // BRANEENGINE_EDITORASSET_H

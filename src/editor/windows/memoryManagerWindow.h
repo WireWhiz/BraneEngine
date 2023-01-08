@@ -10,12 +10,12 @@
 class EntityManager;
 
 class MemoryManagerWindow : public EditorWindow {
-  EntityManager* _em;
+    EntityManager* _em;
 
-  void displayContent() override;
+    void displayContent() override;
 
-public:
-  MemoryManagerWindow(GUI& ui, Editor& editor);
+  public:
+    MemoryManagerWindow(GUI& ui, Editor& editor);
 };
 
 #endif // BRANEENGINE_MEMORYMANAGERWINDOW_H

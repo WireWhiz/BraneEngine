@@ -13,50 +13,50 @@ class ComponentManager;
 
 class ArchetypeManager {
 #ifdef TEST_BUILD
-public:
+  public:
 #endif
 
-  std::shared_ptr<ChunkPool> _chunkAllocator;
-  // Index 1: number of components, Index 2: archetype
-  std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
-  robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
-  ComponentManager& _componentManager;
-
-public:
-  class iterator {
-    ArchetypeManager& _ref;
-    size_t _size;
-    size_t _archetype;
+    std::shared_ptr<ChunkPool> _chunkAllocator;
+    // Index 1: number of components, Index 2: archetype
+    std::vector<std::vector<std::unique_ptr<Archetype>>> _archetypes;
+    robin_hood::unordered_flat_map<ComponentID, robin_hood::unordered_flat_set<Archetype*>> _compToArch;
+    ComponentManager& _componentManager;
 
   public:
-    iterator(size_t size, size_t archetype, ArchetypeManager& ref);
+    class iterator {
+        ArchetypeManager& _ref;
+        size_t _size;
+        size_t _archetype;
 
-    void operator++();
+      public:
+        iterator(size_t size, size_t archetype, ArchetypeManager& ref);
 
-    bool operator!=(const iterator& o) const;
+        void operator++();
 
-    Archetype& operator*();
+        bool operator!=(const iterator& o) const;
 
-    using iterator_category = std::forward_iterator_tag;
-    using reference = Archetype&;
-    using pointer = Archetype*;
-  };
+        Archetype& operator*();
 
-  ArchetypeManager(ComponentManager& componentManager);
+        using iterator_category = std::forward_iterator_tag;
+        using reference = Archetype&;
+        using pointer = Archetype*;
+    };
 
-  Archetype* getArchetype(const ComponentSet& components);
+    ArchetypeManager(ComponentManager& componentManager);
 
-  Archetype* makeArchetype(const ComponentSet& components);
+    Archetype* getArchetype(const ComponentSet& components);
 
-  void destroyArchetype(Archetype* archetype);
+    Archetype* makeArchetype(const ComponentSet& components);
 
-  std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
+    void destroyArchetype(Archetype* archetype);
 
-  void clear();
+    std::vector<Archetype*> getArchetypes(const ComponentFilter& filter);
 
-  iterator begin();
+    void clear();
 
-  iterator end();
+    iterator begin();
+
+    iterator end();
 };
 
 #endif // BRANEENGINE_ARCHETYPEMANAGER_H

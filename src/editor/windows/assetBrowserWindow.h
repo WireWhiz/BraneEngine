@@ -10,12 +10,12 @@
 #include <string>
 
 class AssetBrowserWindow : public EditorWindow {
-  AssetBrowserWidget _browser;
+    AssetBrowserWidget _browser;
 
-  void displayContent() override;
+    void displayContent() override;
 
-public:
-  AssetBrowserWindow(GUI& ui, Editor& editor);
+  public:
+    AssetBrowserWindow(GUI& ui, Editor& editor);
 };
 
 #endif // BRANEENGINE_ASSETBROWSERWINDOW_H

@@ -15,7 +15,7 @@
 #include <unordered_map>
 
 namespace net {
-  class Connection;
+    class Connection;
 }
 
 class GUI;
@@ -25,38 +25,38 @@ class GUIWindow;
 class EditorAsset;
 
 class Editor : public Module {
-  GUI* _ui;
-  GUIWindow* _selectProjectWindow = nullptr;
+    GUI* _ui;
+    GUIWindow* _selectProjectWindow = nullptr;
 
-  JsonVersionTracker _jsonTracker;
-  AssetCache _cache;
-  BraneProject _project;
-  ShaderCompiler _shaderCompiler;
+    JsonVersionTracker _jsonTracker;
+    AssetCache _cache;
+    BraneProject _project;
+    ShaderCompiler _shaderCompiler;
 
-  void addMainWindows();
+    void addMainWindows();
 
-  void drawMenu();
+    void drawMenu();
 
-public:
-  Editor();
+  public:
+    Editor();
 
-  void start() override;
+    void start() override;
 
-  void loadProject(const std::filesystem::path& filepath);
+    void loadProject(const std::filesystem::path& filepath);
 
-  void createProject(const std::string& name, const std::filesystem::path& directory);
+    void createProject(const std::string& name, const std::filesystem::path& directory);
 
-  void reloadAsset(std::shared_ptr<EditorAsset> asset);
+    void reloadAsset(std::shared_ptr<EditorAsset> asset);
 
-  BraneProject& project();
+    BraneProject& project();
 
-  JsonVersionTracker& jsonTracker();
+    JsonVersionTracker& jsonTracker();
 
-  AssetCache& cache();
+    AssetCache& cache();
 
-  ShaderCompiler& shaderCompiler();
+    ShaderCompiler& shaderCompiler();
 
-  static const char* name();
+    static const char* name();
 };
 
 #endif // BRANEENGINE_EDITOR_H

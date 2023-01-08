@@ -5,53 +5,53 @@
 // Edit this function if we need to "load" any assets for testing
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
 {
-  AsyncData<Asset*> asset;
-  asset.setData(nullptr);
-  return asset;
+    AsyncData<Asset*> asset;
+    asset.setData(nullptr);
+    return asset;
 }
 
 TEST(assets, AssetIDTest)
 {
-  AssetID aa("server.ip.goes.here/1234A");
-  EXPECT_EQ(
-      aa.
+    AssetID aa("server.ip.goes.here/1234A");
+    EXPECT_EQ(
+        aa.
 
-      address(),
+        address(),
 
-      "server.ip.goes.here");
-  EXPECT_EQ(
-      aa.
+        "server.ip.goes.here");
+    EXPECT_EQ(
+        aa.
 
-      id(),
+        id(),
 
-      0x1234A);
-  EXPECT_EQ(
-      aa.
+        0x1234A);
+    EXPECT_EQ(
+        aa.
 
-      string(),
+        string(),
 
-      "server.ip.goes.here/1234A");
-  EXPECT_TRUE(aa == aa);
-  EXPECT_FALSE(aa.
+        "server.ip.goes.here/1234A");
+    EXPECT_TRUE(aa == aa);
+    EXPECT_FALSE(aa.
 
-               null()
+                 null()
 
-  );
-  aa.
+    );
+    aa.
 
-      setNull();
+        setNull();
 
-  EXPECT_TRUE(aa.
+    EXPECT_TRUE(aa.
 
-              null()
+                null()
 
-  );
+    );
 
-  AssetID null;
-  EXPECT_TRUE(null.
+    AssetID null;
+    EXPECT_TRUE(null.
 
-              null()
+                null()
 
-  );
-  EXPECT_EQ(aa, null);
+    );
+    EXPECT_EQ(aa, null);
 }

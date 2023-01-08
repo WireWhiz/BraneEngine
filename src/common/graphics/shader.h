@@ -7,32 +7,32 @@
 #include <vulkan/vulkan.h>
 
 namespace graphics {
-  using ShaderID = uint64_t;
+    using ShaderID = uint64_t;
 
-  class Shader {
-    ShaderAsset* _asset;
-    VkShaderModule _shader;
+    class Shader {
+        ShaderAsset* _asset;
+        VkShaderModule _shader;
 
-  public:
-    Shader(ShaderAsset* asset);
+      public:
+        Shader(ShaderAsset* asset);
 
-    Shader(const Shader&) = delete;
+        Shader(const Shader&) = delete;
 
-    Shader(Shader&&);
+        Shader(Shader&&);
 
-    Shader& operator=(Shader&&);
+        Shader& operator=(Shader&&);
 
-    ~Shader();
+        ~Shader();
 
-    ShaderAsset* asset() const;
+        ShaderAsset* asset() const;
 
-    VkShaderModule get();
+        VkShaderModule get();
 
-    VkShaderStageFlagBits type();
+        VkShaderStageFlagBits type();
 
-    VkPipelineShaderStageCreateInfo stageInfo();
+        VkPipelineShaderStageCreateInfo stageInfo();
 
-    std::vector<ShaderVariableData>& inputs() const;
-  };
+        std::vector<ShaderVariableData>& inputs() const;
+    };
 
 } // namespace graphics

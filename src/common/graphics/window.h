@@ -6,44 +6,44 @@
 #include <vulkan/vulkan.hpp>
 
 namespace graphics {
-  class Window {
-  private:
-    GLFWwindow* _window;
-    glm::ivec2 _size;
-    VkSurfaceKHR _surface;
-    int _framerate;
-    static std::function<void()> _onRefocus;
+    class Window {
+      private:
+        GLFWwindow* _window;
+        glm::ivec2 _size;
+        VkSurfaceKHR _surface;
+        int _framerate;
+        static std::function<void()> _onRefocus;
 
-    void init();
+        void init();
 
-    void cleanup();
+        void cleanup();
 
-  public:
-    Window();
+      public:
+        Window();
 
-    ~Window();
+        ~Window();
 
-    GLFWwindow* window();
+        GLFWwindow* window();
 
-    void createSurface(VkInstance instance, const VkAllocationCallbacks* allocator);
+        void createSurface(VkInstance instance, const VkAllocationCallbacks* allocator);
 
-    void destroySurface(VkInstance instance, const VkAllocationCallbacks* allocator);
+        void destroySurface(VkInstance instance, const VkAllocationCallbacks* allocator);
 
-    VkSurfaceKHR surface();
+        VkSurfaceKHR surface();
 
-    void update();
+        void update();
 
-    bool closed();
+        bool closed();
 
-    glm::ivec2 size();
+        glm::ivec2 size();
 
-    void setSize(glm::ivec2& newSize);
+        void setSize(glm::ivec2& newSize);
 
-    int framerate() const;
+        int framerate() const;
 
-    void setTitle(std::string_view name);
+        void setTitle(std::string_view name);
 
-    void onRefocus(std::function<void()> onRefocus);
-  };
+        void onRefocus(std::function<void()> onRefocus);
+    };
 
 } // namespace graphics

@@ -12,7 +12,7 @@ ServerDirectory* DirectoryUpdateEvent::directory() const { return _dir; }
 
 FocusAssetEvent::FocusAssetEvent(std::shared_ptr<EditorAsset> asset) : GUIEvent("focus asset")
 {
-  _asset = std::move(asset);
+    _asset = std::move(asset);
 }
 
 std::shared_ptr<EditorAsset> FocusAssetEvent::asset() const { return _asset; }

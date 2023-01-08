@@ -21,148 +21,148 @@ class ShaderAsset;
 class MaterialAsset;
 
 namespace graphics {
-  class Window;
+    class Window;
 
-  class GraphicsDevice;
+    class GraphicsDevice;
 
-  class SwapChain;
+    class SwapChain;
 
-  class ShaderManager;
+    class ShaderManager;
 
-  class Material;
+    class Material;
 
-  class Renderer;
+    class Renderer;
 
-  class Texture;
+    class Texture;
 
-  class Mesh;
+    class Mesh;
 
-  class Shader;
+    class Shader;
 
-  class VulkanRuntime : public Module {
-    Window* _window;
-    VkInstance _instance;
-    GraphicsDevice* _device;
-    SwapChain* _swapChain;
-    std::vector<VkCommandBuffer> _drawBuffers;
+    class VulkanRuntime : public Module {
+        Window* _window;
+        VkInstance _instance;
+        GraphicsDevice* _device;
+        SwapChain* _swapChain;
+        std::vector<VkCommandBuffer> _drawBuffers;
 
-    std::recursive_mutex _assetLock;
-    std::deque<std::pair<uint32_t, Asset*>> _newAssets;
-    std::deque<Asset*> _reloadAssets;
-    staticIndexVector<std::unique_ptr<Shader>> _shaders;
-    staticIndexVector<std::unique_ptr<Material>> _materials;
-    staticIndexVector<std::unique_ptr<Texture>> _textures;
-    staticIndexVector<std::unique_ptr<Mesh>> _meshes;
+        std::recursive_mutex _assetLock;
+        std::deque<std::pair<uint32_t, Asset*>> _newAssets;
+        std::deque<Asset*> _reloadAssets;
+        staticIndexVector<std::unique_ptr<Shader>> _shaders;
+        staticIndexVector<std::unique_ptr<Material>> _materials;
+        staticIndexVector<std::unique_ptr<Texture>> _textures;
+        staticIndexVector<std::unique_ptr<Mesh>> _meshes;
 
-    std::vector<std::unique_ptr<Renderer>> _renderers;
+        std::vector<std::unique_ptr<Renderer>> _renderers;
 
-    std::vector<VkSemaphore> _renderFinishedSemaphores;
+        std::vector<VkSemaphore> _renderFinishedSemaphores;
 
-    bool _validationLayersEnabled = false;
-    VkDebugUtilsMessengerEXT _debugMessenger;
+        bool _validationLayersEnabled = false;
+        VkDebugUtilsMessengerEXT _debugMessenger;
 
-    std::vector<const char*> requiredExtensions();
+        std::vector<const char*> requiredExtensions();
 
-    const int MAX_FRAMES_IN_FLIGHT = 2;
-    std::vector<VkFence> _inFlightFences;
-    std::vector<VkFence> _imagesInFlight;
+        const int MAX_FRAMES_IN_FLIGHT = 2;
+        std::vector<VkFence> _inFlightFences;
+        std::vector<VkFence> _imagesInFlight;
 
-    std::function<bool()> _onWindowClosed;
+        std::function<bool()> _onWindowClosed;
 
-    void init();
+        void init();
 
-    void cleanup();
+        void cleanup();
 
-    void createInstance();
+        void createInstance();
 
-    void createSyncObjects();
+        void createSyncObjects();
 
-    void createDrawBuffers();
+        void createDrawBuffers();
 
-    bool validationLayersSupported();
+        bool validationLayersSupported();
 
-    void setDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        void setDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
-    void setupDebugMessenger();
+        void setupDebugMessenger();
 
-    static VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger);
+        static VkResult CreateDebugUtilsMessengerEXT(
+            VkInstance instance,
+            const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+            const VkAllocationCallbacks* pAllocator,
+            VkDebugUtilsMessengerEXT* pDebugMessenger);
 
-    static void DestroyDebugUtilsMessengerEXT(
-        VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+        static void DestroyDebugUtilsMessengerEXT(
+            VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData);
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+            VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData);
 
-    void processAsset(uint32_t runtimeID, Asset* graphicalAsset);
+        void processAsset(uint32_t runtimeID, Asset* graphicalAsset);
 
-  public:
-    VulkanRuntime();
+      public:
+        VulkanRuntime();
 
-    ~VulkanRuntime();
+        ~VulkanRuntime();
 
-    static const char* name();
+        static const char* name();
 
-    VkInstance instance();
+        VkInstance instance();
 
-    VkDevice device();
+        VkDevice device();
 
-    VkPhysicalDevice physicalDevice();
+        VkPhysicalDevice physicalDevice();
 
-    Window* window();
+        Window* window();
 
-    SwapChain* swapChain();
+        SwapChain* swapChain();
 
-    void updateWindow();
+        void updateWindow();
 
-    void onWindowClosed(std::function<bool()> callback);
+        void onWindowClosed(std::function<bool()> callback);
 
-    // Behold, the only function we care about:
-    void draw(EntityManager& em);
-    // Bask in its glory!
+        // Behold, the only function we care about:
+        void draw(EntityManager& em);
+        // Bask in its glory!
 
-    // These methods must be called from the main thread
-    size_t addTexture(Texture* texture);
+        // These methods must be called from the main thread
+        size_t addTexture(Texture* texture);
 
-    size_t addShader(ShaderAsset* shader);
+        size_t addShader(ShaderAsset* shader);
 
-    size_t addMaterial(MaterialAsset* material);
+        size_t addMaterial(MaterialAsset* material);
 
-    size_t addMesh(MeshAsset* mesh);
+        size_t addMesh(MeshAsset* mesh);
 
-    void reloadShader(ShaderAsset* shader);
+        void reloadShader(ShaderAsset* shader);
 
-    void reloadMaterial(MaterialAsset* material);
+        void reloadMaterial(MaterialAsset* material);
 
-    // Add asset may be called from any thread
-    uint32_t addAsset(Asset* graphicalAsset);
+        // Add asset may be called from any thread
+        uint32_t addAsset(Asset* graphicalAsset);
 
-    void reloadAsset(Asset* graphicalAsset, bool async = true);
+        void reloadAsset(Asset* graphicalAsset, bool async = true);
 
-    const staticIndexVector<std::unique_ptr<Material>>& materials();
+        const staticIndexVector<std::unique_ptr<Material>>& materials();
 
-    Shader* getShader(size_t runtimeID);
+        Shader* getShader(size_t runtimeID);
 
-    Texture* getTexture(size_t runtimeID);
+        Texture* getTexture(size_t runtimeID);
 
-    template <typename T, typename... Args> T* createRenderer(Args... args)
-    {
-      static_assert(std::is_base_of<Renderer, T>());
-      _renderers.push_back(std::make_unique<T>(*_swapChain, args...));
-      return (T*)_renderers[_renderers.size() - 1].get();
-    }
+        template <typename T, typename... Args> T* createRenderer(Args... args)
+        {
+            static_assert(std::is_base_of<Renderer, T>());
+            _renderers.push_back(std::make_unique<T>(*_swapChain, args...));
+            return (T*)_renderers[_renderers.size() - 1].get();
+        }
 
-    void removeRenderer(Renderer* renderer);
+        void removeRenderer(Renderer* renderer);
 
-    Material* getMaterial(size_t id);
+        Material* getMaterial(size_t id);
 
-    const staticIndexVector<std::unique_ptr<Mesh>>& meshes();
-  };
+        const staticIndexVector<std::unique_ptr<Mesh>>& meshes();
+    };
 
 } // namespace graphics
