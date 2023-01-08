@@ -10,18 +10,18 @@
 typedef unsigned int ImGuiID;
 
 class GUIPopup {
-  ImGuiID _id;
-  std::string _name;
+    ImGuiID _id;
+    std::string _name;
 
-protected:
-  virtual void drawBody() = 0;
+  protected:
+    virtual void drawBody() = 0;
 
-public:
-  GUIPopup(const std::string& name);
+  public:
+    GUIPopup(const std::string& name);
 
-  virtual ~GUIPopup() = default;
+    virtual ~GUIPopup() = default;
 
-  void draw();
+    void draw();
 };
 
 #endif // BRANEENGINE_GUIPOPUP_H

@@ -9,36 +9,36 @@
 #include <string>
 
 namespace graphics {
-  using TextureID = uint32_t;
-  extern const std::array<const char*, 1> textureFileExtensions;
+    using TextureID = uint32_t;
+    extern const std::array<const char*, 1> textureFileExtensions;
 
-  class Texture {
-    ImageAsset* _asset;
+    class Texture {
+        ImageAsset* _asset;
 
-    VkImage _textureImage;
-    VkFormat _format;
-    VkDeviceMemory _textureImageMemory;
+        VkImage _textureImage;
+        VkFormat _format;
+        VkDeviceMemory _textureImageMemory;
 
-    VkImageView _textureImageView;
-    VkSampler _sampler = VK_NULL_HANDLE;
+        VkImageView _textureImageView;
+        VkSampler _sampler = VK_NULL_HANDLE;
 
-    void createTextureImageView();
+        void createTextureImageView();
 
-    void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void transitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 
-    void copyBufferToImage(GraphicsBuffer& buffer);
+        void copyBufferToImage(GraphicsBuffer& buffer);
 
-  public:
-    Texture(ImageAsset* asset);
+      public:
+        Texture(ImageAsset* asset);
 
-    ~Texture();
+        ~Texture();
 
-    VkImage get();
+        VkImage get();
 
-    VkImageView view();
+        VkImageView view();
 
-    VkSampler sampler();
+        VkSampler sampler();
 
-    void update();
-  };
+        void update();
+    };
 } // namespace graphics

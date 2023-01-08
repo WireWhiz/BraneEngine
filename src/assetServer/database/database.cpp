@@ -59,36 +59,36 @@ Database::Database()
     _searchUsers.initialize(
         "SELECT UserID, Username FROM Users WHERE Username LIKE ?3 ORDER BY Username LIMIT ?2 OFFSET ?1", _db);
 
-    rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn> &columns) {
+    rawSQLCall("SELECT * FROM Permissions;", [this](const std::vector<Database::sqlColumn>& columns) {
         _permissions.insert({std::stoi(columns[0].value), columns[1].value});
     });
 }
 
 Database::~Database() { sqlite3_close(_db); }
 
-int Database::sqliteCallback(void *callback, int argc, char **argv, char **azColName)
+int Database::sqliteCallback(void* callback, int argc, char** argv, char** azColName)
 {
     std::vector<sqlColumn> columns(argc);
     for(int i = 0; i < argc; ++i) {
         columns[i].name = azColName[i];
         columns[i].value = argv[i];
     }
-    (*((sqlCallbackFunction *)(callback)))(columns);
+    (*((sqlCallbackFunction*)(callback)))(columns);
     return 0;
 }
 
-void Database::rawSQLCall(const std::string &cmd, const sqlCallbackFunction &f)
+void Database::rawSQLCall(const std::string& cmd, const sqlCallbackFunction& f)
 {
-    char *zErrMsg = 0;
+    char* zErrMsg = 0;
     int rc;
-    rc = sqlite3_exec(_db, cmd.c_str(), sqliteCallback, (void *)&f, &zErrMsg);
+    rc = sqlite3_exec(_db, cmd.c_str(), sqliteCallback, (void*)&f, &zErrMsg);
     if(rc != SQLITE_OK) {
         fprintf(stderr, "SQL error: %s\n", zErrMsg);
         sqlite3_free(zErrMsg);
     }
 }
 
-int64_t Database::getUserID(const std::string &username)
+int64_t Database::getUserID(const std::string& username)
 {
     int64_t userID;
     _userIDCall.run(username, std::function([&userID](int64_t id) { userID = id; }));
@@ -101,13 +101,13 @@ std::unordered_set<std::string> Database::userPermissions(int64_t userID)
     // TODO change this to prepared call
     rawSQLCall(
         "SELECT PermissionID FROM UserPermissions WHERE UserID=" + std::to_string(userID) + ";",
-        [&pems, this](const std::vector<Database::sqlColumn> &columns) {
+        [&pems, this](const std::vector<Database::sqlColumn>& columns) {
             pems.insert(_permissions[std::stoi(columns[0].value)]);
         });
     return pems;
 }
 
-void Database::insertAssetInfo(AssetInfo &assetInfo)
+void Database::insertAssetInfo(AssetInfo& assetInfo)
 {
     _insertAssetInfo.run(assetInfo.id, sqlTEXT(assetInfo.name), assetInfo.type.toString(), assetInfo.hash);
     /*_getLastInserted.run("Assets", [&assetInfo](sqlINT id){
@@ -127,7 +127,7 @@ AssetInfo Database::getAssetInfo(uint32_t id)
     return asset;
 }
 
-void Database::updateAssetInfo(const AssetInfo &info)
+void Database::updateAssetInfo(const AssetInfo& info)
 {
     _updateAssetInfo.run(static_cast<sqlINT>(info.id), info.name, info.type.toString(), info.hash);
 }
@@ -150,13 +150,13 @@ void Database::setAssetPermission(uint32_t assetID, uint32_t userID, AssetPermis
         _deleteAssetPermission.run(static_cast<sqlINT>(assetID), static_cast<sqlINT>(userID));
 }
 
-std::vector<AssetInfo> Database::listUserAssets(const uint32_t &userID)
+std::vector<AssetInfo> Database::listUserAssets(const uint32_t& userID)
 {
     std::string sqlCall = "SELECT Assets.* FROM Assets JOIN AssetPermissions ON Assets.AssetID = "
                           "AssetPermissions.AssetID WHERE AssetPermissions.UserID = " +
                           std::to_string(userID);
     std::vector<AssetInfo> assets;
-    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn> &columns) {
+    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns) {
         AssetInfo ai;
         ai.id = std::stoi(columns[0].value);
         ai.name = columns[1].value;
@@ -166,17 +166,17 @@ std::vector<AssetInfo> Database::listUserAssets(const uint32_t &userID)
     return assets;
 }
 
-std::string Database::assetName(AssetID &id)
+std::string Database::assetName(AssetID& id)
 {
     std::string name = "not found";
     std::string sqlCall = "SELECT Name FROM Assets WHERE AssetID = " + std::to_string(id.id());
-    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn> &columns) { name = columns[0].value; });
+    rawSQLCall(sqlCall, [&](const std::vector<Database::sqlColumn>& columns) { name = columns[0].value; });
     return name;
 }
 
-const char *Database::name() { return "database"; }
+const char* Database::name() { return "database"; }
 
-bool Database::authenticate(const std::string &username, const std::string &password)
+bool Database::authenticate(const std::string& username, const std::string& password)
 {
     std::string passwordHashTarget;
     std::string salt;
@@ -191,24 +191,24 @@ bool Database::authenticate(const std::string &username, const std::string &pass
     return hashedPassword == passwordHashTarget;
 }
 
-std::string Database::hashPassword(const std::string &password, const std::string &salt)
+std::string Database::hashPassword(const std::string& password, const std::string& salt)
 {
     size_t hashIterations = Config::json()["security"].get("hash_iterations", 10000).asLargestInt();
     std::string input(SHA256_DIGEST_LENGTH, ' ');
     std::string output(SHA256_DIGEST_LENGTH, ' ');
 
-    //Always do one iteration first to initialize input
+    // Always do one iteration first to initialize input
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, password.c_str(), password.size());
     SHA256_Update(&sha256, salt.c_str(), salt.size());
-    SHA256_Final((unsigned char *)input.data(), &sha256);
+    SHA256_Final((unsigned char*)input.data(), &sha256);
 
     for(int i = 1; i < hashIterations; ++i) {
         SHA256_Init(&sha256);
         SHA256_Update(&sha256, input.c_str(), input.size());
         SHA256_Update(&sha256, salt.c_str(), salt.size());
-        SHA256_Final((unsigned char *)output.data(), &sha256);
+        SHA256_Final((unsigned char*)output.data(), &sha256);
         std::swap(input, output);
     }
     return output;
@@ -217,7 +217,7 @@ std::string Database::hashPassword(const std::string &password, const std::strin
 std::string Database::randHex(size_t length)
 {
     std::string buffer(length, ' ');
-    RAND_bytes((unsigned char *)buffer.data(), static_cast<int>(length));
+    RAND_bytes((unsigned char*)buffer.data(), static_cast<int>(length));
     return std::move(buffer);
 }
 
@@ -246,14 +246,14 @@ std::vector<Database::UserSearchResult> Database::searchUsers(int start, int cou
     return results;
 }
 
-void Database::setPassword(uint32_t user, const std::string &password)
+void Database::setPassword(uint32_t user, const std::string& password)
 {
     std::string salt = randHex(SHA256_DIGEST_LENGTH);
     std::string hashedPassword = hashPassword(password, salt);
     _setPassword.run((int)user, hashedPassword, salt);
 }
 
-void Database::createUser(const std::string &username, const std::string &password)
+void Database::createUser(const std::string& username, const std::string& password)
 {
     _createUser.run(username);
     uint32_t userID = 0;

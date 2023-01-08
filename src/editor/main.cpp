@@ -15,32 +15,32 @@
 
 int main(int argc, char** argv)
 {
-  Config::loadConfig();
+    Config::loadConfig();
 
-  Runtime::init();
-  Timeline& tl = Runtime::timeline();
-  tl.addBlock("asset management");
-  tl.addBlock("networking");
-  tl.addBlock("before main");
-  tl.addBlock("main");
-  tl.addBlock("draw");
-  Runtime::addModule<NetworkManager>();
-  Runtime::addModule<FileManager>();
-  Runtime::addModule<EntityManager>();
-  Runtime::addModule<AssetManager>();
-  Runtime::addModule<Transforms>();
-  Runtime::addModule<graphics::VulkanRuntime>();
-  Runtime::addModule<GUI>();
-  Runtime::addModule<AssemblyReloadManager>();
-  Runtime::addModule<Editor>();
+    Runtime::init();
+    Timeline& tl = Runtime::timeline();
+    tl.addBlock("asset management");
+    tl.addBlock("networking");
+    tl.addBlock("before main");
+    tl.addBlock("main");
+    tl.addBlock("draw");
+    Runtime::addModule<NetworkManager>();
+    Runtime::addModule<FileManager>();
+    Runtime::addModule<EntityManager>();
+    Runtime::addModule<AssetManager>();
+    Runtime::addModule<Transforms>();
+    Runtime::addModule<graphics::VulkanRuntime>();
+    Runtime::addModule<GUI>();
+    Runtime::addModule<AssemblyReloadManager>();
+    Runtime::addModule<Editor>();
 
-  Runtime::run();
-  Runtime::cleanup();
+    Runtime::run();
+    Runtime::cleanup();
 }
 
 #ifdef _WIN32
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-  return main(__argc, __argv);
+    return main(__argc, __argv);
 }
 #endif

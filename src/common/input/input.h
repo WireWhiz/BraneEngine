@@ -9,14 +9,14 @@
 #include "runtime/module.h"
 
 class InputManager : public Module {
-  graphics::Window* _window;
+    graphics::Window* _window;
 
-public:
-  InputManager();
+  public:
+    InputManager();
 
-  void start() override;
+    void start() override;
 
-  static const char* name();
+    static const char* name();
 };
 
 #endif // BRANEENGINE_INPUT_H

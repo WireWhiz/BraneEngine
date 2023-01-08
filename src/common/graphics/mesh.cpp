@@ -5,91 +5,91 @@
 #include <assets/types/meshAsset.h>
 
 namespace graphics {
-  Mesh::Mesh(MeshAsset* meshAsset)
-  {
-    _meshAsset = meshAsset;
-    _locked = true;
-    unlock();
+    Mesh::Mesh(MeshAsset* meshAsset)
+    {
+        _meshAsset = meshAsset;
+        _locked = true;
+        unlock();
 
-    _stagingBuffer->setData(_meshAsset->packedData(), 0);
+        _stagingBuffer->setData(_meshAsset->packedData(), 0);
 
-    _dataBuffer = new GraphicsBuffer(
-        size(),
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    SingleUseCommandBuffer cmdBuffer(device->transferPool());
-    _dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
-    cmdBuffer.submit(device->transferQueue());
-  }
-
-  Mesh::~Mesh()
-  {
-    if(!_locked)
-      delete _stagingBuffer;
-    delete _dataBuffer;
-  }
-
-  uint32_t Mesh::size() const { return _meshAsset->meshSize(); }
-
-  void Mesh::lock()
-  {
-    if(!_locked) {
-      delete _stagingBuffer;
-      _locked = false;
+        _dataBuffer = new GraphicsBuffer(
+            size(),
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        SingleUseCommandBuffer cmdBuffer(device->transferPool());
+        _dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
+        cmdBuffer.submit(device->transferQueue());
     }
-  }
 
-  void Mesh::unlock()
-  {
-    if(_locked) {
-      _stagingBuffer = new GraphicsBuffer(
-          size(),
-          VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-          VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-      _locked = false;
+    Mesh::~Mesh()
+    {
+        if(!_locked)
+            delete _stagingBuffer;
+        delete _dataBuffer;
     }
-  }
 
-  uint32_t Mesh::vertexCount(uint32_t primitive) const { return _meshAsset->vertexCount(primitive); }
+    uint32_t Mesh::size() const { return _meshAsset->meshSize(); }
 
-  VkIndexType Mesh::indexBufferType(uint32_t primitive) const
-  {
-    return (_meshAsset->indexType(primitive) == MeshAsset::Primitive::UInt16) ? VK_INDEX_TYPE_UINT16
-                                                                              : VK_INDEX_TYPE_UINT32;
-  }
+    void Mesh::lock()
+    {
+        if(!_locked) {
+            delete _stagingBuffer;
+            _locked = false;
+        }
+    }
 
-  VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const { return _meshAsset->indexOffset(primitive); }
+    void Mesh::unlock()
+    {
+        if(_locked) {
+            _stagingBuffer = new GraphicsBuffer(
+                size(),
+                VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            _locked = false;
+        }
+    }
 
-  uint32_t Mesh::primitiveCount() const { return _meshAsset->primitiveCount(); }
+    uint32_t Mesh::vertexCount(uint32_t primitive) const { return _meshAsset->vertexCount(primitive); }
 
-  MeshAsset* Mesh::meshAsset() { return _meshAsset; }
+    VkIndexType Mesh::indexBufferType(uint32_t primitive) const
+    {
+        return (_meshAsset->indexType(primitive) == MeshAsset::Primitive::UInt16) ? VK_INDEX_TYPE_UINT16
+                                                                                  : VK_INDEX_TYPE_UINT32;
+    }
 
-  void Mesh::updateData()
-  {
-    if(!_meshAsset->meshUpdated)
-      return;
+    VkDeviceSize Mesh::indexBufferOffset(uint32_t primitive) const { return _meshAsset->indexOffset(primitive); }
 
-    _stagingBuffer->setData(_meshAsset->packedData(), 0);
+    uint32_t Mesh::primitiveCount() const { return _meshAsset->primitiveCount(); }
 
-    SingleUseCommandBuffer cmdBuffer(device->transferPool());
-    _dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
-    cmdBuffer.submit(device->transferQueue());
+    MeshAsset* Mesh::meshAsset() { return _meshAsset; }
 
-    _meshAsset->meshUpdated = false;
-  }
+    void Mesh::updateData()
+    {
+        if(!_meshAsset->meshUpdated)
+            return;
 
-  bool Mesh::hasAttributeBuffer(uint32_t primitive, const std::string& name) const
-  {
-    return _meshAsset->hasAttribute(primitive, name);
-  }
+        _stagingBuffer->setData(_meshAsset->packedData(), 0);
 
-  VkDeviceSize Mesh::attributeBufferOffset(uint32_t primitive, const std::string& name) const
-  {
-    return _meshAsset->attributeOffset(primitive, name);
-  }
+        SingleUseCommandBuffer cmdBuffer(device->transferPool());
+        _dataBuffer->copy(_stagingBuffer, cmdBuffer.get(), size());
+        cmdBuffer.submit(device->transferQueue());
 
-  VkBuffer Mesh::buffer() const { return _dataBuffer->get(); }
+        _meshAsset->meshUpdated = false;
+    }
 
-  uint32_t Mesh::indexCount(uint32_t primitive) const { return _meshAsset->indexCount(primitive); }
+    bool Mesh::hasAttributeBuffer(uint32_t primitive, const std::string& name) const
+    {
+        return _meshAsset->hasAttribute(primitive, name);
+    }
+
+    VkDeviceSize Mesh::attributeBufferOffset(uint32_t primitive, const std::string& name) const
+    {
+        return _meshAsset->attributeOffset(primitive, name);
+    }
+
+    VkBuffer Mesh::buffer() const { return _dataBuffer->get(); }
+
+    uint32_t Mesh::indexCount(uint32_t primitive) const { return _meshAsset->indexCount(primitive); }
 
 } // namespace graphics

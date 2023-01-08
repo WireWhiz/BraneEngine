@@ -14,34 +14,34 @@
 class GUI;
 
 class GUIWindow {
-  static size_t _instanceCounter;
-  size_t _instance;
-  bool _open = true;
-  bool _resetSize = true;
+    static size_t _instanceCounter;
+    size_t _instance;
+    bool _open = true;
+    bool _resetSize = true;
 
-protected:
-  GUI& _ui;
-  std::string _name;
-  ImGuiWindowFlags _flags = ImGuiWindowFlags_None;
+  protected:
+    GUI& _ui;
+    std::string _name;
+    ImGuiWindowFlags _flags = ImGuiWindowFlags_None;
 
-  virtual void displayContent() = 0;
+    virtual void displayContent() = 0;
 
-public:
-  GUIWindow(GUI& ui);
+  public:
+    GUIWindow(GUI& ui);
 
-  virtual ~GUIWindow() = default;
+    virtual ~GUIWindow() = default;
 
-  virtual void draw();
+    virtual void draw();
 
-  virtual void update();
+    virtual void update();
 
-  bool isOpen() const;
+    bool isOpen() const;
 
-  void close();
+    void close();
 
-  std::string name() const;
+    std::string name() const;
 
-  void resizeDefault();
+    void resizeDefault();
 };
 
 #endif // BRANEENGINE_GUIWINDOW_H

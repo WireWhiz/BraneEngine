@@ -10,20 +10,20 @@
 #include "common/ecs/component.h"
 
 class WorldChunk : public Asset {
-public:
-  struct LOD {
-    AssetID assembly;
-    uint32_t max = -1;
-    uint32_t min = -1;
-  };
-  std::vector<LOD> LODs;
-  uint32_t maxLOD = -1;
+  public:
+    struct LOD {
+        AssetID assembly;
+        uint32_t max = -1;
+        uint32_t min = -1;
+    };
+    std::vector<LOD> LODs;
+    uint32_t maxLOD = -1;
 
-  WorldChunk();
+    WorldChunk();
 
-  virtual void serialize(OutputSerializer& s) const;
+    virtual void serialize(OutputSerializer& s) const;
 
-  virtual void deserialize(InputSerializer& s);
+    virtual void deserialize(InputSerializer& s);
 };
 
 #endif // BRANEENGINE_CHUNK_H

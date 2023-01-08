@@ -3,14 +3,14 @@
 
 TEST(Threading, ThreadPoolTest)
 {
-  ThreadPool::init(4);
-  std::atomic_bool testBool = false;
-  std::shared_ptr<JobHandle> jh = ThreadPool::enqueue([&]() { testBool = true; });
-  jh->
+    ThreadPool::init(4);
+    std::atomic_bool testBool = false;
+    std::shared_ptr<JobHandle> jh = ThreadPool::enqueue([&]() { testBool = true; });
+    jh->
 
-      finish();
+        finish();
 
-  ThreadPool::cleanup();
+    ThreadPool::cleanup();
 
-  EXPECT_TRUE(testBool);
+    EXPECT_TRUE(testBool);
 }

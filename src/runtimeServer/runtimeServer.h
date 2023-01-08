@@ -4,17 +4,17 @@
 #include <vector>
 
 class RuntimeServer {
-  bool _running;
-  EntityManager em;
+    bool _running;
+    EntityManager em;
 
-public:
-  RuntimeServer();
+  public:
+    RuntimeServer();
 
-  ~RuntimeServer();
+    ~RuntimeServer();
 
-  void createSystems();
+    void createSystems();
 
-  void run();
+    void run();
 
-  static void acceptConnections();
+    static void acceptConnections();
 };

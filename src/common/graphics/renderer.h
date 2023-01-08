@@ -4,90 +4,90 @@
 #include "vulkan/vulkan.hpp"
 
 namespace graphics {
-  using RendererID = uint32_t;
+    using RendererID = uint32_t;
 
-  class Mesh;
+    class Mesh;
 
-  class Material;
+    class Material;
 
-  class RenderTexture;
+    class RenderTexture;
 
-  class SwapChain;
+    class SwapChain;
 
-  struct RenderObject {
-    Mesh* mesh;
-    size_t primitive;
+    struct RenderObject {
+        Mesh* mesh;
+        size_t primitive;
 
-    bool operator==(const RenderObject&) const;
-  };
+        bool operator==(const RenderObject&) const;
+    };
 
-  class Renderer {
-  protected:
-    VkRenderPass _renderPass = VK_NULL_HANDLE;
-    std::vector<VkFramebuffer> _frameBuffers;
-    SwapChain& _swapChain;
-    RenderTexture* _target = nullptr;
+    class Renderer {
+      protected:
+        VkRenderPass _renderPass = VK_NULL_HANDLE;
+        std::vector<VkFramebuffer> _frameBuffers;
+        SwapChain& _swapChain;
+        RenderTexture* _target = nullptr;
 
-    std::function<void()> _onDestroy;
-    VkClearColorValue _clearColor;
-    VkExtent2D _extent = {0, 0};
-    bool _depthTexture = false;
-    bool _shouldClear = true;
+        std::function<void()> _onDestroy;
+        VkClearColorValue _clearColor;
+        VkExtent2D _extent = {0, 0};
+        bool _depthTexture = false;
+        bool _shouldClear = true;
 
-    void createRenderPass(VkFormat imageFormat, VkFormat depthImageFormat = VkFormat::VK_FORMAT_UNDEFINED);
+        void createRenderPass(VkFormat imageFormat, VkFormat depthImageFormat = VkFormat::VK_FORMAT_UNDEFINED);
 
-    void createFrameBuffers(
-        VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture = VK_NULL_HANDLE);
+        void createFrameBuffers(
+            VkExtent2D size, const std::vector<VkImageView>& images, VkImageView depthTexture = VK_NULL_HANDLE);
 
-    void startRenderPass(VkCommandBuffer cmdBuffer);
+        void startRenderPass(VkCommandBuffer cmdBuffer);
 
-    void endRenderPass(VkCommandBuffer cmdBuffer);
+        void endRenderPass(VkCommandBuffer cmdBuffer);
 
-    virtual void rebuild();
+        virtual void rebuild();
 
-  public:
-    uint8_t priority;
+      public:
+        uint8_t priority;
 
-    Renderer(SwapChain& swapChain);
+        Renderer(SwapChain& swapChain);
 
-    virtual ~Renderer();
+        virtual ~Renderer();
 
-    bool targetingSwapChain();
+        bool targetingSwapChain();
 
-    void setTargetAsSwapChain(bool depthTexture);
+        void setTargetAsSwapChain(bool depthTexture);
 
-    void setTarget(RenderTexture* texture);
+        void setTarget(RenderTexture* texture);
 
-    void setClearColor(VkClearColorValue color);
+        void setClearColor(VkClearColorValue color);
 
-    void dontClear();
+        void dontClear();
 
-    VkFramebuffer framebuffer(size_t index);
+        VkFramebuffer framebuffer(size_t index);
 
-    VkExtent2D extent();
+        VkExtent2D extent();
 
-    virtual void render(VkCommandBuffer cmdBuffer) = 0;
+        virtual void render(VkCommandBuffer cmdBuffer) = 0;
 
-    VkRenderPass renderPass();
+        VkRenderPass renderPass();
 
-    bool depthTexture();
+        bool depthTexture();
 
-    void clearTarget();
-  };
+        void clearTarget();
+    };
 
-  class CustomRenderer : public Renderer {
-    std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
+    class CustomRenderer : public Renderer {
+        std::function<void(VkCommandBuffer cmdBuffer)> _renderCallback;
 
-  public:
-    CustomRenderer(SwapChain& swapChain);
+      public:
+        CustomRenderer(SwapChain& swapChain);
 
-    void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
+        void setRenderCallback(const std::function<void(VkCommandBuffer cmdBuffer)>& callback);
 
-    void render(VkCommandBuffer cmdBuffer) override;
-  };
+        void render(VkCommandBuffer cmdBuffer) override;
+    };
 } // namespace graphics
 namespace std {
-  template <> struct hash<graphics::RenderObject> {
-    size_t operator()(const graphics::RenderObject&) const;
-  };
+    template <> struct hash<graphics::RenderObject> {
+        size_t operator()(const graphics::RenderObject&) const;
+    };
 } // namespace std

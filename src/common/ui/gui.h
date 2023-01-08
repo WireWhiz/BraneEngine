@@ -16,7 +16,7 @@
 #include <vector>
 
 namespace graphics {
-  class VulkanRuntime;
+    class VulkanRuntime;
 }
 
 class GUIRenderer;
@@ -28,85 +28,85 @@ class GUIPopup;
 struct ImFont;
 
 class GUI : public Module {
-  GUIRenderer* _renderer;
+    GUIRenderer* _renderer;
 
-  friend class GUIRenderer;
+    friend class GUIRenderer;
 
-  VkDescriptorPool _imGuiDescriptorPool;
+    VkDescriptorPool _imGuiDescriptorPool;
 
-  std::vector<ImFont*> _fonts;
+    std::vector<ImFont*> _fonts;
 
-  std::vector<std::unique_ptr<GUIWindow>> _windows;
-  std::unique_ptr<GUIPopup> _popup;
+    std::vector<std::unique_ptr<GUIWindow>> _windows;
+    std::unique_ptr<GUIPopup> _popup;
 
-  void drawUI();
+    void drawUI();
 
-  std::function<void()> _drawMenu;
-  std::mutex _queueLock;
+    std::function<void()> _drawMenu;
+    std::mutex _queueLock;
 
-  std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
-  std::unordered_map<std::string, std::vector<GUIEventListener>> _eventListeners;
+    std::deque<std::unique_ptr<GUIEvent>> _queuedEvents;
+    std::unordered_map<std::string, std::vector<GUIEventListener>> _eventListeners;
 
-  void callEvents();
+    void callEvents();
 
-public:
-  GUI();
+  public:
+    GUI();
 
-  ~GUI();
+    ~GUI();
 
-  static const char* name();
+    static const char* name();
 
-  void start() override;
+    void start() override;
 
-  void stop() override;
+    void stop() override;
 
-  template <typename WindowT, typename... Args> WindowT* addWindow(Args&... args)
-  {
-    size_t index = _windows.size();
-    _windows.push_back(std::make_unique<WindowT>(*this, args...));
-    return static_cast<WindowT*>(_windows[index].get());
-  }
+    template <typename WindowT, typename... Args> WindowT* addWindow(Args&... args)
+    {
+        size_t index = _windows.size();
+        _windows.push_back(std::make_unique<WindowT>(*this, args...));
+        return static_cast<WindowT*>(_windows[index].get());
+    }
 
-  void clearWindows();
+    void clearWindows();
 
-  void setMainMenuCallback(std::function<void()> drawMenu);
+    void setMainMenuCallback(std::function<void()> drawMenu);
 
-  void openPopup(std::unique_ptr<GUIPopup>&& popup);
+    void openPopup(std::unique_ptr<GUIPopup>&& popup);
 
-  void closePopup();
+    void closePopup();
 
-  void sendEvent(std::unique_ptr<GUIEvent>&& name);
+    void sendEvent(std::unique_ptr<GUIEvent>&& name);
 
-  template <typename T, typename... Args> void sendEvent(const Args&... args)
-  {
-    static_assert(std::is_base_of<GUIEvent, T>());
-    sendEvent(std::make_unique<T>(args...));
-  }
+    template <typename T, typename... Args> void sendEvent(const Args&... args)
+    {
+        static_assert(std::is_base_of<GUIEvent, T>());
+        sendEvent(std::make_unique<T>(args...));
+    }
 
-  template <typename T>
-  void addEventListener(const std::string& name, GUIWindow* window, std::function<void(const T*)> callback)
-  {
-    static_assert(std::is_base_of<GUIEvent, T>());
-    if constexpr(std::is_same<GUIEvent, T>())
-      _eventListeners[name].push_back({window, callback});
-    else
-      _eventListeners[name].push_back({window, [callback](const GUIEvent* event) {
-                                         const T* e = (const T*)(event);
-                                         callback(e);
-                                       }});
-  }
+    template <typename T>
+    void addEventListener(const std::string& name, GUIWindow* window, std::function<void(const T*)> callback)
+    {
+        static_assert(std::is_base_of<GUIEvent, T>());
+        if constexpr(std::is_same<GUIEvent, T>())
+            _eventListeners[name].push_back({window, callback});
+        else
+            _eventListeners[name].push_back({window, [callback](const GUIEvent* event) {
+                                                 const T* e = (const T*)(event);
+                                                 callback(e);
+                                             }});
+    }
 
-  VkDescriptorPool descriptorPool();
+    VkDescriptorPool descriptorPool();
 
-  void setupImGui(graphics::VulkanRuntime& runtime);
+    void setupImGui(graphics::VulkanRuntime& runtime);
 
-  void cleanupImGui();
+    void cleanupImGui();
 
-  inline const std::vector<ImFont*>& fonts() const { return _fonts; }
+    inline const std::vector<ImFont*>& fonts() const { return _fonts; }
 
-  void pushHeaderFont() const;
+    void pushHeaderFont() const;
 
-  void pushMonoFont() const;
+    void pushMonoFont() const;
 };
 
 #endif // BRANEENGINE_GUI_H

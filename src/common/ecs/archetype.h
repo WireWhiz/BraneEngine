@@ -21,69 +21,69 @@ class EntitySet;
 class ComponentFilter;
 
 struct ArchetypeEdge {
-  ComponentID component;
-  Archetype* archetype;
+    ComponentID component;
+    Archetype* archetype;
 };
 
 class Archetype {
 #ifdef TEST_BUILD
-public:
+  public:
 #endif
-  size_t _size = 0;
-  size_t _entitySize;
+    size_t _size = 0;
+    size_t _entitySize;
 
-  robin_hood::unordered_flat_map<ComponentID, Archetype*> _addEdges;
-  robin_hood::unordered_flat_map<ComponentID, Archetype*> _removeEdges;
+    robin_hood::unordered_flat_map<ComponentID, Archetype*> _addEdges;
+    robin_hood::unordered_flat_map<ComponentID, Archetype*> _removeEdges;
 
-  ComponentSet _components;
-  std::vector<const ComponentDescription*> _componentDescriptions;
-  std::vector<std::unique_ptr<Chunk>> _chunks;
-  std::shared_ptr<ChunkPool> _chunkAllocator;
+    ComponentSet _components;
+    std::vector<const ComponentDescription*> _componentDescriptions;
+    std::vector<std::unique_ptr<Chunk>> _chunks;
+    std::shared_ptr<ChunkPool> _chunkAllocator;
 
-  size_t chunkIndex(size_t entity) const;
+    size_t chunkIndex(size_t entity) const;
 
-  Chunk* getChunk(size_t entity) const;
+    Chunk* getChunk(size_t entity) const;
 
-public:
-  Archetype(const std::vector<const ComponentDescription*>& components, std::shared_ptr<ChunkPool>& _chunkAllocator);
+  public:
+    Archetype(const std::vector<const ComponentDescription*>& components, std::shared_ptr<ChunkPool>& _chunkAllocator);
 
-  ~Archetype();
+    ~Archetype();
 
-  bool hasComponent(ComponentID component) const;
+    bool hasComponent(ComponentID component) const;
 
-  bool hasComponents(const ComponentSet& comps) const;
+    bool hasComponents(const ComponentSet& comps) const;
 
-  bool hasComponents(const ComponentFilter& filter) const;
+    bool hasComponents(const ComponentFilter& filter) const;
 
-  VirtualComponentView getComponent(size_t entity, ComponentID component) const;
+    VirtualComponentView getComponent(size_t entity, ComponentID component) const;
 
-  void setComponentVersion(size_t entity, ComponentID component, uint32_t version);
+    void setComponentVersion(size_t entity, ComponentID component, uint32_t version);
 
-  void setComponent(size_t entity, VirtualComponent&& component);
+    void setComponent(size_t entity, VirtualComponent&& component);
 
-  void setComponent(size_t entity, VirtualComponentView component);
+    void setComponent(size_t entity, VirtualComponentView component);
 
-  bool isChildOf(const Archetype* parent, ComponentID& connectingComponent) const;
+    bool isChildOf(const Archetype* parent, ComponentID& connectingComponent) const;
 
-  const ComponentSet& components() const;
+    const ComponentSet& components() const;
 
-  const std::vector<const ComponentDescription*>& componentDescriptions();
+    const std::vector<const ComponentDescription*>& componentDescriptions();
 
-  robin_hood::unordered_flat_map<ComponentID, Archetype*>& addEdges();
+    robin_hood::unordered_flat_map<ComponentID, Archetype*>& addEdges();
 
-  robin_hood::unordered_flat_map<ComponentID, Archetype*>& removeEdges();
+    robin_hood::unordered_flat_map<ComponentID, Archetype*>& removeEdges();
 
-  const std::vector<std::unique_ptr<Chunk>>& chunks() const;
+    const std::vector<std::unique_ptr<Chunk>>& chunks() const;
 
-  size_t size() const;
+    size_t size() const;
 
-  size_t createEntity();
+    size_t createEntity();
 
-  size_t moveEntity(size_t index, Archetype* dest);
+    size_t moveEntity(size_t index, Archetype* dest);
 
-  void removeEntity(size_t index);
+    void removeEntity(size_t index);
 
-  size_t entitySize() const;
+    size_t entitySize() const;
 
-  friend class ArchetypeView;
+    friend class ArchetypeView;
 };

@@ -12,10 +12,10 @@
 class AssetID;
 
 class AssetSelectWidget {
-  static std::unique_ptr<AssetSearchWidget> _searchWidget;
+    static std::unique_ptr<AssetSearchWidget> _searchWidget;
 
-public:
-  static bool draw(AssetID& id, AssetType type = AssetType::none);
+  public:
+    static bool draw(AssetID& id, AssetType type = AssetType::none);
 };
 
 #endif // BRANEENGINE_ASSETSELECTWIDGET_H
