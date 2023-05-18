@@ -1,35 +1,6 @@
-[submodule "libraries/external/repos/imgui"]
-	path = libraries/external/repos/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
-[submodule "libraries/external/repos/asio"]
-	path = libraries/external/repos/asio
-	url = https://github.com/chriskohlhoff/asio/
-[submodule "libraries/external/repos/glm"]
-	path = libraries/external/repos/glm
-	url = https://github.com/g-truc/glm
-[submodule "libraries/external/repos/gtest"]
-	path = libraries/external/repos/gtest
-	url = https://github.com/google/googletest
-[submodule "libraries/external/repos/jsoncpp"]
-	path = libraries/external/repos/jsoncpp
-	url = https://github.com/open-source-parsers/jsoncpp
-[submodule "libraries/external/repos/imguizmo"]
-	path = libraries/external/repos/imguizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo
-[submodule "libraries/external/repos/shaderc"]
-	path = libraries/external/repos/shaderc
-	url = https://github.com/google/shaderc/
-[submodule "libraries/external/repos/spirv-tools"]
-	path = libraries/external/repos/spirv-tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools
-	branch = stable
-[submodule "libraries/external/repos/spirv-headers"]
-	path = libraries/external/repos/spirv-headers
-	url = https://github.com/KhronosGroup/SPIRV-Headers
-[submodule "libraries/external/repos/glslang"]
-	path = libraries/external/repos/glslang
-	url = https://github.com/KhronosGroup/glslang
-[submodule "libraries/external/repos/spirv-cross"]
-	path = libraries/external/repos/spirv-cross
-	url = https://github.com/KhronosGroup/SPIRV-Cross/
+[submodule "libraries/repositories/glfw"]
+	path = libraries/repositories/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "libraries/imguizmo"]
+	path = libraries/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
