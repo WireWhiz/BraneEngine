@@ -1,5 +1,5 @@
-[submodule "libraries/repositories/glfw"]
-	path = libraries/repositories/glfw
+[submodule "libraries/glfw"]
+	path = libraries/glfw
 	url = https://github.com/glfw/glfw.git
 [submodule "libraries/imguizmo"]
 	path = libraries/imguizmo
