@@ -7,7 +7,7 @@ find_package(OpenGL REQUIRED)
 ## Vulkan SDK
 find_package(Vulkan REQUIRED)
 ## OpenSSL
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED Crypto)
 ## glslang
 add_subdirectory(glslang)
 ## SPIRV Headers

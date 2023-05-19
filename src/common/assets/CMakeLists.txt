@@ -12,7 +12,7 @@ set(ASSET_SOURCES
 
 add_library(assets_server STATIC ${ASSET_SOURCES})
 
-target_link_libraries(assets_server PUBLIC server_asset_types fileManager ecs systems ssl)
+target_link_libraries(assets_server PUBLIC sqlite3 server_asset_types fileManager ecs systems ssl)
 target_compile_definitions(assets_server PUBLIC SERVER)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

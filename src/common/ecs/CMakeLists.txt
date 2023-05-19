@@ -11,7 +11,7 @@ add_library(ecs STATIC
         systemManager.cpp
         archetypeManager.cpp
         componentManager.cpp entityID.cpp entityID.h)
-target_link_libraries(ecs PUBLIC runtime utility robin_hood)
+target_link_libraries(ecs PUBLIC runtime utility common_includes server_asset_types)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(BUILD_TESTS)

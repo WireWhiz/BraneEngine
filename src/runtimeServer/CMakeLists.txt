@@ -5,7 +5,7 @@ add_executable(RuntimeServer main.cpp
         "runtimeServer.cpp"
         )
 target_compile_definitions(RuntimeServer PRIVATE ${COMMON_DEFS})
-target_link_libraries(RuntimeServer PRIVATE ecs networking config)
+target_link_libraries(RuntimeServer PRIVATE ecs networking config crypto)
 
 configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
 set(INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/runtimeServer)

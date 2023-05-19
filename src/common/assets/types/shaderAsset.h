@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../asset.h"
-#include "utility/enumNameMap.h"
+#include <utility/enumNameMap.h>
 #include "vulkan/vulkan_core.h"
 #include <vector>
 

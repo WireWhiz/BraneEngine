@@ -1,6 +1,6 @@
 #pragma once
 
-#include "assets/types/shaderAsset.h"
+#include <assets/types/shaderAsset.h>
 #include <fstream>
 #include <iostream>
 #include <memory>

@@ -12,6 +12,6 @@ void RuntimeServer::createSystems()
 void RuntimeServer::run()
 {
     while(_running) {
-        em.runSystems();
+//        em.runSystems();
     }
 }
