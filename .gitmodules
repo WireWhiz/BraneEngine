@@ -24,3 +24,6 @@
 [submodule "libraries/glslang"]
 	path = libraries/glslang
 	url = https://github.com/KhronosGroup/glslang.git
+[submodule "libraries/jsoncpp"]
+	path = libraries/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git

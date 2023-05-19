@@ -37,6 +37,8 @@ add_subdirectory(tfd)
 add_subdirectory(glfw)
 ## sqlite3
 add_subdirectory(sqlite3)
+## jsoncpp
+add_subdirectory(jsoncpp)
 ## robin_hood
 add_subdirectory(robin_hood)
 
@@ -51,6 +53,8 @@ add_library(imgui STATIC
         imgui/backends/imgui_impl_vulkan.cpp)
 target_include_directories(imgui PUBLIC
         imgui)
+target_link_libraries(imgui PUBLIC
+        glfw Vulkan)
 ## ImGuizmo
 add_library(imguizmo STATIC
         imguizmo/GraphEditor.cpp
@@ -60,3 +64,5 @@ add_library(imguizmo STATIC
         imguizmo/ImSequencer.cpp)
 target_include_directories(imguizmo PUBLIC
         imguizmo)
+target_link_libraries(imguizmo PUBLIC
+        imgui glfw)
