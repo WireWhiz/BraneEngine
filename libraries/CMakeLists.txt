@@ -33,8 +33,6 @@ target_include_directories(glslc PUBLIC
 add_subdirectory(stb)
 ## tfd (tinyFileDialog)
 add_subdirectory(tfd)
-## GLFW
-add_subdirectory(glfw)
 ## sqlite3
 add_subdirectory(sqlite3)
 ## jsoncpp
