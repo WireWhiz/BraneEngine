@@ -3,7 +3,7 @@
 add_library(networking STATIC 
 	"networking.cpp"
 	"connection.cpp")
-target_link_libraries(networking PUBLIC ssl robin_hood project_properties)
+target_link_libraries(networking PUBLIC project_properties ssl robin_hood config)
 target_compile_definitions(networking PUBLIC)
 
 if(win32)
