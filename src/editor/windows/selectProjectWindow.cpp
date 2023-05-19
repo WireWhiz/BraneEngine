@@ -6,7 +6,7 @@
 #include "editor/editor.h"
 #include "fileManager/fileManager.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "tinyfiledialogs.h"
+#include <tfd/tinyfiledialogs.h>
 #include "ui/gui.h"
 
 SelectProjectWindow::SelectProjectWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)

@@ -7,7 +7,7 @@
 
 #include "ecs/component.h"
 #include "ecs/entityID.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include "runtime/runtime.h"
 
 class Assembly;

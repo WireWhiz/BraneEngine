@@ -1,6 +1,26 @@
 [submodule "libraries/glfw"]
 	path = libraries/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "libraries/imgui"]
+    path = libraries/imgui
+    url = https://github.com/ocornut/imgui.git
+	branch = docking
 [submodule "libraries/imguizmo"]
 	path = libraries/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "libraries/SPIRV-Headers"]
+	path = libraries/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "libraries/SPIRV-Tools"]
+	path = libraries/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "libraries/shaderc"]
+	path = libraries/shaderc
+	url = https://github.com/google/shaderc.git
+
+[submodule "libraries/SPIRV-Cross"]
+	path = libraries/SPIRV-Cross
+	url = https://github.com/KhronosGroup/SPIRV-Cross.git
+[submodule "libraries/glslang"]
+	path = libraries/glslang
+	url = https://github.com/KhronosGroup/glslang.git

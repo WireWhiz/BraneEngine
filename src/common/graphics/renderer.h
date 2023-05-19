@@ -1,7 +1,8 @@
 #pragma once
 
-#include "glm/mat4x4.hpp"
-#include "vulkan/vulkan.hpp"
+#include <functional>
+#include <glm/mat4x4.hpp>
+#include <vulkan/vulkan.hpp>
 
 namespace graphics {
     using RendererID = uint32_t;

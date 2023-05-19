@@ -25,7 +25,7 @@
 #include "graphics/material.h"
 #include "networking/networking.h"
 
-#include "tinyfiledialogs.h"
+#include <tfd/tinyfiledialogs.h>
 
 void Editor::start()
 {

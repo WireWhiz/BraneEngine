@@ -9,7 +9,7 @@ set(SOURCES
 
 add_library(utility STATIC ${SOURCES} jsonTypeUtilities.h)
 
-target_link_libraries(utility PUBLIC runtime include_dir external_include_dirs jsoncpp_static)
+target_link_libraries(utility PUBLIC runtime include_dir robin_hood jsoncpp_static)
 
 if(BUILD_TESTS)
  add_library(utility_test STATIC ${SOURCES})

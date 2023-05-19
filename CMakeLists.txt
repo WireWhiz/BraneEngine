@@ -22,7 +22,6 @@ endif()
 # Library Complie Definitions
 add_compile_definitions(GLM_FORCE_RADIANS
                 GLM_FORCE_DEPTH_ZERO_TO_ONE
-                ASIO_STANDALONE
                 STATIC_CONCPP)
 
 

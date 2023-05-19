@@ -15,7 +15,7 @@
 #include "chunk/chunkLoader.h"
 #include "glm/gtx/quaternion.hpp"
 #include "networking/connection.h"
-#include <asio.hpp>
+#include <boost/asio.hpp>
 #include <utility/threadPool.h>
 
 const char* Client::name() { return "client"; }

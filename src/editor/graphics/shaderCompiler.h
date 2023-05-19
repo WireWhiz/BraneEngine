@@ -6,8 +6,8 @@
 #define BRANEENGINE_SHADERCOMPILER_H
 
 #include "assets/types/shaderAsset.h"
-#include "libshaderc_util/file_finder.h"
-#include "robin_hood.h"
+#include <libshaderc_util/file_finder.h>
+#include <robin_hood/robin_hood.h>
 #include <mutex>
 #include <shaderc/shaderc.hpp>
 

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <asio.hpp>
-#include <asio/ssl.hpp>
-#include <asio/ts/buffer.hpp>
-#include <asio/ts/internet.hpp>
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/asio/ts/buffer.hpp>
+#include <boost/asio/ts/internet.hpp>
 
 #include "config/config.h"
 #include "message.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include <cstdint>
 #include <memory>
 #include <shared_mutex>
@@ -16,6 +16,8 @@
 #include <utility/serializedData.h>
 
 namespace net {
+
+    namespace asio = boost::asio;
 
     using tcp_socket = asio::ip::tcp::socket;
     using ssl_socket = asio::ssl::stream<tcp_socket>;

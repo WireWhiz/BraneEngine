@@ -26,7 +26,7 @@
 #include "graphics/graphics.h"
 #include "graphics/pointLightComponent.h"
 #include "graphics/texture.h"
-#include "imgui/misc/cpp/imgui_stdlib.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "ui/guiPopup.h"
 
 #include "assets/types/imageAsset.h"

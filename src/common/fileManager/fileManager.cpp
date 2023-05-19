@@ -3,7 +3,7 @@
 #include <config/config.h>
 #include <fstream>
 #include <openssl/md5.h>
-#include <tinyfiledialogs.h>
+#include <tfd/tinyfiledialogs.h>
 #include <utility/hex.h>
 #include <utility/serializedData.h>
 #include <utility/strCaseCompare.h>
