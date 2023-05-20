@@ -9,5 +9,6 @@ add_library(editorWindows STATIC
         #createAssetWindow.cpp
         syncWindow.cpp
         selectProjectWindow.cpp editorWindow.cpp editorWindow.h)
-target_link_libraries(editorWindows PUBLIC ui editorWidgets imgui imguizmo tfd)
+target_link_libraries(editorWindows PUBLIC
+        imgui ui editorWidgets imguizmo tfd)
 target_compile_definitions(editorWindows PUBLIC CLIENT)

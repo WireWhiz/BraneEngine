@@ -11,7 +11,7 @@
 
 #include "PreppedSQLCall.h"
 #include "databaseAsset.h"
-
+#include <sqlite3/sqlite3.h>
 #include "runtime/module.h"
 
 class AssetID;

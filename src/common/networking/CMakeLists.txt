@@ -1,9 +1,13 @@
 #src/common/networking
-
 add_library(networking STATIC 
 	"networking.cpp"
 	"connection.cpp")
-target_link_libraries(networking PUBLIC project_properties ssl robin_hood config)
+
+# OpenSSL
+find_package(OpenSSL REQUIRED)
+
+target_link_libraries(networking PUBLIC
+		project_properties OpenSSL::SSL OpenSSL::Crypto robin_hood config)
 target_compile_definitions(networking PUBLIC)
 
 if(win32)
