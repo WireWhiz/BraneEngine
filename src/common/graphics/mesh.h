@@ -6,7 +6,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 class MeshAsset;
 

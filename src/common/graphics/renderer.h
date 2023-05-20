@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <glm/mat4x4.hpp>
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 namespace graphics {
     using RendererID = uint32_t;

@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <stdexcept>
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
 
 namespace graphics {
     class Window {
