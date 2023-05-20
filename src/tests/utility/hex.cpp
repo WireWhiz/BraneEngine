@@ -1,7 +1,7 @@
 //
 // Created by eli on 2/4/2022.
 //
-#include "testing.h"
+#include <gtest/gtest.h>
 #include <utility/hex.h>
 
 TEST(HEX, ConvertToHexTest)

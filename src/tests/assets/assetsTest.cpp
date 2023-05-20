@@ -1,6 +1,7 @@
 #include "assets/assetManager.h"
-#include "testing.h"
 #include <assets/asset.h>
+
+#include <gtest/gtest.h>
 
 // Edit this function if we need to "load" any assets for testing
 AsyncData<Asset*> AssetManager::fetchAssetInternal(const AssetID& id, bool incremental)
