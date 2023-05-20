@@ -8,4 +8,4 @@ add_library(database STATIC
         databaseAsset.cpp
         databaseAsset.h)
 target_link_libraries(database PRIVATE
-        sqlite3 OpenSSL::SSL)
+        sqlite3 config OpenSSL::SSL)
