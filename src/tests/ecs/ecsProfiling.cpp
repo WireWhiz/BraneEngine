@@ -2,9 +2,10 @@
 // Created by eli on 8/28/2022.
 //
 
+#include <gtest/gtest.h>
+
 #include "assets/assetManager.h"
 #include "ecs/entity.h"
-#include "testing.h"
 #include "unordered_set"
 #include "utility/clock.h"
 #include <memory>

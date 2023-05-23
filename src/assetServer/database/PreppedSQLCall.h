@@ -8,8 +8,8 @@
 #include "runtime/runtime.h"
 #include <cassert>
 #include <functional>
-#include <sqlite/sqlite3.h>
 #include <stdexcept>
+#include <sqlite3/sqlite3.h>
 #include <string>
 #include <tuple>
 

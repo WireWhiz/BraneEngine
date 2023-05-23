@@ -45,7 +45,7 @@ void NetworkManager::async_connectToAssetServer(
     Runtime::log("connecting to asset server: " + address + ":" + std::to_string(port));
     _tcpResolver.async_resolve(
         asio::ip::tcp::resolver::query(address, std::to_string(port), asio::ip::tcp::resolver::query::canonical_name),
-        [this, address, callback](const asio::error_code ec, auto endpoints) {
+        [this, address, callback](const std::error_code ec, auto endpoints) {
             if(!ec) {
                 auto* connection = new net::ClientConnection<net::tcp_socket>(net::tcp_socket(_context));
                 connection->onRequest([this](auto c, auto m) { handleResponse(c, std::move(m)); });

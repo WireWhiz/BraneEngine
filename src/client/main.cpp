@@ -1,11 +1,14 @@
-
-#include "assets/assetManager.h"
-#include "chunk/chunkLoader.h"
 #include "client.h"
-#include "ecs/entity.h"
-#include "graphics/graphics.h"
-#include "systems/transforms.h"
-#include <iostream>
+
+#include <config/config.h>
+#include <networking/networking.h>
+#include <assets/assetManager.h>
+#include <fileManager/fileManager.h>
+#include <runtimeServer/runtimeServer.h>
+
+#include <chunk/chunkLoader.h>
+#include <systems/transforms.h>
+#include <graphics/graphics.h>
 
 int main()
 {
@@ -27,7 +30,7 @@ int main()
     Runtime::addModule<ChunkLoader>();
     Runtime::addModule<graphics::VulkanRuntime>();
     Runtime::addModule<Transforms>();
-    Runtime::addModule<Client>();
+   Runtime::addModule<Client>();
 
     Runtime::run();
 

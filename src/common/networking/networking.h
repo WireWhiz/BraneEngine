@@ -13,7 +13,7 @@
 
 #include "config/config.h"
 #include "connection.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include <shared_mutex>
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>

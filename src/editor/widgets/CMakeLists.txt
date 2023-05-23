@@ -4,5 +4,5 @@ add_library(editorWidgets STATIC
         virtualVariableWidgets.cpp
         assetSelectWidget.cpp
         assetSearchWidget.cpp)
-target_link_libraries(editorWidgets PUBLIC ui editorWindows)
-target_compile_definitions(editorWidgets  PUBLIC CLIENT)
+target_link_libraries(editorWidgets PUBLIC ui editorWindows robin_hood shaderc shaderc_util)
+target_compile_definitions(editorWidgets PUBLIC CLIENT)

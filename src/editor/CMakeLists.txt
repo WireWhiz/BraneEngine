@@ -20,7 +20,7 @@ target_include_directories(BraneEditor PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         )
 target_compile_definitions(BraneEditor PRIVATE ${COMMON_DEFS} ${CLIENT_DEFS})
-target_link_libraries(BraneEditor PUBLIC ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler)
+target_link_libraries(BraneEditor PUBLIC imgui ecs networking config graphics assets_client runtime editorWindows systems fileManager editorAssets shaderCompiler shaderc shaderc_util)
 
 configure_file(config.json ${CMAKE_CURRENT_BINARY_DIR}/config.json COPYONLY)
 file(COPY ${PROJECT_SOURCE_DIR}/media/branelogo.png DESTINATION ${CMAKE_CURRENT_BINARY_DIR})

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "component.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include "utility/sharedRecursiveMutex.h"
 
 class ChunkComponentView {

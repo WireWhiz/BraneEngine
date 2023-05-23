@@ -1,14 +1,16 @@
 #pragma once
 
+#include <vulkan/vulkan.h>
 #include "validationLayers.h"
 
+#include <memory>
 #include <chrono>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <runtime/module.h>
 #include <utility/asyncQueue.h>
 #include <utility/staticIndexVector.h>
-#include <vulkan/vulkan.hpp>
+
 
 class EntityManager;
 

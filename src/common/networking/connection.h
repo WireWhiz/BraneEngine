@@ -7,7 +7,7 @@
 
 #include "config/config.h"
 #include "message.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include <cstdint>
 #include <memory>
 #include <shared_mutex>

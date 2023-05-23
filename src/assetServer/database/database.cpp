@@ -11,7 +11,7 @@
 
 #define WIN32_LEAN_AND_MEAN
 
-#include "sqlite3.h"
+#include "sqlite3/sqlite3.h"
 #include <iomanip>
 #include <openssl/err.h>
 #include <openssl/md5.h>

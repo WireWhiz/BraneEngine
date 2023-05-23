@@ -1,7 +1,9 @@
 #include "materialAsset.h"
 #include "componentAsset.h"
-#include "graphics/graphics.h"
 #include <utility/serializedData.h>
+#ifdef CLIENT
+#include "graphics/graphics.h"
+#endif
 
 void MaterialAsset::serialize(OutputSerializer& s) const
 {

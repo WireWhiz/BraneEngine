@@ -1,9 +1,12 @@
 #pragma once
 
 #include "../asset.h"
-#include "utility/enumNameMap.h"
-#include "vulkan/vulkan_core.h"
+#include <utility/enumNameMap.h>
 #include <vector>
+
+#ifdef CLIENT
+#include "vulkan/vulkan_core.h"
+#endif
 
 enum class ShaderType : uint8_t { null = 0, vertex = 1, fragment = 2, geometry = 3, compute = 4 };
 
@@ -63,9 +66,9 @@ class ShaderAsset : public Asset {
 
     void deserialize(InputSerializer& s) override;
 
+#ifdef CLIENT
     VkShaderStageFlagBits vulkanShaderType() const;
 
-#ifdef CLIENT
     uint32_t runtimeID = -1;
     void onDependenciesLoaded() override;
 #endif

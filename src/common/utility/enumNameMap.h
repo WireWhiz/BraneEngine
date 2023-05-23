@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_ENUMNAMEMAP_H
 #define BRANEENGINE_ENUMNAMEMAP_H
 
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 
 template <typename Enum> class EnumNameMap {
     robin_hood::unordered_map<Enum, std::string> _enumToString;

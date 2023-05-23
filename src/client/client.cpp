@@ -3,8 +3,6 @@
 
 #include "assets/assembly.h"
 #include "assets/assetManager.h"
-#include "ecs/nativeTypes/assetComponents.h"
-#include "ecs/nativeTypes/meshRenderer.h"
 #include "graphics/camera.h"
 #include "graphics/graphics.h"
 #include "graphics/sceneRenderer.h"
@@ -15,8 +13,6 @@
 #include "chunk/chunkLoader.h"
 #include "glm/gtx/quaternion.hpp"
 #include "networking/connection.h"
-#include <asio.hpp>
-#include <utility/threadPool.h>
 
 const char* Client::name() { return "client"; }
 

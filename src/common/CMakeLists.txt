@@ -12,3 +12,6 @@ add_subdirectory(input)
 add_subdirectory(ui)
 add_subdirectory(systems)
 add_subdirectory(chunk)
+
+add_library(common_includes INTERFACE)
+target_include_directories(common_includes INTERFACE .)

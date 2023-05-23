@@ -1,7 +1,7 @@
 #pragma once
 
 #include "assets/types/componentAsset.h"
-#include "robin_hood.h"
+#include <robin_hood/robin_hood.h>
 #include <cassert>
 #include <cstddef>
 #include <set>

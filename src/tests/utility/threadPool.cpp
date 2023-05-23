@@ -1,5 +1,5 @@
 #include "utility/threadPool.h"
-#include "testing.h"
+#include <gtest/gtest.h>
 
 TEST(Threading, ThreadPoolTest)
 {

@@ -1,6 +1,8 @@
+
+#include <gtest/gtest.h>
+
 #include <ecs/entity.h>
 #include <ecs/structMembers.h>
-#include <testing.h>
 #include <utility/clock.h>
 
 TEST(ECS, VirtualComponentTest)
