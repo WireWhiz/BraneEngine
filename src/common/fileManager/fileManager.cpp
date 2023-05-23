@@ -1,5 +1,4 @@
 #include "fileManager.h"
-#include "gtest/internal/gtest-port.h"
 #include <config/config.h>
 #include <fstream>
 #include <openssl/md5.h>

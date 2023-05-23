@@ -1,6 +1,8 @@
 #include "meshAsset.h"
-#include "graphics/graphics.h"
 #include "runtime/runtime.h"
+#ifdef CLIENT
+#include "graphics/graphics.h"
+#endif
 
 #include <utility/serializedData.h>
 

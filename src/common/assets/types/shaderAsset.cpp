@@ -1,5 +1,7 @@
 #include "shaderAsset.h"
+#ifdef CLIENT
 #include "graphics/graphics.h"
+#endif
 #include "runtime/runtime.h"
 #include "utility/enumNameMap.h"
 #include "utility/serializedData.h"
@@ -83,7 +85,6 @@ void ShaderAsset::onDependenciesLoaded()
     auto* vkr = Runtime::getModule<graphics::VulkanRuntime>();
     runtimeID = vkr->addAsset(this);
 }
-#endif
 
 VkShaderStageFlagBits ShaderAsset::vulkanShaderType() const
 {
@@ -101,6 +102,7 @@ VkShaderStageFlagBits ShaderAsset::vulkanShaderType() const
     assert(false && "Unreachable");
     return (VkShaderStageFlagBits)0;
 }
+#endif
 
 ShaderVariableData::Layout ShaderVariableData::layout() const
 {

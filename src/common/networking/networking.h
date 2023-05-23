@@ -1,9 +1,9 @@
 #pragma once
 
-#include <boost/asio.hpp>
-#include <boost/asio/ssl.hpp>
-#include <boost/asio/ts/buffer.hpp>
-#include <boost/asio/ts/internet.hpp>
+#include <asio.hpp>
+#include <asio/ssl.hpp>
+#include <asio/ts/buffer.hpp>
+#include <asio/ts/internet.hpp>
 
 #include <iostream>
 #include <memory>
@@ -17,8 +17,6 @@
 #include <shared_mutex>
 #include <utility/asyncData.h>
 #include <utility/serializedData.h>
-
-namespace asio = boost::asio;
 
 class JobHandle;
 

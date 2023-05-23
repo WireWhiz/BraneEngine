@@ -1,4 +1,5 @@
 # src/common/assets/types
+find_package(glm REQUIRED)
 
 set(ASSET_SOURCES
         "materialAsset.cpp"
@@ -9,9 +10,9 @@ set(ASSET_SOURCES
         imageAsset.cpp)
 
 add_library(client_asset_types STATIC ${ASSET_SOURCES})
-target_link_libraries(client_asset_types PUBLIC graphics utility PRIVATE assets_client)
+target_link_libraries(client_asset_types PUBLIC graphics utility glm::glm PRIVATE assets_client)
 target_compile_definitions(client_asset_types PUBLIC CLIENT)
 
 add_library(server_asset_types STATIC ${ASSET_SOURCES})
-target_link_libraries(server_asset_types PUBLIC assets_server utility)
+target_link_libraries(server_asset_types PUBLIC assets_server utility glm::glm)
 target_compile_definitions(server_asset_types PUBLIC SERVER)

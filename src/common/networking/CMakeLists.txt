@@ -5,9 +5,10 @@ add_library(networking STATIC
 
 # OpenSSL
 find_package(OpenSSL REQUIRED)
+find_package(asio REQUIRED)
 
 target_link_libraries(networking PUBLIC
-		project_properties OpenSSL::SSL OpenSSL::Crypto robin_hood config)
+		project_properties OpenSSL::SSL OpenSSL::Crypto asio::asio robin_hood config)
 target_compile_definitions(networking PUBLIC)
 
 if(win32)

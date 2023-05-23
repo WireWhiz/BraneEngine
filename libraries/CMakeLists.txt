@@ -21,6 +21,8 @@ add_subdirectory(shaderc)
 target_include_directories(glslc PUBLIC
         shaderc/glslc/src)
 
+find_package(glfw3 REQUIRED)
+
 # stb
 add_subdirectory(stb)
 # tfd (tinyFileDialog)

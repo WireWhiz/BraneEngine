@@ -1,4 +1,6 @@
 set(CMAKE_FOLDER ${CMAKE_FOLDER}/Windows)
+find_package(OpenSSL REQUIRED)
+
 add_library(editorWindows STATIC
         dataWindow.cpp
         consoleWindow.cpp
@@ -10,5 +12,5 @@ add_library(editorWindows STATIC
         syncWindow.cpp
         selectProjectWindow.cpp editorWindow.cpp editorWindow.h)
 target_link_libraries(editorWindows PUBLIC
-        imgui ui editorWidgets imguizmo tfd)
+        imgui ui editorWidgets imguizmo tfd OpenSSL::SSL)
 target_compile_definitions(editorWindows PUBLIC CLIENT)
