@@ -1,7 +1,5 @@
 #pragma once
-#include "common/ecs/structMembers.h"
 #include <utility/serializedData.h>
-#include "common/ecs/component.h"
 
 namespace net
 {

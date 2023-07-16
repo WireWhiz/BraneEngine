@@ -139,11 +139,11 @@ Asset* EditorAssemblyAsset::buildAsset(const AssetID& id) const
 Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
 {
     Json::Value output;
-    output["name"] = component.description()->name;
+    output["name"] = component.description()->name();
     auto sc = Runtime::getModule<ScriptManager>();
-    auto typeDef = dynamic_cast<const BraneScript::StructDef*>(sc->linker().getType(component.description()->name));
+    auto typeDef = nullptr;// dynamic_cast<const BraneScript::StructDef*>(sc->linker().getType(component.description()->name()));
     assert(typeDef);
-    auto& members = typeDef->memberVars();
+    /*auto& members = typeDef->memberVars();
     for(size_t i = 0; i < members.size(); ++i)
     {
         Json::Value member;
@@ -151,7 +151,7 @@ Json::Value EditorAssemblyAsset::componentToJson(VirtualComponentView component)
         member["value"] = JsonVirtualType::fromVirtual(component.getVar<byte>(i), members[i].type.type());
         member["type"] = VirtualType::typeToString(members[i].type.type());
         output["members"].append(member);
-    }
+    }*/
     return output;
 }
 

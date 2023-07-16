@@ -32,7 +32,7 @@ ComponentID ComponentManager::registerComponent(ComponentDescription* componentD
     ComponentID id = static_cast<ComponentID>(_components.push(std::unique_ptr<ComponentDescription>(componentDescription)));
     _components[id]->id = id;
     _externalComponents.insert(id);
-    _nameToComponent.insert({componentDescription->name, id});
+    _nameToComponent.insert({componentDescription->name(), id});
     return id;
 }
 

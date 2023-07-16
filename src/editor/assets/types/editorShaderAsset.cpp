@@ -35,9 +35,8 @@ void EditorShaderAsset::updateSource(const std::filesystem::path& source)
         ShaderCompiler::ShaderAttributes attributes;
         std::string glsl;
         std::filesystem::path dir = std::filesystem::path{source}.remove_filename();
-        auto finder = ShaderCompiler::defaultFinder();
-        finder.search_path().push_back(dir.string());
-        if(FileManager::readFile(source, glsl) && _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), finder, attributes))
+        if(FileManager::readFile(source, glsl) &&
+           _project.editor().shaderCompiler().extractAttributes(glsl, shaderType(), attributes))
         {
             Json::Value atr;
             for(auto& ub : attributes.uniforms)
@@ -128,16 +127,14 @@ Asset* EditorShaderAsset::buildAsset(const AssetID& id) const
         return nullptr;
     }
     auto& compiler = _project.editor().shaderCompiler();
-    auto finder = ShaderCompiler::defaultFinder();
-    finder.search_path().push_back(source.remove_filename().string());
-    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv, finder))
+    if(!compiler.compileShader(shaderCode, shader->shaderType, shader->spirv))
     {
         delete shader;
         return nullptr;
     }
 
     ShaderCompiler::ShaderAttributes attributes;
-    compiler.extractAttributes(shaderCode, shader->shaderType, finder, attributes);
+    compiler.extractAttributes(shaderCode, shader->shaderType, attributes);
     for(auto& u : attributes.uniforms)
         shader->uniforms.insert({u.name, u});
 

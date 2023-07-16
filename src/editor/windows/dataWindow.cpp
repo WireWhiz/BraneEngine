@@ -28,7 +28,7 @@
 #include "graphics/graphics.h"
 #include "graphics/pointLightComponent.h"
 #include "graphics/texture.h"
-#include "backends/imgui_impl_vulkan.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
 
 #include "utility/jsonTypeUtilities.h"
 #include "assets/types/imageAsset.h"

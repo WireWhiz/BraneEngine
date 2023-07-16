@@ -5,8 +5,8 @@
 #include "guiRenderer.h"
 #include <runtime/runtime.h>
 #include "gui.h"
-#include <backends/imgui_impl_vulkan.h>
-#include <backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_vulkan.h>
+#include <imgui/backends/imgui_impl_glfw.h>
 #include <ImGuizmo.h>
 
 void GUIRenderer::render(VkCommandBuffer cmdBuffer)

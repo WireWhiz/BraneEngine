@@ -5,7 +5,7 @@
 #include "assetSearchWidget.h"
 #include "runtime/runtime.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include "assets/assetManager.h"
 #include "editor/editor.h"
 

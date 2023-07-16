@@ -5,11 +5,9 @@
 #ifndef BRANEENGINE_SHADERCOMPILER_H
 #define BRANEENGINE_SHADERCOMPILER_H
 
-#include <shaderc/shaderc.hpp>
 #include <mutex>
 #include "robin_hood.h"
 #include "assets/types/shaderAsset.h"
-#include "libshaderc_util/file_finder.h"
 
 class ShaderAsset;
 class ShaderCompiler
@@ -24,9 +22,8 @@ public:
         std::vector<ShaderVariableData> outputVariables;
     };
     ShaderCompiler();
-    static shaderc_util::FileFinder defaultFinder();
-    bool compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, shaderc_util::FileFinder& fileFinder, bool optimize = true);
-    bool extractAttributes(const std::string& glsl, ShaderType type, shaderc_util::FileFinder& fileFinder, ShaderAttributes& attributes);
+    bool compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, bool optimize = true);
+    bool extractAttributes(const std::string& glsl, ShaderType type, ShaderAttributes& attributes);
 };
 
 

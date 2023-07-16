@@ -19,24 +19,6 @@ const char* AssetManager::name()
     return "assetManager";
 }
 
-/*template<typename T>
-void AssetManager::addNativeComponent(EntityManager& em)
-{
-    static_assert(std::is_base_of<NativeComponent<T>, T>());
-    ComponentDescription* description = T::constructDescription();
-    ComponentAsset* asset = new ComponentAsset(T::getMemberTypes(), T::getMemberNames(), AssetID("native", static_cast<uint32_t>(_nativeComponentID++)));
-    asset->name = T::getComponentName();
-    asset->componentID = em.components().registerComponent(description);
-
-    AssetData data{};
-    data.asset = std::unique_ptr<Asset>(asset);
-    data.loadState = LoadState::loaded;
-    _assetLock.lock();
-    _assets.insert({asset->id, std::make_unique<AssetData>(std::move(data))});
-    _assetLock.unlock();
-    description->asset = asset;
-}*/
-
 void AssetManager::start()
 {
     EntityManager& em = *Runtime::getModule<EntityManager>();

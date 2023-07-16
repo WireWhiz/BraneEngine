@@ -5,8 +5,8 @@
 #ifndef BRANEENGINE_JSONVIRTUALTYPE_H
 #define BRANEENGINE_JSONVIRTUALTYPE_H
 
+#include <ecs/typeUtils.h>
 #include <json/json.h>
-#include <ecs/virtualType.h>
 
 class JsonVirtualType
 {

@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_ENUMNAMEMAP_H
 #define BRANEENGINE_ENUMNAMEMAP_H
 
-#include "robin_hood.h"
+#include <robin_hood.h>
 
 template<typename Enum>
 class EnumNameMap

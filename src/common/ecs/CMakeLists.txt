@@ -1,7 +1,7 @@
 # src/common/ecs
+find_package(glm REQUIRED)
 
 add_library(ecs STATIC
-        virtualType.cpp
         archetype.cpp
         chunk.cpp
         component.cpp
@@ -11,7 +11,7 @@ add_library(ecs STATIC
         systemManager.cpp
         archetypeManager.cpp
         componentManager.cpp entityID.cpp entityID.h)
-target_link_libraries(ecs PUBLIC runtime utility BraneScript)
+target_link_libraries(ecs PUBLIC runtime utility BraneScriptRuntime glm::glm)
 target_include_directories(ecs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(BUILD_TESTS)
@@ -21,12 +21,11 @@ add_library(ecs_test STATIC
         componentSet.cpp
         chunk.cpp
         entity.cpp
-        virtualType.cpp
         entitySet.cpp
         systemManager.cpp
         archetypeManager.cpp
         componentManager.cpp entityID.cpp entityID.h)
-target_link_libraries(ecs_test PUBLIC runtime utility_test BraneScript)
+target_link_libraries(ecs_test PUBLIC runtime utility_test BraneScriptRuntime glm::glm)
 target_include_directories(ecs_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(ecs_test PUBLIC TEST_BUILD MALLOC_CHECK_)
 endif()

@@ -8,7 +8,7 @@
 
 //Compile stb in this object
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
+#include <stb_image.h>
 
 #include "window.h"
 #include "graphicsBuffer.h"

@@ -19,14 +19,14 @@ void Assembly::EntityAsset::serialize(OutputSerializer& message, robin_hood::uno
     for(auto& comp : components)
     {
         auto* desc = comp.description();
-        if(!componentIndices.contains(desc->name))
+        /*if(!componentIndices.contains(desc->name))
         {
             Runtime::error("Component: " + desc->name + " not found in asset component list");
             throw std::runtime_error("Component assetID not listed in asset components");
         }
 
         uint32_t ssize = desc->serializationSize();
-        message << componentIndices.at(desc->name) << ssize;
+        message << componentIndices.at(desc->name) << ssize;*/
         desc->serialize(message, comp.data());
     }
 }
@@ -45,13 +45,13 @@ void Assembly::EntityAsset::deserialize(InputSerializer& message, Assembly& asse
         const ComponentDescription* description = cm.getComponentDef(assembly.components[componentIDIndex]);
         if(!description)
             throw std::runtime_error("Could not locate component " + assembly.components[componentIDIndex]);
-        if(componentSize != description->serializationSize())
+        /*if(componentSize != description->serializationSize())
         {
             Runtime::error("Component size " + std::to_string(componentSize) + " does not match size of component "
             + description->name + " which is " + std::to_string(description->serializationSize()) + ".\n attempting to skip and continue deserialization");
             message.setPos(message.getPos() + componentSize);
             continue;
-        }
+        }*/
         VirtualComponent component(description);
         description->deserialize(message, component.data());
         components.push_back(std::move(component));

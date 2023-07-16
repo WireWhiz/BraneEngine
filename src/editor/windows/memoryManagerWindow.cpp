@@ -24,8 +24,8 @@ void MemoryManagerWindow::displayContent()
             std::string name = "| ";
             for(auto& c : arch.componentDescriptions())
             {
-                if(!c->name.empty())
-                    name += c->name + " | ";
+                if(!c->name().empty())
+                    name += c->name() + " | ";
                 else
                     name += std::to_string(c->id) + "(ID) | ";
             }

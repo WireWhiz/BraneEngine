@@ -5,7 +5,7 @@
 #include "selectProjectWindow.h"
 #include "fileManager/fileManager.h"
 #include "editor/editor.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include "tinyfiledialogs.h"
 #include "ui/gui.h"
 

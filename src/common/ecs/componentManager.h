@@ -6,7 +6,7 @@
 #define BRANEENGINE_COMPONENTMANAGER_H
 
 #include "component.h"
-#include "structDefinition.h"
+#include "scriptRuntime/structDefinition.h"
 #include "robin_hood.h"
 
 class ComponentManager {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "assets/asset.h"
-#include "ecs/virtualType.h"
+#include "ecs/typeUtils.h"
 
 class MaterialAsset : public Asset
 {

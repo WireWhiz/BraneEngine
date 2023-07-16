@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
-#include "common/ecs/virtualType.h"
 #include <vector>
 #include "../asset.h"
+#include "common/ecs/typeUtils.h"
 
 /*
 class ComponentAsset : public Asset

@@ -4,7 +4,7 @@
 
 #include "consoleWindow.h"
 #include <runtime/logging.h>
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include <ui/gui.h>
 
 ConsoleWindow::ConsoleWindow(GUI& ui, Editor& editor) : EditorWindow(ui, editor)

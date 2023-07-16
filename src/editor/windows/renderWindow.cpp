@@ -16,11 +16,9 @@
 
 #include "assets/assetManager.h"
 #include "assets/types/meshAsset.h"
-#include "ecs/nativeTypes/assetComponents.h"
 #include "scripting/transforms.h"
-#include "backends/imgui_impl_vulkan.h"
+#include "imgui/backends/imgui_impl_vulkan.h"
 #include "editor/assets/types/editorAssemblyAsset.h"
-#include "ecs/nativeComponent.h"
 #include "editor/assets/assemblyReloadManager.h"
 #include "chunk/chunkLoader.h"
 

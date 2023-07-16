@@ -1,0 +1,29 @@
+module "BraneEngine.ECS"
+link "string"
+{
+    struct EntityID
+    {
+        uint id;
+        uint version;
+        bool opr ==(const ref EntityID other)
+        {
+            return id == other.id && version == other.version;
+        }
+        bool opr !=(const ref EntityID other)
+        {
+            return !(this == other);
+        }
+    }
+
+    ["component"]
+    struct EntityIDComponent
+    {
+        EntityID value;
+    }
+
+    ["component"]
+    struct EntityName
+    {
+        string name;
+    }
+}

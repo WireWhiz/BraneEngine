@@ -4,7 +4,7 @@
 
 #include "assetBrowserWidget.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include "ui/IconsFontAwesome6.h"
 #include "utility/strCaseCompare.h"
 #include "fileManager/fileManager.h"

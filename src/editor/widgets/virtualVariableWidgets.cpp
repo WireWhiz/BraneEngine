@@ -4,7 +4,7 @@
 
 #include "virtualVariableWidgets.h"
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui/misc/cpp/imgui_stdlib.h"
 #include "common/ecs/entity.h"
 #include "scripting/transforms.h"
 #include "utility/stackAllocate.h"
@@ -19,9 +19,9 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
             || component.description() == LocalTransform::def()
             || component.description() == Children::def();
     ImGui::BeginDisabled(viewOnly);
-    auto typeDef = dynamic_cast<const BraneScript::StructDef*>(Runtime::getModule<ScriptManager>()->linker().getType(component.description()->name));
+    auto typeDef = nullptr;//dynamic_cast<const BraneScript::StructDef*>(Runtime::getModule<ScriptManager>()->linker().getType(component.description()->name));
     assert(typeDef);
-    for(size_t i = 0; i < component.description()->members().size(); ++i)
+    /*for(size_t i = 0; i < component.description()->members().size(); ++i)
     {
         auto& member = component.description()->members()[i];
         const std::string& name = typeDef->memberVars()[i].name;
@@ -30,7 +30,7 @@ UiChangeType VirtualVariableWidgets::displayVirtualComponentData(VirtualComponen
             changed = (UiChangeType)std::max((uint8_t)changed, (uint8_t)displayVirtualVariable(name.c_str(), member.type, component.data() + member.offset));
             ImGui::Spacing();
         }
-    }
+    }*/
     ImGui::EndDisabled();
     ImGui::PopID();
     return changed;

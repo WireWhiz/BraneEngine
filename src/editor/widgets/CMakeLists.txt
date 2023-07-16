@@ -4,5 +4,6 @@ add_library(editorWidgets STATIC
         virtualVariableWidgets.cpp
         assetSelectWidget.cpp
         assetSearchWidget.cpp)
-target_link_libraries(editorWidgets PUBLIC ui editorWindows BraneScript)
+target_link_libraries(editorWidgets PUBLIC ui editorWindows BraneScript imgui_extras)
 target_compile_definitions(editorWidgets  PUBLIC CLIENT)
+target_include_directories(editorWidgets PUBLIC ${imgui_extras_INCLUDE_DIR})

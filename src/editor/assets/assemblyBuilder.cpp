@@ -134,12 +134,12 @@ AssemblyBuilder::buildAssembly(const std::string& name, GLTFLoader& loader, Mate
     }
 
     //Register component names
-    assembly->components.push_back(EntityName::def()->name);
+    /*assembly->components.push_back(EntityName::def()->name);
     assembly->components.push_back(Transform::def()->name);
     assembly->components.push_back(LocalTransform::def()->name);
     assembly->components.push_back(Children::def()->name);
     assembly->components.push_back(TRS::def()->name);
-    assembly->components.push_back(MeshRendererComponent::def()->name);
+    assembly->components.push_back(MeshRendererComponent::def()->name);*/
 
     assembly->materials.push_back(defaultMaterial->id);
 

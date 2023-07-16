@@ -6,14 +6,79 @@
 #include <filesystem>
 #include "assets/types/shaderAsset.h"
 #include "runtime/runtime.h"
-#include "spirv-cross/spirv_cross.hpp"
-#include "shaderc/glslc/src/file_includer.h"
+#include "shaderc/shaderc.hpp"
+#include "spirv_cross/spirv_cross.hpp"
+#include <fstream>
 
-ShaderCompiler::ShaderCompiler()
+class DefaultFileIncluder : public shaderc::CompileOptions::IncluderInterface
 {
-}
 
-bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std::vector<uint32_t>& spirv, shaderc_util::FileFinder& fileFinder, bool optimize)
+    std::filesystem::path searchRelativeTo(const std::filesystem::path& path, const std::filesystem::path& relativeTo)
+    {
+        if(path.is_absolute())
+            return path;
+        return relativeTo / path;
+    }
+
+
+    shaderc_include_result* GetInclude(const char* requested_source,
+                                       shaderc_include_type type,
+                                       const char* requesting_source,
+                                       size_t include_depth) override
+    {
+        auto result = new shaderc_include_result {};
+        result->source_name = nullptr;
+        result->source_name_length = 0;
+        result->content = nullptr;
+        result->content_length = 0;
+        result->user_data = nullptr;
+        for(auto& possiblePath : {
+                searchRelativeTo(requested_source, requesting_source),
+                searchRelativeTo(requested_source, std::filesystem::current_path() / "defaultAssets" / "shaders"),
+            })
+        {
+            if(std::filesystem::exists(possiblePath))
+            {
+                std::string fullPath = std::filesystem::canonical(possiblePath).string();
+                result->source_name = new char[fullPath.size() + 1];
+                std::strcpy((char*)result->source_name, fullPath.c_str());
+                result->source_name_length = fullPath.size();
+                std::ifstream file(possiblePath);
+                std::string content((std::istreambuf_iterator<char>(file)),
+                                std::istreambuf_iterator<char>());
+                result->content = new char[content.size() + 1];
+                std::strcpy((char*)result->content, content.c_str());
+                result->content_length = content.size();
+                break;
+            }
+        }
+
+        if(!result->source_name)
+        {
+            std::string errorMessage = "Unable to find shader include: " + std::string(requested_source);
+            result->content = new char[errorMessage.size() + 1];
+            std::strcpy((char*)result->content, errorMessage.c_str());
+            result->content_length = errorMessage.size();
+        }
+
+        return result;
+    }
+
+    // Handles shaderc_include_result_release_fn callbacks.
+    virtual void ReleaseInclude(shaderc_include_result* data) override
+    {
+        delete data->source_name;
+        delete data->content;
+        delete data;
+    }
+};
+
+ShaderCompiler::ShaderCompiler() {}
+
+bool ShaderCompiler::compileShader(const std::string& glsl,
+                                   ShaderType type,
+                                   std::vector<uint32_t>& spirv,
+                                   bool optimize)
 {
     shaderc_shader_kind kind;
     switch(type)
@@ -37,14 +102,13 @@ bool ShaderCompiler::compileShader(const std::string& glsl, ShaderType type, std
             return false;
     }
 
-
     shaderc::Compiler compiler;
     shaderc::CompileOptions options;
     options.SetOptimizationLevel(optimize ? shaderc_optimization_level_performance : shaderc_optimization_level_zero);
     options.SetSourceLanguage(shaderc_source_language_glsl);
     options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
     options.SetTargetSpirv(shaderc_spirv_version_1_5);
-    options.SetIncluder(std::make_unique<glslc::FileIncluder>(&fileFinder));
+    options.SetIncluder(std::make_unique<DefaultFileIncluder>());
 
     auto result = compiler.CompileGlslToSpv(glsl, kind, "shader line", options);
 
@@ -98,11 +162,12 @@ ShaderVariableData::Type typeFromSpirvType(spirv_cross::SPIRType::BaseType type)
     }
 }
 
-bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shaderType, shaderc_util::FileFinder& fileFinder, ShaderAttributes& attributes)
+bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shaderType, ShaderAttributes& attributes)
 {
-    // We need to compile without optimization to be able to extract variable names
+    // We need to compile without optimization to be able to extract variable
+    // names
     std::vector<uint32_t> spirv;
-    if(!compileShader(glsl, shaderType, spirv, fileFinder, false))
+    if(!compileShader(glsl, shaderType, spirv, false))
         return false;
 
     spirv_cross::Compiler compiler(std::move(spirv));
@@ -188,11 +253,3 @@ bool ShaderCompiler::extractAttributes(const std::string& glsl, ShaderType shade
 
     return true;
 }
-
-shaderc_util::FileFinder ShaderCompiler::defaultFinder()
-{
-    shaderc_util::FileFinder finder;
-    finder.search_path().push_back((std::filesystem::current_path() / "defaultAssets" / "shaders").string());
-    return std::move(finder);
-}
-

@@ -2,59 +2,46 @@
 #include <algorithm>
 #include <cstring>
 
-
-#include "linker.h"
 #include "utility/serializedData.h"
 
-ComponentDescription::ComponentDescription(const BraneScript::StructDef* type, const BraneScript::Linker* linker)
+ComponentDescription::ComponentDescription(const BraneScript::StructDef* type)
 {
     _type = type;
-    _constructor = (void (*)(byte*))linker->getFunction(std::string(type->name()) + "::construct()");
+    assert(false);
+    /*_constructor = (void (*)(byte*))linker->getFunction(std::string(type->name()) + "::construct()");
     _destructor  = (void (*)(byte*))linker->getFunction(std::string(type->name()) + "::destruct()");
     _copy = (void (*)(byte*, const byte*))linker->getFunction(std::string(type->name()) + "::copy(const ref " + std::string(type->name()) + ")");
-    _move = (void (*)(byte*, byte*))linker->getFunction(std::string(type->name()) + "::move(ref " + std::string(type->name()) + ")");
+    _move = (void (*)(byte*, byte*))linker->getFunction(std::string(type->name()) + "::move(ref " + std::string(type->name()) + ")");*/
 }
 
 void ComponentDescription::construct(byte* component) const
 {
-    _constructor(component);
+    _type->constructor(component);
 }
 
 void ComponentDescription::deconstruct(byte* component) const
 {
-    _destructor(component);
-}
-
-void ComponentDescription::serialize(OutputSerializer& sData, byte* component) const
-{
-    for(auto& m : _members)
-    {
-        VirtualType::serialize(m.type, sData, component + m.offset);
-    }
-}
-
-void ComponentDescription::deserialize(InputSerializer& sData, byte* component) const
-{
-    for(auto& m : _members)
-    {
-        VirtualType::deserialize(m.type, sData, component + m.offset);
-    }
+    _type->destructor(component);
 }
 
 void ComponentDescription::copy(const byte* src, byte* dest) const
 {
-    _copy(dest, src);
+    _type->copyConstructor(dest, src);
 }
 
 void ComponentDescription::move(byte* src, byte* dest) const
 {
-    _move(dest, src);
+    _type->moveConstructor(dest, src);
 }
 
 size_t ComponentDescription::size() const
 {
-    return _type->size();
+    return _type->size;
 }
+
+const std::string& ComponentDescription::name() const { return _type->name; }
+
+const BraneScript::StructDef* ComponentDescription::type() const { return _type; }
 
 VirtualComponent::VirtualComponent(const VirtualComponent& source)
 {

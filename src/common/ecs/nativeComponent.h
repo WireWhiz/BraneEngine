@@ -5,12 +5,11 @@
 #ifndef BRANEENGINE_NATIVECOMPONENT_H
 #define BRANEENGINE_NATIVECOMPONENT_H
 
-#include "component.h"
-#include "structMembers.h"
-#include "structDefinition.h"
-#include "nativeTypes.h"
-#include "linker.h"
 #include "assets/assetID.h"
+#include "component.h"
+#include "scriptRuntime/structDefinition.h"
+#include "structMembers.h"
+#include "typeUtils.h"
 
 template <class T>
 class NativeComponent
@@ -26,12 +25,12 @@ public:
         AssetID id;
         std::vector<VirtualType::Type> members = T::getMemberTypes();
         std::vector<size_t> offsets = T::getMemberOffsets();
-        _description = new ComponentDescription(members, nullptr);
-        _description->name =  T::getComponentName();
+        /*_description = new ComponentDescription(members, nullptr);
+        _description->name =  T::getComponentName();*/
         return _description;
     }
 
-    static BraneScript::StructDef* newTypeDef(BraneScript::Linker* linker)
+    /*static BraneScript::StructDef* newTypeDef(BraneScript::Linker* linker)
     {
         auto def = new BraneScript::StructDef(T::getComponentName());
         auto names = T::getMemberNames();
@@ -73,7 +72,7 @@ public:
                 def->addMemberVar(names[i], type, offsets[i]);
         }
         return def;
-    }
+    }*/
 
     NativeComponent() = default;
     VirtualComponentView toVirtual() const

@@ -2,7 +2,7 @@
 
 #include <array>
 #include <vector>
-#include "virtualType.h"
+#include "typeUtils.h"
 
 #include "component.h"
 #include "robin_hood.h"

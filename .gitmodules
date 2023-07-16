@@ -1,1 +1,4 @@
 
+[submodule "libraries/BraneScript"]
+	path = libraries/BraneScript
+	url = https://github.com/WireWhiz/BraneScript
