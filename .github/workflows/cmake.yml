@@ -19,9 +19,25 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Download Submodules
-      run: git submodule update --init
+
+    - name: Load conan cache
+      id: cache-conan
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-node-modules
+      with:
+        path: ~/.conan
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('conanfile.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
+
+    - name: Install & configure conan
+      run: |
+        pip install --upgrade conan==1.59
+        conan profile new default --detect --force
+        conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.

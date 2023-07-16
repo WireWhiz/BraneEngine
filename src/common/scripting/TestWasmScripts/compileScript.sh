@@ -1,0 +1,1 @@
+rustc testScript.rs --out-dir="wasm" --crate-type=cdylib --target=wasm32-unknown-unknown -g --crate-name="wasm_crate"
