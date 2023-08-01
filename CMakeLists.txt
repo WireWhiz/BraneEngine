@@ -13,6 +13,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 option(BUILD_TESTS "Include testing build targets" OFF)
 
+message("${CMAKE_CURRENT_BINARY_DIR}> conan install ${CMAKE_CURRENT_SOURCE_DIR} --build=missing")
 execute_process(COMMAND conan install ${CMAKE_CURRENT_SOURCE_DIR} --build=missing
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
