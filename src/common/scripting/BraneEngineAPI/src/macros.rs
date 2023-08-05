@@ -1,12 +1,11 @@
 extern crate proc_macro;
 use proc_macro_error::{proc_macro_error, emit_error};
-use proc_macro::{TokenStream, TokenTree};
+use proc_macro::{Span, TokenStream, TokenTree, Ident};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use toml::{Table, Value};
 use lazy_static::lazy_static;
 use std::io::prelude::*;
-use std::mem::swap;
 use std::sync::Mutex;
 
 fn parse_token_tree(token_tree: TokenTree) -> String {
@@ -53,19 +52,22 @@ pub fn print_token_stream(_attr: TokenStream, item: TokenStream) -> TokenStream 
 
 
 struct ScriptDefinition {
+    source_file: String,
     components : Vec<String>,
     systems: Vec<String>,
 }
 
 impl ScriptDefinition {
-    fn new() -> ScriptDefinition {
+    fn new(source_file : String) -> ScriptDefinition {
         ScriptDefinition {
+            source_file: source_file,
             components: Vec::new(),
             systems: Vec::new(),
         }
     }
 
     fn save(&self) {
+        println!("Source file: {}", self.source_file);
         println!("Components: {:?}", self.components);
         println!("Systems: {:?}", self.systems);
 
@@ -83,14 +85,24 @@ impl ScriptDefinition {
             Value::Table(system)
         }).collect()));
 
-        println!("TOML: {}", toml::to_string(&toml).unwrap());
 
-        let mut output_path = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
-        //output_path.push("script_definitions");
+        let mut output_path = if std::env::var("CARGO_TARGET_DIR").is_err() {
+            let mut current_dir = std::env::current_dir().unwrap();
+            current_dir.push("target");
+            current_dir
+        } else {
+            std::path::PathBuf::from(std::env::var("CARGO_TARGET_DIR").unwrap())
+        };
+        output_path.push("script_defs");
 
-        let file_path = std::path::PathBuf::from(file!().to_string());
+        let file_path = std::path::PathBuf::from(&self.source_file);
 
         output_path.push(file_path.file_name().unwrap().to_str().unwrap().to_string() + ".toml");
+
+        std::fs::create_dir_all(output_path.parent().unwrap()).unwrap();
+
+        println!("Output path: {}", output_path.to_str().unwrap());
+        println!("TOML: {}", toml::to_string(&toml).unwrap());
 
         let mut binding_file = std::fs::File::create(output_path).unwrap();
         binding_file.write_all(toml::to_string(&toml).unwrap().as_bytes()).unwrap();
@@ -101,10 +113,10 @@ lazy_static! {
     static ref OPEN_DEFS: Mutex<RefCell<HashMap<String, ScriptDefinition>>> = Mutex::new(RefCell::new(HashMap::new()));
 }
 
+
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
-
     let mut is_pub = false;
     let mut is_extern_c = false;
     let mut next_token_is_ident = false;
@@ -144,7 +156,7 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let script_def = if defs.contains_key(cf.as_str()) {
         defs.get_mut(cf.as_str()).unwrap()
     } else {
-        defs.insert(cf.clone(), ScriptDefinition::new());
+        defs.insert(cf.clone(), ScriptDefinition::new(cf.clone()));
         defs.get_mut(cf.as_str()).unwrap()
     };
 
@@ -196,7 +208,7 @@ pub fn system(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let script_def = if defs.contains_key(cf.as_str()) {
         defs.get_mut(cf.as_str()).unwrap()
     } else {
-        defs.insert(cf.clone(), ScriptDefinition::new());
+        defs.insert(cf.clone(), ScriptDefinition::new(file!().to_string()));
         defs.get_mut(cf.as_str()).unwrap()
     };
 

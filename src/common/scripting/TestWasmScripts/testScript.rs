@@ -1,3 +1,5 @@
+mod testScript2;
+
 use brane_engine::{component, system};
 
 #[component]
