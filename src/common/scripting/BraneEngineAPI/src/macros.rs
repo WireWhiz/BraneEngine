@@ -7,112 +7,18 @@ use toml::{Table, Value};
 use lazy_static::lazy_static;
 use std::io::prelude::*;
 use std::sync::Mutex;
-
-fn parse_token_tree(token_tree: TokenTree) -> String {
-    match token_tree {
-        TokenTree::Ident(ident) => {
-            format!("Ident: {}\n", ident)
-        },
-        TokenTree::Punct(punct) => {
-            format!("Punct: {}\n", punct)
-        },
-        TokenTree::Literal(literal) => {
-            format!("Literal: {}\n", literal)
-        },
-        TokenTree::Group(group) => {
-            let delim;
-            match group.delimiter() {
-                proc_macro::Delimiter::Parenthesis => delim = "()",
-                proc_macro::Delimiter::Brace => delim = "{}",
-                proc_macro::Delimiter::Bracket => delim = "[]",
-                proc_macro::Delimiter::None => delim = "None",
-            }
-            let mut out = String::new();
-
-            out += &format!("Group: {} [\n", delim);
-            for token_tree in group.stream().into_iter() {
-                out += &parse_token_tree(token_tree);
-            }
-            out += "]\n";
-            out
-        },
-    }
-}
+use syn::{parse_macro_input};
 
 #[proc_macro_attribute]
 pub fn print_token_stream(_attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut diagnostic_data = String::new();
 
     for token_tree in item.clone().into_iter() {
-        diagnostic_data += &parse_token_tree(token_tree);
+        //diagnostic_data += &parse_token_tree(token_tree);
     }
 
     panic!("Requested TokenStream: {}", diagnostic_data);
 }
-
-
-struct ScriptDefinition {
-    source_file: String,
-    components : Vec<String>,
-    systems: Vec<String>,
-}
-
-impl ScriptDefinition {
-    fn new(source_file : String) -> ScriptDefinition {
-        ScriptDefinition {
-            source_file: source_file,
-            components: Vec::new(),
-            systems: Vec::new(),
-        }
-    }
-
-    fn save(&self) {
-        println!("Source file: {}", self.source_file);
-        println!("Components: {:?}", self.components);
-        println!("Systems: {:?}", self.systems);
-
-        let mut toml= Table::new();
-
-        toml.insert("component".to_string(), Value::Array(self.components.iter().map(|s| {
-            let mut component = Table::new();
-            component.insert("name".to_string(), Value::String(s.clone()));
-            Value::Table(component)
-        }).collect()));
-
-        toml.insert("system".to_string(), Value::Array(self.systems.iter().map(|s| {
-            let mut system = Table::new();
-            system.insert("name".to_string(), Value::String(s.clone()));
-            Value::Table(system)
-        }).collect()));
-
-
-        let mut output_path = if std::env::var("CARGO_TARGET_DIR").is_err() {
-            let mut current_dir = std::env::current_dir().unwrap();
-            current_dir.push("target");
-            current_dir
-        } else {
-            std::path::PathBuf::from(std::env::var("CARGO_TARGET_DIR").unwrap())
-        };
-        output_path.push("script_defs");
-
-        let file_path = std::path::PathBuf::from(&self.source_file);
-
-        output_path.push(file_path.file_name().unwrap().to_str().unwrap().to_string() + ".toml");
-
-        std::fs::create_dir_all(output_path.parent().unwrap()).unwrap();
-
-        println!("Output path: {}", output_path.to_str().unwrap());
-        println!("TOML: {}", toml::to_string(&toml).unwrap());
-
-        let mut binding_file = std::fs::File::create(output_path).unwrap();
-        binding_file.write_all(toml::to_string(&toml).unwrap().as_bytes()).unwrap();
-    }
-}
-
-lazy_static! {
-    static ref OPEN_DEFS: Mutex<RefCell<HashMap<String, ScriptDefinition>>> = Mutex::new(RefCell::new(HashMap::new()));
-}
-
 
 #[proc_macro_error]
 #[proc_macro_attribute]
@@ -160,8 +66,6 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
         defs.get_mut(cf.as_str()).unwrap()
     };
 
-    script_def.components.push(identifier);
-    script_def.save();
     item
 }
 
@@ -212,7 +116,5 @@ pub fn system(_attr: TokenStream, item: TokenStream) -> TokenStream {
         defs.get_mut(cf.as_str()).unwrap()
     };
 
-    script_def.systems.push(identifier);
-    script_def.save();
     item
 }

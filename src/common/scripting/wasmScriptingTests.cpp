@@ -1,9 +1,20 @@
+#include <filesystem>
 #include <fstream>
 #include <iostream>
+#include "module_metadata_parser.h"
 #include "wasmer.h"
 
 int main()
 {
+    auto metadata = module_metadata_parser::build_module_metadata(std::filesystem::current_path().string().c_str());
+
+    std::cout << "Found components: \n";
+    for(int i = 0; i < metadata->components.length; ++i)
+        std::cout << "\t" << i << ":" << metadata->components.data[i].name.data << '\n';
+    std::cout << "Found systems: \n";
+    for(int i = 0; i < metadata->systems.length; ++i)
+        std::cout << "\t" << i << ":" << metadata->systems.data[i].name.data << std::endl;
+
     std::ifstream wasmFile("wasm_crate.wasm", std::ios::binary | std::ios::ate);
     if(!wasmFile.is_open())
     {
@@ -128,11 +139,11 @@ int main()
     printf("Found %zu externs:\n", externs.size);
 
     wasm_func_t* test_function = wasm_extern_as_func(externs.data[1]);
-    wasm_val_t args_val[0] = {};
+    wasm_val_t args_val[1] = { WASM_I32_VAL(42) };
     wasm_val_t results_val[1] = {WASM_INIT_VAL};
     wasm_val_vec_t args = WASM_ARRAY_VEC(args_val);
     wasm_val_vec_t results = WASM_ARRAY_VEC(results_val);
-    if(auto t =wasm_func_call(test_function, &args, &results))
+    if(auto t = wasm_func_call(test_function, &args, &results))
     {
         wasm_message_t msg;
         wasm_trap_message(t, &msg);

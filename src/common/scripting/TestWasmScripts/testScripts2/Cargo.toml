@@ -1,0 +1,15 @@
+[package]
+name = "testScript2"
+version = "0.1.0"
+
+[lib]
+name = "wasm_crate2"
+path = "testScript2.rs"
+crate-type=["cdylib"]
+
+[dependencies]
+brane_engine.workspace = true
+
+[build-dependencies]
+proc-macro2 = "1.0.66"
+syn = "2.0.28"
