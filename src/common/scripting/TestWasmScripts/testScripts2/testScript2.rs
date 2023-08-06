@@ -6,7 +6,11 @@ pub struct TestComponent2 {
 }
 
 #[system]
-pub fn test_function3() -> i32 { 42 }
+pub fn test_function3() -> i32 {
+    42
+}
 
 #[system]
-pub fn test_function4() -> i32 { 42 }
+pub fn test_function4() -> i32 {
+    42
+}

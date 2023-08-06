@@ -1,13 +1,9 @@
 extern crate proc_macro;
-use proc_macro_error::{proc_macro_error, emit_error};
-use proc_macro::{Span, TokenStream, TokenTree, Ident};
-use std::cell::RefCell;
-use std::collections::HashMap;
-use toml::{Table, Value};
-use lazy_static::lazy_static;
-use std::io::prelude::*;
-use std::sync::Mutex;
-use syn::{parse_macro_input};
+use proc_macro::{TokenStream};
+use proc_macro_error::{emit_error, proc_macro_error};
+use syn::{ItemStruct, ItemFn};
+use syn::{parse_quote};
+use quote::quote;
 
 #[proc_macro_attribute]
 pub fn print_token_stream(_attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -23,98 +19,67 @@ pub fn print_token_stream(_attr: TokenStream, item: TokenStream) -> TokenStream 
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
-    let mut is_pub = false;
-    let mut is_extern_c = false;
-    let mut next_token_is_ident = false;
+    let component = syn::parse::<ItemStruct>(item.clone());
+    if let Err(err) = component {
+        emit_error!(err.span(), "Failed to parse component: {}", err);
+        return item;
+    }
 
-    let mut identifier = String::new();
+    let mut component = component.unwrap();
 
-    for token_tree in item.clone().into_iter() {
-        if let TokenTree::Ident(ident) = token_tree {
-
-            if next_token_is_ident {
-                if !is_pub {
-                    emit_error!(ident.span(), "Components must be public!");
-                    return item;
-                }
-                identifier = ident.to_string();
-                break;
-            }
-
-            if ident.to_string() == "pub" {
-                is_pub = true;
-            } else if ident.to_string() == "fn" {
-                let ident_span = ident.span();
-                emit_error!(ident_span, "Components must be a struct!");
-                return item;
-            } else if ident.to_string() == "struct" {
-                next_token_is_ident = true;
-            } else if ident.to_string() == "extern" {
-                is_extern_c = true;
-            }
+    match component.vis {
+        syn::Visibility::Public(_) => { },
+        _ => {
+            emit_error!(component.ident.span(), "Components must be public!");
+            return item;
         }
     }
 
-    let defs_ref = OPEN_DEFS.lock().unwrap();
-    let mut defs = defs_ref.borrow_mut();
-    let cf = file!().to_string();
+    component.attrs.push(syn::parse_quote! {
+        #[repr(C)]
+    });
 
-    let script_def = if defs.contains_key(cf.as_str()) {
-        defs.get_mut(cf.as_str()).unwrap()
-    } else {
-        defs.insert(cf.clone(), ScriptDefinition::new(cf.clone()));
-        defs.get_mut(cf.as_str()).unwrap()
+    //TODO make sure member types are compatable with the ecs framework?
+
+    //TODO make public bindings for accessing move and drop functions
+
+    let out = quote! {
+        #component
     };
 
-    item
+    TokenStream::from(out)
 }
 
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn system(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let system = syn::parse::<ItemFn>(item.clone());
+    if let Err(err) = system {
+        emit_error!(err.span(), "Failed to parse system: {}", err);
+        return item;
+    }
 
-    let mut is_pub = false;
-    let mut is_extern_c = false;
-    let mut next_token_is_ident = false;
+    let mut system = system.unwrap();
 
-    let mut identifier = String::new();
-
-    for token_tree in item.clone().into_iter() {
-        if let TokenTree::Ident(ident) = token_tree {
-
-            if next_token_is_ident {
-                if !is_pub {
-                    emit_error!(ident.span(), "Systems must be public!");
-                    return item;
-                }
-                identifier = ident.to_string();
-                break;
-            }
-
-            if ident.to_string() == "pub" {
-                is_pub = true;
-            } else if ident.to_string() == "fn" {
-                next_token_is_ident = true;
-            } else if ident.to_string() == "struct" {
-                let ident_span = ident.span();
-                emit_error!(ident_span, "Systems must be a function!");
-                return item;
-            } else if ident.to_string() == "extern" {
-                is_extern_c = true;
-            }
+    match system.vis {
+        syn::Visibility::Public(_) => { },
+        _ => {
+            emit_error!(system.sig.ident.span(), "Systems must be public!");
+            return item;
         }
     }
 
-    let defs_ref = OPEN_DEFS.lock().unwrap();
-    let mut defs = defs_ref.borrow_mut();
-    let cf = file!().to_string();
+    system.attrs.push(syn::parse_quote! {
+        #[no_mangle]
+    });
 
-    let script_def = if defs.contains_key(cf.as_str()) {
-        defs.get_mut(cf.as_str()).unwrap()
-    } else {
-        defs.insert(cf.clone(), ScriptDefinition::new(file!().to_string()));
-        defs.get_mut(cf.as_str()).unwrap()
+    system.sig.abi = Some(syn::parse_quote! {
+        extern "C"
+    });
+
+    let out = quote! {
+        #system
     };
 
-    item
+    TokenStream::from(out)
 }
