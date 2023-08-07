@@ -41,10 +41,29 @@ pub fn component(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     //TODO make sure member types are compatable with the ecs framework?
 
-    //TODO make public bindings for accessing move and drop functions
+    let ident_str = component.ident.to_string();
+    let ident = syn::Ident::new(ident_str.as_str(), component.ident.span());
+    let clone_method_sig = syn::Ident::new((String::from("be_clone_") + &ident_str).as_str(), component.ident.span());
+    let drop_method_sig = syn::Ident::new((String::from("be_drop_") + &ident_str).as_str(), component.ident.span());
+
 
     let out = quote! {
         #component
+
+        #[no_mangle]
+        pub extern "C" fn #clone_method_sig (dest : *mut #ident, src : *const #ident) {
+            unsafe {
+                *dest = (*src).clone();
+            }
+        }
+
+        #[no_mangle]
+        pub extern "C" fn #drop_method_sig (component : *mut #ident) {
+            unsafe {
+                let data = Box::from_raw(component);
+                drop(data);
+            }
+        }
     };
 
     TokenStream::from(out)

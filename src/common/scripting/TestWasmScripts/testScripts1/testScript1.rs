@@ -1,5 +1,6 @@
 use brane_engine::{component, system};
 
+#[derive(Clone)]
 #[component]
 pub struct TestComponent {
     pub test: i32,
