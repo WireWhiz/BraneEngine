@@ -4,10 +4,6 @@
 
 #include "scripting.h"
 
-#include "ecs/entity.h"
-#include "transforms.h"
-#include "scriptRuntime/structDefinition.h"
-
 ScriptManager::ScriptManager()
 {
     /*addNativeComponent<EntityIDComponent>(em);

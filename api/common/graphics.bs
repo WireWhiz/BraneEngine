@@ -1,0 +1,9 @@
+module "BraneEngine.Graphics"
+{
+    ["component"]
+    struct MeshRendererComponent
+    {
+        uint mesh;
+        
+    }
+}

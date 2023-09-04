@@ -1,0 +1,8 @@
+module "BraneEngine.Colletions"
+{
+    template<typedef T, typedef N>
+    struct InlineArray
+    {
+
+    }
+}

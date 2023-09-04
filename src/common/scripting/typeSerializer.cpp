@@ -3,9 +3,10 @@
 //
 
 #include "typeSerializer.h"
-#include "structDefinition.h"
+//#include "structDefinition.h"
 #include "robin_hood.h"
 
+/*
 namespace TypeSerializer
 {
     robin_hood::unordered_map<const TypeDef*, CustomSerializer> _customSerializers;
@@ -171,4 +172,4 @@ namespace TypeSerializer
                 s->second.fromJson(data, source);
         }
     }
-};
+};*/

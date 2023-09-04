@@ -1,0 +1,31 @@
+[package]
+name = "scripting_runtime"
+version = "0.1.0"
+edition = "2021"
+authors = ["WireWhiz"]
+description = "Scripting runtime for Brane Engine. This is where the magic happens"
+
+[lib]
+crate-type = ["staticlib"]
+name = "ScriptingRuntime"
+path = "src/lib.rs"
+
+[dependencies]
+# Core libraries
+wasmtime = "11.0.1"
+
+[dependencies.syn]
+syn = "2.0"
+default-features = true
+features = ["full"]
+
+# Editor libraries
+
+[build-dependencies]
+cbindgen = "0.24.5"
+
+
+[features]
+client = []
+
+default = ["client"]

@@ -1,4 +1,9 @@
-use brane_engine::{component, system};
+use brane_engine_api::{component, system};
+
+#[link(wasm_import_module = "env")]
+extern "C" {
+    pub fn create_test_component() -> i32;
+}
 
 #[derive(Clone)]
 #[component]
@@ -22,6 +27,12 @@ pub struct TestComponent {
     pub a: bool,
     pub b: i32,
     pub c: f32
+}
+
+#[system]
+pub fn test_imported_create_test_component() -> *mut TestComponent
+{
+    unsafe { create_test_component() as *mut TestComponent }
 }
 
 #[system]

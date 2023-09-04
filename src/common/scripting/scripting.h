@@ -6,12 +6,11 @@
 #define BRANEENGINE_SCRIPTING_H
 
 #include "runtime/runtime.h"
-
-#include "scriptRuntime/scriptRuntime.h"
+#include "scripting-runtime.h"
 
 class ScriptManager : public Module
 {
-    BraneScript::ScriptRuntime _rt;
+
 public:
     ScriptManager();
     static const char* name();

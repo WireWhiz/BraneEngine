@@ -14,7 +14,6 @@ glfw/3.3.8
 vulkan-headers/1.3.243.0
 stb/cci.20220909
 zlib/1.2.13
-wasmer/3.2.1
 
 [generators]
 cmake

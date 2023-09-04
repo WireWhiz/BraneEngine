@@ -2,7 +2,6 @@
 
 #include <array>
 #include <vector>
-#include "typeUtils.h"
 
 #include "component.h"
 #include "robin_hood.h"

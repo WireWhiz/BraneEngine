@@ -5,7 +5,7 @@
 #ifndef BRANEENGINE_TYPESERIALIZER_H
 #define BRANEENGINE_TYPESERIALIZER_H
 
-#include "typeDef.h"
+/*#include "typeDef.h"
 #include "json/json.h"
 #include "utility/serializedData.h"
 #include "functionHandle.h"
@@ -26,6 +26,6 @@ namespace TypeSerializer
     void deserialize(byte* data, const TypeDef* type, InputSerializer serializer);
     Json::Value toJson(const byte* data, const TypeDef* type);
     void fromJson(byte* data, const TypeDef* type, const Json::Value& source);
-};
+};*/
 
 #endif //BRANEENGINE_TYPESERIALIZER_H

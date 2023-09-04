@@ -1,0 +1,8 @@
+module "BraneEngine.Assets"
+link "BraneEngine.ECS"
+{
+    struct AssemblyRoot
+    {
+        EntityID id;
+    }
+}

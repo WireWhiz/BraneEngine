@@ -24,6 +24,7 @@ fn load_module(path: &str, engine: &Engine) -> Result<Module, String> {
         println!("Error reading file: {}", e.to_string());
         return Err(e.to_string());
     }
+    let now = std::time::Instant::now();
     let module = Module::from_binary(&engine,&buf);
     if module.is_err() {
         let err = module.err().unwrap();
@@ -31,6 +32,9 @@ fn load_module(path: &str, engine: &Engine) -> Result<Module, String> {
         return Err(err.to_string());
     }
     let module = module.unwrap();
+
+    let module_instantiation_time = now.elapsed();
+    println!("Module load time: {:?}", module_instantiation_time);
     Ok(module)
 }
 
@@ -77,6 +81,7 @@ fn main() {
     let func1 = Func::wrap(&mut store, be_print_external);
     let func2 = Func::wrap(&mut store, test_external_function);
 
+    let now = std::time::Instant::now();
 
     let imports1 = [Extern::Memory(main_memory.clone()), Extern::Func(func1), Extern::Func(func2)];
     let instance1 = Instance::new(&mut store, &module1, &imports1);
@@ -84,14 +89,19 @@ fn main() {
         println!("Was unable to instantiate module1: {:?}", instance1.err().unwrap());
         return;
     }
+    let instanceInstantiationTime = now.elapsed();
+    println!("Instance1 instantiation time: {:?}", instanceInstantiationTime);
     let instance1 = instance1.unwrap();
 
-    let imports2 = [Extern::Memory(main_memory.clone())];
+    let now = std::time::Instant::now();
+    let imports2 = [Extern::Memory(main_memory.clone()), Extern::Func(instance1.get_typed_func::<(), i32>(&mut store, "create_test_component").unwrap().func().clone())];
     let instance2 = Instance::new(&mut store, &module2, &imports2);
     if instance2.is_err() {
         println!("Was unable to instantiate module1: {:?}", instance2.err().unwrap());
         return;
     }
+    let instanceInstantiationTime = now.elapsed();
+    println!("Instance2 instantiation time: {:?}", instanceInstantiationTime);
     let instance2 = instance2.unwrap();
 
     let test_function = instance1.get_typed_func::<i32, i32>(&mut store,"test_function").unwrap();
@@ -100,10 +110,10 @@ fn main() {
 
     let test_extern_call = instance1.get_typed_func::<(), i32>(&mut store,"test_extern_call").unwrap();
     let res = test_extern_call.call(&mut store, ()).unwrap();
-    println!("Test function returned {}", res);
+    println!("Test extern call returned {}", res);
 
-    let mut test_component_ref = -1;
-    let create_test_component = instance1.get_typed_func::<(), i32>(&mut store,"create_test_component").unwrap();
+    let test_component_ref;
+    let create_test_component = instance2.get_typed_func::<(), i32>(&mut store,"test_imported_create_test_component").unwrap();
     match create_test_component.call(&mut store, ()) {
         Ok(res) => {
             test_component_ref = res;

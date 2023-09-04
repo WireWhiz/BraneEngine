@@ -1,5 +1,5 @@
 use std::ffi::c_char;
-use brane_engine::{component, system};
+use brane_engine_api::{component, system};
 
 #[link(wasm_import_module = "BraneEngine")]
 extern "C" {

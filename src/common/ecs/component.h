@@ -9,9 +9,6 @@
 #include <string>
 #include <vector>
 #include "common/utility/staticIndexVector.h"
-#include "scriptRuntime/funcRef.h"
-#include "scriptRuntime/nativeLibrary.h"
-#include "scriptRuntime/structDef.h"
 #include "utility/typeUtils.h"
 #include "utility/serializedData.h"
 #include <unordered_set>
