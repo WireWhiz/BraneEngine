@@ -1,5 +1,5 @@
 use std::ffi::c_char;
-use brane_engine_api::{component, system};
+use brane_engine_api::{component, offset_of, system};
 
 #[link(wasm_import_module = "BraneEngine")]
 extern "C" {
@@ -31,6 +31,8 @@ pub struct TestComponent {
 #[system]
 pub fn test_function(ret: i32) -> i32 {
     be_print(format!("Test function was passed: {}", ret).as_str());
+    be_print(format!("info offsets:\nsize: {}\nfields: {}\n sizeof fields {}", offset_of!(brane_engine_api::ComponentInfo, size), offset_of!(brane_engine_api::ComponentInfo, fields), std::mem::size_of::<&[i32]>()).as_str());
+    be_print(format!("field info offsets:\n offset {}, size {}, ty {}, ty size {}", offset_of!(brane_engine_api::ComponentFieldInfo, offset), offset_of!(brane_engine_api::ComponentFieldInfo, size),offset_of!(brane_engine_api::ComponentFieldInfo, ty), std::mem::size_of::<&str>()).as_str());
     ret
 }
 

@@ -39,20 +39,8 @@ impl BehaviourPack {
                         if item_contains_attr(&item_struct.attrs, "component") {
                             let identifier = item_struct.ident.to_string();
 
-                            let mut members = vec![];
-                            item_struct.fields.iter().for_each(|field| {
-                                let name = field.ident.as_ref().unwrap().to_string();
-                                if let Some(value_type) = parse_type(&field.ty) {
-                                    members.push(component::ComponentVar {
-                                        name,
-                                        value_type
-                                    });
-                                }
-                            });
-
                             pack.components.push(component::ComponentDef {
                                 name: identifier,
-                                member_vars: members
                             });
                         }
                     }

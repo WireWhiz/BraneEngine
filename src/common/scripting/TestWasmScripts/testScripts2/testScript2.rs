@@ -1,4 +1,6 @@
-use brane_engine_api::{component, system};
+use std::ptr::null;
+use brane_engine_api::{component, system, ComponentInfo, ComponentFieldInfo};
+
 
 #[link(wasm_import_module = "env")]
 extern "C" {
@@ -36,7 +38,7 @@ pub fn test_imported_create_test_component() -> *mut TestComponent
 }
 
 #[system]
-pub fn test_component_access(component: &mut TestComponent) -> &mut TestComponent {
+pub fn test_component_access(mut component: Box<TestComponent>) -> Box<TestComponent> {
     *component = TestComponent {
         a: true,
         b: 42,

@@ -7,16 +7,7 @@ description = "API for Brane Engine scripting"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-path = "src/macros.rs"
-proc-macro = true
-
 [dependencies]
-proc-macro-error = { version = "1" }
-quote = "1.0.32"
-toml = "0.7.6"
+brane_engine_api_macros = { version = "0.1.0", path = "macros" }
+memoffset = "0.9"
 
-[dependencies.syn]
-syn = "2.0"
-default-features = true
-features = ["full"]

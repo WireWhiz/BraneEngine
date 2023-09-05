@@ -13,6 +13,5 @@ pub struct ComponentVar {
 
 #[derive(Debug, Clone)]
 pub struct ComponentDef {
-    pub name: String,
-    pub member_vars: Vec<ComponentVar>
+    pub name: String
 }

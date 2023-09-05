@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 wasmtime = "12.0.0"
+brane_engine_api = {version = "0.1.0", path = "../scripting_runtime/api"}
