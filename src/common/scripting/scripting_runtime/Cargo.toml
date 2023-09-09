@@ -6,13 +6,12 @@ authors = ["WireWhiz"]
 description = "Scripting runtime for Brane Engine. This is where the magic happens"
 
 [lib]
-crate-type = ["staticlib"]
-name = "ScriptingRuntime"
+crate-type = ["staticlib", "rlib"]
 path = "src/lib.rs"
 
 [dependencies]
 # Core libraries
-wasmtime = "11.0.1"
+wasmtime = "12.0.1"
 
 [dependencies.syn]
 syn = "2.0"

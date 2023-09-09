@@ -1,6 +1,6 @@
 
-mod runtime;
-mod ffi_types;
+pub mod runtime;
+pub mod ffi_types;
 
 use runtime::ScriptingRuntime;
 use runtime::behaviour_pack::BehaviourPack;

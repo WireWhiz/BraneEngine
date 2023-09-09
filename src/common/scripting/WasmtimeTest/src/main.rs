@@ -3,7 +3,8 @@ use std::io::Read;
 use std::mem::size_of;
 use std::ops::Index;
 use wasmtime::{Config, Engine, Instance, Store, Module, Memory, MemoryType, Func, Extern, Export, Caller, AsContextMut, AsContext};
-use brane_engine_api::{ComponentInfo, ComponentFieldInfo, offset_of};
+
+use scripting_runtime::runtime::api_bindings::{WasmPtr, ComponentInfo, ComponentFieldInfo};
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -148,36 +149,22 @@ fn main() {
         println!("Instance1 exports: {} of type {:?}", e.name(), ty);
     }
 
-    let testComponentInfo = instance1.get_typed_func::<(), i32>(&mut store,"be_info_TestComponent").unwrap();
+    let test_component_info = instance1.get_typed_func::<(), u32>(&mut store, "be_info_TestComponent").unwrap();
 
-    let testComponentInfoPtr = testComponentInfo.call(&mut store, ()).unwrap();
-    println!("Test component info returned {}", testComponentInfoPtr);
-    unsafe {
-        println!("Memory is of size: {}", main_memory.size(&mut store) * 65536);
-        assert!(testComponentInfoPtr < main_memory.size(&mut store) as i32 * 65536); //Make sure the pointer is within the bounds of the memory
-        let testComponentInfoPtr = main_memory.data_ptr(&mut store).offset(testComponentInfoPtr as isize) as *const ComponentInfo;
-        println!("Offset of size field is: {}", offset_of!(ComponentInfo, size));
-        println!("Offset of fields field is: {}", offset_of!(ComponentInfo, fields));
-        println!("Test component of size {} contains fields:", (*testComponentInfoPtr).size);
+    let test_component_info_ptr = test_component_info.call(&mut store, ()).unwrap();
+    println!("Test component info returned {}", test_component_info_ptr);
+    println!("Memory is of size: {}", main_memory.size(&mut store) * 65536);
+    assert!(test_component_info_ptr < main_memory.size(&mut store) as u32 * 65536); //Make sure the pointer is within the bounds of the memory
+    let test_component_info_ptr: WasmPtr<ComponentInfo> = WasmPtr::new(test_component_info_ptr);
+    let test_component_info = test_component_info_ptr.as_ref(&main_memory, &store);
+    println!("Test component of size {} contains fields:", test_component_info.size);
 
-        //Manually generate a pointer to the fields array, which on the wasm side is just an i32
-        let fields_info_ptr_index =  *((testComponentInfoPtr as *const u8).offset(4) as *const i32);
-        let fields_count =  *((testComponentInfoPtr as *const u8).offset(8) as *const i32);
-        println!("Fields info ptr index is {} and slice size is {}", fields_info_ptr_index, fields_count);
-        assert!(fields_info_ptr_index < main_memory.size(&mut store) as i32 * 65536); //Make sure the pointer is within the bounds of the memory
+    let fields = test_component_info.fields.as_ref(&main_memory, &store);
 
-        let fields_data = main_memory.data_ptr(&mut store).offset(fields_info_ptr_index as isize) as *const u8;
-        for i in 0..fields_count {
-            let field = &*(fields_data.offset((i * 16) as isize) as *const ComponentFieldInfo);
-            let ty : &str;
-            unsafe {
-                let ty_ptr_index =  *((field as *const ComponentFieldInfo as *const u8).offset(8) as *const i32);
-                let ty_char_count =  *((field as *const ComponentFieldInfo as *const u8).offset(12) as *const i32);
-                assert!(ty_ptr_index < main_memory.size(&mut store) as i32 * 65536); //Make sure the pointer is within the bounds of the memory
-                ty = std::str::from_utf8_unchecked(std::slice::from_raw_parts(main_memory.data_ptr(&mut store).offset(ty_ptr_index as isize) as *const u8, ty_char_count as usize));
-            }
-            println!("\t{}: offset = {}, size = {}, type = {}", i, field.offset, field.size, ty);
-        }
-
+    let mut i = 0;
+    for f in fields.iter() {
+        let ty = f.ty.as_str(&main_memory, &store);
+        println!("\t{}: offset = {}, size = {}, type = {}", i, f.offset, f.size, ty);
+        i += 1;
     }
 }

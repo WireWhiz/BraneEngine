@@ -1,7 +1,9 @@
 
-pub(crate) mod behaviour_pack;
-mod component;
-mod job;
+pub mod api_bindings;
+pub mod behaviour_pack;
+pub mod component;
+pub mod job;
+
 
 pub struct ScriptingRuntime {
     engine: wasmtime::Engine,
