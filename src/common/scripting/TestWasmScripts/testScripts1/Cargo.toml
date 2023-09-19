@@ -6,7 +6,7 @@ edition = "2021"
 [lib]
 name = "wasm_crate1"
 path = "testScript1.rs"
-crate-type=["cdylib"]
+crate-type = ["cdylib"]
 
 [dependencies]
 brane_engine_api.workspace = true

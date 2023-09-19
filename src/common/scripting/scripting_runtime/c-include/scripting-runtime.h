@@ -28,11 +28,15 @@ void delete_scripting_runtime(RUST_ScriptingRuntime *runtime);
 
 RUST_BehaviourPack *compile_crate(const char *crate_root, bool release);
 
+uint32_t runtime_load_pack(RUST_ScriptingRuntime *runtime, const RUST_BehaviourPack *pack);
+
 /// Get behaviour name
 /// # Arguments
 /// * `behaviour_pack` - Pointer to the behaviour pack
 /// * `name` - Pointer to an uninitialized RawBuffer struct to write the name to
 void behaviour_pack_name(const RUST_BehaviourPack *behaviour_pack, RUST_BEStr *name);
+
+void free_behaviour_pack(RUST_BehaviourPack *behaviour_pack);
 
 void new_be_string(RUST_BEStr *uninitalized);
 

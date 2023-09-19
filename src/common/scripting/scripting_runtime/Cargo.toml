@@ -12,6 +12,7 @@ path = "src/lib.rs"
 [dependencies]
 # Core libraries
 wasmtime = "12.0.1"
+proc-macro2 = "1.0.66"
 
 [dependencies.syn]
 syn = "2.0"

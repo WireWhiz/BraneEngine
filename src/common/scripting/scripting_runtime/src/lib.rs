@@ -37,6 +37,20 @@ pub extern "C" fn compile_crate(crate_root: *const std::ffi::c_char, release: bo
 }
 
 // Load a compiled module
+#[no_mangle]
+pub extern "C" fn runtime_load_pack(runtime: *mut runtime::ScriptingRuntime, pack: *const BehaviourPack) -> u32
+{
+    let runtime = unsafe { &mut *runtime };
+    let pack = unsafe { &*pack };
+
+    match runtime.load_pack(pack) {
+        Ok(id) => id,
+        Err(e) => {
+            eprintln!("Error loading pack: {}", e.to_string());
+            0xFFFFFFFF
+        }
+    }
+}
 
 // Unload a compiled module
 
@@ -64,4 +78,10 @@ pub extern "C" fn behaviour_pack_name(behaviour_pack: *const BehaviourPack, name
     unsafe {
         *name = BEStr::from(behaviour_pack.name.as_str())
     };
+}
+
+#[no_mangle]
+pub extern "C" fn free_behaviour_pack(behaviour_pack: *mut BehaviourPack)
+{
+    unsafe { drop(Box::from_raw(behaviour_pack)) }
 }

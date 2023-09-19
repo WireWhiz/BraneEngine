@@ -2,15 +2,19 @@ use std::ffi::OsStr;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use crate::runtime::component;
+use crate::runtime::{job};
+use job::JobInfo;
 use std::process::Command;
+use proc_macro2::TokenTree;
+use crate::runtime::job::JobAttribute;
+
 
 #[derive(Clone, Debug)]
 pub struct BehaviourPack {
     pub name: String,
     pub module_data: Vec<u8>,
-    pub jobs: Vec<String>,
-    pub components: Vec<component::ComponentDef>
+    pub jobs: Vec<JobInfo>,
+    pub component_ids: Vec<String>
 }
 
 impl BehaviourPack {
@@ -30,18 +34,47 @@ impl BehaviourPack {
             syntax.items.iter().for_each(|item| {
                 match item {
                     syn::Item::Fn(item_fn) => {
-                        if item_contains_attr(&item_fn.attrs, "system") {
+                        if item_contains_attr(&item_fn.attrs, "job") {
                             let identifier = item_fn.sig.ident.to_string();
-                            pack.jobs.push(identifier);
+
+                            let mut job_attrs = vec![];
+                            for a in item_fn.attrs.iter() {
+                                if let syn::AttrStyle::Inner(_) = a.style {
+                                    continue;
+                                }
+
+                                if let syn::Meta::List(ref list) = a.meta {
+                                    if list.path.is_ident("order_before"){
+                                        for t in list.tokens.to_owned() {
+                                            if let TokenTree::Ident(ident) = t {
+                                                job_attrs.push(JobAttribute::OrderBefore(ident.to_string()));
+                                            }
+                                        }
+                                    }
+                                    else if list.path.is_ident("order_after") {
+                                        for t in list.tokens.to_owned() {
+                                            if let TokenTree::Ident(ident) = t {
+                                                job_attrs.push(JobAttribute::OrderAfter(ident.to_string()));
+                                            }
+                                        }
+                                    }
+                                }
+
+                            }
+
+
+
+                            pack.jobs.push(JobInfo {
+                                name: identifier,
+                                attributes: job_attrs,
+                            });
                         }
                     },
                     syn::Item::Struct(item_struct) => {
                         if item_contains_attr(&item_struct.attrs, "component") {
                             let identifier = item_struct.ident.to_string();
 
-                            pack.components.push(component::ComponentDef {
-                                name: identifier,
-                            });
+                            pack.component_ids.push(identifier);
                         }
                     }
                     _ => {}
@@ -57,7 +90,7 @@ impl BehaviourPack {
             name: String::new(),
             module_data: vec![],
             jobs: vec![],
-            components: vec![]
+            component_ids: vec![]
         };
 
         let crate_root = Path::canonicalize(Path::new(path))?;
@@ -105,6 +138,8 @@ impl BehaviourPack {
             behaviour_pack.module_data = std::fs::read(path)?;
         }
 
+
+
         Ok(behaviour_pack)
     }
 }
@@ -133,7 +168,7 @@ fn find_rs_files_in_crate(path: &Path) -> Result<Vec<PathBuf>, Box<dyn std::erro
 
 fn item_contains_attr(attrs: &Vec<syn::Attribute>, attr_name: &str) -> bool {
     attrs.iter().find(|attr| {
-        if let syn::AttrStyle::Inner(t) = attr.style {
+        if let syn::AttrStyle::Inner(_) = attr.style {
             return false;
         }
         match attr.meta {
@@ -151,18 +186,4 @@ fn item_contains_attr(attrs: &Vec<syn::Attribute>, attr_name: &str) -> bool {
         }
         false
     }).is_some()
-}
-
-fn parse_type(ty: &syn::Type) -> Option<component::VarType>
-{
-    match ty {
-        syn::Type::Path(path) => {
-            Some(component::VarType {
-                type_name: path.path.segments.iter().map(|s|s.ident.to_string()).reduce(|a, b| {
-                    a + "::" + b.as_str()
-                }).unwrap()
-            })
-        },
-        _ => None
-    }
 }

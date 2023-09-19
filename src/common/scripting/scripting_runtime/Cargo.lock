@@ -1026,6 +1026,7 @@ name = "scripting_runtime"
 version = "0.1.0"
 dependencies = [
  "cbindgen",
+ "proc-macro2",
  "syn 2.0.29",
  "wasmtime",
 ]

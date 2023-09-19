@@ -1,8 +1,7 @@
-use std::ptr::null;
-use brane_engine_api::{component, system, ComponentInfo, ComponentFieldInfo};
+use brane_engine_api::{component, job, order_before};
 
 
-#[link(wasm_import_module = "env")]
+#[link(wasm_import_module = "module1")]
 extern "C" {
     pub fn create_test_component() -> i32;
 }
@@ -13,12 +12,13 @@ pub struct TestComponent2 {
     pub test: i32,
 }
 
-#[system]
+#[order_before(a, c, d)]
+#[job]
 pub fn test_function3() -> i32 {
     42
 }
 
-#[system]
+#[job]
 pub fn test_function4() -> i32 {
     42
 }
@@ -31,13 +31,13 @@ pub struct TestComponent {
     pub c: f32
 }
 
-#[system]
+#[job]
 pub fn test_imported_create_test_component() -> *mut TestComponent
 {
     unsafe { create_test_component() as *mut TestComponent }
 }
 
-#[system]
+#[job]
 pub fn test_component_access(mut component: Box<TestComponent>) -> Box<TestComponent> {
     *component = TestComponent {
         a: true,
