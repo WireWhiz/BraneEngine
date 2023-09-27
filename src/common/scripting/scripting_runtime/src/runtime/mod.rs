@@ -103,10 +103,10 @@ impl ScriptingRuntime {
             let mut fields = vec![];
             for field in info.fields.as_ref(&self.main_memory, store.as_context_mut()).iter() {
                 fields.push(ComponentField {
-                    name: field.name.as_str(&self.main_memory, store.as_context_mut()).to_string(),
+                    name: field.name.as_ref(&self.main_memory, store.as_context_mut()).as_str().to_string(),
                     offset: field.offset,
                     size: field.size,
-                    ty: field.ty.as_str(&self.main_memory, store.as_context_mut()).to_string()
+                    ty: field.ty.as_ref(&self.main_memory, store.as_context_mut()).as_str().to_string()
                 });
             };
             let size = info.size;

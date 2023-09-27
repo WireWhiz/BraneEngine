@@ -1,10 +1,10 @@
 use std::ops::{Deref, DerefMut};
-use wasmtime::{Memory, AsContext};
+use wasmtime::{Memory, SharedMemory, AsContext};
 
 /// Struct that can be used as a member in a wasm struct to represent a pointer to a wasm memory buffer, allowing for chained pointers to be used
 #[repr(C)]
 pub struct WasmPtr<T> {
-    ptr: u32,
+    pub ptr: u32,
     phantom: std::marker::PhantomData<*const T>
 }
 
@@ -30,11 +30,28 @@ impl<T> WasmPtr<T> {
         }
     }
 
-    pub fn as_ref_mut(&mut self, source: &Memory, store: impl AsContext) -> WasmRef<T>
+    pub fn as_ref_mut(&mut self, source: &Memory, store: impl AsContext) -> MutWasmRef<T>
     {
-        let raw_ptr = unsafe { source.data_ptr(store).offset(self.ptr as isize) as *const T };
-        let value = unsafe { &*raw_ptr };
+        let raw_ptr = unsafe { source.data_ptr(store).offset(self.ptr as isize) as *mut T };
+        let value = unsafe { &mut *raw_ptr };
+        MutWasmRef {
+            value
+        }
+    }
+
+    pub fn as_shared_ref(&self, source: &SharedMemory) -> WasmRef<T> {
+
+        let raw_ptr = unsafe { source.data()[self.ptr as usize].get() as *const T };
+        let value= unsafe { &*raw_ptr };
         WasmRef {
+            value
+        }
+    }
+
+    pub fn as_shared_ref_mut(&mut self, source: &SharedMemory) -> MutWasmRef<T> {
+        let raw_ptr = source.data()[self.ptr as usize].get() as *mut T;
+        let value = unsafe { &mut *raw_ptr };
+        MutWasmRef {
             value
         }
     }

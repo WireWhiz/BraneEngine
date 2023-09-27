@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
 wasmtime = "12.0.2"
-scripting_runtime = {version = "0.1.0", path = "../scripting_runtime" }
 wasmtime-wasi = "12.0.2"
-wasmtime-wasi-threads = "12.0.2"
+scripting_runtime = {version = "0.1.0", path = "../scripting_runtime" }

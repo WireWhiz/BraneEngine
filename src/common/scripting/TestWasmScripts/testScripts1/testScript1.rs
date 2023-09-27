@@ -4,13 +4,15 @@ use brane_engine_api::{component, order_before, order_after, job};
 #[link(wasm_import_module = "BraneEngine")]
 extern "C" {
     pub fn test_external_function() -> i32;
-    pub fn extern_be_print(msg: *const c_char);
+
+    pub fn spawn_thread(func: Box<dyn Fn()>);
+
+    pub fn extern_be_print(msg: *const u8, size: u32);
 }
 
 pub fn be_print(msg: &str) {
-    let c_str = std::ffi::CString::new(msg).unwrap();
     unsafe {
-        extern_be_print(c_str.as_ptr());
+        extern_be_print(msg.as_ptr(), msg.len() as u32);
     }
 }
 
@@ -31,7 +33,7 @@ pub struct TestComponent {
 #[order_before(test_extern_call)]
 #[job]
 pub fn test_function(ret: i32) -> i32 {
-    println!("Test function was passed: {}", ret);
+    be_print(format!("Test function passed {}", ret).as_str());
     ret
 }
 
@@ -53,15 +55,13 @@ pub fn create_test_component() -> *mut TestComponent {
 }
 
 #[job]
-pub fn threads_test() {
-    println!("Starting function and spawning threads");
-    let mut threads = Vec::new();
-    for i in 0..10 {
-        threads.push(std::thread::spawn(move || {
-            println!("Thread {} started, trying to wait", i);
-            std::thread::sleep(std::time::Duration::from_millis(3000));
-            println!("Thread {} finished, joining", i);
-        }));
-    }
-    println!("Returning function");
+pub fn run_thread(func: Box<dyn Fn()>)
+{
+    func();
+}
+
+#[job]
+pub fn enqueue_job(func: Box<dyn Fn()>)
+{
+    unsafe{spawn_thread(func)};
 }
